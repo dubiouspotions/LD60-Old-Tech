@@ -6,5 +6,8 @@
 
 [resource]
 script = ExtResource("1_crew")
+walk_speed = 3.4
+climb_speed = 2.4
+build_speed = 0.8
 work_sound = ExtResource("2_crew")
 strike_sound = ExtResource("3_crew")

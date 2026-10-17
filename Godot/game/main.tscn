@@ -1,30 +1,39 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://bfllsmio3y4jc"]
 
-[ext_resource type="Script" path="res://game/game.gd" id="1"]
-[ext_resource type="PackedScene" path="res://world/background/background.tscn" id="2"]
-[ext_resource type="Script" path="res://game/tool_controller.gd" id="3"]
-[ext_resource type="Script" path="res://game/camera_rig.gd" id="4"]
+[ext_resource type="Script" uid="uid://bkxv0rh5hu488" path="res://game/game.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://kib74rq6nvro" path="res://world/background/background.tscn" id="2"]
+[ext_resource type="Script" uid="uid://csheef411813p" path="res://game/tool_controller.gd" id="3"]
+[ext_resource type="Script" uid="uid://ccqxavwqhp3xu" path="res://game/camera_rig.gd" id="4"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="5"]
 [ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6"]
+[ext_resource type="CompressedTexture3D" uid="uid://drnrrtm8ewlhd" path="res://post/lut/low_17_night.png" id="7_wjctj"]
 
-[node name="Game" type="Node"]
+[sub_resource type="Environment" id="Environment_sfb0x"]
+background_mode = 3
+adjustment_enabled = true
+adjustment_color_correction = ExtResource("7_wjctj")
+
+[node name="Game" type="Node" unique_id=904096967]
 script = ExtResource("1")
 march_sound = ExtResource("6")
 
-[node name="Background" parent="." instance=ExtResource("2")]
+[node name="Background" parent="." unique_id=1700337154 instance=ExtResource("2")]
 
-[node name="LevelHolder" type="Node2D" parent="."]
+[node name="LevelHolder" type="Node2D" parent="." unique_id=1998500207]
 unique_name_in_owner = true
 
-[node name="ToolController" type="Node2D" parent="."]
+[node name="ToolController" type="Node2D" parent="." unique_id=885474919]
 unique_name_in_owner = true
 z_index = 20
 script = ExtResource("3")
 
-[node name="Camera" type="Camera2D" parent="."]
+[node name="Camera" type="Camera2D" parent="." unique_id=1549734198]
 unique_name_in_owner = true
 anchor_mode = 0
 script = ExtResource("4")
 
-[node name="HUD" parent="." instance=ExtResource("5")]
+[node name="HUD" parent="." unique_id=425979277 instance=ExtResource("5")]
 unique_name_in_owner = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1380559701]
+environment = SubResource("Environment_sfb0x")
