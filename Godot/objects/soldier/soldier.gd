@@ -2,7 +2,7 @@ class_name Soldier
 extends Node2D
 ## One marching soldier. Army moves it; this node only shows it.
 ## The node origin is at the feet. Edit the look and the "walk"/"idle"/"sleep" animations in soldier.tscn.
-## While sleeping, Body is hidden and the optional Asleep node (lying pose) is shown instead.
+## While sleeping, Body is hidden and the optional Asleep node (tent and "z") is shown instead.
 
 @export var hurt_flash_color: Color = Color.WHITE
 @export_range(0.0, 2.0, 0.05, "suffix:s") var hurt_flash_time: float = 0.3

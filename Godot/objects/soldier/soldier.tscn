@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://csjqg38nc21d5" path="res://world/soilder_green.png" id="3_fity6"]
 [ext_resource type="Texture2D" uid="uid://c78yrurvjdt8p" path="res://world/soilder_walk.png" id="4_yrtfe"]
 [ext_resource type="Texture2D" uid="uid://28j71k80nis2" path="res://world/green_flag_ani.png" id="5_lxyqk"]
+[ext_resource type="Texture2D" uid="uid://ds7nrtiq0f4cv" path="res://world/tent.png" id="6_dsnea"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lxyqk"]
 atlas = ExtResource("4_yrtfe")
@@ -231,6 +232,35 @@ tracks/3/keys = {
 "values": [0]
 }
 
+[sub_resource type="Animation" id="sleep"]
+resource_name = "sleep"
+length = 2.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Asleep/Zzz:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 2.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(-14, -30), Vector2(-6, -52)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Asleep/Zzz:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.4, 2.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
 [sub_resource type="Animation" id="walk"]
 resource_name = "walk"
 length = 0.57
@@ -272,47 +302,6 @@ tracks/2/keys = {
 "args": [&"soilder_walk", 1.0, false],
 "method": &"play"
 }]
-}
-
-[sub_resource type="Animation" id="sleep"]
-resource_name = "sleep"
-length = 2.4
-loop_mode = 1
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Asleep/Zzz:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 2.4),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Vector2(-14, -30), Vector2(-6, -52)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("Asleep/Zzz:modulate")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.4, 2.4),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 0,
-"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("Asleep/Sleeper:scale")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 1.2, 2.4),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 0,
-"values": [Vector2(1.25, 1.25), Vector2(1.25, 1.31), Vector2(1.25, 1.25)]
 }
 
 [sub_resource type="AnimationLibrary" id="lib"]
@@ -406,30 +395,37 @@ default_color = Color(0.54509807, 0.33333334, 0.12941177, 1)
 
 [node name="Wounded" type="Polygon2D" parent="Body" unique_id=1334022656]
 unique_name_in_owner = true
-visible = false
+position = Vector2(8, 1)
 color = Color(1, 0.416, 0.333, 1)
 polygon = PackedVector2Array(-6.4, -33.92, -2.56, -33.92, -2.56, -30.08, -6.4, -30.08)
 
-[node name="Asleep" type="Node2D" parent="."]
+[node name="Shaft" type="Line2D" parent="Body/Wounded" unique_id=721048966]
+z_index = 1
+position = Vector2(11.000002, -32)
+scale = Vector2(1.0361437, 1.052631)
+points = PackedVector2Array(-1.9302368, -6.6500034, -14.4, 0)
+width = 1.9
+default_color = Color(0.165, 0.102, 0.063, 1)
+
+[node name="Asleep" type="Node2D" parent="." unique_id=551251667]
 unique_name_in_owner = true
-visible = false
 
-[node name="Sleeper" type="Sprite2D" parent="Asleep"]
-position = Vector2(0, -9)
-rotation = -1.5707964
-scale = Vector2(1.25, 1.25)
-texture = ExtResource("3_fity6")
-
-[node name="Zzz" type="Label" parent="Asleep"]
-offset_left = -14.0
-offset_top = -30.0
-offset_right = 6.0
-offset_bottom = -8.0
+[node name="Zzz" type="Label" parent="Asleep" unique_id=1002089416]
+z_index = 1
+offset_left = -15.0
+offset_top = -23.0
+offset_right = 5.0
+offset_bottom = -1.0
 theme_override_colors/font_color = Color(0.82, 0.88, 1, 1)
 theme_override_colors/font_outline_color = Color(0.0902, 0.1255, 0.1686, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 14
 text = "z"
+
+[node name="Tent" type="Sprite2D" parent="Asleep" unique_id=1021765552]
+position = Vector2(-20, -18)
+scale = Vector2(0.34374997, 0.34374997)
+texture = ExtResource("6_dsnea")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=28494290]
 unique_name_in_owner = true

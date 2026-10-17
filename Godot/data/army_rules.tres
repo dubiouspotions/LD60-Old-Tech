@@ -4,7 +4,7 @@
 [ext_resource type="Resource" path="res://data/sounds/soldier_hurt.tres" id="2_epn7y"]
 [ext_resource type="Script" uid="uid://d055yaujmwfi2" path="res://core/army_rules.gd" id="3_16x7n"]
 [ext_resource type="Resource" path="res://data/sounds/arrow_hit.tres" id="4_melee"]
-[ext_resource type="Script" path="res://core/supplies.gd" id="5_supplies"]
+[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="5_supplies"]
 [ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6_recruit"]
 
 [sub_resource type="Resource" id="recruit_cost"]
