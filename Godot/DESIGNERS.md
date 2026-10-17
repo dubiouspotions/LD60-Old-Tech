@@ -27,7 +27,7 @@ Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with 
 | --- | --- |
 | Soldier look and walk cycle | `objects/soldier/soldier.tscn` (polygons + AnimationPlayer "walk"/"idle") |
 | March speed, step-up, fall damage, max army, messages | `data/army_rules.tres` |
-| Engineer crew: size, walk/climb/build speed, ground climb and drop limits, strike delay, sounds | `data/crew_rules.tres` |
+| Engineer crew: size, walk/climb/build speed, step-up, ground climb and drop limits, strike delay, sounds | `data/crew_rules.tres` |
 | Engineer look | `objects/engineer/engineer.tscn` (inherits the soldier scene) |
 | Log / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres`, `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list) |

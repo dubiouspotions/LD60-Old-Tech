@@ -8,7 +8,10 @@ extends Resource
 @export_range(0.1, 10.0, 0.05, "suffix:m/s") var walk_speed: float = 2.4
 ## Speed climbing along scaffolding and finished members, and up or down terrain.
 @export_range(0.1, 10.0, 0.05, "suffix:m/s") var climb_speed: float = 1.5
-## Highest step and deepest drop an engineer takes on the ground. Anything more, or a hazard,
+## Ledges up to this high are stepped onto. Higher ones are climbed only when the way at the
+## engineer's own level is blocked, so tunnels are walked through rather than climbed over.
+@export_range(0.0, 5.0, 0.05, "suffix:m") var step_up: float = 1.05
+## Highest climb and deepest drop an engineer takes on the ground. Anything more, or a hazard,
 ## has to be crossed over the structure.
 @export_range(0.0, 20.0, 0.5, "suffix:m") var max_climb: float = 3.0
 @export_range(0.0, 20.0, 0.5, "suffix:m") var max_drop: float = 3.0

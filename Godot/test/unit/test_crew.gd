@@ -78,14 +78,14 @@ func test_crew_climbs_finished_parts_to_reach_far_members() -> void:
 		_plan(Vector2(8, 6), Vector2(10, 8), ROPE),
 	]
 	level.bridge.order_blueprints()
-	var in_pit := false
+	var in_pit := [false]  # an array, so the lambda can write to it
 	_run(60.0, func() -> bool:
 		for e in level.crew.engineers:
-			in_pit = in_pit or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.5)
+			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.5)
 		return plan.all(func(m: Bridge.Member) -> bool: return not m.blueprint))
 	for m in plan:
 		assert_false(m.blueprint, "%s built" % m.material.display_name)
-	assert_false(in_pit, "nobody walks through the spikes")
+	assert_false(in_pit[0], "nobody walks through the spikes")
 
 
 ## At 2× speed the last step toward a joint on the cliff edge lands exactly on the edge.
@@ -103,3 +103,37 @@ func test_crew_idles_without_orders() -> void:
 	_run(1.0)
 	for e in level.crew.engineers:
 		assert_null(e.job)
+
+
+## A rock hill with a tunnel dug under it. The hill top is within climbing reach of the tunnel floor.
+const TUNNEL: Array = [
+	"..............",
+	"..............",
+	"..............",
+	"...RRRR.......",
+	"..............",
+	"..............",
+	"##############",
+	"##############",
+	"BBBBBBBBBBBBBB",
+]
+
+
+func test_crew_walks_through_tunnel_not_over_hill() -> void:
+	level.terrain.clear()
+	level.terrain.rebuild()
+	for y in TUNNEL.size():
+		for x in TUNNEL[y].length():
+			var key: String = WorldFixture.LEGEND[TUNNEL[y][x]]
+			if key != "":
+				level.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	level.army.spawn(1, 12.5)
+	level.crew.spawn(3.0)
+	var highest := [99.0]  # an array, so the lambda can write to it
+	_run(10.0, func() -> bool:
+		for e in level.crew.engineers:
+			highest[0] = minf(highest[0], e.pos.y)
+		return level.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.pos.x > 9.0))
+	for e in level.crew.engineers:
+		assert_gt(e.pos.x, 9.0, "came through")
+	assert_gt(highest[0], 5.5, "stayed in the tunnel")

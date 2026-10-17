@@ -197,8 +197,15 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 
 ## Ground surface at x for an engineer standing at height y, or NAN if it can not get there:
 ## a hazard, a wall higher than max_climb or a drop deeper than max_drop. Built decks count as ground.
+## The engineer's own level (within step_up) wins over climbing.
 func _next_y(y: float, x: float) -> float:
-	var s := army.surface_at(x, y - rules.max_climb)
+	var level_y := _surface_y(y, x, rules.step_up)
+	return level_y if not is_nan(level_y) else _surface_y(y, x, rules.max_climb)
+
+
+## First safe surface at x no more than up above y, or NAN.
+func _surface_y(y: float, x: float, up: float) -> float:
+	var s := army.surface_at(x, y - up)
 	if s.hazard != null or s.y - y > rules.max_drop or terrain.is_solid(Vector2i(floori(x), floori(s.y - 0.5))):
 		return NAN
 	return s.y
