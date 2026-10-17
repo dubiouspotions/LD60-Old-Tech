@@ -2,7 +2,7 @@
 
 A Ludum Dare 60 game ("Old Tech") made in Godot 4.7.
 
-The column marches east on its own. It halts at anything it can't cross: walls over 1 m, drops over 3 m, water and spikes. You are the engineers above the field. Dig, fill, bridge and blast a way through before the archers' towers thin the ranks.
+The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. You are the engineers above the field. Dig, fill, bridge and blast a way through before the archers' towers thin the ranks.
 
 ## How to play
 
@@ -17,7 +17,7 @@ The column marches east on its own. It halts at anything it can't cross: walls o
 | Pan | 7 | Drag to move the view. |
 
 - Log, Support and Rope place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
-- **Enter** or the **Build** button hands the plan to the engineers (orange). They build it member by member, starting from the ground or finished parts and climbing along what is already up. Finished parts are held on scaffolding, and the column can't cross them yet. When the last engineer is back on the ground the scaffolding comes down, and your design holds or it doesn't. The column waits at any deck or ramp still being built.
+- While you plan, idle engineers (orange) walk over and wait beside it. **Enter** or the **Build** button hands the plan to them. They build it member by member, starting from the ground or finished parts and climbing along what is already up. With only one thing to build or dig, they all work on it together. Finished parts are held on scaffolding and can't be walked on yet. Each separate structure comes down off its scaffolding once it's finished and no engineer is on it, and your design holds or it doesn't. The column doesn't wait for it: a soldier walking onto an unfinished bridge falls.
 - Bridge ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down.
 - Joints are hinges, so build triangles or hang the deck from ropes. Members glow red as they near breaking, and each soldier adds 80 kg.
 - Each level the column waits at the start until the king loses patience (30 s by default). Use the time to build ahead, and press **M** or **March** to set off early once you're ready.

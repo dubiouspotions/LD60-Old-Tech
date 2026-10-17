@@ -72,6 +72,7 @@ func _physics_process(dt: float) -> void:
 		if _march_left <= 0.0:
 			_order_march(false)
 	bridge.step(dt, army.bridge_loads())
+	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
 	army.step(dt)
 	crew.step(dt)
 	var lead := army.lead()

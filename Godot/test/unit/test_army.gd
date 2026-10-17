@@ -38,29 +38,56 @@ func test_halts_at_two_metre_wall() -> void:
 	assert_eq(a.halt_reason, "2 m wall ahead")
 
 
-func test_halts_before_deep_drop() -> void:
-	var a := _world([
-		"..........",
-		"#####.....",
-		"#####.....",
-		"#####.....",
-		"#####.....",
-		"#####.....",
-		"##########",
-		"BBBBBBBBBB",
-	])
+## 5 m down: survivable, so the column walks off the edge and marches on.
+const LEDGE: Array = [
+	"..........",
+	"#####.....",
+	"#####.....",
+	"#####.....",
+	"#####.....",
+	"#####.....",
+	"##########",
+	"BBBBBBBBBB",
+]
+
+
+func test_warns_of_drop_but_walks_off_it() -> void:
+	var a := _world(LEDGE)
 	a.spawn(1, 1.5)
+	_run(a, 0.8)
+	assert_eq(a.danger, "5 m drop ahead", "warned")
+	assert_eq(a.halt_reason, "", "not halted")
 	_run(a, 3.0)
-	assert_lt(a.lead().pos.x, 5.0)
-	assert_eq(a.halt_reason, "5 m drop ahead")
+	assert_gt(a.lead().pos.x, 6.0, "walked off and on")
+	assert_eq(a.lead().pos.y, 6.0)
 
 
-func test_halts_before_water() -> void:
+func test_marches_into_water() -> void:
 	var a := _world(["..........", "#####~~~~~", "##########", "BBBBBBBBBB"])
 	a.spawn(1, 1.5)
+	watch_signals(a)
 	_run(a, 3.0)
-	assert_lt(a.lead().pos.x, 5.0)
-	assert_eq(a.halt_reason, "Water ahead")
+	assert_eq(a.soldiers.size(), 0, "orders are orders")
+	assert_signal_emitted(a, "soldier_died")
+
+
+func test_marches_into_deep_ravine() -> void:
+	var a := _world([
+		"............",
+		"####....####",
+		"####....####",
+		"####....####",
+		"####....####",
+		"####....####",
+		"####....####",
+		"####....####",
+		"####....####",
+		"############",
+		"BBBBBBBBBBBB",
+	])
+	a.spawn(1, 1.5)
+	_run(a, 4.0)
+	assert_eq(a.soldiers.size(), 0, "fell to its death")
 
 
 func test_long_fall_kills() -> void:
@@ -125,19 +152,48 @@ const RAMP_WALL: Array = [
 ]
 
 
-func test_waits_for_ramp_then_climbs_it() -> void:
+func test_marches_under_unfinished_ramp_to_the_wall() -> void:
 	var a := _world(RAMP_WALL)
 	var b := a.bridge
-	var ramp := b.build(b.snap_point(Vector2(6, 4)), b.snap_point(Vector2(10, 1)), preload("res://data/bridge/log.tres"), true)
+	b.build(b.snap_point(Vector2(6, 4)), b.snap_point(Vector2(10, 1)), preload("res://data/bridge/log.tres"), true)
 	b.order_blueprints()
 	a.spawn(1, 2.5)
-	_run(a, 4.0)
-	assert_lt(a.lead().pos.x, 6.0, "does not walk under the ramp")
-	assert_eq(a.halt_reason, a.rules.construction_text)
-	b.finish(ramp)
-	_run(a, 1.0)
-	assert_lt(a.lead().pos.x, 6.0, "still on scaffolding")
-	b.strike_scaffolding()
 	_run(a, 6.0)
+	assert_gt(a.lead().pos.x, 9.0, "did not wait for the engineers")
+	assert_eq(a.halt_reason, "3 m wall ahead", "only a wall stops it")
+
+
+func test_climbs_finished_ramp() -> void:
+	var a := _world(RAMP_WALL)
+	var b := a.bridge
+	b.build(b.snap_point(Vector2(6, 4)), b.snap_point(Vector2(10, 1)), preload("res://data/bridge/log.tres"))
+	a.spawn(1, 2.5)
+	_run(a, 8.0)
 	assert_gt(a.lead().pos.x, 10.5, "over the wall")
 	assert_almost_eq(a.lead().pos.y, 1.0, 0.05)
+
+
+func _archer_at(feet: Vector2) -> Archer:
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(feet)
+	add_child_autofree(archer)
+	return archer
+
+
+func test_attacks_archer_it_reaches_then_marches_on() -> void:
+	var a := _world(["....................", "####################", "BBBBBBBBBBBBBBBBBBBB"])
+	var archer := _archer_at(Vector2(6.5, 1))
+	a.foes = [archer]
+	a.spawn(1, 2.5)
+	for i in 40:
+		_run(a, 0.1)
+		if a.halt_reason == a.rules.fight_text:
+			break
+	assert_eq(a.halt_reason, a.rules.fight_text, "reached him and fights")
+	assert_lt(a.lead().pos.x, 6.5, "stopped at him")
+	_run(a, 0.2)
+	assert_lt(archer.hp, archer.hit_points, "hit him")
+	_run(a, 3.0)
+	assert_false(archer.alive(), "slain")
+	_run(a, 2.0)
+	assert_gt(a.lead().pos.x, 8.0, "marched on")
