@@ -651,8 +651,10 @@ func _collide(n: Joint) -> void:
 	if not terrain.is_solid(c):
 		return
 	var f := n.pos - Vector2(c)
-	var e := 0.01
+	# Pushed out just clear of the cell edge. Further would leave the joint falling back every few substeps.
+	var e := 0.001
 	var best := Vector2(n.pos.x, c.y - e)
+	var normal := Vector2.UP
 	var bd := 9.0
 	if not terrain.is_solid(c + Vector2i.UP) and f.y < bd:
 		bd = f.y
@@ -660,13 +662,20 @@ func _collide(n: Joint) -> void:
 	if not terrain.is_solid(c + Vector2i.LEFT) and f.x < bd:
 		bd = f.x
 		best = Vector2(c.x - e, n.pos.y)
+		normal = Vector2.LEFT
 	if not terrain.is_solid(c + Vector2i.RIGHT) and 1.0 - f.x < bd:
 		bd = 1.0 - f.x
 		best = Vector2(c.x + 1 + e, n.pos.y)
+		normal = Vector2.RIGHT
 	if not terrain.is_solid(c + Vector2i.DOWN) and 1.0 - f.y < bd:
 		best = Vector2(n.pos.x, c.y + 1 + e)
+		normal = Vector2.DOWN
+	# Contact: no velocity into the ground, sliding slowed by friction. Working the velocity out from the
+	# push-out instead would make every contact a small kick upward, and loose pieces would never rest.
+	var v := n.pos - n.prev
+	var slide := v - normal * v.dot(normal)
 	n.pos = best
-	n.prev = n.pos - (n.pos - n.prev) * ground_friction
+	n.prev = n.pos - slide * ground_friction
 
 
 static func _on_grid(v: float) -> bool:

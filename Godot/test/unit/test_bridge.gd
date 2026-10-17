@@ -341,3 +341,53 @@ func test_only_finished_parts_of_a_plan_are_walkable() -> void:
 	second.progress = 0.5
 	assert_eq(b.walk_surface(4.0, 0.0).member, first)
 	assert_true(b.walk_surface(6.0, 0.0).is_empty(), "the piece being built is not")
+
+
+const FLAT: Array = [
+	"..........",
+	"..........",
+	"..........",
+	"..........",
+	"..........",
+	"..........",
+	"##########",
+	"BBBBBBBBBB",
+]
+
+
+## Drops a loose structure (no bolted joints) built from plans, then lets it settle for seconds.
+func _drop_loose(b: Bridge, plans: Array, seconds: float) -> void:
+	for p: Array in plans:
+		b.build(b.snap_point(p[0]), b.snap_point(p[1]), p[2], true)
+	b.order_blueprints()
+	for m in b.members.duplicate():
+		b.finish(m)
+	b.strike_scaffolding()
+	_run(b, seconds)
+
+
+func test_loose_log_comes_to_rest_on_the_ground() -> void:
+	var t := WorldFixture.terrain(self, FLAT)
+	var b := WorldFixture.bridge(self, t)
+	_drop_loose(b, [[Vector2(2, 3), Vector2(5, 3), LOG]], 2.0)
+	var worst := 0.0
+	for i in 60:
+		_run(b, 1.0 / 60.0)
+		for n in b.nodes:
+			worst = maxf(worst, absf(n.pos.y - 6.0))
+	assert_lt(worst, 0.03, "lies still on the ground, no hopping")
+
+
+func test_loose_frame_settles_with_steady_forces() -> void:
+	var t := WorldFixture.terrain(self, FLAT)
+	var b := WorldFixture.bridge(self, t)
+	_drop_loose(b, [[Vector2(2, 3), Vector2(5, 3), LOG], [Vector2(2, 3), Vector2(3.5, 1), SUPPORT], [Vector2(3.5, 1), Vector2(5, 3), SUPPORT]], 3.0)
+	var lo := {}
+	var hi := {}
+	for i in 60:
+		_run(b, 1.0 / 60.0)
+		for m in b.members:
+			lo[m] = minf(lo.get(m, INF), m.force)
+			hi[m] = maxf(hi.get(m, -INF), m.force)
+	for m: Bridge.Member in b.members:
+		assert_lt(hi[m] - lo[m], 20.0, "%s force holds steady at rest" % m.material.display_name)
