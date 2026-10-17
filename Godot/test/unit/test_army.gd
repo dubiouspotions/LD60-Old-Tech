@@ -112,3 +112,32 @@ func test_holds_until_released() -> void:
 	a.hold = false
 	_run(a, 1.0)
 	assert_gt(a.lead().pos.x, x0 + 1.0, "marches")
+
+
+## Ground at row 4, a 3 m wall from x = 10.
+const RAMP_WALL: Array = [
+	"....................",
+	"..........##########",
+	"..........##########",
+	"..........##########",
+	"####################",
+	"BBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_waits_for_ramp_then_climbs_it() -> void:
+	var a := _world(RAMP_WALL)
+	var b := a.bridge
+	var ramp := b.build(b.snap_point(Vector2(6, 4)), b.snap_point(Vector2(10, 1)), preload("res://data/bridge/log.tres"), true)
+	b.order_blueprints()
+	a.spawn(1, 2.5)
+	_run(a, 4.0)
+	assert_lt(a.lead().pos.x, 6.0, "does not walk under the ramp")
+	assert_eq(a.halt_reason, a.rules.construction_text)
+	b.finish(ramp)
+	_run(a, 1.0)
+	assert_lt(a.lead().pos.x, 6.0, "still on scaffolding")
+	b.strike_scaffolding()
+	_run(a, 6.0)
+	assert_gt(a.lead().pos.x, 10.5, "over the wall")
+	assert_almost_eq(a.lead().pos.y, 1.0, 0.05)

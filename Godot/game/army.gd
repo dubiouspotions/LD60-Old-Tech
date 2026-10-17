@@ -164,6 +164,9 @@ func _settle_vertical(s: Soldier, dt: float) -> bool:
 ## Reason text if the soldier can not take the next dx step, else "".
 func _blocked_ahead(s: Soldier, dx: float) -> String:
 	var xp := s.pos.x + rules.foot_half_width + dx
+	# Wait for the engineers rather than walk under a ramp or onto a deck that is not finished.
+	if bridge and bridge.under_construction(xp, s.pos.y - rules.step_up, s.pos.y + rules.max_drop):
+		return rules.construction_text
 	var sup := surface_at(xp, s.pos.y - rules.step_up)
 	var col := floori(xp)
 	var head_blocked: bool = terrain.is_solid(Vector2i(floori(s.pos.x), floori(s.pos.y - 1.5))) and sup.y < s.pos.y - 0.5
