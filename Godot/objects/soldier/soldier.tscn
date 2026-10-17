@@ -1,35 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://box6jvl3ii2vp"]
 
-[ext_resource type="Script" path="res://objects/soldier/soldier.gd" id="1"]
-
-[sub_resource type="Animation" id="walk"]
-resource_name = "walk"
-length = 0.57
-loop_mode = 1
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Body/LegL:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0.000, 0.142, 0.285, 0.427, 0.570),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
-"update": 0,
-"values": [Vector2(0.00, 0), Vector2(2.20, 0), Vector2(0.00, 0), Vector2(-2.20, 0), Vector2(0.00, 0)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("Body/LegR:position")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0.000, 0.142, 0.285, 0.427, 0.570),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
-"update": 0,
-"values": [Vector2(0.00, 0), Vector2(-2.20, 0), Vector2(0.00, 0), Vector2(2.20, 0), Vector2(0.00, 0)]
-}
+[ext_resource type="Script" uid="uid://cv6d17o3vdyex" path="res://objects/soldier/soldier.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bwfwi0ulhbpaf" path="res://world/soilder.png" id="2_ddl4y"]
+[ext_resource type="Texture2D" uid="uid://csjqg38nc21d5" path="res://world/soilder_green.png" id="3_fity6"]
 
 [sub_resource type="Animation" id="idle"]
 resource_name = "idle"
@@ -42,10 +15,10 @@ tracks/0/path = NodePath("Body/LegL:position")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0.000),
+"times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector2(0.00, 0)]
+"values": [Vector2(0, 0)]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -54,10 +27,39 @@ tracks/1/path = NodePath("Body/LegR:position")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0.000),
+"times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector2(0.00, 0)]
+"values": [Vector2(0, 0)]
+}
+
+[sub_resource type="Animation" id="walk"]
+resource_name = "walk"
+length = 0.57
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Body/LegL:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.142, 0.285, 0.427, 0.57),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(2.2, 0), Vector2(0, 0), Vector2(-2.2, 0), Vector2(0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Body/LegR:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.142, 0.285, 0.427, 0.57),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(-2.2, 0), Vector2(0, 0), Vector2(2.2, 0), Vector2(0, 0)]
 }
 
 [sub_resource type="AnimationLibrary" id="lib"]
@@ -66,63 +68,78 @@ _data = {
 &"walk": SubResource("walk")
 }
 
-[node name="Soldier" type="Node2D"]
+[node name="Soldier" type="Node2D" unique_id=288418748]
 script = ExtResource("1")
 
-[node name="Body" type="Node2D" parent="."]
+[node name="Body" type="Node2D" parent="." unique_id=1059209595]
 unique_name_in_owner = true
 
-[node name="LegL" type="Polygon2D" parent="Body"]
+[node name="LegL" type="Polygon2D" parent="Body" unique_id=1589337898]
+visible = false
 color = Color(0.1647, 0.3098, 0.5608, 1)
-polygon = PackedVector2Array(-5.44, -9.60, -1.28, -9.60, -1.28, 0.00, -5.44, 0.00)
+polygon = PackedVector2Array(-5.44, -9.6, -1.28, -9.6, -1.28, 0, -5.44, 0)
 
-[node name="LegR" type="Polygon2D" parent="Body"]
+[node name="LegR" type="Polygon2D" parent="Body" unique_id=101798183]
+visible = false
 color = Color(0.1647, 0.3098, 0.5608, 1)
-polygon = PackedVector2Array(1.28, -9.60, 5.44, -9.60, 5.44, 0.00, 1.28, 0.00)
+polygon = PackedVector2Array(1.28, -9.6, 5.44, -9.6, 5.44, 0, 1.28, 0)
 
-[node name="Torso" type="Polygon2D" parent="Body"]
+[node name="Torso" type="Polygon2D" parent="Body" unique_id=970279339]
+visible = false
 color = Color(0.302, 0.545, 0.941, 1)
-polygon = PackedVector2Array(-6.40, -21.12, 6.40, -21.12, 6.40, -8.96, -6.40, -8.96)
+polygon = PackedVector2Array(-6.4, -21.12, 6.4, -21.12, 6.4, -8.96, -6.4, -8.96)
 
-[node name="Head" type="Polygon2D" parent="Body"]
+[node name="Head" type="Polygon2D" parent="Body" unique_id=1728295630]
+visible = false
 color = Color(0.945, 0.827, 0.69, 1)
-polygon = PackedVector2Array(4.16, -24.96, 3.60, -22.88, 2.08, -21.36, 0.00, -20.80, -2.08, -21.36, -3.60, -22.88, -4.16, -24.96, -3.60, -27.04, -2.08, -28.56, -0.00, -29.12, 2.08, -28.56, 3.60, -27.04)
+polygon = PackedVector2Array(4.16, -24.96, 3.6, -22.88, 2.08, -21.36, 0, -20.8, -2.08, -21.36, -3.6, -22.88, -4.16, -24.96, -3.6, -27.04, -2.08, -28.56, 0, -29.12, 2.08, -28.56, 3.6, -27.04)
 
-[node name="Helmet" type="Polygon2D" parent="Body"]
+[node name="Helmet" type="Polygon2D" parent="Body" unique_id=710373049]
+visible = false
 color = Color(0.169, 0.227, 0.333, 1)
-polygon = PackedVector2Array(-4.80, -25.60, -4.43, -27.44, -3.39, -28.99, -1.84, -30.03, -0.00, -30.40, 1.84, -30.03, 3.39, -28.99, 4.43, -27.44, 4.80, -25.60)
+polygon = PackedVector2Array(-4.8, -25.6, -4.43, -27.44, -3.39, -28.99, -1.84, -30.03, 0, -30.4, 1.84, -30.03, 3.39, -28.99, 4.43, -27.44, 4.8, -25.6)
 
-[node name="Spear" type="Line2D" parent="Body"]
+[node name="Sprite2D" type="Sprite2D" parent="Body" unique_id=108067592]
+visible = false
+position = Vector2(-2.5000026, -25.499996)
+scale = Vector2(1.5937498, 1.5937498)
+texture = ExtResource("2_ddl4y")
+
+[node name="Sprite2D2" type="Sprite2D" parent="Body" unique_id=1390574391]
+position = Vector2(-2.9999979, -25.499996)
+scale = Vector2(1.5937498, 1.5937498)
+texture = ExtResource("3_fity6")
+
+[node name="Spear" type="Line2D" parent="Body" unique_id=1391842286]
 unique_name_in_owner = true
-points = PackedVector2Array(7.04, -8.00, 10.24, -40.00)
+visible = false
+points = PackedVector2Array(7.04, -8, 10.24, -40)
 width = 1.6
 default_color = Color(0.847, 0.824, 0.769, 1)
 
-[node name="Flag" type="Node2D" parent="Body"]
+[node name="Flag" type="Node2D" parent="Body" unique_id=378328095]
 unique_name_in_owner = true
 visible = false
 
-[node name="Pole" type="Line2D" parent="Body/Flag"]
-points = PackedVector2Array(7.68, -6.40, 7.68, -54.40)
+[node name="Pole" type="Line2D" parent="Body/Flag" unique_id=275752667]
+points = PackedVector2Array(7.68, -6.4, 7.68, -54.4)
 width = 1.6
 default_color = Color(0.847, 0.824, 0.769, 1)
 
-[node name="Cloth" type="Polygon2D" parent="Body/Flag"]
+[node name="Cloth" type="Polygon2D" parent="Body/Flag" unique_id=2090493809]
 color = Color(0.302, 0.545, 0.941, 1)
-polygon = PackedVector2Array(7.68, -54.40, 27.20, -49.60, 7.68, -43.20)
+polygon = PackedVector2Array(7.68, -54.4, 27.2, -49.6, 7.68, -43.2)
 
-[node name="Stripe" type="Polygon2D" parent="Body/Flag"]
+[node name="Stripe" type="Polygon2D" parent="Body/Flag" unique_id=1266818095]
 color = Color(0.925, 0.894, 0.824, 1)
-polygon = PackedVector2Array(9.60, -50.56, 16.64, -50.56, 16.64, -48.32, 9.60, -48.32)
+polygon = PackedVector2Array(9.6, -50.56, 16.64, -50.56, 16.64, -48.32, 9.6, -48.32)
 
-[node name="Wounded" type="Polygon2D" parent="Body"]
+[node name="Wounded" type="Polygon2D" parent="Body" unique_id=1334022656]
 unique_name_in_owner = true
 visible = false
 color = Color(1, 0.416, 0.333, 1)
-polygon = PackedVector2Array(-6.40, -33.92, -2.56, -33.92, -2.56, -30.08, -6.40, -30.08)
+polygon = PackedVector2Array(-6.4, -33.92, -2.56, -33.92, -2.56, -30.08, -6.4, -30.08)
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=28494290]
 unique_name_in_owner = true
-libraries = {
-&"": SubResource("lib")
-}
+libraries/ = SubResource("lib")
