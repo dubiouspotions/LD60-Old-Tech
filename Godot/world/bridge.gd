@@ -192,6 +192,37 @@ func blueprint_count() -> int:
 	return members.reduce(func(n: int, m: Member) -> int: return n + int(m.blueprint and not m.ordered), 0)
 
 
+## Unordered blueprints, grouped by shared joints: each group is one plan the player can order.
+func plans() -> Array[Array]:
+	var out: Array[Array] = []
+	var seen := {}
+	for m in members:
+		if seen.has(m) or not (m.blueprint and not m.ordered):
+			continue
+		var group: Array[Member] = [m]
+		var joints := {m.a: true, m.b: true}
+		seen[m] = true
+		var grew := true
+		while grew:
+			grew = false
+			for o in members:
+				if not seen.has(o) and o.blueprint and not o.ordered and (joints.has(o.a) or joints.has(o.b)):
+					seen[o] = true
+					group.append(o)
+					joints[o.a] = true
+					joints[o.b] = true
+					grew = true
+		out.append(group)
+	return out
+
+
+## Hands one plan (from plans()) to the crew.
+func order_plan(plan: Array) -> void:
+	for m: Member in plan:
+		if m.blueprint and not m.dead:
+			m.ordered = true
+
+
 ## Hands every unordered blueprint to the crew. Returns how many.
 func order_blueprints() -> int:
 	var n := 0

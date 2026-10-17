@@ -252,3 +252,19 @@ func test_logs_block_arrow_paths_ropes_and_plans_do_not() -> void:
 	assert_null(b.arrow_block(Vector2(2, 2.5), Vector2(6, 2.5)), "ropes do not block")
 	b.build(b.snap_point(Vector2(5, 1)), b.snap_point(Vector2(5, 4)), LOG, true)
 	assert_null(b.arrow_block(Vector2(2, 2.5), Vector2(6, 2.5)), "plans do not block")
+
+
+func test_plans_group_unordered_blueprints_by_shared_joints() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var left := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 2)), LOG, true)
+	var joined := b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 0)), SUPPORT, true)
+	var apart := b.build(b.snap_point(Vector2(7, 2)), b.snap_point(Vector2(9, 2)), LOG, true)
+	b.build(b.snap_point(Vector2(0, 2)), b.snap_point(Vector2(2, 2)), LOG)
+	var plans := b.plans()
+	assert_eq(plans.size(), 2, "the built log is not a plan")
+	assert_true(plans.any(func(p: Array) -> bool: return left in p and joined in p and not apart in p))
+	b.order_plan(plans.filter(func(p: Array) -> bool: return apart in p)[0])
+	assert_true(apart.ordered)
+	assert_false(left.ordered, "only that plan is ordered")
+	assert_eq(b.plans().size(), 1)

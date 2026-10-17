@@ -5,11 +5,13 @@
 [ext_resource type="Theme" path="res://ui/theme.tres" id="3"]
 [ext_resource type="PackedScene" path="res://ui/readout.tscn" id="4"]
 [ext_resource type="Resource" path="res://data/sounds/ui_click.tres" id="5"]
+[ext_resource type="PackedScene" path="res://ui/world_button.tscn" id="6"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1")
 tool_button_scene = ExtResource("2")
 click_sound = ExtResource("5")
+world_button_scene = ExtResource("6")
 
 [node name="Root" type="Control" parent="."]
 anchors_preset = 15
@@ -161,14 +163,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="CommitButton" type="Button" parent="Root/Margin/Column/Rack"]
-unique_name_in_owner = true
-layout_mode = 2
-focus_mode = 0
-tooltip_text = "Order the engineers to build the plan (Enter)"
-disabled = true
-text = "Build"
-
 [node name="PauseButton" type="Button" parent="Root/Margin/Column/Rack"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -264,6 +258,16 @@ focus_mode = 0
 max_value = 1.0
 step = 0.01
 value = 1.0
+
+[node name="WorldButtons" type="Control" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="PausedTag" type="Label" parent="Root"]
 unique_name_in_owner = true

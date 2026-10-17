@@ -20,6 +20,8 @@ extends Node
 @export var march_player_text: String = "The column breaks camp on your order"
 @export var march_king_text: String = "The king has lost his patience"
 @export var march_sound: SoundEffect
+## How far above a plan its Build button floats.
+@export var plan_button_rise: float = 0.4
 
 @onready var _world: World = %World
 @onready var _tools: ToolController = %ToolController
@@ -28,6 +30,8 @@ extends Node
 @onready var _day_night: DayNight = %DayNight
 
 var _over: bool = false
+## Plans shown with Build buttons this frame (see _show_plans).
+var _plans: Array[Array] = []
 
 
 func _ready() -> void:
@@ -43,7 +47,7 @@ func _ready() -> void:
 	_hud.pause_pressed.connect(_toggle_pause)
 	_hud.speed_pressed.connect(_toggle_speed)
 	_hud.follow_pressed.connect(_camera.snap_to_lead)
-	_hud.commit_pressed.connect(_tools.commit)
+	_hud.build_pressed.connect(_on_build_pressed)
 	_hud.march_pressed.connect(_march)
 	_hud.recruit_pressed.connect(_recruit)
 	_hud.begin_pressed.connect(_begin)
@@ -78,7 +82,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	var lead := _world.army.lead()
 	_hud.set_level(GameState.level_number(), floori(lead.pos.x) if lead else 0)
-	_hud.set_plan(_world.bridge.blueprint_count())
+	_show_plans()
 	_hud.set_march(_world.camping() and not _over)
 	var rules := _world.army.rules
 	var room := _world.army.soldiers.size() < rules.max_soldiers
@@ -96,6 +100,30 @@ func _begin() -> void:
 func _march() -> void:
 	if not _over and not _hud.any_card_open():
 		_world.march()
+
+
+## A Build button above each plan, a little over its highest point.
+func _show_plans() -> void:
+	_plans = _world.bridge.plans() if not _over else []
+	var spots: Array = []
+	var counts: Array = []
+	for plan in _plans:
+		var lo := INF
+		var hi := -INF
+		var top := INF
+		for m: Bridge.Member in plan:
+			for j: Bridge.Joint in [m.a, m.b]:
+				lo = minf(lo, j.pos.x)
+				hi = maxf(hi, j.pos.x)
+				top = minf(top, j.pos.y)
+		spots.append(Grid.to_px(Vector2((lo + hi) / 2, top - plan_button_rise)))
+		counts.append(plan.size())
+	_hud.set_build_spots(spots, counts)
+
+
+func _on_build_pressed(index: int) -> void:
+	if index < _plans.size():
+		_world.bridge.order_plan(_plans[index])
 
 
 func _recruit() -> void:

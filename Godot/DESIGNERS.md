@@ -59,7 +59,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Sky, sun, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |
 | Bridge physics feel, build messages, blueprint / ordered / scaffold colours | **Bridge** node in `game/world.tscn` |
-| Build button text | **HUD** node in `ui/hud.tscn` (Commit Text) |
+| Build buttons above plans: text, look, height | **Build Text** on the **HUD** node in `ui/hud.tscn`; the button scene is `ui/world_button.tscn`; **Plan Button Rise** on the **Game** node in `game/main.tscn` |
 
 ## Sound and music
 

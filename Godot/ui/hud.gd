@@ -6,7 +6,8 @@ signal tool_pressed(index: int)
 signal pause_pressed
 signal speed_pressed
 signal follow_pressed
-signal commit_pressed
+## The player clicked the Build button above plan number index (as last passed to set_build_spots).
+signal build_pressed(index: int)
 signal march_pressed
 signal recruit_pressed
 signal begin_pressed
@@ -26,13 +27,15 @@ enum Mood { NORMAL, HALT, FIRE }
 ## Audio buses behind the Music and Sound sliders.
 @export var music_bus: StringName = &"Music"
 @export var sound_bus: StringName = &"SFX"
-## Build button text with blueprints waiting (%d = count), and with none.
-@export var commit_text: String = "Build %d"
-@export var commit_empty_text: String = "Build"
+## Floating button scene used above plans (and the camp).
+@export var world_button_scene: PackedScene
+## Build button text above a plan (%d = members in it).
+@export var build_text: String = "Build %d"
 ## Recruit button text (%d = gold per soldier).
 @export var recruit_text: String = "Recruit · %d gold"
 
 var _tool_buttons: Array[ToolButton] = []
+var _build_buttons: Array[WorldButton] = []
 var _group := ButtonGroup.new()
 
 
@@ -40,7 +43,6 @@ func _ready() -> void:
 	%PauseButton.pressed.connect(_emit.bind(pause_pressed))
 	%SpeedButton.pressed.connect(_emit.bind(speed_pressed))
 	%FollowButton.pressed.connect(_emit.bind(follow_pressed))
-	%CommitButton.pressed.connect(_emit.bind(commit_pressed))
 	%MarchButton.pressed.connect(_emit.bind(march_pressed))
 	%RecruitButton.pressed.connect(_emit.bind(recruit_pressed))
 	%BeginButton.pressed.connect(_emit.bind(begin_pressed))
@@ -120,10 +122,24 @@ func fit_to(width: float) -> void:
 		%Title.visible = false
 
 
-## Shows how many blueprints the Build button will build.
-func set_plan(count: int) -> void:
-	%CommitButton.text = commit_text % count if count > 0 else commit_empty_text
-	%CommitButton.disabled = count == 0
+## One Build button above each plan. spots are world pixel positions (top centre of each plan), counts the
+## members in each. Clicking one reports its index through build_pressed.
+func set_build_spots(spots: Array, counts: Array) -> void:
+	while _build_buttons.size() < spots.size():
+		var b: WorldButton = world_button_scene.instantiate()
+		var index := _build_buttons.size()
+		b.tooltip_text = "Order the engineers to build this plan (Enter builds all)"
+		b.pressed.connect(func() -> void:
+			Audio.play(click_sound)
+			build_pressed.emit(index))
+		%WorldButtons.add_child(b)
+		_build_buttons.append(b)
+	for i in _build_buttons.size():
+		var b := _build_buttons[i]
+		b.visible = i < spots.size()
+		if b.visible:
+			b.text = build_text % counts[i]
+			b.pin(_to_screen(spots[i]))
 
 
 ## Shows the current volumes (0..1) without reporting them back.
@@ -191,6 +207,10 @@ func hide_cards() -> void:
 
 func any_card_open() -> bool:
 	return %Intro.visible or %Lost.visible or %Victory.visible
+
+
+func _to_screen(world_px: Vector2) -> Vector2:
+	return get_viewport().get_canvas_transform() * world_px
 
 
 func _fit() -> void:
