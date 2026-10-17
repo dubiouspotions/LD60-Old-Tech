@@ -4,9 +4,44 @@
 [ext_resource type="PackedScene" uid="uid://3agsers3q588" path="res://objects/arrow/arrow.tscn" id="2"]
 [ext_resource type="Resource" path="res://data/sounds/arrow_shot.tres" id="3"]
 [ext_resource type="Resource" path="res://data/sounds/tower_down.tres" id="4"]
-[ext_resource type="Texture2D" uid="uid://d33q41mhfggd7" path="res://world/soilderenemy.png" id="5_5s01x"]
-[ext_resource type="Texture2D" uid="uid://dufun24ochsjf" path="res://world/bow.png" id="6_2vx7e"]
+[ext_resource type="Texture2D" uid="uid://bydp0wj23xm6k" path="res://world/enemy_animated.png" id="5_cgja7"]
 [ext_resource type="Texture2D" uid="uid://73bogj4nu6k6" path="res://world/red_flag.png" id="7_cgja7"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xp456"]
+atlas = ExtResource("5_cgja7")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m1mvd"]
+atlas = ExtResource("5_cgja7")
+region = Rect2(128, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_patcs"]
+atlas = ExtResource("5_cgja7")
+region = Rect2(256, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1tjo0"]
+atlas = ExtResource("5_cgja7")
+region = Rect2(384, 0, 128, 128)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ppky4"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xp456")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m1mvd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_patcs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1tjo0")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_cgja7"]
 atlas = ExtResource("7_cgja7")
@@ -83,11 +118,12 @@ visible = false
 color = Color(0.478, 0.165, 0.133, 1)
 polygon = PackedVector2Array(-4.8, -9.6, 4.8, -9.6, 4.8, 0, -4.8, 0)
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=21234211]
-z_index = 1
-position = Vector2(4, -20)
-scale = Vector2(1.25, 1.25)
-texture = ExtResource("5_5s01x")
+[node name="AnimatedSprite2D2" type="AnimatedSprite2D" parent="." unique_id=802048814]
+position = Vector2(2.2500036, -23.749998)
+scale = Vector2(0.3789063, 0.3789063)
+sprite_frames = SubResource("SpriteFrames_ppky4")
+autoplay = "default"
+frame_progress = 0.6631592
 
 [node name="Torso" type="Polygon2D" parent="." unique_id=603410038]
 visible = false
@@ -99,22 +135,10 @@ visible = false
 color = Color(0.945, 0.827, 0.69, 1)
 polygon = PackedVector2Array(4.16, -24.96, 3.6, -22.88, 2.08, -21.36, 0, -20.8, -2.08, -21.36, -3.6, -22.88, -4.16, -24.96, -3.6, -27.04, -2.08, -28.56, 0, -29.12, 2.08, -28.56, 3.6, -27.04)
 
-[node name="Bow" type="Line2D" parent="." unique_id=69918146]
-position = Vector2(2, -8.834382)
-scale = Vector2(0.87429875, 0.87429875)
-points = PackedVector2Array(-9.56, -6.26, -11.89, -7.35, -13.86, -8.99, -15.37, -11.07, -16.32, -13.45, -16.64, -16, -16.32, -18.55, -15.37, -20.93, -13.86, -23.01, -11.89, -24.65, -9.56, -25.74)
-width = 1.9
-default_color = Color(0.227, 0.133, 0.078, 1)
-
-[node name="Sprite2D2" type="Sprite2D" parent="Bow" unique_id=1201675197]
-position = Vector2(-10.293964, -15.058488)
-scale = Vector2(1.6441748, 1.6441748)
-texture = ExtResource("6_2vx7e")
-
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1434503639]
 process_mode = 3
 position = Vector2(22, -44)
 sprite_frames = SubResource("SpriteFrames_4pjgo")
 animation = &"flagwavered"
 autoplay = "flagwavered"
-frame_progress = 0.4108122
+frame_progress = 0.89163345

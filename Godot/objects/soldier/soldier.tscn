@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://bwfwi0ulhbpaf" path="res://world/soilder.png" id="2_ddl4y"]
 [ext_resource type="Texture2D" uid="uid://csjqg38nc21d5" path="res://world/soilder_green.png" id="3_fity6"]
 [ext_resource type="Texture2D" uid="uid://c78yrurvjdt8p" path="res://world/soilder_walk.png" id="4_yrtfe"]
+[ext_resource type="Texture2D" uid="uid://28j71k80nis2" path="res://world/green_flag_ani.png" id="5_lxyqk"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lxyqk"]
 atlas = ExtResource("4_yrtfe")
@@ -123,6 +124,56 @@ animations = [{
 "loop": 1,
 "name": &"soilder_walk",
 "speed": 27.0
+}]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r1scb"]
+atlas = ExtResource("5_lxyqk")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h6g8s"]
+atlas = ExtResource("5_lxyqk")
+region = Rect2(128, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e2lph"]
+atlas = ExtResource("5_lxyqk")
+region = Rect2(256, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l5xlm"]
+atlas = ExtResource("5_lxyqk")
+region = Rect2(384, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s31v8"]
+atlas = ExtResource("5_lxyqk")
+region = Rect2(512, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rjhu6"]
+atlas = ExtResource("5_lxyqk")
+region = Rect2(640, 0, 128, 128)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ppky4"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r1scb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h6g8s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e2lph")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l5xlm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s31v8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rjhu6")
+}],
+"loop": 1,
+"name": &"grön flagga",
+"speed": 9.0
 }]
 
 [sub_resource type="Animation" id="idle"]
@@ -280,7 +331,7 @@ scale = Vector2(0.35937503, 0.40625003)
 sprite_frames = SubResource("SpriteFrames_4pjgo")
 animation = &"soilder_walk"
 autoplay = "soilder_walk"
-frame_progress = 0.84113437
+frame_progress = 0.62080973
 
 [node name="Spear" type="Line2D" parent="Body" unique_id=1391842286]
 unique_name_in_owner = true
@@ -291,20 +342,28 @@ default_color = Color(0.847, 0.824, 0.769, 1)
 
 [node name="Flag" type="Node2D" parent="Body" unique_id=378328095]
 unique_name_in_owner = true
-visible = false
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body/Flag" unique_id=304151946]
+z_index = 1
+position = Vector2(-15.000001, -58.000004)
+rotation = -0.10471976
+scale = Vector2(0.22265626, 0.22265626)
+sprite_frames = SubResource("SpriteFrames_ppky4")
+animation = &"grön flagga"
+autoplay = "grön flagga"
+frame_progress = 0.29888517
 
 [node name="Pole" type="Line2D" parent="Body/Flag" unique_id=275752667]
-points = PackedVector2Array(7.68, -6.4, 7.68, -54.4)
+position = Vector2(1, 0)
+points = PackedVector2Array(-7, -22, -12, -65)
 width = 1.6
-default_color = Color(0.847, 0.824, 0.769, 1)
+default_color = Color(0.54509807, 0.33333334, 0.12941177, 1)
 
-[node name="Cloth" type="Polygon2D" parent="Body/Flag" unique_id=2090493809]
-color = Color(0.302, 0.545, 0.941, 1)
-polygon = PackedVector2Array(7.68, -54.4, 27.2, -49.6, 7.68, -43.2)
-
-[node name="Stripe" type="Polygon2D" parent="Body/Flag" unique_id=1266818095]
-color = Color(0.925, 0.894, 0.824, 1)
-polygon = PackedVector2Array(9.6, -50.56, 16.64, -50.56, 16.64, -48.32, 9.6, -48.32)
+[node name="Pole" type="Line2D" parent="Body/Flag/Pole" unique_id=202732495]
+position = Vector2(1, 0)
+points = PackedVector2Array(-6, -10, -7, -18)
+width = 1.6
+default_color = Color(0.54509807, 0.33333334, 0.12941177, 1)
 
 [node name="Wounded" type="Polygon2D" parent="Body" unique_id=1334022656]
 unique_name_in_owner = true
