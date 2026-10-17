@@ -58,18 +58,20 @@ func test_recruit_button_shows_at_camp_and_reports_clicks() -> void:
 	assert_false(b.visible)
 
 
-func test_build_buttons_float_above_plans() -> void:
+func test_build_and_cancel_buttons_float_above_plans() -> void:
 	watch_signals(hud)
 	hud.set_build_spots([Vector2(100, 200), Vector2(300, 220)], [2, 1])
-	var buttons := hud.get_node("%WorldButtons").get_children().filter(func(b: Node) -> bool: return b is WorldButton and b.visible and b != hud.get_node("%RecruitButton"))
-	assert_eq(buttons.size(), 2)
-	var second: WorldButton = buttons[1]
+	var pairs := hud.get_node("%WorldButtons").get_children().filter(func(n: Node) -> bool: return n is PlanButtons and n.visible)
+	assert_eq(pairs.size(), 2)
+	var second: PlanButtons = pairs[1]
 	assert_almost_eq(second.position.x + second.size.x / 2, 300.0, 1.0, "centred on its plan")
 	assert_almost_eq(second.position.y + second.size.y, 220.0, 1.0, "sits above it")
-	second.pressed.emit()
+	second.get_node("%Build").pressed.emit()
 	assert_signal_emitted_with_parameters(hud, "build_pressed", [1])
+	second.get_node("%Cancel").pressed.emit()
+	assert_signal_emitted_with_parameters(hud, "cancel_pressed", [1])
 	hud.set_build_spots([], [])
-	assert_false(hud.get_node("%WorldButtons").get_children().any(func(b: Node) -> bool: return b.visible))
+	assert_false(hud.get_node("%WorldButtons").get_children().any(func(n: Node) -> bool: return n.visible))
 
 
 func test_recruit_button_floats_above_the_camp() -> void:

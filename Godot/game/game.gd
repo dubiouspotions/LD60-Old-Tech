@@ -48,6 +48,7 @@ func _ready() -> void:
 	_hud.speed_pressed.connect(_toggle_speed)
 	_hud.follow_pressed.connect(_camera.snap_to_lead)
 	_hud.build_pressed.connect(_on_build_pressed)
+	_hud.cancel_pressed.connect(_on_cancel_pressed)
 	_hud.march_pressed.connect(_march)
 	_hud.recruit_pressed.connect(_recruit)
 	_hud.begin_pressed.connect(_begin)
@@ -125,6 +126,11 @@ func _show_plans() -> void:
 func _on_build_pressed(index: int) -> void:
 	if index < _plans.size():
 		_world.bridge.order_plan(_plans[index])
+
+
+func _on_cancel_pressed(index: int) -> void:
+	if index < _plans.size():
+		GameState.gain(_world.bridge.cancel_plan(_plans[index]))
 
 
 func _recruit() -> void:

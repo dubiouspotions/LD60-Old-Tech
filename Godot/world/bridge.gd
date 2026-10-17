@@ -223,6 +223,16 @@ func order_plan(plan: Array) -> void:
 			m.ordered = true
 
 
+## Removes one plan (from plans()). Returns what it cost, to give back.
+func cancel_plan(plan: Array) -> Supplies:
+	var refund := Supplies.new()
+	for m: Member in plan:
+		if m.blueprint and not m.dead:
+			refund.add(m.material.cost)
+			remove_member(m)
+	return refund
+
+
 ## Hands every unordered blueprint to the crew. Returns how many.
 func order_blueprints() -> int:
 	var n := 0

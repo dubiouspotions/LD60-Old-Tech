@@ -268,3 +268,15 @@ func test_plans_group_unordered_blueprints_by_shared_joints() -> void:
 	assert_true(apart.ordered)
 	assert_false(left.ordered, "only that plan is ordered")
 	assert_eq(b.plans().size(), 1)
+
+
+func test_cancel_plan_removes_it_and_returns_its_cost() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var kept := b.build(b.snap_point(Vector2(0, 2)), b.snap_point(Vector2(2, 2)), LOG, true)
+	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 2)), LOG, true)
+	b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 0)), ROPE, true)
+	var plan: Array = b.plans().filter(func(p: Array) -> bool: return not kept in p)[0]
+	var refund := b.cancel_plan(plan)
+	assert_eq([refund.logs, refund.rope], [1, 1])
+	assert_eq(b.members, [kept] as Array[Bridge.Member])

@@ -6,12 +6,13 @@
 [ext_resource type="PackedScene" path="res://ui/readout.tscn" id="4"]
 [ext_resource type="Resource" path="res://data/sounds/ui_click.tres" id="5"]
 [ext_resource type="PackedScene" path="res://ui/world_button.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://ui/plan_buttons.tscn" id="7"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1")
 tool_button_scene = ExtResource("2")
 click_sound = ExtResource("5")
-world_button_scene = ExtResource("6")
+plan_buttons_scene = ExtResource("7")
 
 [node name="Root" type="Control" parent="."]
 anchors_preset = 15
