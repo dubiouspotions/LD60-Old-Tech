@@ -121,23 +121,6 @@ func test_brick_on_ground_stands() -> void:
 	assert_eq(t.type_at(Vector2i(2, 0)), WorldFixture.type("brick"))
 
 
-func test_blast_clears_radius_but_not_bedrock() -> void:
-	var t := WorldFixture.terrain(self, [
-		"..........",
-		"..........",
-		"##########",
-		"##########",
-		"RRRRRRRRRR",
-		"BBBBBBBBBB",
-	])
-	var got := t.blast(Vector2(5.5, 3.5), 2.6)
-	assert_null(t.type_at(Vector2i(5, 3)))
-	assert_null(t.type_at(Vector2i(5, 4)), "rock is blasted")
-	assert_eq(t.type_at(Vector2i(5, 5)), WorldFixture.type("bedrock"))
-	assert_eq(t.type_at(Vector2i(0, 2)), WorldFixture.type("soil"), "outside radius untouched")
-	assert_gt(got.earth, 0)
-
-
 func test_unload_before_turns_left_columns_into_bedrock() -> void:
 	var t := WorldFixture.terrain(self, MAP)
 	t.unload_before(3)

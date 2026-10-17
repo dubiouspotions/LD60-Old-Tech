@@ -13,8 +13,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 | Log | 3 | Drag from point to point to plan a deck log. Takes push and pull, up to 5 m. Costs 1 log. |
 | Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
 | Rope | 5 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
-| Charge | 6 | Blasts rock, brick, bridges and your own soldiers within 2.6 m. Costs 1 powder. |
-| Pan | 7 | Drag to move the view. |
+| Pan | 6 | Drag to move the view. |
 
 - Log, Support and Rope place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
 - While you plan, idle engineers (orange) walk over and wait beside it. **Enter** or the **Build** button hands the plan to them. They build it member by member, starting from the ground or finished parts and climbing along what is already up. With only one thing to build or dig, they all work on it together. Finished parts are held on scaffolding and can't be walked on yet. Each separate structure comes down off its scaffolding once it's finished and no engineer is on it, and your design holds or it doesn't. The column doesn't wait for it: a soldier walking onto an unfinished bridge falls.
@@ -39,7 +38,7 @@ Levels, tiles, tools, bridge materials, army rules, sounds and music are all sce
 | --- | --- |
 | `Godot/levels/` | Level scenes. All inherit `level_base.tscn`. |
 | `Godot/data/` | Campaign, terrain types, tools, log/rope, army rules, sound effects |
-| `Godot/objects/` | Soldier, archer, arrow, charge, falling block, flags, effects |
+| `Godot/objects/` | Soldier, archer, arrow, falling block, camp, flags, effects |
 | `Godot/world/` | Terrain (TileMapLayer + TileSet), bridge simulation, background |
 | `Godot/game/`, `Godot/ui/` | Game flow, camera, tool input, HUD |
 | `Godot/core/` | Resource types and autoloads (GameState, Audio, Effects) |

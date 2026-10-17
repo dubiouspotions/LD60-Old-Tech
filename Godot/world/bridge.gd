@@ -86,11 +86,6 @@ class Snap:
 @export var grid_step: float = 0.5
 @export var min_length: float = 0.45
 
-@export_group("Blast")
-## Joints within blast radius × this are pushed away.
-@export var blast_push_range: float = 2.0
-@export var blast_push: float = 0.12
-
 @export_group("Messages")
 @export var need_anchor_text: String = "Start on ground or a joint"
 @export var already_joined_text: String = "Already joined"
@@ -340,18 +335,6 @@ func break_member(m: Member, quiet: bool = false) -> void:
 	Effects.debris(Grid.to_px(mid), m.material.color, 4 if m.material.draw_as_rope else 9, 140.0)
 	remove_member(m)
 	member_broken.emit(m, text)
-
-
-## Breaks built members within radius and pushes nearby joints away.
-func blast(center: Vector2, radius: float) -> void:
-	for m in members.duplicate():
-		if not m.blueprint and _seg_dist(center, m.a.pos, m.b.pos) < radius:
-			break_member(m, true)
-	var reach := radius * blast_push_range
-	for n in nodes:
-		var d := n.pos.distance_to(center)
-		if d < reach and d > 0.01:
-			n.prev -= (n.pos - center) / d * blast_push * (1.0 - d / reach)
 
 
 ## Highest walkable deck at x that is at or below y_from. {y, member, t} or {} if none.

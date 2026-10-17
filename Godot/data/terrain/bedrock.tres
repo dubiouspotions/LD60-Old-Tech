@@ -5,5 +5,4 @@
 [resource]
 script = ExtResource("1_qvqmm")
 display_name = "Bedrock"
-blast_proof = true
 debris_color = Color(0.14901961, 0.16470589, 0.2, 1)

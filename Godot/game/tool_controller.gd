@@ -1,6 +1,6 @@
 class_name ToolController
 extends Node2D
-## Turns mouse and tool keys into Dig / Fill / Build / Charge actions on the world, and draws the cursor.
+## Turns mouse and tool keys into Dig / Fill / Build actions on the world, and draws the cursor.
 ## Dig marks cells for the engineers (and takes back bridge members at once). Build tools place blueprints; commit
 ## hands them to the engineers. Works while the game is paused so the player can plan before resuming.
 
@@ -32,7 +32,6 @@ var _hold_left: float = 0.0
 var _build_from: Bridge.Snap
 ## While Dig is held: true marks cells, false clears marks (decided by the first cell clicked).
 var _dig_marking: bool = true
-var _radius_cache: Dictionary = {}
 
 
 func tool() -> ToolDefinition:
@@ -172,27 +171,11 @@ func _use(cell: Vector2i, first: bool) -> void:
             block.position = Grid.to_px(Vector2(cell))
             world.objects.add_child(block)
             Audio.play(t.use_sound, block.position)
-        ToolDefinition.Kind.CHARGE:
-            if (here and here.blast_proof) or _charge_at(cell):
-                return
-            if not GameState.spend(t.cost):
-                _say(center - Vector2(0, 0.5), t.no_supply_text, ok_color)
-                return
-            var charge: Charge = t.spawn_scene.instantiate()
-            charge.position = Grid.to_px(Vector2(cell))
-            world.objects.add_child(charge)
 
 
 func _falling_at(cell: Vector2i) -> bool:
     for o in world.objects.get_children():
         if o is FallingBlock and o.cell_x() == cell.x and absf(o.position.y / Grid.PX - cell.y) < 1.0:
-            return true
-    return false
-
-
-func _charge_at(cell: Vector2i) -> bool:
-    for o in world.objects.get_children():
-        if o is Charge and o.cell() == cell:
             return true
     return false
 
@@ -229,12 +212,6 @@ func _draw() -> void:
         ok = (here == null or here.fill_replaces) and GameState.supplies.can_afford(t.cost)
         if ok:
             draw_rect(r, Color(0.627, 0.439, 0.247, 0.5))
-    elif t.kind == ToolDefinition.Kind.CHARGE:
-        ok = (here == null or not here.blast_proof) and GameState.supplies.can_afford(t.cost)
-        var radius := _blast_radius(t.spawn_scene)
-        var n := 64
-        for i in range(0, n, 2):
-            draw_arc(r.get_center(), radius * px, TAU * i / n, TAU * (i + 1) / n, 3, Color(ok_color if ok else bad_color, 0.7), 1.5)
     draw_rect(r.grow(-1), ok_color if ok else bad_color, false, 2.0)
 
 
@@ -280,11 +257,3 @@ func _marker(p: Bridge.Snap) -> void:
     var color := joint_color if p.node else (anchor_color if p.anchor else loose_color)
     draw_arc(p.pos * Grid.PX, 0.22 * Grid.PX, 0, TAU, 20, color, 2.0)
 
-
-## Blast radius of a charge scene, read once from an instance so the preview matches the scene.
-func _blast_radius(scene: PackedScene) -> float:
-    if not _radius_cache.has(scene):
-        var probe: Node = scene.instantiate()
-        _radius_cache[scene] = probe.get(&"blast_radius") if &"blast_radius" in probe else 0.0
-        probe.free()
-    return _radius_cache[scene]

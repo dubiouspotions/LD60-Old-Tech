@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="SoundEffect" format=3]
-
-[ext_resource type="Script" path="res://core/sound_effect.gd" id="1_yhiqv"]
-[ext_resource type="AudioStream" path="res://audio/sfx/charge_place.wav" id="2_v7kn6"]
-
-[resource]
-script = ExtResource("1_yhiqv")
-streams = Array[AudioStream]([ExtResource("2_v7kn6")])
-volume_db = -4.0

@@ -30,15 +30,6 @@ func debris(at_px: Vector2, color: Color, amount: int = 4, speed_px: float = 90.
 	add_child(p)
 
 
-## Spawns any one-shot effect scene (explosion flash etc.) at a pixel position.
-func spawn(scene: PackedScene, at_px: Vector2) -> void:
-	if scene == null:
-		return
-	var n: Node2D = scene.instantiate()
-	n.position = at_px
-	add_child(n)
-
-
 func say(at_px: Vector2, text: String, color: Color = Color("ece4d2")) -> void:
 	if text_scene == null or text.is_empty():
 		return

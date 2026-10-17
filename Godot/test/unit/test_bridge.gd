@@ -122,14 +122,6 @@ func test_remove_member_drops_orphan_nodes() -> void:
 	assert_eq(b.nodes.size(), 0)
 
 
-func test_blast_breaks_members_in_radius() -> void:
-	var t := WorldFixture.terrain(self, CHASM)
-	var b := WorldFixture.bridge(self, t)
-	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
-	b.blast(Vector2(5, 2.5), 2.6)
-	assert_eq(b.members.size(), 0)
-
-
 func test_blueprint_is_not_simulated() -> void:
 	var t := WorldFixture.terrain(self, CHASM)
 	var b := WorldFixture.bridge(self, t)
@@ -205,14 +197,6 @@ func test_work_starts_from_ground_or_finished_structure() -> void:
 	b.finish(m1)
 	assert_eq(b.work_ends(m2), [m1.b] as Array[Bridge.Joint])
 	assert_eq(b.route_from_ground(m1.b), [m1.a, m1.b] as Array[Bridge.Joint])
-
-
-func test_blast_spares_blueprints() -> void:
-	var t := WorldFixture.terrain(self, CHASM)
-	var b := WorldFixture.bridge(self, t)
-	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
-	b.blast(Vector2(5, 2.5), 2.6)
-	assert_eq(b.members.size(), 1)
 
 
 func test_support_holds_but_is_not_walkable() -> void:

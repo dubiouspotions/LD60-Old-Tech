@@ -9,7 +9,6 @@ solid = false
 anchor = false
 fill_replaces = true
 buoyant = true
-blast_proof = true
 hazard = 1
 death_text = "Drowned"
 ahead_text = "Water ahead"

@@ -140,14 +140,3 @@ func test_dig_member_refunds_it() -> void:
 	_click(Vector2(7.5, 6.05))
 	assert_eq(world.bridge.members.size(), 0)
 	assert_eq(GameState.supplies.logs, logs + 1)
-
-
-func test_charge_blasts_rock_after_fuse() -> void:
-	_select(ToolDefinition.Kind.CHARGE)
-	var powder := GameState.supplies.powder
-	_click(Vector2(5.5, 7.5))
-	assert_eq(GameState.supplies.powder, powder - 1)
-	assert_eq(world.terrain.type_at(Vector2i(5, 7)), WorldFixture.type("rock"), "fuse still burning")
-	await wait_seconds(2.0)
-	assert_null(world.terrain.type_at(Vector2i(5, 7)), "rock blasted")
-	assert_eq(world.terrain.type_at(Vector2i(5, 8)), WorldFixture.type("bedrock"))

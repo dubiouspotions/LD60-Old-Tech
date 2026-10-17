@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_vobtq")
 display_name = "Rock"
-too_hard_text = "Too hard. Use a charge"
+too_hard_text = "Too hard to dig"
 debris_color = Color(0.35686275, 0.39215687, 0.44705883, 1)

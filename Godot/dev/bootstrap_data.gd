@@ -34,10 +34,9 @@ func _sfx(name: String, volume: float = 0.0, pitch: float = 0.08, bus: StringNam
 
 
 func _sounds() -> void:
-	for n in ["dig", "fill_land", "log_place", "rope_place", "member_snap", "charge_place", "arrow_shot", "arrow_hit",
+	for n in ["dig", "fill_land", "log_place", "rope_place", "member_snap", "arrow_shot", "arrow_hit",
 			"soldier_hurt", "soldier_death", "tree_fell", "crystal", "collapse", "tower_down", "ui_click"]:
 		_sfx(n, -4.0)
-	_sfx("explosion", 0.0, 0.12)
 	for n in ["checkpoint", "lost", "victory"]:
 		_sfx(n, -2.0, 0.0)
 
@@ -55,18 +54,18 @@ func _t(file: String, name: String, props: Dictionary) -> void:
 
 
 func _terrain() -> void:
-	var too_hard := "Too hard. Use a charge"
+	var too_hard := "Too hard to dig"
 	_t("soil", "Soil", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.4, dig_yield = Supplies.make(1),
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), debris_color = Color("7b5131")})
 	_t("fill", "Fill", {falls = true, dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.3, dig_yield = Supplies.make(1),
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), debris_color = Color("a0703f")})
 	_t("rock", "Rock", {too_hard_text = too_hard, debris_color = Color("5b6472")})
-	_t("bedrock", "Bedrock", {blast_proof = true, debris_color = Color("262a33")})
+	_t("bedrock", "Bedrock", {debris_color = Color("262a33")})
 	_t("crystal", "Powder crystal", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.8, dig_yield = Supplies.make(0, 0, 0, 1),
 		dig_text = "+1 powder", bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), debris_color = Color("8ff0e0")})
 	_t("brick", "Brick", {anchor = false, structure = true, too_hard_text = too_hard,
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})
-	_t("water", "Water", {solid = false, anchor = false, fill_replaces = true, buoyant = true, blast_proof = true,
+	_t("water", "Water", {solid = false, anchor = false, fill_replaces = true, buoyant = true,
 		hazard = TerrainType.Hazard.WATER, death_text = "Drowned", ahead_text = "Water ahead", debris_color = Color("3480b6")})
 	_t("spikes", "Spikes", {solid = false, anchor = false, hazard = TerrainType.Hazard.SPIKES,
 		death_text = "Spiked", ahead_text = "Spikes ahead", debris_color = Color("cfd4da")})
@@ -153,11 +152,8 @@ func _tools() -> void:
 		action = &"tool_support", key_label = "4", bridge_material = load("res://data/bridge/support.tres")})
 	_tool("5_rope", {kind = ToolDefinition.Kind.BUILD, display_name = "Rope", hint = "1 rope · ≤ 12 m · pull only",
 		action = &"tool_rope", key_label = "5", bridge_material = load("res://data/bridge/rope.tres")})
-	_tool("6_charge", {kind = ToolDefinition.Kind.CHARGE, display_name = "Charge", hint = "1 powder · r 2.6",
-		action = &"tool_charge", key_label = "6", cost = Supplies.make(0, 0, 0, 1),
-		no_supply_text = "No powder. Mine crystals", spawn_scene = load("res://objects/charge/charge.tscn")})
-	_tool("7_pan", {kind = ToolDefinition.Kind.PAN, display_name = "Pan", hint = "drag the view",
-		action = &"tool_pan", key_label = "7"})
+	_tool("6_pan", {kind = ToolDefinition.Kind.PAN, display_name = "Pan", hint = "drag the view",
+		action = &"tool_pan", key_label = "6"})
 
 
 func _campaign() -> void:
@@ -171,7 +167,7 @@ func _campaign() -> void:
 	c.start_supplies = Supplies.make(8, 12, 6, 2)
 	c.army_rules = load("res://data/army_rules.tres")
 	var tools: Array[ToolDefinition] = []
-	for f in ["1_dig", "2_fill", "3_log", "4_support", "5_rope", "6_charge", "7_pan"]:
+	for f in ["1_dig", "2_fill", "3_log", "4_support", "5_rope", "6_pan"]:
 		tools.append(load("res://data/tools/%s.tres" % f))
 	c.tools = tools
 	c.level_up_sound = _snd("checkpoint")

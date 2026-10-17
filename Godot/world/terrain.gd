@@ -193,31 +193,6 @@ func _fell_group(cell: Vector2i) -> Array[Vector2i]:
     return out
 
 
-## Clears every cell whose centre lies within radius (metres) of center. Trees caught are felled whole.
-func blast(center: Vector2, radius: float) -> Supplies:
-    var counts := {}
-    var felled := Supplies.new()
-    var r := ceili(radius)
-    var c0 := Vector2i(floori(center.x), floori(center.y))
-    for dx in range(-r, r + 1):
-        for dy in range(-r, r + 1):
-            var cell := c0 + Vector2i(dx, dy)
-            if (Vector2(cell) + Vector2(0.5, 0.5)).distance_to(center) > radius:
-                continue
-            var t := type_at(cell)
-            if t == null or t.blast_proof or not _inside(cell):
-                continue
-            if t.dig_action == TerrainType.DigAction.FELL:
-                felled.add(fell(cell))
-                continue
-            counts[t] = counts.get(t, 0) + 1
-            set_type(cell, null)
-            Effects.debris(cell_center_px(cell), t.debris_color, 2, 160.0)
-    var got := TerrainType.bulk_total(counts)
-    got.add(felled)
-    return got
-
-
 ## Detaches unsupported falling tiles and collapses unsupported structures near recent changes.
 func settle() -> void:
     if _dirty_cols.is_empty():

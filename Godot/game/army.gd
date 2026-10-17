@@ -173,14 +173,6 @@ func hit(s: Soldier, kill_text: String) -> bool:
 	return false
 
 
-## Kills every soldier within radius (metres) of center.
-func blast(center: Vector2, radius: float, text: String) -> void:
-	for s in soldiers:
-		if (s.pos - Vector2(0, 0.5)).distance_to(center) < radius:
-			kill(s, text)
-	_remove_dead()
-
-
 func kill(s: Soldier, text: String) -> void:
 	if s.dead:
 		return

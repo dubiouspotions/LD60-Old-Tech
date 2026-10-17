@@ -3,7 +3,7 @@ class_name ToolDefinition
 extends Resource
 ## One button in the tool rack. The kind decides the behaviour; everything else is tuning.
 
-enum Kind { DIG, FILL, BUILD, CHARGE, PAN }
+enum Kind { DIG, FILL, BUILD, PAN }
 
 @export var kind: Kind = Kind.DIG
 @export var display_name: String = "Dig"
@@ -23,5 +23,5 @@ enum Kind { DIG, FILL, BUILD, CHARGE, PAN }
 @export var bridge_material: BridgeMaterial
 
 @export_group("Spawn")
-## Scene dropped by Fill (falling block) or Charge (charge).
+## Scene dropped by Fill (falling block).
 @export var spawn_scene: PackedScene

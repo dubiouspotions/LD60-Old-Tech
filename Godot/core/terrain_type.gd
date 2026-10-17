@@ -22,8 +22,6 @@ enum DigAction { NONE, REMOVE, FELL }
 @export var fill_replaces: bool = false
 ## Wood floats in it.
 @export var buoyant: bool = false
-## Charges can not be placed on it and blasts leave it alone.
-@export var blast_proof: bool = false
 
 @export_group("Hazard")
 @export var hazard: Hazard = Hazard.NONE

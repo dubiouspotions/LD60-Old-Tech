@@ -21,11 +21,20 @@ func test_wide_window_shows_everything() -> void:
 	assert_true(hud.get_node("%Title").visible)
 
 
-func test_narrow_window_folds_hints_and_title_to_fit() -> void:
-	hud.fit_to(1248.0)
-	assert_lte(hud.get_node("%Rack").get_combined_minimum_size().x, 1248.0, "rack fits")
-	assert_lte(hud.get_node("%TopBar").get_combined_minimum_size().x, 1248.0, "top bar fits")
+func test_narrow_window_folds_hints_to_fit_the_rack() -> void:
+	hud.fit_to(4000.0)
+	var width: float = hud.get_node("%Rack").get_combined_minimum_size().x - 1.0
+	hud.fit_to(width)
 	assert_false(_hints_shown(), "hints folded")
+	assert_lte(hud.get_node("%Rack").get_combined_minimum_size().x, width, "rack fits")
+
+
+func test_narrower_window_hides_the_title_to_fit_the_top_bar() -> void:
+	hud.fit_to(4000.0)
+	var width: float = hud.get_node("%TopBar").get_combined_minimum_size().x - 1.0
+	hud.fit_to(width)
+	assert_false(hud.get_node("%Title").visible, "title hidden")
+	assert_lte(hud.get_node("%TopBar").get_combined_minimum_size().x, width, "top bar fits")
 
 
 func test_widening_again_unfolds() -> void:

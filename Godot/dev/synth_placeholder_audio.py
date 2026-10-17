@@ -86,8 +86,6 @@ def sfx():
     write("sfx/log_place.wav", mix(gain(tone(220, 0.15, 6, tri), 0.8), gain(tone(330, 0.1, 8, tri), 0.4), gain(noise_burst(0.04, 0.6, 2), 0.3)))
     write("sfx/rope_place.wav", mix(gain(tone(180, 0.25, 2, tri, sweep=0.15), 0.6), gain(noise_burst(0.2, 0.05, 2), 0.3)))
     write("sfx/member_snap.wav", mix(noise_burst(0.22, 0.7, 5, 0.0005), gain(tone(140, 0.2, 5, sweep=-0.5), 0.5)))
-    write("sfx/charge_place.wav", mix(gain(tone(900, 0.03, 4, square), 0.3), gain(tone(500, 0.06, 4, tri), 0.5)))
-    write("sfx/explosion.wav", mix(noise_burst(1.2, 0.06, 2.5, 0.001), gain(noise_burst(0.3, 0.6, 4, 0.0005), 0.6), gain(tone(55, 0.8, 2, sweep=-0.4), 0.9)))
     write("sfx/arrow_shot.wav", mix(gain(noise_burst(0.25, 0.35, 1.5, 0.05), 0.6), gain(tone(700, 0.08, 6, tri, sweep=-0.4), 0.2)))
     write("sfx/arrow_hit.wav", mix(gain(tone(260, 0.08, 6, tri), 0.7), gain(noise_burst(0.05, 0.5, 4), 0.4)))
     write("sfx/soldier_hurt.wav", gain(tone(320, 0.14, 2, tri, sweep=-0.35), 0.7))

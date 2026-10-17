@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_jf6lf")
-kind = 4
+kind = 3
 display_name = "Pan"
 hint = "drag the view"
 action = &"tool_pan"
-key_label = "7"
+key_label = "6"
