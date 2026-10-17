@@ -8,7 +8,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 
 | Tool | Key | What it does |
 | --- | --- | --- |
-| Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope) and cyan crystals (+1 powder) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
+| Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope) and gold ore (+1 gold) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
 | Fill | 2 | Drops a block of earth that falls until it lands. Costs 1 earth. |
 | Log | 3 | Drag from point to point to plan a deck log. Takes push and pull, up to 5 m. Costs 1 log. |
 | Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |

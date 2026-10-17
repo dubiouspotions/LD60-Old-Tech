@@ -191,7 +191,7 @@ func _refresh_supplies() -> void:
 	%Earth.set_value(str(s.earth), true)
 	%Logs.set_value(str(s.logs), true)
 	%Rope.set_value(str(s.rope), true)
-	%Powder.set_value(str(s.powder), true)
+	%Gold.set_value(str(s.gold), true)
 
 
 func _emit(sig: Signal) -> void:

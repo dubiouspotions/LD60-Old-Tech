@@ -46,9 +46,9 @@ func test_dig_rock_refuses() -> void:
 	assert_eq(t.type_at(Vector2i(8, 6)), WorldFixture.type("rock"))
 
 
-func test_dig_crystal_yields_powder() -> void:
+func test_dig_gold_ore_yields_gold() -> void:
 	var t := WorldFixture.terrain(self, MAP)
-	assert_eq(t.dig(Vector2i(3, 6)).powder, 1)
+	assert_eq(t.dig(Vector2i(3, 6)).gold, 1)
 
 
 func test_dig_tree_fells_whole_tree() -> void:

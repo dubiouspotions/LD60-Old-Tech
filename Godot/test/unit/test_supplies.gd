@@ -4,7 +4,7 @@ extends GutTest
 func test_add_and_spend() -> void:
 	var s := Supplies.make(3, 2, 1, 0)
 	s.add(Supplies.make(1, 1, 1, 1))
-	assert_eq([s.earth, s.logs, s.rope, s.powder], [4, 3, 2, 1])
+	assert_eq([s.earth, s.logs, s.rope, s.gold], [4, 3, 2, 1])
 	assert_true(s.spend(Supplies.make(4)))
 	assert_eq(s.earth, 0)
 

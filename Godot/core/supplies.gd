@@ -7,17 +7,17 @@ extends Resource
 @export var earth: int = 0
 @export var logs: int = 0
 @export var rope: int = 0
-@export var powder: int = 0
+@export var gold: int = 0
 
-const KEYS: Array[StringName] = [&"earth", &"logs", &"rope", &"powder"]
+const KEYS: Array[StringName] = [&"earth", &"logs", &"rope", &"gold"]
 
 
-static func make(p_earth: int = 0, p_logs: int = 0, p_rope: int = 0, p_powder: int = 0) -> Supplies:
+static func make(p_earth: int = 0, p_logs: int = 0, p_rope: int = 0, p_gold: int = 0) -> Supplies:
 	var s := Supplies.new()
 	s.earth = p_earth
 	s.logs = p_logs
 	s.rope = p_rope
-	s.powder = p_powder
+	s.gold = p_gold
 	return s
 
 

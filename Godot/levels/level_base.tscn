@@ -11,7 +11,7 @@ script = ExtResource("7")
 earth = 4
 logs = 8
 rope = 4
-powder = 2
+gold = 5
 
 [node name="Level" type="Node2D" unique_id=1546824629]
 script = ExtResource("1")

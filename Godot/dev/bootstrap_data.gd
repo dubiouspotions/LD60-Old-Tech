@@ -61,8 +61,8 @@ func _terrain() -> void:
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), debris_color = Color("a0703f")})
 	_t("rock", "Rock", {too_hard_text = too_hard, debris_color = Color("5b6472")})
 	_t("bedrock", "Bedrock", {debris_color = Color("262a33")})
-	_t("crystal", "Powder crystal", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.8, dig_yield = Supplies.make(0, 0, 0, 1),
-		dig_text = "+1 powder", bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), debris_color = Color("8ff0e0")})
+	_t("crystal", "Gold ore", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.8, dig_yield = Supplies.make(0, 0, 0, 1),
+		dig_text = "+1 gold", bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), debris_color = Color("8ff0e0")})
 	_t("brick", "Brick", {anchor = false, structure = true, too_hard_text = too_hard,
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})
 	_t("water", "Water", {solid = false, anchor = false, fill_replaces = true, buoyant = true,
@@ -164,7 +164,7 @@ func _campaign() -> void:
 			levels.append("res://levels/" + f)
 	c.levels = levels
 	c.start_soldiers = 10
-	c.start_supplies = Supplies.make(8, 12, 6, 2)
+	c.start_supplies = Supplies.make(8, 12, 6, 10)
 	c.army_rules = load("res://data/army_rules.tres")
 	var tools: Array[ToolDefinition] = []
 	for f in ["1_dig", "2_fill", "3_log", "4_support", "5_rope", "6_pan"]:
