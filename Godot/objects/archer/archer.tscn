@@ -1,40 +1,120 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://e65yrjjqwtsi"]
 
-[ext_resource type="Script" path="res://objects/archer/archer.gd" id="1"]
-[ext_resource type="PackedScene" path="res://objects/arrow/arrow.tscn" id="2"]
+[ext_resource type="Script" uid="uid://dc6v6q2gmueg0" path="res://objects/archer/archer.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://3agsers3q588" path="res://objects/arrow/arrow.tscn" id="2"]
 [ext_resource type="Resource" path="res://data/sounds/arrow_shot.tres" id="3"]
 [ext_resource type="Resource" path="res://data/sounds/tower_down.tres" id="4"]
+[ext_resource type="Texture2D" uid="uid://d33q41mhfggd7" path="res://world/soilderenemy.png" id="5_5s01x"]
+[ext_resource type="Texture2D" uid="uid://dufun24ochsjf" path="res://world/bow.png" id="6_2vx7e"]
+[ext_resource type="Texture2D" uid="uid://73bogj4nu6k6" path="res://world/red_flag.png" id="7_cgja7"]
 
-[node name="Archer" type="Node2D"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_cgja7"]
+atlas = ExtResource("7_cgja7")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uf2il"]
+atlas = ExtResource("7_cgja7")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1jqql"]
+atlas = ExtResource("7_cgja7")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_imbxt"]
+atlas = ExtResource("7_cgja7")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4kcra"]
+atlas = ExtResource("7_cgja7")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m10gj"]
+atlas = ExtResource("7_cgja7")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4pjgo"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cgja7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uf2il")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1jqql")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_imbxt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4kcra")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m10gj")
+}],
+"loop": 1,
+"name": &"flagwavered",
+"speed": 9.0
+}]
+
+[node name="Archer" type="Node2D" unique_id=822854197]
 script = ExtResource("1")
 arrow_scene = ExtResource("2")
 shoot_sound = ExtResource("3")
 down_sound = ExtResource("4")
 
-[node name="Banner" type="Node2D" parent="."]
+[node name="Banner" type="Node2D" parent="." unique_id=387621047]
 
-[node name="Pole" type="Line2D" parent="Banner"]
-points = PackedVector2Array(16.00, 32.00, 16.00, -51.20)
+[node name="Pole" type="Line2D" parent="Banner" unique_id=385452031]
+position = Vector2(2.861023e-06, -20.080345)
+scale = Vector2(0.9999998, 0.6218391)
+points = PackedVector2Array(16, 32, 16, -51.2)
 width = 1.9
 default_color = Color(0.169, 0.094, 0.063, 1)
 
-[node name="Cloth" type="Polygon2D" parent="Banner"]
+[node name="Cloth" type="Polygon2D" parent="Banner" unique_id=466868175]
+visible = false
 color = Color(0.851, 0.314, 0.247, 1)
-polygon = PackedVector2Array(16.00, -51.20, 35.20, -46.40, 16.00, -40.00)
+polygon = PackedVector2Array(16, -51.2, 35.2, -46.4, 16, -40)
 
-[node name="Legs" type="Polygon2D" parent="."]
+[node name="Legs" type="Polygon2D" parent="." unique_id=2094755441]
+visible = false
 color = Color(0.478, 0.165, 0.133, 1)
-polygon = PackedVector2Array(-4.80, -9.60, 4.80, -9.60, 4.80, 0.00, -4.80, 0.00)
+polygon = PackedVector2Array(-4.8, -9.6, 4.8, -9.6, 4.8, 0, -4.8, 0)
 
-[node name="Torso" type="Polygon2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=21234211]
+z_index = 1
+position = Vector2(4, -20)
+scale = Vector2(1.25, 1.25)
+texture = ExtResource("5_5s01x")
+
+[node name="Torso" type="Polygon2D" parent="." unique_id=603410038]
+visible = false
 color = Color(0.851, 0.314, 0.247, 1)
-polygon = PackedVector2Array(-6.40, -21.12, 6.40, -21.12, 6.40, -8.96, -6.40, -8.96)
+polygon = PackedVector2Array(-6.4, -21.12, 6.4, -21.12, 6.4, -8.96, -6.4, -8.96)
 
-[node name="Head" type="Polygon2D" parent="."]
+[node name="Head" type="Polygon2D" parent="." unique_id=375502233]
+visible = false
 color = Color(0.945, 0.827, 0.69, 1)
-polygon = PackedVector2Array(4.16, -24.96, 3.60, -22.88, 2.08, -21.36, 0.00, -20.80, -2.08, -21.36, -3.60, -22.88, -4.16, -24.96, -3.60, -27.04, -2.08, -28.56, -0.00, -29.12, 2.08, -28.56, 3.60, -27.04)
+polygon = PackedVector2Array(4.16, -24.96, 3.6, -22.88, 2.08, -21.36, 0, -20.8, -2.08, -21.36, -3.6, -22.88, -4.16, -24.96, -3.6, -27.04, -2.08, -28.56, 0, -29.12, 2.08, -28.56, 3.6, -27.04)
 
-[node name="Bow" type="Line2D" parent="."]
-points = PackedVector2Array(-9.56, -6.26, -11.89, -7.35, -13.86, -8.99, -15.37, -11.07, -16.32, -13.45, -16.64, -16.00, -16.32, -18.55, -15.37, -20.93, -13.86, -23.01, -11.89, -24.65, -9.56, -25.74)
+[node name="Bow" type="Line2D" parent="." unique_id=69918146]
+position = Vector2(2, -8.834382)
+scale = Vector2(0.87429875, 0.87429875)
+points = PackedVector2Array(-9.56, -6.26, -11.89, -7.35, -13.86, -8.99, -15.37, -11.07, -16.32, -13.45, -16.64, -16, -16.32, -18.55, -15.37, -20.93, -13.86, -23.01, -11.89, -24.65, -9.56, -25.74)
 width = 1.9
 default_color = Color(0.227, 0.133, 0.078, 1)
+
+[node name="Sprite2D2" type="Sprite2D" parent="Bow" unique_id=1201675197]
+position = Vector2(-10.293964, -15.058488)
+scale = Vector2(1.6441748, 1.6441748)
+texture = ExtResource("6_2vx7e")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1434503639]
+process_mode = 3
+position = Vector2(22, -44)
+sprite_frames = SubResource("SpriteFrames_4pjgo")
+animation = &"flagwavered"
+autoplay = "flagwavered"
+frame_progress = 0.3937253
