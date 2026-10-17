@@ -1,30 +1,72 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://bfllsmio3y4jc"]
 
-[ext_resource type="Script" path="res://game/game.gd" id="1"]
-[ext_resource type="PackedScene" path="res://world/background/background.tscn" id="2"]
-[ext_resource type="Script" path="res://game/tool_controller.gd" id="3"]
-[ext_resource type="Script" path="res://game/camera_rig.gd" id="4"]
+[ext_resource type="Script" uid="uid://bkxv0rh5hu488" path="res://game/game.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://kib74rq6nvro" path="res://world/background/background.tscn" id="2"]
+[ext_resource type="Script" uid="uid://csheef411813p" path="res://game/tool_controller.gd" id="3"]
+[ext_resource type="Script" uid="uid://ccqxavwqhp3xu" path="res://game/camera_rig.gd" id="4"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="5"]
 [ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6"]
+[ext_resource type="PackedScene" path="res://game/world.tscn" id="7"]
+[ext_resource type="CompressedTexture3D" uid="uid://bgadupm8eb0qp" path="res://post/lut/low_17.png" id="7_wjctj"]
+[ext_resource type="Script" uid="uid://crrmlhkv6vxe2" path="res://game/day_night.gd" id="8"]
 
-[node name="Game" type="Node"]
+[sub_resource type="Gradient" id="lantern_g"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="lantern_tex"]
+gradient = SubResource("lantern_g")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="Environment" id="Environment_sfb0x"]
+background_mode = 3
+adjustment_enabled = true
+adjustment_color_correction = ExtResource("7_wjctj")
+
+[node name="Game" type="Node" unique_id=904096967]
 script = ExtResource("1")
 march_sound = ExtResource("6")
 
-[node name="Background" parent="." instance=ExtResource("2")]
+[node name="Background" parent="." unique_id=1700337154 instance=ExtResource("2")]
 
-[node name="LevelHolder" type="Node2D" parent="."]
+[node name="NightTint" type="CanvasModulate" parent="." unique_id=328120713]
+
+[node name="LevelHolder" type="Node2D" parent="." unique_id=1998500207]
 unique_name_in_owner = true
 
-[node name="ToolController" type="Node2D" parent="."]
+[node name="World" parent="LevelHolder" unique_id=781211549 instance=ExtResource("7")]
+unique_name_in_owner = true
+
+[node name="ToolController" type="Node2D" parent="." unique_id=885474919 node_paths=PackedStringArray("lantern")]
 unique_name_in_owner = true
 z_index = 20
 script = ExtResource("3")
+lantern = NodePath("../Lantern")
 
-[node name="Camera" type="Camera2D" parent="."]
+[node name="Lantern" type="PointLight2D" parent="." unique_id=383740827]
+visible = false
+color = Color(1, 0.86, 0.6, 1)
+energy = 0.0
+texture = SubResource("lantern_tex")
+texture_scale = 2.2
+
+[node name="DayNight" type="Node" parent="." unique_id=1668103146 node_paths=PackedStringArray("world_tint", "sky_tint", "lantern")]
+unique_name_in_owner = true
+script = ExtResource("8")
+world_tint = NodePath("../NightTint")
+sky_tint = NodePath("../Background/SkyTint")
+lantern = NodePath("../Lantern")
+
+[node name="Camera" type="Camera2D" parent="." unique_id=1549734198]
 unique_name_in_owner = true
 anchor_mode = 0
 script = ExtResource("4")
 
-[node name="HUD" parent="." instance=ExtResource("5")]
+[node name="HUD" parent="." unique_id=425979277 instance=ExtResource("5")]
 unique_name_in_owner = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1380559701]
+environment = SubResource("Environment_sfb0x")

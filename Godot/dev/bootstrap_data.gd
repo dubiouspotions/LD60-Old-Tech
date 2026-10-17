@@ -162,10 +162,10 @@ func _tools() -> void:
 
 func _campaign() -> void:
 	var c := Campaign.new()
-	var levels: Array[PackedScene] = []
+	var levels: Array[String] = []
 	for f in DirAccess.get_files_at("res://levels"):
 		if f.begins_with("level_") and f.ends_with(".tscn") and f != "level_base.tscn":
-			levels.append(load("res://levels/" + f))
+			levels.append("res://levels/" + f)
 	c.levels = levels
 	c.start_soldiers = 10
 	c.start_supplies = Supplies.make(8, 12, 6, 2)

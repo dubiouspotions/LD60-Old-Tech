@@ -18,7 +18,7 @@ signal follow_changed(on: bool)
 ## Pixels of shake per unit of shake amount.
 @export var shake_px: float = 16.0
 
-var level: Level
+var world: World
 var follow: bool = true:
 	set(v):
 		if v != follow:
@@ -49,7 +49,7 @@ func view_size_m() -> Vector2:
 
 func snap_to_lead() -> void:
 	follow = true
-	var lead := level.army.lead() if level else null
+	var lead := world.army.lead() if world else null
 	if lead:
 		position = Grid.to_px(lead.pos - view_size_m() * follow_anchor)
 	_clamp()
@@ -82,7 +82,7 @@ func _process(delta: float) -> void:
 	if pan != Vector2.ZERO:
 		position += pan * key_pan_speed * Grid.PX * dt
 		follow = false
-	var lead := level.army.lead() if level else null
+	var lead := world.army.lead() if world else null
 	if follow and lead:
 		var target := Grid.to_px(lead.pos - view_size_m() * follow_anchor)
 		position += (target - position) * minf(1.0, dt * follow_rate)
@@ -92,14 +92,15 @@ func _process(delta: float) -> void:
 
 
 func _clamp() -> void:
-	if level == null:
+	if world == null:
 		return
 	var view := view_size_m()
 	var m := view_m()
-	var lead := level.army.lead()
+	var lead := world.army.lead()
 	if lead:
-		m.x = clampf(m.x, level.army.rear().pos.x - view.x * keep_rear_in_view, lead.pos.x + max_lead_ahead)
-	var size := Vector2(level.terrain.size)
-	m.x = clampf(m.x, 0.0, maxf(0.0, size.x - view.x))
+		m.x = clampf(m.x, world.army.rear().pos.x - view.x * keep_rear_in_view, lead.pos.x + max_lead_ahead)
+	var size := Vector2(world.terrain.size)
+	var left := float(world.terrain.min_x)
+	m.x = clampf(m.x, left, maxf(left, size.x - view.x))
 	m.y = clampf(m.y, 0.0, maxf(0.0, size.y - view.y))
 	position = Grid.to_px(m)

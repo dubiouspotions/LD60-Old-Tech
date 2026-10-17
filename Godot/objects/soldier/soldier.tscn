@@ -234,9 +234,51 @@ tracks/1/keys = {
 "values": [Vector2(0, 0), Vector2(-2.2, 0), Vector2(0, 0), Vector2(2.2, 0), Vector2(0, 0)]
 }
 
+[sub_resource type="Animation" id="sleep"]
+resource_name = "sleep"
+length = 2.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Asleep/Zzz:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 2.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(-14, -30), Vector2(-6, -52)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Asleep/Zzz:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.4, 2.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Asleep/Sleeper:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 1.2, 2.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1.25, 1.25), Vector2(1.25, 1.31), Vector2(1.25, 1.25)]
+}
+
 [sub_resource type="AnimationLibrary" id="lib"]
 _data = {
 &"idle": SubResource("idle"),
+&"sleep": SubResource("sleep"),
 &"walk": SubResource("walk")
 }
 
@@ -328,6 +370,27 @@ unique_name_in_owner = true
 visible = false
 color = Color(1, 0.416, 0.333, 1)
 polygon = PackedVector2Array(-6.4, -33.92, -2.56, -33.92, -2.56, -30.08, -6.4, -30.08)
+
+[node name="Asleep" type="Node2D" parent="."]
+unique_name_in_owner = true
+visible = false
+
+[node name="Sleeper" type="Sprite2D" parent="Asleep"]
+position = Vector2(0, -9)
+rotation = -1.5707964
+scale = Vector2(1.25, 1.25)
+texture = ExtResource("3_fity6")
+
+[node name="Zzz" type="Label" parent="Asleep"]
+offset_left = -14.0
+offset_top = -30.0
+offset_right = 6.0
+offset_bottom = -8.0
+theme_override_colors/font_color = Color(0.82, 0.88, 1, 1)
+theme_override_colors/font_outline_color = Color(0.0902, 0.1255, 0.1686, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = "z"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=28494290]
 unique_name_in_owner = true

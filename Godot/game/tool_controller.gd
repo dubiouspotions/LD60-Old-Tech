@@ -1,6 +1,6 @@
 class_name ToolController
 extends Node2D
-## Turns mouse and tool keys into Dig / Fill / Build / Charge actions on the current level, and draws the cursor.
+## Turns mouse and tool keys into Dig / Fill / Build / Charge actions on the world, and draws the cursor.
 ## Dig marks cells for the engineers (and takes back bridge members at once). Build tools place blueprints; commit
 ## hands them to the engineers. Works while the game is paused so the player can plan before resuming.
 
@@ -16,10 +16,12 @@ signal tool_changed(index: int)
 ## Outline and progress bar of cells marked for digging.
 @export var mark_color: Color = Color("e9a93b")
 @export var preview_font_size: int = 16
+## Light that follows the cursor so the engineers' work can be seen at night (optional).
+@export var lantern: Node2D
 
 var tools: Array[ToolDefinition] = []
 var current: int = 0
-var level: Level
+var world: World
 ## Off while an overlay (intro, lost) is up.
 var enabled: bool = false
 
@@ -51,11 +53,11 @@ func cancel() -> void:
     _holding = false
 
 
-## Hands every blueprint on the level to the crew. Returns how many.
+## Hands every blueprint in the world to the crew. Returns how many.
 func commit() -> int:
-    if not enabled or level == null:
+    if not enabled or world == null:
         return 0
-    return level.bridge.order_blueprints()
+    return world.bridge.order_blueprints()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -72,7 +74,7 @@ func _unhandled_input(event: InputEvent) -> void:
         return
     if event is InputEventMouseMotion:
         _hover = true
-    if not enabled or level == null or tool() == null or tool().kind == ToolDefinition.Kind.PAN:
+    if not enabled or world == null or tool() == null or tool().kind == ToolDefinition.Kind.PAN:
         return
     if event.is_action_pressed(&"use_tool"):
         _update_mouse()
@@ -92,7 +94,9 @@ func _notification(what: int) -> void:
 
 func _process(delta: float) -> void:
     _update_mouse()
-    if _holding and enabled and level:
+    if lantern:
+        lantern.global_position = get_global_mouse_position()
+    if _holding and enabled and world:
         _hold_left -= delta
         if _hold_left <= 0.0:
             _use(Grid.cell_of(_mouse_m), false)
@@ -107,7 +111,7 @@ func _update_mouse() -> void:
 func _press() -> void:
     var t := tool()
     if t.kind == ToolDefinition.Kind.BUILD:
-        _build_from = level.bridge.snap_point(_mouse_m)
+        _build_from = world.bridge.snap_point(_mouse_m)
         return
     _holding = t.repeat_interval > 0.0
     _hold_left = t.repeat_interval
@@ -121,10 +125,10 @@ func _release() -> void:
     var from := _build_from
     _build_from = null
     var mat := tool().bridge_material
-    var to := level.bridge.snap_point(_mouse_m, from.node)
-    var check := level.bridge.check_build(from, to, mat, GameState.supplies)
+    var to := world.bridge.snap_point(_mouse_m, from.node)
+    var check := world.bridge.check_build(from, to, mat, GameState.supplies)
     if check.ok and GameState.spend(mat.cost):
-        level.bridge.build(from, to, mat, true)
+        world.bridge.build(from, to, mat, true)
         Audio.play(tool().use_sound, Grid.to_px((from.pos + to.pos) / 2))
     elif not check.msg.is_empty():
         _say(to.pos - Vector2(0, 0.6), check.msg, ok_color)
@@ -133,18 +137,18 @@ func _release() -> void:
 ## Applies the current tool to one cell. first is true on the click, false on held repeats.
 func _use(cell: Vector2i, first: bool) -> void:
     var t := tool()
-    var terrain := level.terrain
+    var terrain := world.terrain
     var here := terrain.type_at(cell)
     var center := Vector2(cell) + Vector2(0.5, 0.5)
     match t.kind:
         ToolDefinition.Kind.DIG:
-            var m := level.bridge.member_at(_mouse_m, member_pick_radius)
+            var m := world.bridge.member_at(_mouse_m, member_pick_radius)
             if m:
                 GameState.gain(m.material.cost)
                 if m.blueprint:
-                    level.bridge.remove_member(m)
+                    world.bridge.remove_member(m)
                 else:
-                    level.bridge.break_member(m, true)
+                    world.bridge.break_member(m, true)
                 return
             if first:
                 _dig_marking = not terrain.is_marked(cell)
@@ -166,7 +170,7 @@ func _use(cell: Vector2i, first: bool) -> void:
                 terrain.set_type(cell, null)
             var block: FallingBlock = t.spawn_scene.instantiate()
             block.position = Grid.to_px(Vector2(cell))
-            level.objects.add_child(block)
+            world.objects.add_child(block)
             Audio.play(t.use_sound, block.position)
         ToolDefinition.Kind.CHARGE:
             if (here and here.blast_proof) or _charge_at(cell):
@@ -176,18 +180,18 @@ func _use(cell: Vector2i, first: bool) -> void:
                 return
             var charge: Charge = t.spawn_scene.instantiate()
             charge.position = Grid.to_px(Vector2(cell))
-            level.objects.add_child(charge)
+            world.objects.add_child(charge)
 
 
 func _falling_at(cell: Vector2i) -> bool:
-    for o in level.objects.get_children():
+    for o in world.objects.get_children():
         if o is FallingBlock and o.cell_x() == cell.x and absf(o.position.y / Grid.PX - cell.y) < 1.0:
             return true
     return false
 
 
 func _charge_at(cell: Vector2i) -> bool:
-    for o in level.objects.get_children():
+    for o in world.objects.get_children():
         if o is Charge and o.cell() == cell:
             return true
     return false
@@ -198,7 +202,7 @@ func _say(at_m: Vector2, text: String, color: Color) -> void:
 
 
 func _draw() -> void:
-    if level == null:
+    if world == null:
         return
     _draw_marks()
     if not enabled or not _hover or tool() == null:
@@ -213,10 +217,10 @@ func _draw() -> void:
             return
     var cell := Grid.cell_of(_mouse_m)
     var r := Rect2(Vector2(cell) * px, Vector2.ONE * px)
-    var here := level.terrain.type_at(cell)
+    var here := world.terrain.type_at(cell)
     var ok := true
     if t.kind == ToolDefinition.Kind.DIG:
-        var m := level.bridge.member_at(_mouse_m, member_pick_radius)
+        var m := world.bridge.member_at(_mouse_m, member_pick_radius)
         if m:
             draw_line(m.a.pos * px, m.b.pos * px, Color(ok_color, 0.5), 0.36 * px)
             return
@@ -236,18 +240,18 @@ func _draw() -> void:
 
 func _draw_marks() -> void:
     var px := Grid.PX
-    for cell in level.terrain.marked_cells():
+    for cell in world.terrain.marked_cells():
         var r := Rect2(Vector2(cell) * px, Vector2.ONE * px).grow(-3)
         draw_rect(r, mark_color, false, 2.0)
         draw_line(r.position, r.end, Color(mark_color, 0.5), 1.5)
-        var done := level.terrain.dig_progress(cell)
+        var done := world.terrain.dig_progress(cell)
         if done > 0.0:
             draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x * done, 4)), mark_color)
 
 
 func _draw_build(mat: BridgeMaterial) -> void:
     var px := Grid.PX
-    var bridge := level.bridge
+    var bridge := world.bridge
     if _build_from == null:
         var p := bridge.snap_point(_mouse_m)
         _marker(p)

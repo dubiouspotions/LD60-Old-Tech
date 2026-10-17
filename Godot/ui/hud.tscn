@@ -39,11 +39,13 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="TopBar" type="HBoxContainer" parent="Root/Margin/Column"]
+unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 22
 
 [node name="Title" type="Label" parent="Root/Margin/Column/TopBar"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Heading"
 theme_override_font_sizes/font_size = 26
@@ -135,6 +137,7 @@ size_flags_vertical = 3
 mouse_filter = 2
 
 [node name="Rack" type="HBoxContainer" parent="Root/Margin/Column"]
+unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
@@ -180,6 +183,79 @@ tooltip_text = "Follow the column (C)"
 toggle_mode = true
 button_pressed = true
 text = "Follow"
+
+[node name="SoundButton" type="Button" parent="Root/Margin/Column/Rack"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Music and sound volume"
+toggle_mode = true
+text = "Sound"
+
+[node name="SoundPanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -316.0
+offset_top = -196.0
+offset_right = -16.0
+offset_bottom = -68.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="Rows" type="VBoxContainer" parent="Root/SoundPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Root/SoundPanel/Rows"]
+layout_mode = 2
+theme_type_variation = &"Display"
+text = "Volume"
+
+[node name="Music" type="HBoxContainer" parent="Root/SoundPanel/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/SoundPanel/Rows/Music"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "Music"
+
+[node name="MusicSlider" type="HSlider" parent="Root/SoundPanel/Rows/Music"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+focus_mode = 0
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="Sound" type="HBoxContainer" parent="Root/SoundPanel/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/SoundPanel/Rows/Sound"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "Sound"
+
+[node name="SoundSlider" type="HSlider" parent="Root/SoundPanel/Rows/Sound"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+focus_mode = 0
+max_value = 1.0
+step = 0.01
+value = 1.0
 
 [node name="PausedTag" type="Label" parent="Root"]
 unique_name_in_owner = true
@@ -290,7 +366,7 @@ text = "[ul][b]Dig[/b] marks soft earth (+1 earth), trees (trunk → logs, leave
 [b]Fill[/b] drops a block of earth that falls until it lands.
 [b]Log[/b], [b]Support[/b] and [b]Rope[/b]: drag from point to point to plan a member, then press [b]Build[/b] (Enter): the engineers build it piece by piece from the ground outward on scaffolding, and strike the scaffolding when done. Ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down. Joints are hinges, so build triangles or hang the deck from ropes. Logs take push and pull up to 5 m long and can be walked on; supports are logs nobody walks on; ropes only pull, up to 12 m. Members glow red as they near breaking, and each soldier adds 80 kg.
 [b]Charge[/b] blasts rock, brick and bridges within 2.6 m, your own soldiers included.
-The column waits at the start of each level until the king loses patience; press [b]March[/b] (M) to set off earlier. Plan while paused (Space), build, then resume to load the bridge. Pan with right-drag, the wheel, A/D, or the Pan tool. F toggles speed, C follows the column.[/ul]"
+At the start of each level the column camps for the night: the soldiers sleep, the archers rest and your engineers keep working until the king loses patience; press [b]March[/b] (M) to break camp earlier. Plan while paused (Space), build, then resume to load the bridge. Pan with right-drag, the wheel, A/D, or the Pan tool. F toggles speed, C follows the column.[/ul]"
 fit_content = true
 
 [node name="Buttons" type="HBoxContainer" parent="Root/Intro/Center/Card/Rows"]

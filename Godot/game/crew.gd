@@ -390,6 +390,6 @@ func _show(e: Engineer, moving: bool, facing: int) -> void:
 	e.node.pos = e.pos
 	e.node.moving = moving
 	e.node.speed = rules.walk_speed if e.at == null else rules.climb_speed
-	e.node.sync()
 	if facing != 0:
-		e.node.scale.x = facing
+		e.node.facing = facing
+	e.node.sync()

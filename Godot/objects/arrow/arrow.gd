@@ -29,8 +29,8 @@ func _physics_process(dt: float) -> void:
 		if _stuck < 0.0:
 			queue_free()
 		return
-	var level := Level.of(self)
-	if level == null:
+	var world := World.of(self)
+	if world == null:
 		return
 	_age += dt
 	position += velocity * dt * Grid.PX
@@ -39,15 +39,15 @@ func _physics_process(dt: float) -> void:
 	var p := Grid.to_m(position)
 	var cell := Grid.cell_of(p)
 	var own_tower := _age < 0.12 and absi(cell.x - shooter_column) <= 1
-	if not own_tower and level.terrain.is_solid(cell):
+	if not own_tower and world.terrain.is_solid(cell):
 		_stuck = stuck_time
 		return
 	if _age > max_flight:
 		queue_free()
 		return
-	for s in level.army.soldiers:
+	for s in world.army.soldiers:
 		if absf(s.pos.x - p.x) < soldier_half_width and p.y > s.pos.y - 1.0 and p.y < s.pos.y:
 			Audio.play(hit_sound, position)
-			level.army.hit(s, kill_text)
+			world.army.hit(s, kill_text)
 			queue_free()
 			return

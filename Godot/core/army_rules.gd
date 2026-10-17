@@ -26,6 +26,13 @@ extends Resource
 ## Soldiers higher than this apart do not queue behind each other.
 @export_range(0.1, 5.0, 0.1, "suffix:m") var queue_height: float = 1.5
 
+@export_group("Camp")
+## Gap between soldiers as they gather at camp, so the sleepers do not pile up.
+@export_range(0.1, 5.0, 0.05, "suffix:m") var camp_spacing: float = 1.3
+## Seconds a soldier stands at camp before lying down.
+@export_range(0.0, 10.0, 0.1, "suffix:s") var settle_time: float = 0.6
+@export var camp_text: String = "Making camp"
+
 @export_group("Melee")
 ## A soldier fights an enemy (archer) whose feet are at most this far ahead and about level with its own.
 @export_range(0.1, 3.0, 0.05, "suffix:m") var melee_reach: float = 0.9
