@@ -391,3 +391,10 @@ func test_loose_frame_settles_with_steady_forces() -> void:
 			hi[m] = maxf(hi.get(m, -INF), m.force)
 	for m: Bridge.Member in b.members:
 		assert_lt(hi[m] - lo[m], 20.0, "%s force holds steady at rest" % m.material.display_name)
+
+
+func test_supports_let_arrows_through() -> void:
+	var t := WorldFixture.terrain(self, CRANE)
+	var b := WorldFixture.bridge(self, t)
+	b.build(b.snap_point(Vector2(4, 1)), b.snap_point(Vector2(4, 4)), SUPPORT)
+	assert_null(b.arrow_block(Vector2(2, 2.5), Vector2(6, 2.5)), "arrows fly past supports")

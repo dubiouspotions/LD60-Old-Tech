@@ -18,7 +18,7 @@ extends Resource
 @export var tension_only: bool = false
 ## New members may start or end anywhere along it, not only at its joints (logs yes, ropes no).
 @export var attach_along: bool = true
-## Stops arrows once built (logs do, ropes do not).
+## Stops arrows once built (bridges do; supports and ropes do not).
 @export var blocks_arrows: bool = true
 ## Soldiers can walk on top of it.
 @export var walkable: bool = true
