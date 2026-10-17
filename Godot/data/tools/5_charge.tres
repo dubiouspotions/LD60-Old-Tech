@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ToolDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/supplies.gd" id="1_x614n"]
+[ext_resource type="Script" path="res://core/tool_definition.gd" id="2_kvjmm"]
+[ext_resource type="PackedScene" path="res://objects/charge/charge.tscn" id="3_8j7bs"]
+
+[sub_resource type="Resource" id="Resource_lb0tf"]
+script = ExtResource("1_x614n")
+powder = 1
+
+[resource]
+script = ExtResource("2_kvjmm")
+kind = 3
+display_name = "Charge"
+hint = "1 powder · r 2.6"
+action = &"tool_charge"
+key_label = "5"
+cost = SubResource("Resource_lb0tf")
+no_supply_text = "No powder. Mine crystals"
+spawn_scene = ExtResource("3_8j7bs")

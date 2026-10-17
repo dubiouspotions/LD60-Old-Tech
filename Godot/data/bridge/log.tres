@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BridgeMaterial" format=3]
+
+[ext_resource type="Resource" path="res://data/sounds/member_snap.tres" id="1_ue7ld"]
+[ext_resource type="Script" path="res://core/supplies.gd" id="2_qvngx"]
+[ext_resource type="Resource" path="res://data/sounds/log_place.tres" id="3_u0lpy"]
+[ext_resource type="Script" path="res://core/bridge_material.gd" id="4_am5kb"]
+
+[sub_resource type="Resource" id="Resource_ipm0b"]
+script = ExtResource("2_qvngx")
+logs = 1
+
+[resource]
+script = ExtResource("4_am5kb")
+cost = SubResource("Resource_ipm0b")
+place_sound = ExtResource("3_u0lpy")
+break_sound = ExtResource("1_ue7ld")

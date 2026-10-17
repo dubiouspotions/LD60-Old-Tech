@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="SoundEffect" format=3]
+
+[ext_resource type="Script" path="res://core/sound_effect.gd" id="1_6onpo"]
+[ext_resource type="AudioStream" path="res://audio/sfx/tower_down.wav" id="2_414tw"]
+
+[resource]
+script = ExtResource("1_6onpo")
+streams = Array[AudioStream]([ExtResource("2_414tw")])
+volume_db = -4.0

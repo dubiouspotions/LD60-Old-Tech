@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TerrainType" format=3]
+
+[ext_resource type="Script" path="res://core/supplies.gd" id="1_nu3ba"]
+[ext_resource type="Script" path="res://core/terrain_type.gd" id="2_t7f37"]
+
+[sub_resource type="Resource" id="Resource_r6hm7"]
+script = ExtResource("1_nu3ba")
+earth = 1
+
+[resource]
+script = ExtResource("2_t7f37")
+display_name = "Brick"
+anchor = false
+structure = true
+too_hard_text = "Too hard. Use a charge"
+bulk_yield = SubResource("Resource_r6hm7")
+bulk_tiles_per_yield = 3
+debris_color = Color(0.5803922, 0.27450982, 0.22745098, 1)

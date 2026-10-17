@@ -1,0 +1,11 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/army.gd" id="1"]
+[ext_resource type="Resource" path="res://data/army_rules.tres" id="2"]
+[ext_resource type="PackedScene" path="res://objects/soldier/soldier.tscn" id="3"]
+
+[node name="Army" type="Node2D"]
+z_index = 2
+script = ExtResource("1")
+rules = ExtResource("2")
+soldier_scene = ExtResource("3")

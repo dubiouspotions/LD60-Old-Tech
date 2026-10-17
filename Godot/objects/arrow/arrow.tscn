@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://objects/arrow/arrow.gd" id="1"]
+[ext_resource type="Resource" path="res://data/sounds/arrow_hit.tres" id="2"]
+
+[node name="Arrow" type="Node2D"]
+z_index = 3
+script = ExtResource("1")
+hit_sound = ExtResource("2")
+
+[node name="Shaft" type="Line2D" parent="."]
+points = PackedVector2Array(0.00, 0.00, -14.40, 0.00)
+width = 1.9
+default_color = Color(0.165, 0.102, 0.063, 1)

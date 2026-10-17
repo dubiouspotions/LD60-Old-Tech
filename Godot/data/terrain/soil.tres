@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="TerrainType" format=3]
+
+[ext_resource type="Script" path="res://core/supplies.gd" id="1_oup2l"]
+[ext_resource type="Resource" path="res://data/sounds/dig.tres" id="2_a757o"]
+[ext_resource type="Script" path="res://core/terrain_type.gd" id="3_nsu85"]
+
+[sub_resource type="Resource" id="Resource_4ir41"]
+script = ExtResource("1_oup2l")
+earth = 1
+
+[sub_resource type="Resource" id="Resource_bp276"]
+script = ExtResource("1_oup2l")
+earth = 1
+
+[resource]
+script = ExtResource("3_nsu85")
+display_name = "Soil"
+dig_action = 1
+dig_yield = SubResource("Resource_bp276")
+dig_sound = ExtResource("2_a757o")
+bulk_yield = SubResource("Resource_4ir41")
+bulk_tiles_per_yield = 2

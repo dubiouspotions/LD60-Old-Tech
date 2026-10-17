@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SoundEffect" format=3]
+
+[ext_resource type="Script" path="res://core/sound_effect.gd" id="1_rnifk"]
+[ext_resource type="AudioStream" path="res://audio/sfx/checkpoint.wav" id="2_6fhjg"]
+
+[resource]
+script = ExtResource("1_rnifk")
+streams = Array[AudioStream]([ExtResource("2_6fhjg")])
+volume_db = -2.0
+pitch_variation = 0.0

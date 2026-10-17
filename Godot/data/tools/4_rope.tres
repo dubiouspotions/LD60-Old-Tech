@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ToolDefinition" format=3]
+
+[ext_resource type="Resource" path="res://data/bridge/rope.tres" id="1_a1eik"]
+[ext_resource type="Script" path="res://core/tool_definition.gd" id="2_koevw"]
+
+[resource]
+script = ExtResource("2_koevw")
+kind = 2
+display_name = "Rope"
+hint = "1 rope · ≤ 12 m · pull only"
+action = &"tool_rope"
+key_label = "4"
+bridge_material = ExtResource("1_a1eik")

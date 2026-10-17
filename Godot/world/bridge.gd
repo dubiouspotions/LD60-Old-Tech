@@ -1,0 +1,395 @@
+class_name Bridge
+extends Node2D
+## The player's truss: joints are hinges, members are logs (push + pull) or ropes (pull only).
+## Simulated with XPBD (small-steps variant, one iteration per substep). SI units: m, kg, s, N.
+## Joints touching solid ground are bolted down.
+
+signal member_built(member: Member)
+signal member_broken(member: Member, text: String)
+
+
+class Joint:
+	var pos: Vector2
+	var prev: Vector2
+	var pinned: bool = false
+	var mass: float = 0.0
+	var load: float = 0.0
+	var inv_mass: float = 0.0
+	var degree: int = 0
+
+
+class Member:
+	var a: Joint
+	var b: Joint
+	var length: float
+	var material: BridgeMaterial
+	var mass: float
+	## Smoothed axial force in N, tension positive.
+	var force: float = 0.0
+	var _acc: float = 0.0
+	var dead: bool = false
+
+	func stress() -> float:
+		return absf(force) / material.break_force
+
+
+## A candidate end point for a new member.
+class Snap:
+	var pos: Vector2
+	var node: Joint
+	var anchor: bool
+
+	func _init(p_pos: Vector2, p_node: Joint, p_anchor: bool) -> void:
+		pos = p_pos
+		node = p_node
+		anchor = p_anchor
+
+
+@export_group("Physics")
+@export var gravity: float = 9.81
+@export_range(1, 40) var substeps: int = 10
+## Velocity kept per substep (numerical damping).
+@export var damping: float = 0.9995
+## Upward push in buoyant terrain, in multiples of gravity (wood ~600 kg/m³ floats).
+@export var buoyancy: float = 1.6
+@export var water_drag: float = 0.97
+## Smoothing of member force before the break test, per tick. Filters single-substep spikes.
+@export_range(0.01, 1.0) var force_smoothing: float = 0.2
+## Ground friction: fraction of velocity kept when a joint touches ground.
+@export_range(0.0, 1.0) var ground_friction: float = 0.3
+
+@export_group("Building")
+## Walking surface sits this far above the member line (log radius).
+@export var deck_offset: float = 0.14
+## Rise/run above which a member is not walkable.
+@export var max_walk_slope: float = 1.2
+@export var max_members: int = 260
+@export var snap_radius: float = 0.4
+@export var grid_step: float = 0.5
+@export var min_length: float = 0.45
+
+@export_group("Blast")
+## Joints within blast radius × this are pushed away.
+@export var blast_push_range: float = 2.0
+@export var blast_push: float = 0.12
+
+@export_group("Messages")
+@export var need_anchor_text: String = "Start on ground or a joint"
+@export var already_joined_text: String = "Already joined"
+@export var through_ground_text: String = "Runs through ground"
+@export var too_many_text: String = "Too many members"
+@export var too_long_text: String = "%.1f m · max %.0f m"
+@export var length_text: String = "%.1f m"
+
+@export_group("Look")
+@export var joint_color: Color = Color("3a2a1a")
+@export var bolt_color: Color = Color("2b2f36")
+@export var bolt_head_color: Color = Color("9aa6b4")
+@export var highlight_color: Color = Color(1, 0.92, 0.78, 0.25)
+
+var terrain: Terrain
+var nodes: Array[Joint] = []
+var members: Array[Member] = []
+
+
+func _process(_delta: float) -> void:
+	queue_redraw()
+
+
+func anchorable(p: Vector2) -> bool:
+	if terrain == null:
+		return false
+	var xs := [roundi(p.x) - 1, roundi(p.x)] if _on_grid(p.x) else [floori(p.x)]
+	var ys := [roundi(p.y) - 1, roundi(p.y)] if _on_grid(p.y) else [floori(p.y)]
+	for x: int in xs:
+		for y: int in ys:
+			if terrain.is_solid(Vector2i(x, y)):
+				return true
+	return false
+
+
+func snap_point(p: Vector2, exclude: Joint = null) -> Snap:
+	var best: Joint = null
+	var bd := snap_radius
+	for n in nodes:
+		if n == exclude:
+			continue
+		var d := n.pos.distance_to(p)
+		if d < bd:
+			bd = d
+			best = n
+	if best:
+		return Snap.new(best.pos, best, best.pinned)
+	var g := (p / grid_step).round() * grid_step
+	return Snap.new(g, null, anchorable(g))
+
+
+## {ok: bool, msg: String, length: float}
+func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> Dictionary:
+	var length := a.pos.distance_to(b.pos)
+	var r := {ok = false, msg = "", length = length}
+	if length < min_length:
+		return r
+	if length > mat.max_length + 1e-6:
+		r.msg = too_long_text % [length, mat.max_length]
+		return r
+	if not a.node and not a.anchor and not b.node and not b.anchor:
+		r.msg = need_anchor_text
+		return r
+	if a.node and b.node and _joined(a.node, b.node):
+		r.msg = already_joined_text
+		return r
+	if _through_ground(a.pos, b.pos):
+		r.msg = through_ground_text
+		return r
+	if members.size() >= max_members:
+		r.msg = too_many_text
+		return r
+	if supplies and not supplies.can_afford(mat.cost):
+		r.msg = mat.no_supply_text
+		return r
+	r.ok = true
+	r.msg = length_text % length
+	return r
+
+
+## Adds the member without any cost or validity check (see check_build).
+func build(a: Snap, b: Snap, mat: BridgeMaterial) -> Member:
+	var m := Member.new()
+	m.a = a.node if a.node else _add_joint(a.pos)
+	m.b = b.node if b.node else _add_joint(b.pos)
+	m.length = a.pos.distance_to(b.pos)
+	m.material = mat
+	m.mass = m.length * mat.kg_per_m
+	members.append(m)
+	_recompute_mass()
+	Audio.play(mat.place_sound, Grid.to_px((m.a.pos + m.b.pos) / 2))
+	member_built.emit(m)
+	return m
+
+
+func member_at(p: Vector2, radius: float) -> Member:
+	var best: Member = null
+	var bd := radius
+	for m in members:
+		var d := _seg_dist(p, m.a.pos, m.b.pos)
+		if d < bd:
+			bd = d
+			best = m
+	return best
+
+
+func remove_member(m: Member) -> void:
+	m.dead = true
+	members.erase(m)
+	_recompute_mass()
+
+
+## Breaks a member with debris. quiet skips the message (blasts, player removal).
+func break_member(m: Member, quiet: bool = false) -> void:
+	var mid := (m.a.pos + m.b.pos) / 2
+	var text := ""
+	if not quiet:
+		text = m.material.snapped_text if m.force > 0 or m.material.buckled_text.is_empty() else m.material.buckled_text
+		Audio.play(m.material.break_sound, Grid.to_px(mid))
+	Effects.debris(Grid.to_px(mid), m.material.color, 4 if m.material.draw_as_rope else 9, 140.0)
+	remove_member(m)
+	member_broken.emit(m, text)
+
+
+## Breaks members within radius and pushes nearby joints away.
+func blast(center: Vector2, radius: float) -> void:
+	for m in members.duplicate():
+		if _seg_dist(center, m.a.pos, m.b.pos) < radius:
+			break_member(m, true)
+	var reach := radius * blast_push_range
+	for n in nodes:
+		var d := n.pos.distance_to(center)
+		if d < reach and d > 0.01:
+			n.prev -= (n.pos - center) / d * blast_push * (1.0 - d / reach)
+
+
+## Highest walkable deck at x that is at or below y_from. {y, member, t} or {} if none.
+func walk_surface(x: float, y_from: float) -> Dictionary:
+	var best := {}
+	for m in members:
+		if not m.material.walkable:
+			continue
+		var a := m.a.pos
+		var b := m.b.pos
+		var run := b.x - a.x
+		if absf(run) < 0.2 or x < minf(a.x, b.x) or x > maxf(a.x, b.x):
+			continue
+		if absf((b.y - a.y) / run) > max_walk_slope:
+			continue
+		var t := (x - a.x) / run
+		var y := a.y + (b.y - a.y) * t - deck_offset
+		if y >= y_from - 1e-6 and (best.is_empty() or y < best.y):
+			best = {y = y, member = m, t = t}
+	return best
+
+
+## Advances the truss by dt. loads: [[member, t along member, kg], ...] from soldiers standing on it.
+func step(dt: float, loads: Array = []) -> void:
+	if members.is_empty():
+		return
+	for n in nodes:
+		n.load = 0.0
+		if n.pinned and not anchorable(n.pos):
+			n.pinned = false
+	for l: Array in loads:
+		var m: Member = l[0]
+		if m.dead:
+			continue
+		m.a.load += l[2] * (1.0 - l[1])
+		m.b.load += l[2] * l[1]
+	for n in nodes:
+		n.inv_mass = 0.0 if n.pinned else 1.0 / (n.mass + n.load)
+	for m in members:
+		m._acc = 0.0
+	var h := dt / substeps
+	var h2 := h * h
+	for s in substeps:
+		for n in nodes:
+			if n.pinned:
+				continue
+			var v := (n.pos - n.prev) * damping
+			var ay := gravity
+			var t := terrain.type_at(Grid.cell_of(n.pos)) if terrain else null
+			if t and t.buoyant:
+				ay -= gravity * buoyancy
+				v *= water_drag
+			n.prev = n.pos
+			n.pos += v + Vector2(0, ay * h2)
+		for m in members:
+			var w := m.a.inv_mass + m.b.inv_mass
+			if w == 0.0:
+				continue
+			var d := m.b.pos - m.a.pos
+			var dist := maxf(d.length(), 1e-6)
+			var c := dist - m.length
+			if m.material.tension_only and c <= 0.0:
+				continue
+			var dl := -c / (w + m.material.compliance / h2)
+			var dir := d / dist
+			m.a.pos -= dir * (m.a.inv_mass * dl)
+			m.b.pos += dir * (m.b.inv_mass * dl)
+			m._acc -= dl / h2
+		for n in nodes:
+			if not n.pinned:
+				_collide(n)
+	var broken: Array[Member] = []
+	for m in members:
+		m.force += (m._acc / substeps - m.force) * force_smoothing
+		if absf(m.force) > m.material.break_force:
+			broken.append(m)
+	for m in broken:
+		break_member(m)
+	var bottom := (terrain.size.y + 2) if terrain else 1000
+	for m in members.duplicate():
+		if m.a.pos.y > bottom or m.b.pos.y > bottom:
+			remove_member(m)
+
+
+func clear() -> void:
+	members.clear()
+	nodes.clear()
+
+
+func _draw() -> void:
+	var px := Grid.PX
+	for m in members:
+		var a := m.a.pos * px
+		var b := m.b.pos * px
+		var mat := m.material
+		var hot := mat.color.lerp(mat.hot_color, clampf((m.stress() - 0.3) / 0.7, 0.0, 1.0))
+		if mat.draw_as_rope:
+			var dist := m.a.pos.distance_to(m.b.pos)
+			var sag := sqrt(m.length * m.length - dist * dist) * 0.5 if m.length > dist else 0.0
+			var ctrl := (a + b) / 2 + Vector2(0, sag * px)
+			var pts := PackedVector2Array()
+			for i in 13:
+				var t := i / 12.0
+				pts.append(a.lerp(ctrl, t).lerp(ctrl.lerp(b, t), t))
+			draw_polyline(pts, hot if m.stress() > 0.3 else mat.color, maxf(1.5, mat.thickness * px), true)
+		else:
+			draw_line(a, b, mat.edge_color, mat.thickness * 1.5 * px)
+			draw_line(a, b, hot, mat.thickness * px)
+			draw_line(a - Vector2(0, 0.05 * px), b - Vector2(0, 0.05 * px), highlight_color, maxf(1.0, 0.04 * px))
+			draw_circle(a, mat.thickness * 0.75 * px, mat.edge_color)
+			draw_circle(b, mat.thickness * 0.75 * px, mat.edge_color)
+	for n in nodes:
+		var p := n.pos * px
+		if n.pinned:
+			draw_rect(Rect2(p - Vector2.ONE * 0.15 * px, Vector2.ONE * 0.3 * px), bolt_color)
+			draw_rect(Rect2(p - Vector2.ONE * 0.04 * px, Vector2.ONE * 0.08 * px), bolt_head_color)
+		else:
+			draw_circle(p, 0.11 * px, joint_color)
+
+
+func _add_joint(p: Vector2) -> Joint:
+	var n := Joint.new()
+	n.pos = p
+	n.prev = p
+	n.pinned = anchorable(p)
+	nodes.append(n)
+	return n
+
+
+func _recompute_mass() -> void:
+	for n in nodes:
+		n.mass = 0.0
+		n.degree = 0
+	for m in members:
+		m.a.mass += m.mass / 2
+		m.b.mass += m.mass / 2
+		m.a.degree += 1
+		m.b.degree += 1
+	nodes = nodes.filter(func(n: Joint) -> bool: return n.degree > 0)
+
+
+func _joined(a: Joint, b: Joint) -> bool:
+	for m in members:
+		if (m.a == a and m.b == b) or (m.a == b and m.b == a):
+			return true
+	return false
+
+
+func _through_ground(a: Vector2, b: Vector2) -> bool:
+	for i in range(1, 12):
+		var p := a.lerp(b, i / 12.0)
+		if terrain.is_solid(Vector2i(floori(p.x + 0.02), floori(p.y - 0.02))) \
+				and terrain.is_solid(Vector2i(floori(p.x - 0.02), floori(p.y - 0.02))):
+			return true
+	return false
+
+
+func _collide(n: Joint) -> void:
+	var c := Grid.cell_of(n.pos)
+	if not terrain.is_solid(c):
+		return
+	var f := n.pos - Vector2(c)
+	var e := 0.01
+	var best := Vector2(n.pos.x, c.y - e)
+	var bd := 9.0
+	if not terrain.is_solid(c + Vector2i.UP) and f.y < bd:
+		bd = f.y
+		best = Vector2(n.pos.x, c.y - e)
+	if not terrain.is_solid(c + Vector2i.LEFT) and f.x < bd:
+		bd = f.x
+		best = Vector2(c.x - e, n.pos.y)
+	if not terrain.is_solid(c + Vector2i.RIGHT) and 1.0 - f.x < bd:
+		bd = 1.0 - f.x
+		best = Vector2(c.x + 1 + e, n.pos.y)
+	if not terrain.is_solid(c + Vector2i.DOWN) and 1.0 - f.y < bd:
+		best = Vector2(n.pos.x, c.y + 1 + e)
+	n.pos = best
+	n.prev = n.pos - (n.pos - n.prev) * ground_friction
+
+
+static func _on_grid(v: float) -> bool:
+	return absf(v - roundf(v)) < 1e-6
+
+
+static func _seg_dist(p: Vector2, a: Vector2, b: Vector2) -> float:
+	return p.distance_to(Geometry2D.get_closest_point_to_segment(p, a, b))

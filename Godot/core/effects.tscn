@@ -1,0 +1,10 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://core/effects.gd" id="1"]
+[ext_resource type="PackedScene" path="res://objects/effects/debris.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://objects/effects/floating_text.tscn" id="3"]
+
+[node name="Effects" type="Node2D"]
+script = ExtResource("1")
+debris_scene = ExtResource("2")
+text_scene = ExtResource("3")

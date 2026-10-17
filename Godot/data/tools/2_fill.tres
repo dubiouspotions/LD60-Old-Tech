@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ToolDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/supplies.gd" id="1_s1dbg"]
+[ext_resource type="Script" path="res://core/tool_definition.gd" id="2_m0onc"]
+[ext_resource type="PackedScene" path="res://objects/falling_block/falling_block.tscn" id="3_ul00j"]
+
+[sub_resource type="Resource" id="Resource_bg4tf"]
+script = ExtResource("1_s1dbg")
+earth = 1
+
+[resource]
+script = ExtResource("2_m0onc")
+kind = 1
+display_name = "Fill"
+hint = "1 earth · falls"
+action = &"tool_fill"
+key_label = "2"
+repeat_interval = 0.11
+cost = SubResource("Resource_bg4tf")
+no_supply_text = "No earth. Dig some"
+spawn_scene = ExtResource("3_ul00j")

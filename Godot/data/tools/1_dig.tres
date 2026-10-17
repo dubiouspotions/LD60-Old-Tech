@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ToolDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/tool_definition.gd" id="1_cv8fe"]
+
+[resource]
+script = ExtResource("1_cv8fe")
+hint = "earth · trees · undo"
+action = &"tool_dig"
+key_label = "1"
+repeat_interval = 0.06

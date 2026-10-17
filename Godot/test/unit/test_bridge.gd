@@ -1,0 +1,129 @@
+extends GutTest
+
+const LOG := preload("res://data/bridge/log.tres")
+const ROPE := preload("res://data/bridge/rope.tres")
+
+## Rock ceiling at row 0, rock wall in column 0, open air in between.
+const CRANE: Array = [
+	"RRRRRRRR",
+	"R.......",
+	"R.......",
+	"R.......",
+	"R.......",
+	"R.......",
+	"R.......",
+	"BBBBBBBB",
+]
+
+const CHASM: Array = [
+	"..........",
+	"..........",
+	"###....###",
+	"###....###",
+	"###....###",
+	"BBBBBBBBBB",
+]
+
+
+func _run(b: Bridge, seconds: float, loads: Array = []) -> void:
+	for i in int(seconds * 60):
+		b.step(1.0 / 60.0, loads)
+
+
+func test_anchorable_only_touching_ground() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	assert_true(b.anchorable(Vector2(3, 2)), "corner of ground")
+	assert_false(b.anchorable(Vector2(5, 1)), "mid air")
+
+
+func test_check_build_rejects() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var plenty := Supplies.make(9, 9, 9, 9)
+	assert_false(b.check_build(b.snap_point(Vector2(1, 2)), b.snap_point(Vector2(8, 2)), LOG, plenty).ok, "too long")
+	assert_false(b.check_build(b.snap_point(Vector2(5, 0)), b.snap_point(Vector2(6, 0)), LOG, plenty).ok, "floating")
+	assert_false(b.check_build(b.snap_point(Vector2(1, 2)), b.snap_point(Vector2(1, 5)), LOG, plenty).ok, "through ground")
+	assert_false(b.check_build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, Supplies.new()).ok, "no logs")
+	assert_true(b.check_build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, plenty).ok)
+
+
+func test_snap_to_half_metre_and_existing_joint() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var p := b.snap_point(Vector2(4.3, 1.1))
+	assert_eq(p.pos, Vector2(4.5, 1.0))
+	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 1)), LOG)
+	assert_not_null(b.snap_point(Vector2(5.2, 1.1)).node, "snaps to the joint")
+
+
+func test_log_across_chasm_holds() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	_run(b, 2.0)
+	assert_eq(b.members.size(), 1)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.05)
+
+
+func test_hinged_log_swings_down() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(6, 2)), LOG)
+	_run(b, 0.5)
+	assert_gt(m.b.pos.y, 2.5, "free end falls")
+
+
+func test_rope_crane_holds_soldier() -> void:
+	var t := WorldFixture.terrain(self, CRANE)
+	var b := WorldFixture.bridge(self, t)
+	var arm := b.build(b.snap_point(Vector2(1, 5)), b.snap_point(Vector2(5, 5)), LOG)
+	b.build(b.snap_point(Vector2(5, 1)), b.snap_point(Vector2(5, 5)), ROPE)
+	_run(b, 2.0, [[arm, 1.0, 80.0]])
+	assert_eq(b.members.size(), 2)
+
+
+func test_rope_crane_snaps_when_overloaded() -> void:
+	var t := WorldFixture.terrain(self, CRANE)
+	var b := WorldFixture.bridge(self, t)
+	var arm := b.build(b.snap_point(Vector2(1, 5)), b.snap_point(Vector2(5, 5)), LOG)
+	var rope := b.build(b.snap_point(Vector2(5, 1)), b.snap_point(Vector2(5, 5)), ROPE)
+	watch_signals(b)
+	_run(b, 2.0, [[arm, 1.0, 2000.0]])
+	assert_false(rope in b.members, "rope broke")
+	assert_signal_emitted(b, "member_broken")
+
+
+func test_rope_never_pushes() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(6, 2)), ROPE)
+	_run(b, 1.0)
+	assert_lt(m.b.pos.distance_to(m.a.pos), m.length + 0.01)
+	assert_gt(m.b.pos.y, 2.5, "rope end hangs")
+
+
+func test_walk_surface_on_log() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	var s: Dictionary = b.walk_surface(5.0, 0.0)
+	assert_eq(s.member, m)
+	assert_almost_eq(s.y, 2.0 - b.deck_offset, 0.01)
+
+
+func test_remove_member_drops_orphan_nodes() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	b.remove_member(m)
+	assert_eq(b.members.size(), 0)
+	assert_eq(b.nodes.size(), 0)
+
+
+func test_blast_breaks_members_in_radius() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	b.blast(Vector2(5, 2.5), 2.6)
+	assert_eq(b.members.size(), 0)

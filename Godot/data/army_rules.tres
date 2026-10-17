@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArmyRules" format=3]
+
+[ext_resource type="Resource" path="res://data/sounds/soldier_death.tres" id="1_nkii1"]
+[ext_resource type="Resource" path="res://data/sounds/soldier_hurt.tres" id="2_epn7y"]
+[ext_resource type="Script" path="res://core/army_rules.gd" id="3_16x7n"]
+
+[resource]
+script = ExtResource("3_16x7n")
+death_sound = ExtResource("1_nkii1")
+hurt_sound = ExtResource("2_epn7y")

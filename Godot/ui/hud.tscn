@@ -1,0 +1,397 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://ui/hud.gd" id="1"]
+[ext_resource type="PackedScene" path="res://ui/tool_button.tscn" id="2"]
+[ext_resource type="Theme" path="res://ui/theme.tres" id="3"]
+[ext_resource type="PackedScene" path="res://ui/readout.tscn" id="4"]
+[ext_resource type="Resource" path="res://data/sounds/ui_click.tres" id="5"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1")
+tool_button_scene = ExtResource("2")
+click_sound = ExtResource("5")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("3")
+
+[node name="Margin" type="MarginContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 10
+
+[node name="Column" type="VBoxContainer" parent="Root/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="TopBar" type="HBoxContainer" parent="Root/Margin/Column"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="Root/Margin/Column/TopBar"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+theme_override_font_sizes/font_size = 26
+text = "Sappers' March"
+
+[node name="Stats" type="HBoxContainer" parent="Root/Margin/Column/TopBar"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Level" parent="Root/Margin/Column/TopBar/Stats" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Level"
+
+[node name="Army" parent="Root/Margin/Column/TopBar/Stats" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Army"
+
+[node name="Marched" parent="Root/Margin/Column/TopBar/Stats" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Marched"
+
+[node name="Best" parent="Root/Margin/Column/TopBar/Stats" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Best"
+
+[node name="Supplies" type="HBoxContainer" parent="Root/Margin/Column/TopBar"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Earth" parent="Root/Margin/Column/TopBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Earth"
+swatch = Color(0.627, 0.439, 0.247, 1)
+
+[node name="Logs" parent="Root/Margin/Column/TopBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Logs"
+swatch = Color(0.69, 0.478, 0.259, 1)
+
+[node name="Rope" parent="Root/Margin/Column/TopBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Rope"
+swatch = Color(0.851, 0.765, 0.561, 1)
+
+[node name="Powder" parent="Root/Margin/Column/TopBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Powder"
+swatch = Color(0.561, 0.941, 0.878, 1)
+
+[node name="Spacer" type="Control" parent="Root/Margin/Column/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="StatusPanel" type="PanelContainer" parent="Root/Margin/Column/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"StatusPanel"
+
+[node name="Status" type="Label" parent="Root/Margin/Column/TopBar/StatusPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Display"
+theme_override_font_sizes/font_size = 20
+text = "Awaiting orders"
+
+[node name="Field" type="Control" parent="Root/Margin/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Rack" type="HBoxContainer" parent="Root/Margin/Column"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Tools" type="HBoxContainer" parent="Root/Margin/Column/Rack"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Spacer" type="Control" parent="Root/Margin/Column/Rack"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="PauseButton" type="Button" parent="Root/Margin/Column/Rack"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Pause / resume (Space)"
+text = "Pause"
+
+[node name="SpeedButton" type="Button" parent="Root/Margin/Column/Rack"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Toggle speed (F)"
+text = "Speed 1×"
+
+[node name="FollowButton" type="Button" parent="Root/Margin/Column/Rack"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Follow the column (C)"
+toggle_mode = true
+button_pressed = true
+text = "Follow"
+
+[node name="PausedTag" type="Label" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.0
+offset_top = 64.0
+offset_right = 80.0
+offset_bottom = 96.0
+grow_horizontal = 2
+theme_type_variation = &"Heading"
+theme_override_font_sizes/font_size = 24
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="Banner" type="VBoxContainer" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.22
+anchor_right = 0.5
+anchor_bottom = 0.22
+offset_left = -300.0
+offset_right = 300.0
+offset_bottom = 110.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="BannerTitle" type="Label" parent="Root/Banner"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Heading"
+theme_override_colors/font_outline_color = Color(0.0902, 0.1255, 0.1686, 0.7)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 64
+text = "Level 2"
+horizontal_alignment = 1
+
+[node name="BannerSub" type="Label" parent="Root/Banner"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0.0902, 0.1255, 0.1686, 0.7)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+text = "Checkpoint"
+horizontal_alignment = 1
+
+[node name="LeadMarker" type="Label" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 30.0
+theme_override_colors/font_color = Color(0.302, 0.545, 0.941, 1)
+theme_override_font_sizes/font_size = 24
+text = "▶"
+
+[node name="Intro" type="ColorRect" parent="Root"]
+unique_name_in_owner = true
+visible = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588, 0.0824, 0.1137, 0.62)
+
+[node name="Center" type="CenterContainer" parent="Root/Intro"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Root/Intro/Center"]
+custom_minimum_size = Vector2(540, 0)
+layout_mode = 2
+
+[node name="Rows" type="VBoxContainer" parent="Root/Intro/Center/Card"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Root/Intro/Center/Card/Rows"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+text = "Sappers' March"
+
+[node name="IntroText" type="Label" parent="Root/Intro/Center/Card/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(490, 0)
+layout_mode = 2
+text = "The column marches east on its own. It halts at anything it can't cross: walls over 1 m, drops over 3 m, water, spikes. You are the engineers above the field. Dig, fill, bridge and blast a way through before the towers thin the ranks."
+autowrap_mode = 3
+
+[node name="Rules" type="RichTextLabel" parent="Root/Intro/Center/Card/Rows"]
+custom_minimum_size = Vector2(490, 0)
+layout_mode = 2
+theme_override_colors/default_color = Color(0.6039, 0.651, 0.7059, 1)
+theme_override_font_sizes/normal_font_size = 13
+theme_override_font_sizes/bold_font_size = 13
+bbcode_enabled = true
+text = "[ul][b]Dig[/b] soft earth (+1 earth), fell trees (trunk → logs, leaves → rope), mine cyan crystals (+1 powder). Dig a bridge member to take it back.
+[b]Fill[/b] drops a block of earth that falls until it lands.
+[b]Log[/b] and [b]Rope[/b]: drag from point to point. Ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down. Joints are hinges, so build triangles or hang the deck from ropes. Logs take push and pull up to 5 m long; ropes only pull, up to 12 m. Members glow red as they near breaking, and each soldier adds 80 kg.
+[b]Charge[/b] blasts rock, brick and bridges within 2.6 m, your own soldiers included.
+Build while paused (Space), then resume to load the bridge. Pan with right-drag, the wheel, A/D, or the Pan tool. F toggles speed, C follows the column.[/ul]"
+fit_content = true
+
+[node name="Buttons" type="HBoxContainer" parent="Root/Intro/Center/Card/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BeginButton" type="Button" parent="Root/Intro/Center/Card/Rows/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Begin march"
+
+[node name="Lost" type="ColorRect" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588, 0.0824, 0.1137, 0.62)
+
+[node name="Center" type="CenterContainer" parent="Root/Lost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Root/Lost/Center"]
+custom_minimum_size = Vector2(540, 0)
+layout_mode = 2
+
+[node name="Rows" type="VBoxContainer" parent="Root/Lost/Center/Card"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Root/Lost/Center/Card/Rows"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+text = "The column has fallen"
+theme_override_colors/font_color = Color(0.851, 0.314, 0.247, 1)
+
+[node name="LostText" type="Label" parent="Root/Lost/Center/Card/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(490, 0)
+layout_mode = 2
+text = "Lost on level 1."
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Root/Lost/Center/Card/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RetryButton" type="Button" parent="Root/Lost/Center/Card/Rows/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Retry from checkpoint"
+
+[node name="NewWorldButton" type="Button" parent="Root/Lost/Center/Card/Rows/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Start over"
+
+[node name="Victory" type="ColorRect" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588, 0.0824, 0.1137, 0.62)
+
+[node name="Center" type="CenterContainer" parent="Root/Victory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Root/Victory/Center"]
+custom_minimum_size = Vector2(540, 0)
+layout_mode = 2
+
+[node name="Rows" type="VBoxContainer" parent="Root/Victory/Center/Card"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Root/Victory/Center/Card/Rows"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+text = "The march is won"
+
+[node name="VictoryText" type="Label" parent="Root/Victory/Center/Card/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(490, 0)
+layout_mode = 2
+text = "Every level crossed."
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Root/Victory/Center/Card/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AgainButton" type="Button" parent="Root/Victory/Center/Card/Rows/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "March again"

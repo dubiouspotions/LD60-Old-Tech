@@ -1,0 +1,13 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="TileSet" path="res://world/tileset.tres" id="1"]
+[ext_resource type="Script" path="res://world/terrain.gd" id="2"]
+[ext_resource type="Resource" path="res://data/terrain/bedrock.tres" id="3"]
+[ext_resource type="Resource" path="res://data/sounds/collapse.tres" id="4"]
+
+[node name="Terrain" type="TileMapLayer"]
+process_mode = 3
+tile_set = ExtResource("1")
+script = ExtResource("2")
+out_of_bounds = ExtResource("3")
+collapse_sound = ExtResource("4")

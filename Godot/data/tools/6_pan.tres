@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ToolDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/tool_definition.gd" id="1_jf6lf"]
+
+[resource]
+script = ExtResource("1_jf6lf")
+kind = 4
+display_name = "Pan"
+hint = "drag the view"
+action = &"tool_pan"
+key_label = "6"

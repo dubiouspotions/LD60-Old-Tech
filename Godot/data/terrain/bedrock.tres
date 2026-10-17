@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TerrainType" format=3]
+
+[ext_resource type="Script" path="res://core/terrain_type.gd" id="1_qvqmm"]
+
+[resource]
+script = ExtResource("1_qvqmm")
+display_name = "Bedrock"
+blast_proof = true
+debris_color = Color(0.14901961, 0.16470589, 0.2, 1)

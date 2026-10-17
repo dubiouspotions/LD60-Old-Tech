@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TerrainType" format=3]
+
+[ext_resource type="Script" path="res://core/terrain_type.gd" id="1_7wvn4"]
+
+[resource]
+script = ExtResource("1_7wvn4")
+display_name = "Water"
+solid = false
+anchor = false
+fill_replaces = true
+buoyant = true
+blast_proof = true
+hazard = 1
+death_text = "Drowned"
+ahead_text = "Water ahead"
+debris_color = Color(0.20392157, 0.5019608, 0.7137255, 1)

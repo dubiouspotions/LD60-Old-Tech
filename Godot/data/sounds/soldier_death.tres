@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="SoundEffect" format=3]
+
+[ext_resource type="Script" path="res://core/sound_effect.gd" id="1_hik8r"]
+[ext_resource type="AudioStream" path="res://audio/sfx/soldier_death.wav" id="2_ah04a"]
+
+[resource]
+script = ExtResource("1_hik8r")
+streams = Array[AudioStream]([ExtResource("2_ah04a")])
+volume_db = -4.0

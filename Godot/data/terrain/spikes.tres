@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="TerrainType" format=3]
+
+[ext_resource type="Script" path="res://core/terrain_type.gd" id="1_ubrnl"]
+
+[resource]
+script = ExtResource("1_ubrnl")
+display_name = "Spikes"
+solid = false
+anchor = false
+hazard = 2
+death_text = "Spiked"
+ahead_text = "Spikes ahead"
+debris_color = Color(0.8117647, 0.83137256, 0.85490197, 1)

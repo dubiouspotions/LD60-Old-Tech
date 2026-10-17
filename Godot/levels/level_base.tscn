@@ -1,0 +1,44 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://levels/level.gd" id="1"]
+[ext_resource type="PackedScene" path="res://world/terrain.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://world/bridge.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://game/army.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://objects/checkpoint_flag/checkpoint_flag.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://objects/falling_block/falling_block.tscn" id="6"]
+[ext_resource type="Script" path="res://core/supplies.gd" id="7"]
+[ext_resource type="AudioStream" path="res://audio/music/march_loop.wav" id="8"]
+
+[sub_resource type="Resource" id="drop"]
+script = ExtResource("7")
+earth = 4
+logs = 8
+rope = 4
+powder = 2
+
+[node name="Level" type="Node2D"]
+script = ExtResource("1")
+music = ExtResource("8")
+supply_drop = SubResource("drop")
+falling_block_scene = ExtResource("6")
+
+[node name="Terrain" parent="." instance=ExtResource("2")]
+unique_name_in_owner = true
+
+[node name="Objects" type="Node2D" parent="."]
+unique_name_in_owner = true
+
+[node name="StartFlag" parent="." instance=ExtResource("5")]
+unique_name_in_owner = true
+position = Vector2(208, 768)
+
+[node name="ExitFlag" parent="." instance=ExtResource("5")]
+unique_name_in_owner = true
+position = Vector2(4048, 768)
+label = "L2"
+
+[node name="Bridge" parent="." instance=ExtResource("3")]
+unique_name_in_owner = true
+
+[node name="Army" parent="." instance=ExtResource("4")]
+unique_name_in_owner = true

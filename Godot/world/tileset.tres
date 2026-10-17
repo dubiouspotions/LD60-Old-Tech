@@ -1,0 +1,81 @@
+[gd_resource type="TileSet" format=3]
+
+[ext_resource type="Resource" path="res://data/terrain/soil.tres" id="1_01qsn"]
+[ext_resource type="Resource" path="res://data/terrain/fill.tres" id="2_2gid8"]
+[ext_resource type="Resource" path="res://data/terrain/water.tres" id="3_gyr0v"]
+[ext_resource type="Resource" path="res://data/terrain/brick.tres" id="4_xoi5k"]
+[ext_resource type="Resource" path="res://data/terrain/trunk.tres" id="5_jqp3q"]
+[ext_resource type="Resource" path="res://data/terrain/crystal.tres" id="6_pt1jg"]
+[ext_resource type="Resource" path="res://data/terrain/leaves.tres" id="7_d1lit"]
+[ext_resource type="Resource" path="res://data/terrain/rock.tres" id="8_uyccs"]
+[ext_resource type="Resource" path="res://data/terrain/spikes.tres" id="9_0hhlm"]
+[ext_resource type="Resource" path="res://data/terrain/bedrock.tres" id="10_ua0c1"]
+[ext_resource type="Texture2D" path="res://world/tiles.png" id="11_ojk4e"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0csw6"]
+texture = ExtResource("11_ojk4e")
+texture_region_size = Vector2i(32, 32)
+0:0/0 = 0
+0:0/0/custom_data_0 = ExtResource("1_01qsn")
+1:0/0 = 0
+1:0/0/custom_data_0 = ExtResource("1_01qsn")
+2:0/0 = 0
+2:0/0/custom_data_0 = ExtResource("1_01qsn")
+3:0/0 = 0
+3:0/0/custom_data_0 = ExtResource("1_01qsn")
+4:0/0 = 0
+4:0/0/custom_data_0 = ExtResource("1_01qsn")
+5:0/0 = 0
+5:0/0/custom_data_0 = ExtResource("1_01qsn")
+6:0/0 = 0
+6:0/0/custom_data_0 = ExtResource("8_uyccs")
+7:0/0 = 0
+7:0/0/custom_data_0 = ExtResource("8_uyccs")
+8:0/0 = 0
+8:0/0/custom_data_0 = ExtResource("8_uyccs")
+9:0/0 = 0
+9:0/0/custom_data_0 = ExtResource("10_ua0c1")
+0:1/0 = 0
+0:1/0/custom_data_0 = ExtResource("2_2gid8")
+1:1/0 = 0
+1:1/0/custom_data_0 = ExtResource("4_xoi5k")
+2:1/0 = 0
+2:1/0/custom_data_0 = ExtResource("4_xoi5k")
+3:1/0 = 0
+3:1/0/custom_data_0 = ExtResource("4_xoi5k")
+4:1/0 = 0
+4:1/0/custom_data_0 = ExtResource("5_jqp3q")
+5:1/0 = 0
+5:1/0/custom_data_0 = ExtResource("7_d1lit")
+6:1/0 = 0
+6:1/0/custom_data_0 = ExtResource("7_d1lit")
+7:1/0 = 0
+7:1/0/custom_data_0 = ExtResource("7_d1lit")
+8:1/0 = 0
+8:1/0/custom_data_0 = ExtResource("9_0hhlm")
+9:1/0 = 0
+9:1/0/custom_data_0 = ExtResource("3_gyr0v")
+0:2/animation_frame_0/duration = 0.22
+0:2/animation_frame_1/duration = 0.22
+0:2/animation_frame_2/duration = 0.22
+0:2/animation_frame_3/duration = 0.22
+0:2/0 = 0
+0:2/0/custom_data_0 = ExtResource("3_gyr0v")
+4:2/animation_frame_0/duration = 0.22
+4:2/animation_frame_1/duration = 0.22
+4:2/animation_frame_2/duration = 0.22
+4:2/animation_frame_3/duration = 0.22
+4:2/0 = 0
+4:2/0/custom_data_0 = ExtResource("6_pt1jg")
+0:3/0 = 0
+0:3/0/custom_data_0 = ExtResource("4_xoi5k")
+1:3/0 = 0
+1:3/0/custom_data_0 = ExtResource("4_xoi5k")
+2:3/0 = 0
+2:3/0/custom_data_0 = ExtResource("4_xoi5k")
+
+[resource]
+tile_size = Vector2i(32, 32)
+custom_data_layer_0/name = "terrain"
+custom_data_layer_0/type = 24
+sources/0 = SubResource("TileSetAtlasSource_0csw6")

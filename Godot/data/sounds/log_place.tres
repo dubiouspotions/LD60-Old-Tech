@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="SoundEffect" format=3]
+
+[ext_resource type="Script" path="res://core/sound_effect.gd" id="1_5wrk6"]
+[ext_resource type="AudioStream" path="res://audio/sfx/log_place.wav" id="2_k0n25"]
+
+[resource]
+script = ExtResource("1_5wrk6")
+streams = Array[AudioStream]([ExtResource("2_k0n25")])
+volume_db = -4.0

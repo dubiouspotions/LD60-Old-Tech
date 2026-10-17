@@ -1,0 +1,13 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://objects/charge/charge.gd" id="1"]
+[ext_resource type="Resource" path="res://data/sounds/explosion.tres" id="2"]
+[ext_resource type="Resource" path="res://data/sounds/charge_place.tres" id="3"]
+[ext_resource type="PackedScene" path="res://objects/effects/explosion_flash.tscn" id="4"]
+
+[node name="Charge" type="Node2D"]
+z_index = 3
+script = ExtResource("1")
+explosion_sound = ExtResource("2")
+place_sound = ExtResource("3")
+flash_scene = ExtResource("4")
