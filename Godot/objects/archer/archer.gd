@@ -1,7 +1,8 @@
 class_name Archer
 extends Node2D
 ## An enemy archer on a tower. Shoots at the nearest soldier in range.
-## Place it with its feet (node origin) on top of a solid tile. It dies when that tile is destroyed.
+## Place it with its feet (node origin) on top of a solid tile. It dies when that tile is destroyed,
+## or when soldiers reach it and cut it down.
 
 @export_range(1.0, 40.0, 0.5, "suffix:m") var shoot_range: float = 13.0
 @export var arrow_scene: PackedScene
@@ -15,6 +16,10 @@ extends Node2D
 @export var shoot_sound: SoundEffect
 @export var down_sound: SoundEffect
 @export var down_text: String = "Tower down"
+## Melee hits it takes from soldiers before it falls.
+@export_range(1, 50) var hit_points: int = 3
+@export var slain_text: String = "Archer slain"
+@export var hurt_flash_color: Color = Color.WHITE
 ## Height of the bow above the feet.
 @export var bow_height: float = 0.6
 
@@ -24,12 +29,29 @@ extends Node2D
 
 ## True while a soldier is in range of this archer.
 var engaging: bool = false
+var hp: int = 3
 var _cooldown: float = 0.0
 var _down: bool = false
 
 
 func _ready() -> void:
 	_cooldown = first_shot_delay
+	hp = hit_points
+
+
+func alive() -> bool:
+	return not _down
+
+
+## A soldier's melee strike.
+func hit(damage: int) -> void:
+	if _down:
+		return
+	hp -= damage
+	modulate = hurt_flash_color * 3.0
+	create_tween().tween_property(self, ^"modulate", Color.WHITE, 0.25)
+	if hp <= 0:
+		_go_down(slain_text)
 
 
 func feet_m() -> Vector2:
@@ -41,7 +63,7 @@ func _physics_process(dt: float) -> void:
 	if level == null or _down:
 		return
 	if not level.terrain.is_solid(Grid.cell_of(feet_m() + Vector2(0, 0.5))):
-		_fall(level)
+		_go_down(down_text)
 		return
 	_cooldown -= dt
 	var origin := feet_m() - Vector2(0, bow_height)
@@ -68,10 +90,10 @@ func _physics_process(dt: float) -> void:
 	Audio.play(shoot_sound, position)
 
 
-func _fall(_level: Level) -> void:
+func _go_down(text: String) -> void:
 	_down = true
 	engaging = false
-	Effects.say(position - Vector2(0, Grid.PX), down_text, Color("e9a93b"))
+	Effects.say(position - Vector2(0, Grid.PX), text, Color("e9a93b"))
 	Audio.play(down_sound, position)
 	var tw := create_tween()
 	tw.tween_property(self, ^"modulate:a", 0.0, 0.6)

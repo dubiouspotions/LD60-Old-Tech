@@ -37,6 +37,14 @@ func test_archers_stand_on_solid_ground() -> void:
 				assert_true(level.terrain.is_solid(Grid.cell_of(o.feet_m() + Vector2(0, 0.5))), "%s %s" % [level.name, o.name])
 
 
+## The game finds archers (to fight, and for the "under fire" status) only under Objects.
+func test_archers_are_under_objects() -> void:
+	for level: Level in _levels():
+		for o in level.find_children("*", "Node2D", true, false):
+			if o is Archer:
+				assert_eq(o.get_parent(), level.objects, "%s %s belongs under Objects" % [level.name, o.name])
+
+
 func test_army_spawns_on_ground() -> void:
 	for level: Level in _levels():
 		level.start(10, 1)

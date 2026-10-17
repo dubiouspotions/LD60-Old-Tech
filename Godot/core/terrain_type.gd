@@ -34,7 +34,7 @@ enum DigAction { NONE, REMOVE, FELL }
 
 @export_group("Dig")
 @export var dig_action: DigAction = DigAction.NONE
-## Seconds one engineer works to dig this tile (or fell the whole tree).
+## Seconds one engineer works to dig this tile (or fell the whole tree). Engineers digging together add up.
 @export_range(0.1, 30.0, 0.1, "suffix:s") var dig_time: float = 1.0
 ## Given for each tile removed with the Dig tool.
 @export var dig_yield: Supplies

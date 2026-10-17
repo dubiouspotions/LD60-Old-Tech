@@ -5,9 +5,9 @@ extends Resource
 
 @export_range(1, 12) var crew_size: int = 3
 ## Walking speed on the ground. Engineers carry no armour, so they should outpace the column (ArmyRules march speed).
-@export_range(0.1, 10.0, 0.05, "suffix:m/s") var walk_speed: float = 3.4
+@export_range(0.1, 10.0, 0.05, "suffix:m/s") var walk_speed: float = 6.8
 ## Speed climbing along scaffolding and finished members, and up or down terrain.
-@export_range(0.1, 10.0, 0.05, "suffix:m/s") var climb_speed: float = 2.4
+@export_range(0.1, 10.0, 0.05, "suffix:m/s") var climb_speed: float = 4.8
 ## Ledges up to this high are stepped onto. Higher ones are climbed only when the way at the
 ## engineer's own level is blocked, so tunnels are walked through rather than climbed over.
 @export_range(0.0, 5.0, 0.05, "suffix:m") var step_up: float = 1.05
@@ -18,8 +18,8 @@ extends Resource
 ## Engineers dig a marked cell whose centre is within this distance of their chest.
 ## How long the digging takes is set per terrain type (Dig Time).
 @export_range(0.5, 5.0, 0.1, "suffix:m") var dig_reach: float = 1.6
-## Metres of member one engineer builds per second.
-@export_range(0.05, 10.0, 0.05, "suffix:m/s") var build_speed: float = 0.8
+## Metres of member one engineer builds per second. Engineers on the same member add up.
+@export_range(0.05, 10.0, 0.05, "suffix:m/s") var build_speed: float = 1.6
 ## Idle engineers trail this far behind the front soldier...
 @export_range(0.0, 10.0, 0.1, "suffix:m") var follow_gap: float = 1.2
 ## ...and this far apart.

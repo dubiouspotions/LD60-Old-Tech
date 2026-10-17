@@ -259,17 +259,6 @@ func finish(m: Member) -> void:
 	member_built.emit(m)
 
 
-## Is a walkable member being built (ordered or on scaffolding) at x, with some of it between heights top and bottom.
-func under_construction(x: float, top: float, bottom: float) -> bool:
-	for m in members:
-		if not (m.material.walkable and ((m.blueprint and m.ordered) or m.scaffolded)):
-			continue
-		if x >= minf(m.a.pos.x, m.b.pos.x) and x <= maxf(m.a.pos.x, m.b.pos.x) \
-				and minf(m.a.pos.y, m.b.pos.y) <= bottom and maxf(m.a.pos.y, m.b.pos.y) >= top:
-			return true
-	return false
-
-
 func has_scaffolding() -> bool:
 	return members.any(func(m: Member) -> bool: return m.scaffolded)
 

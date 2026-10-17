@@ -11,7 +11,7 @@ extends Resource
 @export_range(0.0, 3.0, 0.05, "suffix:m") var step_up: float = 1.05
 ## Minimum gap between soldiers.
 @export_range(0.1, 3.0, 0.05, "suffix:m") var spacing: float = 0.55
-## Deepest step-down the column accepts.
+## Deeper step-downs are warned about (the column still walks off them).
 @export_range(0.0, 20.0, 0.5, "suffix:m") var max_drop: float = 3.0
 @export_range(1.0, 30.0, 0.5, "suffix:m") var fatal_fall: float = 5.5
 ## Arcade gravity for soldiers and falling fill.
@@ -26,11 +26,20 @@ extends Resource
 ## Soldiers higher than this apart do not queue behind each other.
 @export_range(0.1, 5.0, 0.1, "suffix:m") var queue_height: float = 1.5
 
+@export_group("Melee")
+## A soldier fights an enemy (archer) whose feet are at most this far ahead and about level with its own.
+@export_range(0.1, 3.0, 0.05, "suffix:m") var melee_reach: float = 0.9
+@export_range(0.1, 5.0, 0.05, "suffix:s") var attack_interval: float = 0.6
+@export_range(1, 10) var melee_damage: int = 1
+@export var attack_sound: SoundEffect
+
 @export_group("Messages")
+## Status while the front soldier fights an enemy.
+@export var fight_text: String = "Fighting an archer"
 ## Shown while the column waits for the king's order to march.
 @export var hold_text: String = "Awaiting the king's order"
-## Shown while the column waits for engineers building a walkable member ahead.
-@export var construction_text: String = "Engineers at work ahead"
+## How far ahead the front soldier spots deep drops and hazards. Only a warning in the status bar.
+@export_range(0.5, 20.0, 0.5, "suffix:m") var warn_distance: float = 3.0
 @export var wall_text: String = "%d m wall ahead"
 @export var drop_text: String = "%d m drop ahead"
 @export var chasm_text: String = "Chasm ahead"

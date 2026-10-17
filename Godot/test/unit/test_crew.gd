@@ -53,7 +53,7 @@ func _run(seconds: float, done: Callable = func() -> bool: return false, speed: 
 
 
 func test_engineers_outpace_the_column() -> void:
-	assert_gt(level.crew.rules.walk_speed, level.army.rules.march_speed * 1.5)
+	assert_gt(level.crew.rules.walk_speed, level.army.rules.march_speed * 3.5)
 
 
 ## Engineers have their own look, so new soldier art does not turn them into soldiers.
@@ -91,10 +91,11 @@ func test_crew_climbs_finished_parts_to_reach_far_members() -> void:
 		_plan(Vector2(8, 6), Vector2(10, 8), ROPE),
 	]
 	level.bridge.order_blueprints()
+	# Standing in the pit means y >= 8. Climbing the support or rope stays above that.
 	var in_pit := [false]  # an array, so the lambda can write to it
 	_run(60.0, func() -> bool:
 		for e in level.crew.engineers:
-			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.5)
+			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.9)
 		return plan.all(func(m: Bridge.Member) -> bool: return not m.blueprint))
 	for m in plan:
 		assert_false(m.blueprint, "%s built" % m.material.display_name)
@@ -160,10 +161,43 @@ func test_crew_leaves_unreachable_marks() -> void:
 	var in_pit := [false]  # an array, so the lambda can write to it
 	_run(10.0, func() -> bool:
 		for e in level.crew.engineers:
-			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.5)
+			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.9)
 		return false)
 	assert_true(level.terrain.is_marked(Vector2i(11, 6)), "across the pit")
 	assert_false(in_pit[0], "nobody walks through the spikes")
+
+
+func test_crew_gets_ready_beside_a_new_plan() -> void:
+	level.terrain.clear()
+	level.terrain.rebuild()
+	for y in TWO_PITS.size():
+		for x in TWO_PITS[y].length():
+			var key: String = WorldFixture.LEGEND[TWO_PITS[y][x]]
+			if key != "":
+				level.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	level.army.spawn(1, 10.5)
+	level.crew.spawn(10.5)
+	_plan(Vector2(16, 6), Vector2(18.5, 6))
+	_run(5.0)
+	for e in level.crew.engineers:
+		assert_null(e.job, "not ordered yet")
+		assert_between(e.pos.x, 13.0, 16.0, "waiting at the near end of the plan")
+
+
+func test_whole_crew_helps_with_a_single_member() -> void:
+	var m := _plan(Vector2(6, 6), Vector2(8, 6))
+	level.bridge.order_blueprints()
+	_run(10.0, func() -> bool: return level.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.job == m and e.working))
+	for e in level.crew.engineers:
+		assert_eq(e.job, m, "everyone on it")
+		assert_true(e.working)
+
+
+func test_whole_crew_helps_dig_a_single_cell() -> void:
+	level.terrain.mark(Vector2i(3, 6))
+	_run(1.0, func() -> bool: return level.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.digging))
+	for e in level.crew.engineers:
+		assert_true(e.digging and e.dig == Vector2i(3, 6), "everyone digging it")
 
 
 func test_crew_idles_without_orders() -> void:
