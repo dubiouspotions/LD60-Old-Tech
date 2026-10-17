@@ -15,6 +15,9 @@ extends Resource
 ## has to be crossed over the structure.
 @export_range(0.0, 20.0, 0.5, "suffix:m") var max_climb: float = 3.0
 @export_range(0.0, 20.0, 0.5, "suffix:m") var max_drop: float = 3.0
+## An engineer left with nothing to stand on (its structure collapsed) falls with this gravity, up to max_fall_speed.
+@export_range(1.0, 100.0, 1.0, "suffix:m/s²") var fall_gravity: float = 30.0
+@export_range(1.0, 50.0, 1.0, "suffix:m/s") var max_fall_speed: float = 20.0
 ## Engineers dig a marked cell whose centre is within this distance of their chest.
 ## How long the digging takes is set per terrain type (Dig Time).
 @export_range(0.5, 5.0, 0.1, "suffix:m") var dig_reach: float = 1.6

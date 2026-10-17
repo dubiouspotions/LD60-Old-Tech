@@ -42,6 +42,8 @@ class Engineer:
 	var working: bool = false
 	## Builds the job from the ground standing at this x (a plan not connected to anything), else NAN.
 	var reach_x: float = NAN
+	## Falling speed while nothing holds the engineer up.
+	var vy: float = 0.0
 
 
 @export var rules: CrewRules
@@ -85,6 +87,8 @@ func step(dt: float) -> void:
 			e.route.clear()
 		if e.at and e.route.is_empty():
 			e.pos = e.at.pos
+		if _fall(e, dt):
+			continue
 		if e.job and (e.job.dead or not e.job.blueprint or (e.route.is_empty() and e.at != e.goal and is_nan(e.reach_x))):
 			_drop(e)
 		if e.digging and not terrain.is_marked(e.dig):
@@ -110,6 +114,24 @@ func step(dt: float) -> void:
 			_walk_to(e, _idle_x(i), dt)
 	_update_strike(dt)
 	_update_work_sound(dt)
+
+
+## Drops an engineer that nothing holds up (its structure fell away) and that can not simply climb down.
+## True while it falls; it gives up its job.
+func _fall(e: Engineer, dt: float) -> bool:
+	if e.at:
+		e.vy = 0.0
+		return false
+	# Either foot on something holds it, like a soldier standing at a cliff edge.
+	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y).y)
+	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and not is_nan(_next_y(e.pos.y, e.pos.x))):
+		e.vy = 0.0
+		return false
+	_drop(e)
+	e.vy = minf(e.vy + rules.fall_gravity * dt, rules.max_fall_speed)
+	e.pos.y = minf(e.pos.y + e.vy * dt, below)
+	_show(e, false, 0)
+	return true
 
 
 ## Picks the closest job the engineer can reach. A member is reached along the structure from where the

@@ -50,7 +50,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | How long the column camps before the king orders the march | **March Delay** on each level's root node (default in `levels/level_base.tscn`) |
 | March and camp banner texts, march sound, camp status | **Game** node in `game/main.tscn` |
 | How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |
-| Engineer crew: size, walk and climb speed, dig speed, dig reach, step-up, ground climb and drop limits, strike delay, sounds | `data/crew_rules.tres` (how fast each piece type is built: **Build Speed** on `data/bridge/*.tres`) |
+| Engineer crew: size, walk and climb speed, dig speed, dig reach, step-up, ground climb and drop limits, fall gravity, strike delay, sounds | `data/crew_rules.tres` (how fast each piece type is built: **Build Speed** on `data/bridge/*.tres`) |
 | Engineer look | `objects/engineer/engineer.tscn` (its own placeholder until engineer art exists; keep the Body, Wounded and AnimationPlayer nodes the soldier script uses) |
 | Bridge / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list) |

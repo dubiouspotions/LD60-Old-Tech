@@ -339,3 +339,27 @@ func test_dig_speed_scales_digging() -> void:
 			seconds[0] += 1.0 / 60.0
 		return world.terrain.type_at(Vector2i(3, 6)) == null)
 	assert_lt(seconds[0], WorldFixture.type("soil").dig_time / 4.0 + 0.1, "digs four times as fast")
+
+
+func test_engineer_left_in_the_air_falls_to_the_ground() -> void:
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.at = null
+	e.route.clear()
+	e.pos = Vector2(3.0, 2.0)
+	_run(2.0)
+	assert_almost_eq(e.pos.y, 6.0, 0.05, "landed on the ground")
+
+
+func test_engineer_falls_when_the_bridge_under_it_breaks() -> void:
+	var m := _plan(Vector2(6, 6), Vector2(10, 6))
+	world.bridge.order_blueprints()
+	_run(20.0, func() -> bool: return not m.blueprint)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	var mid := world.bridge.split(m, Vector2(8, 6))
+	e.at = mid
+	e.route.clear()
+	e.pos = mid.pos
+	for other in world.bridge.members.duplicate():
+		world.bridge.break_member(other, true)
+	_run(2.0)
+	assert_gt(e.pos.y, 7.5, "fell into the pit")
