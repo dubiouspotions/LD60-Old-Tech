@@ -183,8 +183,12 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 		_show(e, false, facing)
 		return
 	var nx := e.pos.x + clampf(dx, -rules.walk_speed * dt, rules.walk_speed * dt)
-	var look := minf(ENGINEER_HALF_WIDTH, maxf(absf(x - nx) - EDGE, 0.0))
-	if is_nan(_next_y(e.pos.y, nx + signf(dx) * look)):
+	# Look ahead for edges, but never past the target: a joint on a cliff edge is reached from this side.
+	var look := nx + signf(dx) * ENGINEER_HALF_WIDTH
+	var limit := x - signf(dx) * EDGE
+	if signf(dx) * (look - limit) > 0.0:
+		look = limit
+	if is_nan(_next_y(e.pos.y, look)):
 		_show(e, false, facing)
 		return
 	e.pos.x = nx

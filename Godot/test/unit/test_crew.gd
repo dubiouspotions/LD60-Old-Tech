@@ -43,11 +43,11 @@ func _plan(a: Vector2, b: Vector2, mat: BridgeMaterial = LOG) -> Bridge.Member:
 	return bridge.build(bridge.snap_point(a), bridge.snap_point(b), mat, true)
 
 
-## Steps bridge and crew (the column stays put) until done() or seconds pass.
-func _run(seconds: float, done: Callable = func() -> bool: return false) -> void:
-	for i in int(seconds * 60):
-		level.bridge.step(1.0 / 60.0)
-		level.crew.step(1.0 / 60.0)
+## Steps bridge and crew (the column stays put) until done() or seconds pass. speed is the game speed.
+func _run(seconds: float, done: Callable = func() -> bool: return false, speed: float = 1.0) -> void:
+	for i in int(seconds * 60 / speed):
+		level.bridge.step(speed / 60.0)
+		level.crew.step(speed / 60.0)
 		if done.call():
 			return
 
@@ -86,6 +86,16 @@ func test_crew_climbs_finished_parts_to_reach_far_members() -> void:
 	for m in plan:
 		assert_false(m.blueprint, "%s built" % m.material.display_name)
 	assert_false(in_pit, "nobody walks through the spikes")
+
+
+## At 2× speed the last step toward a joint on the cliff edge lands exactly on the edge.
+func test_crew_reaches_edge_joint_at_double_speed() -> void:
+	for e in level.crew.engineers:
+		e.pos.x = 5.93
+	var m := _plan(Vector2(6, 6), Vector2(8, 6))
+	level.bridge.order_blueprints()
+	_run(10.0, func() -> bool: return not m.blueprint, 2.0)
+	assert_false(m.blueprint)
 
 
 func test_crew_idles_without_orders() -> void:
