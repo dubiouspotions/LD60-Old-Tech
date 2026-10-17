@@ -6,12 +6,11 @@
 [ext_resource type="Script" uid="uid://ccqxavwqhp3xu" path="res://game/camera_rig.gd" id="4"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="5"]
 [ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6"]
-[ext_resource type="CompressedTexture3D" uid="uid://drnrrtm8ewlhd" path="res://post/lut/low_17_night.png" id="7_wjctj"]
 [ext_resource type="PackedScene" path="res://game/world.tscn" id="7"]
-[ext_resource type="Script" path="res://game/day_night.gd" id="8"]
+[ext_resource type="CompressedTexture3D" uid="uid://bgadupm8eb0qp" path="res://post/lut/low_17.png" id="7_wjctj"]
+[ext_resource type="Script" uid="uid://crrmlhkv6vxe2" path="res://game/day_night.gd" id="8"]
 
 [sub_resource type="Gradient" id="lantern_g"]
-offsets = PackedFloat32Array(0, 1)
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
 
 [sub_resource type="GradientTexture2D" id="lantern_tex"]
@@ -33,12 +32,12 @@ march_sound = ExtResource("6")
 
 [node name="Background" parent="." unique_id=1700337154 instance=ExtResource("2")]
 
-[node name="NightTint" type="CanvasModulate" parent="."]
+[node name="NightTint" type="CanvasModulate" parent="." unique_id=328120713]
 
 [node name="LevelHolder" type="Node2D" parent="." unique_id=1998500207]
 unique_name_in_owner = true
 
-[node name="World" parent="LevelHolder" instance=ExtResource("7")]
+[node name="World" parent="LevelHolder" unique_id=781211549 instance=ExtResource("7")]
 unique_name_in_owner = true
 
 [node name="ToolController" type="Node2D" parent="." unique_id=885474919 node_paths=PackedStringArray("lantern")]
@@ -47,14 +46,14 @@ z_index = 20
 script = ExtResource("3")
 lantern = NodePath("../Lantern")
 
-[node name="Lantern" type="PointLight2D" parent="."]
+[node name="Lantern" type="PointLight2D" parent="." unique_id=383740827]
 visible = false
 color = Color(1, 0.86, 0.6, 1)
 energy = 0.0
 texture = SubResource("lantern_tex")
 texture_scale = 2.2
 
-[node name="DayNight" type="Node" parent="." node_paths=PackedStringArray("world_tint", "sky_tint", "lantern")]
+[node name="DayNight" type="Node" parent="." unique_id=1668103146 node_paths=PackedStringArray("world_tint", "sky_tint", "lantern")]
 unique_name_in_owner = true
 script = ExtResource("8")
 world_tint = NodePath("../NightTint")
