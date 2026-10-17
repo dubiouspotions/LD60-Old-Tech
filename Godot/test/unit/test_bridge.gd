@@ -398,3 +398,18 @@ func test_supports_let_arrows_through() -> void:
 	var b := WorldFixture.bridge(self, t)
 	b.build(b.snap_point(Vector2(4, 1)), b.snap_point(Vector2(4, 4)), SUPPORT)
 	assert_null(b.arrow_block(Vector2(2, 2.5), Vector2(6, 2.5)), "arrows fly past supports")
+
+
+func test_the_built_part_of_a_piece_in_progress_is_walkable() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	b.order_blueprints()
+	m.from_joint = m.a
+	m.progress = 0.5
+	var on := b.walk_surface(4.0, 0.0)
+	assert_eq(on.get("member"), m, "built half carries you")
+	assert_true(b.walk_surface(6.0, 0.0).is_empty(), "the rest is not built yet")
+	m.from_joint = m.b
+	assert_true(b.walk_surface(4.0, 0.0).is_empty(), "building from the other end")
+	assert_eq(b.walk_surface(6.0, 0.0).get("member"), m)

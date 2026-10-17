@@ -274,3 +274,29 @@ func test_walks_through_a_two_metre_tunnel() -> void:
 	a.spawn(1, 2.5)
 	_run(a, 4.0)
 	assert_gt(a.lead().pos.x, 8.0)
+
+
+func test_walks_onto_the_finished_part_of_a_bridge_being_built() -> void:
+	var a := _world([
+		"..................",
+		"..................",
+		"######......######",
+		"######......######",
+		"######......######",
+		"BBBBBBBBBBBBBBBBBB",
+	])
+	var b := a.bridge
+	var log := preload("res://data/bridge/log.tres")
+	var first := b.build(b.snap_point(Vector2(6, 2)), b.snap_point(Vector2(9, 2)), log, true)
+	var rest := b.build(b.snap_point(Vector2(9, 2)), b.snap_point(Vector2(12, 2)), log, true)
+	b.order_blueprints()
+	b.finish(first)
+	rest.progress = 0.3
+	a.spawn(1, 3.5)
+	var furthest := [0.0]
+	for i in 240:
+		b.step(1.0 / 60.0, a.bridge_loads())
+		a.step(1.0 / 60.0)
+		if a.lead():
+			furthest[0] = maxf(furthest[0], a.lead().pos.x)
+	assert_gt(furthest[0], 7.0, "out on the finished piece")
