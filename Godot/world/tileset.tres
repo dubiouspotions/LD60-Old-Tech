@@ -2,14 +2,14 @@
 
 [ext_resource type="Resource" uid="uid://ci5mjffwjo0g8" path="res://data/terrain/soil.tres" id="1_01qsn"]
 [ext_resource type="Resource" uid="uid://c04be2d7tcrnh" path="res://data/terrain/fill.tres" id="2_2gid8"]
-[ext_resource type="Resource" path="res://data/terrain/water.tres" id="3_gyr0v"]
+[ext_resource type="Resource" uid="uid://6vsc07cm4yld" path="res://data/terrain/water.tres" id="3_gyr0v"]
 [ext_resource type="Resource" uid="uid://bqub5yq1d5lfc" path="res://data/terrain/brick.tres" id="4_xoi5k"]
 [ext_resource type="Resource" uid="uid://c5wv5tvojccyx" path="res://data/terrain/trunk.tres" id="5_jqp3q"]
 [ext_resource type="Resource" uid="uid://cjvmcjvjjnnq5" path="res://data/terrain/crystal.tres" id="6_pt1jg"]
 [ext_resource type="Resource" uid="uid://cug4s7vjhqh05" path="res://data/terrain/leaves.tres" id="7_d1lit"]
-[ext_resource type="Resource" path="res://data/terrain/rock.tres" id="8_uyccs"]
+[ext_resource type="Resource" uid="uid://dk5h26prf4ud3" path="res://data/terrain/rock.tres" id="8_uyccs"]
 [ext_resource type="Resource" path="res://data/terrain/spikes.tres" id="9_0hhlm"]
-[ext_resource type="Resource" path="res://data/terrain/bedrock.tres" id="10_ua0c1"]
+[ext_resource type="Resource" uid="uid://hv3txf15xhcx" path="res://data/terrain/bedrock.tres" id="10_ua0c1"]
 [ext_resource type="Texture2D" uid="uid://ciawyo8yq7gfg" path="res://world/tiles.png" id="11_ojk4e"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0csw6"]
