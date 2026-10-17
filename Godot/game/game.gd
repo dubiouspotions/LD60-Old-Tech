@@ -175,7 +175,6 @@ func _set_paused(paused: bool) -> void:
 
 func _on_tool_changed(index: int) -> void:
 	_hud.set_tool(index)
-	_camera.pan_tool = _tools.tool().kind == ToolDefinition.Kind.PAN
 
 
 ## Puts the column at the start of level index with the soldiers and supplies GameState holds.

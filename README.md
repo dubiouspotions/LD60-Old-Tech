@@ -13,7 +13,6 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 | Log | 3 | Drag from point to point to plan a deck log. Takes push and pull, up to 5 m. Costs 1 log. |
 | Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
 | Rope | 5 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
-| Pan | 6 | Drag to move the view. |
 
 - Log, Support and Rope place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
 - While you plan, idle engineers (orange) walk over and wait beside it. **Build** above a plan hands that plan to them; **Enter** hands over every plan. They build it member by member, starting from the ground or finished parts and climbing along what is already up. With only one thing to build or dig, they all work on it together. Finished parts are held on scaffolding and can't be walked on yet. Each separate structure comes down off its scaffolding once it's finished and no engineer is on it, and your design holds or it doesn't. The column doesn't wait for it: a soldier walking onto an unfinished bridge falls.

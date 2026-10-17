@@ -10,7 +10,6 @@
 [ext_resource type="Resource" path="res://data/tools/2_fill.tres" id="14_y2rpw"]
 [ext_resource type="Resource" path="res://data/tools/3_log.tres" id="15_v2pp1"]
 [ext_resource type="Resource" path="res://data/tools/5_rope.tres" id="16_jeutq"]
-[ext_resource type="Resource" path="res://data/tools/6_pan.tres" id="18_jj3rx"]
 [ext_resource type="Resource" path="res://data/sounds/victory.tres" id="19_n15p4"]
 [ext_resource type="Resource" path="res://data/tools/4_support.tres" id="20_s8k2p"]
 
@@ -28,7 +27,7 @@ script = ExtResource("10_1pfus")
 levels = Array[String](["res://levels/level_01.tscn", "res://levels/level_02.tscn", "res://levels/level_03.tscn", "res://levels/level_04.tscn", "res://levels/level_05.tscn", "res://levels/level_06.tscn"])
 start_supplies = SubResource("Resource_kpggy")
 army_rules = ExtResource("1_f5uj3")
-tools = Array[ExtResource("12_aqc2n")]([ExtResource("13_rhlp7"), ExtResource("14_y2rpw"), ExtResource("15_v2pp1"), ExtResource("20_s8k2p"), ExtResource("16_jeutq"), ExtResource("18_jj3rx")])
+tools = Array[ExtResource("12_aqc2n")]([ExtResource("13_rhlp7"), ExtResource("14_y2rpw"), ExtResource("15_v2pp1"), ExtResource("20_s8k2p"), ExtResource("16_jeutq")])
 level_up_sound = ExtResource("2_4757c")
 lost_sound = ExtResource("9_r50rh")
 victory_sound = ExtResource("19_n15p4")

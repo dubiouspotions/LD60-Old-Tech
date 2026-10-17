@@ -152,8 +152,6 @@ func _tools() -> void:
 		action = &"tool_support", key_label = "4", bridge_material = load("res://data/bridge/support.tres")})
 	_tool("5_rope", {kind = ToolDefinition.Kind.BUILD, display_name = "Rope", hint = "1 rope · ≤ 12 m · pull only",
 		action = &"tool_rope", key_label = "5", bridge_material = load("res://data/bridge/rope.tres")})
-	_tool("6_pan", {kind = ToolDefinition.Kind.PAN, display_name = "Pan", hint = "drag the view",
-		action = &"tool_pan", key_label = "6"})
 
 
 func _campaign() -> void:
@@ -167,7 +165,7 @@ func _campaign() -> void:
 	c.start_supplies = Supplies.make(8, 12, 6, 10)
 	c.army_rules = load("res://data/army_rules.tres")
 	var tools: Array[ToolDefinition] = []
-	for f in ["1_dig", "2_fill", "3_log", "4_support", "5_rope", "6_pan"]:
+	for f in ["1_dig", "2_fill", "3_log", "4_support", "5_rope"]:
 		tools.append(load("res://data/tools/%s.tres" % f))
 	c.tools = tools
 	c.level_up_sound = _snd("checkpoint")

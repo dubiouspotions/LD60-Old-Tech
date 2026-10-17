@@ -24,8 +24,6 @@ var follow: bool = true:
 		if v != follow:
 			follow = v
 			follow_changed.emit(v)
-## True while the Pan tool is selected: left drag pans.
-var pan_tool: bool = false
 
 var _drag_from: Vector2
 var _drag_cam: Vector2
@@ -58,7 +56,7 @@ func snap_to_lead() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"follow"):
 		follow = true
-	var drag_start := event.is_action_pressed(&"drag_view") or (pan_tool and event.is_action_pressed(&"use_tool"))
+	var drag_start := event.is_action_pressed(&"drag_view")
 	if drag_start and event is InputEventMouseButton:
 		_dragging = true
 		_drag_from = event.position

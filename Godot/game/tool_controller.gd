@@ -73,7 +73,7 @@ func _unhandled_input(event: InputEvent) -> void:
         return
     if event is InputEventMouseMotion:
         _hover = true
-    if not enabled or world == null or tool() == null or tool().kind == ToolDefinition.Kind.PAN:
+    if not enabled or world == null or tool() == null:
         return
     if event.is_action_pressed(&"use_tool"):
         _update_mouse()
@@ -192,12 +192,9 @@ func _draw() -> void:
         return
     var t := tool()
     var px := Grid.PX
-    match t.kind:
-        ToolDefinition.Kind.PAN:
-            return
-        ToolDefinition.Kind.BUILD:
-            _draw_build(t.bridge_material)
-            return
+    if t.kind == ToolDefinition.Kind.BUILD:
+        _draw_build(t.bridge_material)
+        return
     var cell := Grid.cell_of(_mouse_m)
     var r := Rect2(Vector2(cell) * px, Vector2.ONE * px)
     var here := world.terrain.type_at(cell)

@@ -3,7 +3,7 @@ class_name ToolDefinition
 extends Resource
 ## One button in the tool rack. The kind decides the behaviour; everything else is tuning.
 
-enum Kind { DIG, FILL, BUILD, PAN }
+enum Kind { DIG, FILL, BUILD }
 
 @export var kind: Kind = Kind.DIG
 @export var display_name: String = "Dig"
