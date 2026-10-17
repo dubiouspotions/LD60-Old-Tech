@@ -27,3 +27,17 @@ func test_walking_soldier_plays_its_walk_cycle() -> void:
 	assert_true(sprite.is_playing())
 	await _show(false)
 	assert_false(sprite.is_playing(), "stops when the column halts")
+
+
+func test_idle_engineer_does_not_walk_on_the_spot() -> void:
+	var engineer: Soldier = load("res://objects/engineer/engineer.tscn").instantiate()
+	add_child_autofree(engineer)
+	var art: AnimatedSprite2D = engineer.get_node("Body/AnimatedSprite2D")
+	engineer.moving = false
+	engineer.sync()
+	await wait_process_frames(2)
+	assert_false(art.is_playing(), "idle holds still")
+	engineer.moving = true
+	engineer.sync()
+	await wait_process_frames(2)
+	assert_true(art.is_playing(), "walks when moving")
