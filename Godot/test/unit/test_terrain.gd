@@ -175,3 +175,9 @@ func test_clear_from_makes_right_side_a_wall() -> void:
 	assert_eq(t.type_at(Vector2i(6, 6)), WorldFixture.type("bedrock"))
 	assert_false(t.is_marked(Vector2i(8, 6)), "marks beyond cleared")
 	assert_eq(t.type_at(Vector2i(4, 6)), WorldFixture.type("soil"))
+
+
+## The TileSet editor's paint view labels tiles with this, so it must be short.
+func test_terrain_type_prints_its_name() -> void:
+	assert_eq(str(WorldFixture.type("soil")), "Soil")
+	assert_eq(str(WorldFixture.type("water")), "Water")

@@ -55,6 +55,11 @@ enum DigAction { NONE, REMOVE, FELL }
 @export var debris_color: Color = Color("7b5131")
 
 
+## Short label, shown on the tiles in the TileSet editor's paint view.
+func _to_string() -> String:
+	return display_name if not display_name.is_empty() else resource_path.get_file().get_basename()
+
+
 func is_hazard() -> bool:
 	return hazard != Hazard.NONE
 
