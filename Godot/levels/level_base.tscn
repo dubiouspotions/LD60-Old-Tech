@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://levels/level.gd" id="1"]
 [ext_resource type="PackedScene" path="res://world/terrain.tscn" id="2"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://objects/falling_block/falling_block.tscn" id="6"]
 [ext_resource type="Script" path="res://core/supplies.gd" id="7"]
 [ext_resource type="AudioStream" path="res://audio/music/march_loop.wav" id="8"]
+[ext_resource type="PackedScene" path="res://game/crew.tscn" id="9"]
 
 [sub_resource type="Resource" id="drop"]
 script = ExtResource("7")
@@ -41,4 +42,7 @@ label = "L2"
 unique_name_in_owner = true
 
 [node name="Army" parent="." instance=ExtResource("4")]
+unique_name_in_owner = true
+
+[node name="Crew" parent="." instance=ExtResource("9")]
 unique_name_in_owner = true

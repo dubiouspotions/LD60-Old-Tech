@@ -18,6 +18,7 @@ signal army_lost
 @onready var terrain: Terrain = %Terrain
 @onready var bridge: Bridge = %Bridge
 @onready var army: Army = %Army
+@onready var crew: Crew = %Crew
 ## Falling blocks, charges and arrows are added here.
 @onready var objects: Node2D = %Objects
 @onready var start_flag: CheckpointFlag = %StartFlag
@@ -36,6 +37,9 @@ func _ready() -> void:
 	bridge.terrain = terrain
 	army.terrain = terrain
 	army.bridge = bridge
+	crew.terrain = terrain
+	crew.bridge = bridge
+	crew.army = army
 	terrain.tile_detached.connect(_on_tile_detached)
 	terrain.collapsed.connect(func(found: Supplies, _cells: Array[Vector2i]) -> void: GameState.gain(found))
 	bridge.member_broken.connect(_on_member_broken)
@@ -48,6 +52,7 @@ func start(soldiers: int, level_number: int) -> void:
 	start_flag.label = "L%d" % level_number
 	exit_flag.label = "L%d" % (level_number + 1)
 	army.spawn(soldiers, start_flag.metres().x)
+	crew.spawn(start_flag.metres().x)
 
 
 func _physics_process(dt: float) -> void:
@@ -55,6 +60,7 @@ func _physics_process(dt: float) -> void:
 		return
 	bridge.step(dt, army.bridge_loads())
 	army.step(dt)
+	crew.step(dt)
 	var lead := army.lead()
 	if lead and lead.pos.x >= exit_flag.metres().x:
 		_done = true

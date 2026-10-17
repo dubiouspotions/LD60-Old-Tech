@@ -46,11 +46,11 @@ func cancel() -> void:
     _holding = false
 
 
-## Builds every blueprint on the level. Returns how many were built.
+## Hands every blueprint on the level to the crew. Returns how many.
 func commit() -> int:
     if not enabled or level == null:
         return 0
-    return level.bridge.commit_blueprints()
+    return level.bridge.order_blueprints()
 
 
 func _unhandled_input(event: InputEvent) -> void:

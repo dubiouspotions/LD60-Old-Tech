@@ -155,26 +155,56 @@ func test_blueprint_adds_no_weight_to_built_joint() -> void:
 	assert_almost_eq(deck.b.mass, built_mass, 0.001)
 
 
-func test_commit_turns_plan_into_bridge() -> void:
+func test_order_does_not_build_yet() -> void:
 	var t := WorldFixture.terrain(self, CHASM)
 	var b := WorldFixture.bridge(self, t)
 	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
 	assert_eq(b.blueprint_count(), 1)
-	assert_eq(b.commit_blueprints(), 1)
+	assert_eq(b.order_blueprints(), 1)
+	assert_true(m.blueprint, "waits for the crew")
+	assert_true(m.ordered)
+	assert_eq(b.blueprint_count(), 0, "no unordered plans left")
+
+
+func test_finished_member_stays_on_scaffolding_until_struck() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(6, 2)), LOG, true)
+	b.order_blueprints()
+	b.finish(m)
 	assert_false(m.blueprint)
-	assert_eq(b.blueprint_count(), 0)
-	assert_eq(b.walk_surface(5.0, 0.0).member, m)
+	assert_true(m.scaffolded)
+	assert_true(b.walk_surface(4.5, 0.0).is_empty(), "nobody walks on scaffolding")
+	_run(b, 0.5)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.001, "scaffolding holds it")
+	assert_eq(b.strike_scaffolding(), 1)
+	assert_eq(b.walk_surface(4.5, 0.0).member, m)
+	_run(b, 0.5)
+	assert_gt(m.b.pos.y, 2.5, "hinge swings once struck")
+
+
+func test_crossing_plan_holds_after_strike() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	b.order_blueprints()
+	b.finish(m)
+	b.strike_scaffolding()
 	_run(b, 2.0)
 	assert_almost_eq(m.b.pos.y, 2.0, 0.05)
 
 
-func test_committed_hinge_swings_down() -> void:
+func test_work_starts_from_ground_or_finished_structure() -> void:
 	var t := WorldFixture.terrain(self, CHASM)
 	var b := WorldFixture.bridge(self, t)
-	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(6, 2)), LOG, true)
-	b.commit_blueprints()
-	_run(b, 0.5)
-	assert_gt(m.b.pos.y, 2.5)
+	var m1 := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 2)), LOG, true)
+	var m2 := b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 0)), LOG, true)
+	b.order_blueprints()
+	assert_eq(b.work_ends(m1), [m1.a] as Array[Bridge.Joint], "bolted end")
+	assert_eq(b.work_ends(m2), [] as Array[Bridge.Joint], "nothing to stand on yet")
+	b.finish(m1)
+	assert_eq(b.work_ends(m2), [m1.b] as Array[Bridge.Joint])
+	assert_eq(b.route_from_ground(m1.b), [m1.a, m1.b] as Array[Bridge.Joint])
 
 
 func test_blast_spares_blueprints() -> void:

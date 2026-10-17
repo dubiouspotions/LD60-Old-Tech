@@ -158,7 +158,7 @@ func _settle_vertical(s: Soldier, dt: float) -> bool:
 ## Reason text if the soldier can not take the next dx step, else "".
 func _blocked_ahead(s: Soldier, dx: float) -> String:
 	var xp := s.pos.x + rules.foot_half_width + dx
-	var sup := _surface_at(xp, s.pos.y - rules.step_up)
+	var sup := surface_at(xp, s.pos.y - rules.step_up)
 	var col := floori(xp)
 	var head_blocked: bool = terrain.is_solid(Vector2i(floori(s.pos.x), floori(s.pos.y - 1.5))) and sup.y < s.pos.y - 0.5
 	if terrain.is_solid(Vector2i(col, floori(sup.y - 0.5))) or head_blocked:
@@ -177,7 +177,7 @@ func _blocked_ahead(s: Soldier, dx: float) -> String:
 
 ## Highest surface at x at or below y_from: tile tops, hazards and bridge decks.
 ## {y, hazard: TerrainType or null, member, t}
-func _surface_at(x: float, y_from: float) -> Dictionary:
+func surface_at(x: float, y_from: float) -> Dictionary:
 	var col := floori(x)
 	var best := {y = float(terrain.size.y), hazard = null, member = null, t = 0.0}
 	for r in range(maxi(0, ceili(y_from - 1e-6)), terrain.size.y):
@@ -200,8 +200,8 @@ func _surface_at(x: float, y_from: float) -> Dictionary:
 
 ## Surface under both feet. A foot over a hazard is ignored if the other is on safe ground.
 func _support(s: Soldier, y_from: float) -> Dictionary:
-	var a := _surface_at(s.pos.x - rules.foot_half_width, y_from)
-	var b := _surface_at(s.pos.x + rules.foot_half_width, y_from)
+	var a := surface_at(s.pos.x - rules.foot_half_width, y_from)
+	var b := surface_at(s.pos.x + rules.foot_half_width, y_from)
 	if (a.hazard == null) != (b.hazard == null):
 		return b if a.hazard != null else a
 	return a if a.y <= b.y else b

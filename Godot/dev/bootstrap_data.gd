@@ -9,6 +9,7 @@ func _ready() -> void:
 	_terrain()
 	_bridge()
 	_army()
+	_crew()
 	_tools()
 	_campaign()
 	get_tree().quit()
@@ -123,6 +124,13 @@ func _army() -> void:
 	r.death_sound = _snd("soldier_death")
 	r.hurt_sound = _snd("soldier_hurt")
 	_save(r, "res://data/army_rules.tres")
+
+
+func _crew() -> void:
+	var r := CrewRules.new()
+	r.work_sound = _snd("dig")
+	r.strike_sound = _snd("rope_place")
+	_save(r, "res://data/crew_rules.tres")
 
 
 func _tool(file: String, props: Dictionary) -> void:

@@ -146,7 +146,7 @@ mouse_filter = 2
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
-tooltip_text = "Build the planned members (Enter)"
+tooltip_text = "Order the engineers to build the plan (Enter)"
 disabled = true
 text = "Build"
 
@@ -280,7 +280,7 @@ theme_override_font_sizes/bold_font_size = 13
 bbcode_enabled = true
 text = "[ul][b]Dig[/b] soft earth (+1 earth), fell trees (trunk → logs, leaves → rope), mine cyan crystals (+1 powder). Dig a bridge member or a planned one to take it back.
 [b]Fill[/b] drops a block of earth that falls until it lands.
-[b]Log[/b], [b]Support[/b] and [b]Rope[/b]: drag from point to point to plan a member, then press [b]Build[/b] (Enter) to build the plan. Ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down. Joints are hinges, so build triangles or hang the deck from ropes. Logs take push and pull up to 5 m long and can be walked on; supports are logs nobody walks on; ropes only pull, up to 12 m. Members glow red as they near breaking, and each soldier adds 80 kg.
+[b]Log[/b], [b]Support[/b] and [b]Rope[/b]: drag from point to point to plan a member, then press [b]Build[/b] (Enter): the engineers build it piece by piece from the ground outward on scaffolding, and strike the scaffolding when done. Ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down. Joints are hinges, so build triangles or hang the deck from ropes. Logs take push and pull up to 5 m long and can be walked on; supports are logs nobody walks on; ropes only pull, up to 12 m. Members glow red as they near breaking, and each soldier adds 80 kg.
 [b]Charge[/b] blasts rock, brick and bridges within 2.6 m, your own soldiers included.
 Plan while paused (Space), build, then resume to load the bridge. Pan with right-drag, the wheel, A/D, or the Pan tool. F toggles speed, C follows the column.[/ul]"
 fit_content = true
