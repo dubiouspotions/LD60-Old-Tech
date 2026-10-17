@@ -1,0 +1,32 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://game/world.gd" id="1"]
+[ext_resource type="PackedScene" path="res://world/terrain.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://world/bridge.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://game/army.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://game/crew.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://objects/falling_block/falling_block.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://objects/camp/camp.tscn" id="7"]
+
+[node name="World" type="Node2D"]
+script = ExtResource("1")
+falling_block_scene = ExtResource("6")
+camp_scene = ExtResource("7")
+
+[node name="Terrain" parent="." instance=ExtResource("2")]
+unique_name_in_owner = true
+
+[node name="Flags" type="Node2D" parent="."]
+unique_name_in_owner = true
+
+[node name="Objects" type="Node2D" parent="."]
+unique_name_in_owner = true
+
+[node name="Bridge" parent="." instance=ExtResource("3")]
+unique_name_in_owner = true
+
+[node name="Crew" parent="." instance=ExtResource("5")]
+unique_name_in_owner = true
+
+[node name="Army" parent="." instance=ExtResource("4")]
+unique_name_in_owner = true

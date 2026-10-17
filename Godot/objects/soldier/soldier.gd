@@ -1,7 +1,8 @@
 class_name Soldier
 extends Node2D
 ## One marching soldier. Army moves it; this node only shows it.
-## The node origin is at the feet. Edit the look and the "walk"/"idle" animations in soldier.tscn.
+## The node origin is at the feet. Edit the look and the "walk"/"idle"/"sleep" animations in soldier.tscn.
+## While sleeping, Body is hidden and the optional Asleep node (lying pose) is shown instead.
 
 @export var hurt_flash_color: Color = Color.WHITE
 @export_range(0.0, 2.0, 0.05, "suffix:s") var hurt_flash_time: float = 0.3
@@ -18,9 +19,12 @@ var moving: bool = false
 var on_member: Bridge.Member
 var on_t: float = 0.0
 var dead: bool = false
+## Camped for the night. Owned by Army.
+var sleeping: bool = false
 
 @onready var _anim: AnimationPlayer = %AnimationPlayer
 @onready var _body: CanvasItem = %Body
+@onready var _asleep: CanvasItem = get_node_or_null(^"%Asleep")
 
 
 func _ready() -> void:
@@ -42,7 +46,11 @@ func stand_on(surface: Dictionary) -> void:
 func sync() -> void:
 	position = Grid.to_px(pos)
 	%Wounded.visible = hp < max_hp
-	var want := &"walk" if moving else &"idle"
+	var lying := sleeping and _asleep != null
+	if _asleep:
+		_asleep.visible = lying
+	_body.visible = not lying
+	var want := &"sleep" if lying else (&"walk" if moving else &"idle")
 	if _anim.current_animation != want:
 		_anim.play(want)
 	_anim.speed_scale = speed / 1.7

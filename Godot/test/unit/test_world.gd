@@ -1,0 +1,162 @@
+extends GutTest
+## The stitched world: levels stream in ahead, unload behind, and the column camps at every level start.
+
+var world: World
+
+
+func before_each() -> void:
+	GameState.save_path = "user://test_sappers.cfg"
+	GameState.new_campaign()
+	world = load("res://game/world.tscn").instantiate()
+	add_child_autofree(world)
+	world.set_physics_process(false)
+	world.set_process(false)
+
+
+func _run(seconds: float) -> void:
+	for i in int(seconds * 60):
+		world._physics_process(1.0 / 60.0)
+
+
+func test_begin_places_first_level_and_camps() -> void:
+	world.begin(0, 5)
+	var c0 := world.chunk(0)
+	assert_not_null(c0)
+	assert_eq(world.current, 0)
+	assert_eq(world.army.soldiers.size(), 5)
+	assert_almost_eq(world.army.lead().pos.x, c0.start_flag.metres().x, 0.01)
+	assert_eq(world.crew.engineers.size(), world.crew.rules.crew_size)
+	assert_true(world.army.hold, "camped until the march is ordered")
+	assert_true(world.army.lead().sleeping)
+	assert_not_null(world.camp(), "camp pitched")
+
+
+func test_next_level_stitches_onto_the_exit_flag() -> void:
+	world.begin(0, 3)
+	var c0 := world.chunk(0)
+	var c1 := world.place_now(1)
+	assert_eq(c1.seam, floori(c0.exit_flag.metres().x))
+	assert_eq(c1.start_flag, c0.exit_flag, "one flag marks both")
+	var t := world.terrain
+	assert_lte(absi(t.surface_row(c1.seam) - t.surface_row(c1.seam - 1)), 1, "walkable seam")
+	assert_gt(t.size.x, c1.seam + 100)
+	assert_eq(c1.exit_flag.label, "L3")
+
+
+func test_archers_move_with_their_level() -> void:
+	world.begin(0, 3)
+	for i in range(1, 5):
+		world.place_now(i)
+	var archers := world.objects.get_children().filter(func(o: Node) -> bool: return o is Archer)
+	assert_gt(archers.size(), 0, "level 5 has a tower")
+	for a: Archer in archers:
+		assert_true(world.terrain.is_solid(Grid.cell_of(a.feet_m() + Vector2(0, 0.5))), "%s on its tower" % a.name)
+
+
+func test_streams_next_level_in_the_background() -> void:
+	world.begin(0, 3)
+	world.request(1)
+	world.set_process(true)
+	await wait_until(func() -> bool: return world.chunk(1) != null, 5.0)
+	assert_not_null(world.chunk(1))
+
+
+func test_unload_drops_the_level_behind() -> void:
+	world.begin(0, 3)
+	var c1 := world.place_now(1)
+	world.unload(0)
+	assert_null(world.chunk(0))
+	assert_eq(world.terrain.min_x, c1.seam)
+	assert_eq(world.terrain.type_at(Vector2i(c1.seam - 3, 30)), world.terrain.out_of_bounds)
+	assert_true(is_instance_valid(c1.start_flag), "camp flag of the next level kept")
+
+
+func test_column_arrives_and_camps_at_the_next_level() -> void:
+	world.begin(0, 3)
+	world.march()
+	var c1 := world.place_now(1)
+	var x := c1.start_flag.metres().x
+	world.army.spawn(3, x + 0.05)
+	watch_signals(world)
+	_run(0.1)
+	assert_signal_emitted(world, "camp_made")
+	var joined: int = get_signal_parameters(world, "camp_made")[1]
+	assert_gt(joined, 0)
+	assert_eq(world.current, 1)
+	assert_eq(GameState.level_index, 1)
+	assert_eq(world.army.soldiers.size(), 3 + joined, "reinforcements join the camp")
+	assert_true(world.army.hold)
+	assert_true(world.army.soldiers.all(func(s: Soldier) -> bool: return s.sleeping))
+
+
+func test_camp_sleeps_while_engineers_work() -> void:
+	world.begin(0, 3)
+	var lead := world.army.lead()
+	var x := lead.pos.x
+	var cell := Vector2i(floori(x) + 3, world.terrain.surface_row(floori(x) + 3))
+	world.terrain.mark(cell)
+	_run(15.0)
+	assert_eq(lead.pos.x, x, "the column sleeps")
+	assert_null(world.terrain.type_at(cell), "the engineers dug through the night")
+
+
+func test_march_breaks_camp() -> void:
+	world.begin(0, 3)
+	watch_signals(world)
+	world.march()
+	assert_false(world.army.hold)
+	assert_false(world.army.lead().sleeping)
+	assert_signal_emitted_with_parameters(world, "night_changed", [false])
+	assert_signal_emitted_with_parameters(world, "march_ordered", [true])
+	var x := world.army.lead().pos.x
+	_run(1.0)
+	assert_gt(world.army.lead().pos.x, x)
+
+
+func test_king_ends_the_night() -> void:
+	world.begin(0, 3)
+	world.start_at(world.chunk(0).start_flag.metres().x, 3, 1.0)
+	watch_signals(world)
+	_run(1.5)
+	assert_false(world.army.hold)
+	assert_signal_emitted_with_parameters(world, "march_ordered", [false])
+
+
+func test_rewind_restores_the_level_and_clears_work_beyond() -> void:
+	world.begin(0, 3)
+	var c1 := world.place_now(1)
+	var x := c1.seam + 20
+	var cell := Vector2i(x, world.terrain.surface_row(x))
+	world.terrain.set_type(cell, null)
+	var b := world.bridge
+	b.build(b.snap_point(Vector2(x, cell.y)), b.snap_point(Vector2(x + 3, cell.y)), preload("res://data/bridge/log.tres"))
+	world.rewind(1)
+	assert_not_null(world.terrain.type_at(cell), "ground restored")
+	assert_eq(b.members.size(), 0, "bridges past the checkpoint removed")
+	assert_eq(world.chunk(1).seam, c1.seam, "same place as before")
+
+
+func test_last_exit_wins() -> void:
+	var last := GameState.campaign.levels.size() - 1
+	world.begin(last, 3)
+	world.march()
+	world.army.spawn(1, world.chunk(last).exit_flag.metres().x + 0.05)
+	watch_signals(world)
+	_run(0.1)
+	assert_signal_emitted(world, "victory")
+
+
+func test_archers_hold_fire_while_the_column_sleeps() -> void:
+	world.begin(0, 3)
+	var x := world.army.lead().pos.x
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(x + 4, world.terrain.surface_row(floori(x) + 4)))
+	archer.first_shot_delay = 0.0
+	world.objects.add_child(archer)
+	var shots := [0]
+	world.objects.child_entered_tree.connect(func(n: Node) -> void: shots[0] += int(n is Arrow))
+	await wait_physics_frames(90)
+	assert_eq(shots[0], 0, "no arrows at night")
+	world.march()
+	await wait_physics_frames(30)
+	assert_gt(shots[0], 0, "shoots by day")

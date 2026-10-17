@@ -136,3 +136,42 @@ func test_blast_clears_radius_but_not_bedrock() -> void:
 	assert_eq(t.type_at(Vector2i(5, 5)), WorldFixture.type("bedrock"))
 	assert_eq(t.type_at(Vector2i(0, 2)), WorldFixture.type("soil"), "outside radius untouched")
 	assert_gt(got.earth, 0)
+
+
+func test_unload_before_turns_left_columns_into_bedrock() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	t.unload_before(3)
+	assert_eq(t.min_x, 3)
+	assert_eq(t.type_at(Vector2i(0, 6)), WorldFixture.type("bedrock"), "unloaded column is a wall")
+	assert_null(t.type_at(Vector2i(3, 0)), "air right of the edge stays air")
+	assert_eq(t.type_at(Vector2i(3, 6)), WorldFixture.type("crystal"))
+	assert_false(t.get_used_cells().any(func(c: Vector2i) -> bool: return c.x < 3), "tiles freed")
+
+
+func test_stamp_copies_level_right_of_seam_with_offset() -> void:
+	var t := WorldFixture.terrain(self, ["....", "####", "BBBB"])
+	var src := WorldFixture.terrain(self, ["RR..", "RR##", "BBBB"])
+	t.stamp(src, Vector2i(2, 0), 3)
+	assert_eq(t.type_at(Vector2i(3, 0)), WorldFixture.type("rock"), "src column 1 lands on world column 3")
+	assert_eq(t.type_at(Vector2i(4, 1)), WorldFixture.type("soil"))
+	assert_eq(t.type_at(Vector2i(2, 1)), WorldFixture.type("soil"), "left of the seam untouched")
+	assert_eq(t.type_at(Vector2i(2, 0)), null)
+	assert_eq(t.size.x, 6)
+
+
+func test_stamp_replaces_everything_right_of_seam() -> void:
+	var t := WorldFixture.terrain(self, ["......R", "#######", "BBBBBBB"])
+	var src := WorldFixture.terrain(self, ["..", "##", "BB"])
+	t.stamp(src, Vector2i(2, 0), 2)
+	assert_eq(t.get_cell_source_id(Vector2i(6, 0)), -1, "old tile beyond the seam cleared")
+	assert_eq(t.size.x, 4, "level now ends where the stamp ends")
+
+
+func test_clear_from_makes_right_side_a_wall() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	t.mark(Vector2i(8, 6))
+	t.clear_from(5)
+	assert_eq(t.size.x, 5)
+	assert_eq(t.type_at(Vector2i(6, 6)), WorldFixture.type("bedrock"))
+	assert_false(t.is_marked(Vector2i(8, 6)), "marks beyond cleared")
+	assert_eq(t.type_at(Vector2i(4, 6)), WorldFixture.type("soil"))

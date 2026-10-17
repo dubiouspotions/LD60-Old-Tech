@@ -20,11 +20,11 @@ The column marches east on its own. It halts at anything it can't cross: walls o
 - **Enter** or the **Build** button hands the plan to the engineers (orange). They build it member by member, starting from the ground or finished parts and climbing along what is already up. Finished parts are held on scaffolding, and the column can't cross them yet. When the last engineer is back on the ground the scaffolding comes down, and your design holds or it doesn't. The column waits at any deck or ramp still being built.
 - Bridge ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down.
 - Joints are hinges, so build triangles or hang the deck from ropes. Members glow red as they near breaking, and each soldier adds 80 kg.
-- Each level the column waits at the start until the king loses patience (30 s by default). Use the time to build ahead, and press **M** or **March** to set off early once you're ready.
+- The march is one long road: each level joins the last. At the start of every level the column makes camp and sleeps through the night while your engineers keep working, until the king loses patience (30 s by default). Use the night to build ahead, and press **M** or **March** to break camp early. Archers hold their fire while the column sleeps.
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
 - **F** toggles 2× speed. **C** makes the camera follow the column again.
 - Move the view with **WASD**/arrow keys, right or middle drag, or the mouse wheel.
-- Reaching a level's exit flag brings reinforcements and supplies. If the column falls, you retry the level with the army and supplies you had when it began.
+- Reaching a level's exit flag means camp, reinforcements and supplies. If the column falls, you retry from that camp with the army and supplies you had when you got there; work done since is undone.
 
 ## Running
 

@@ -16,8 +16,12 @@ var bridge: Bridge
 var soldiers: Array[Soldier] = []
 ## Why the front soldier is not moving, or "" while it marches.
 var halt_reason: String = ""
-## Waiting for the order to march. Soldiers still fall, but do not walk.
-var hold: bool = false
+## Camped, waiting for the order to march. Soldiers sleep: they still fall, but do not walk.
+var hold: bool = false:
+	set(v):
+		hold = v
+		for s in soldiers:
+			s.sleeping = v
 
 
 func lead() -> Soldier:
@@ -35,6 +39,17 @@ func spawn(count: int, x: float) -> void:
 	soldiers.clear()
 	for i in count:
 		_add(maxf(0.5, x - i * rules.spawn_spacing))
+	_update_leader()
+	count_changed.emit(soldiers.size())
+
+
+## Adds count soldiers behind the rear (reinforcements). They join asleep if the column is camped.
+func reinforce(count: int) -> void:
+	if count <= 0:
+		return
+	var back := rear().pos.x if rear() else 0.5
+	for i in count:
+		_add(maxf(0.5, back - (i + 1) * rules.spawn_spacing))
 	_update_leader()
 	count_changed.emit(soldiers.size())
 
@@ -222,6 +237,7 @@ func _add(x: float) -> Soldier:
 	s.max_hp = rules.hit_points
 	s.hp = rules.hit_points
 	s.speed = rules.march_speed * (1.0 + randf_range(-rules.speed_spread, rules.speed_spread))
+	s.sleeping = hold
 	add_child(s)
 	soldiers.append(s)
 	s.sync()

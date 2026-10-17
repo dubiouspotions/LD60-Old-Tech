@@ -1,6 +1,6 @@
 """Writes placeholder sound effects and a march loop as 16-bit mono WAV into audio/.
 
-Stdlib only. Run from the Godot folder:  python -I dev/synth_placeholder_audio.py
+Stdlib only. Run from the Godot folder:  python -I dev/synth_placeholder_audio.py [--no-music] [--only-night]
 Designers replace these files (or point the SoundEffect resources at new ones).
 """
 import math
@@ -129,8 +129,34 @@ def music():
     write("music/march_loop.wav", mix(*tracks))
 
 
+def night():
+    """Camp: fire crackle loop, a quiet night tune, and the dawn bugle."""
+    length = n(4.0)
+    crackle = [x * 0.15 for x in noise_burst(4.0, 0.03, 0.0, 0.0)]
+    tracks = [crackle]
+    for _ in range(26):
+        tracks.append(at(gain(noise_burst(0.03 + rng.random() * 0.05, 0.6, 6, 0.0005), 0.3 + rng.random() * 0.5), rng.random() * 3.9, length))
+    write("sfx/campfire_loop.wav", mix(*tracks))
+    beat = 0.75
+    notes = [330, 392, 440, 392, 330, 294, 262, 294, 330, 392, 330, 294, 262, 0, 262, 0]
+    length = n(len(notes) * beat)
+    tracks = []
+    for k, f in enumerate(notes):
+        if f:
+            tracks.append(at(gain(tone(f, beat * 1.4, 1.5, tri, attack=0.08), 0.18), k * beat, length))
+    for k, f in enumerate([131, 110, 131, 98]):
+        tracks.append(at(gain(tone(f, beat * 4, 1.0, math.sin, attack=0.3), 0.12), k * 4 * beat, length))
+    write("music/night_loop.wav", mix(*tracks))
+    write("sfx/dawn_bugle.wav", mix(*[at(gain(tone(f, d, 1.2, tri, attack=0.01), 0.5), t, n(1.8))
+                                      for t, f, d in [(0, 392, 0.2), (0.22, 523, 0.2), (0.44, 659, 0.2), (0.66, 784, 0.9)]]))
+
+
 if __name__ == "__main__":
+    if "--only-night" in sys.argv:
+        night()
+        sys.exit()
     sfx()
+    night()
     if "--no-music" not in sys.argv:
         music()
     print("wrote placeholder audio to", os.path.normpath(ROOT))

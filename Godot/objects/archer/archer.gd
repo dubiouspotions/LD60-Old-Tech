@@ -17,6 +17,8 @@ extends Node2D
 @export var down_text: String = "Tower down"
 ## Height of the bow above the feet.
 @export var bow_height: float = 0.6
+## Holds fire while the column camps for the night.
+@export var rests_at_night: bool = true
 
 @export_group("Look")
 @export var show_range: bool = true
@@ -37,17 +39,20 @@ func feet_m() -> Vector2:
 
 
 func _physics_process(dt: float) -> void:
-	var level := Level.of(self)
-	if level == null or _down:
+	var world := World.of(self)
+	if world == null or _down:
 		return
-	if not level.terrain.is_solid(Grid.cell_of(feet_m() + Vector2(0, 0.5))):
-		_fall(level)
+	if not world.terrain.is_solid(Grid.cell_of(feet_m() + Vector2(0, 0.5))):
+		_fall(world)
+		return
+	if rests_at_night and world.army.hold:
+		engaging = false
 		return
 	_cooldown -= dt
 	var origin := feet_m() - Vector2(0, bow_height)
 	var target: Soldier = null
 	var best := shoot_range
-	for s in level.army.soldiers:
+	for s in world.army.soldiers:
 		var d := (s.pos - Vector2(0, 0.5)).distance_to(origin)
 		if d < best:
 			best = d
@@ -64,11 +69,11 @@ func _physics_process(dt: float) -> void:
 	arrow.gravity = arrow_gravity
 	arrow.shooter_column = floori(feet_m().x)
 	arrow.position = Grid.to_px(origin)
-	level.objects.add_child(arrow)
+	world.objects.add_child(arrow)
 	Audio.play(shoot_sound, position)
 
 
-func _fall(_level: Level) -> void:
+func _fall(_world: World) -> void:
 	_down = true
 	engaging = false
 	Effects.say(position - Vector2(0, Grid.PX), down_text, Color("e9a93b"))

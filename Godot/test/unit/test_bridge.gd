@@ -223,3 +223,17 @@ func test_support_holds_but_is_not_walkable() -> void:
 	_run(b, 2.0)
 	assert_true(m in b.members)
 	assert_almost_eq(m.b.pos.y, 2.0, 0.05)
+
+
+func test_remove_outside_drops_members_with_an_end_beyond() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var left := b.build(b.snap_point(Vector2(1, 2)), b.snap_point(Vector2(3, 2)), LOG)
+	var across := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	b.remove_outside(0.0, 5.0)
+	assert_true(left in b.members)
+	assert_false(across in b.members, "blueprints go too")
+	assert_true(across.dead)
+	b.remove_outside(2.0, 100.0)
+	assert_eq(b.members.size(), 0)
+	assert_eq(b.nodes.size(), 0)
