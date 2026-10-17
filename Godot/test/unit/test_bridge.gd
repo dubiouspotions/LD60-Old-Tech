@@ -280,3 +280,52 @@ func test_cancel_plan_removes_it_and_returns_its_cost() -> void:
 	var refund := b.cancel_plan(plan)
 	assert_eq([refund.logs, refund.rope], [1, 1])
 	assert_eq(b.members, [kept] as Array[Bridge.Member])
+
+
+func test_snaps_along_a_bridge_not_only_to_its_ends() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var deck := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	var s := b.snap_point(Vector2(5.2, 2.1))
+	assert_eq(s.on_member, deck)
+	assert_almost_eq(s.pos, Vector2(5.2, 2.0), Vector2(0.01, 0.01), "on the log")
+	assert_null(s.node)
+
+
+func test_ropes_are_only_joined_at_their_ends() -> void:
+	var t := WorldFixture.terrain(self, CRANE)
+	var b := WorldFixture.bridge(self, t)
+	b.build(b.snap_point(Vector2(5, 1)), b.snap_point(Vector2(5, 5)), ROPE)
+	assert_null(b.snap_point(Vector2(5.1, 3)).on_member)
+
+
+func test_building_from_the_middle_splits_the_bridge() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var deck := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	var support := b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 5)), SUPPORT)
+	assert_eq(b.members.size(), 3, "deck split in two, plus the support")
+	var mid := support.a
+	assert_eq(deck.b, mid, "the deck now ends at the new joint")
+	var other: Bridge.Member = b.members.filter(func(m: Bridge.Member) -> bool: return m != deck and m != support)[0]
+	assert_eq(other.a, mid)
+	assert_almost_eq(deck.length + other.length, 4.0, 0.001)
+	assert_eq(other.material, deck.material)
+
+
+func test_split_bridge_on_a_support_holds() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	var support := b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 5)), SUPPORT)
+	_run(b, 2.0, [[support, 0.0, 160.0]])
+	assert_eq(b.members.size(), 3)
+	assert_almost_eq(support.a.pos.y, 2.0, 0.05, "the middle stays up")
+
+
+func test_can_not_join_a_bridge_to_its_own_end() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var deck := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	var plenty := Supplies.make(9, 9, 9, 9)
+	assert_false(b.check_build(b.snap_point(Vector2(5, 2)), b.snap_point(deck.b.pos), LOG, plenty).ok)

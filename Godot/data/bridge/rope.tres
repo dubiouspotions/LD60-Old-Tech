@@ -20,6 +20,7 @@ compliance = 2e-06
 break_force = 11000.0
 tension_only = true
 blocks_arrows = false
+attach_along = false
 walkable = false
 snapped_text = "Rope snapped"
 buckled_text = ""

@@ -251,6 +251,6 @@ func _draw_build(mat: BridgeMaterial) -> void:
 
 
 func _marker(p: Bridge.Snap) -> void:
-    var color := joint_color if p.node else (anchor_color if p.anchor else loose_color)
+    var color := joint_color if p.node or p.on_member else (anchor_color if p.anchor else loose_color)
     draw_arc(p.pos * Grid.PX, 0.22 * Grid.PX, 0, TAU, 20, color, 2.0)
 

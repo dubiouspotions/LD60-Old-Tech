@@ -56,6 +56,8 @@ class Snap:
 	var pos: Vector2
 	var node: Joint
 	var anchor: bool
+	## Lands part-way along this member (no joint there yet); building splits it here.
+	var on_member: Member
 
 	func _init(p_pos: Vector2, p_node: Joint, p_anchor: bool) -> void:
 		pos = p_pos
@@ -139,6 +141,20 @@ func snap_point(p: Vector2, exclude: Joint = null) -> Snap:
 			best = n
 	if best:
 		return Snap.new(best.pos, best, best.pinned)
+	var along: Member = null
+	var ad := snap_radius
+	for m in members:
+		if not m.material.attach_along or (exclude and (m.a == exclude or m.b == exclude)):
+			continue
+		var d := _seg_dist(p, m.a.pos, m.b.pos)
+		if d < ad:
+			ad = d
+			along = m
+	if along:
+		var at := Geometry2D.get_closest_point_to_segment(p, along.a.pos, along.b.pos)
+		var s := Snap.new(at, null, anchorable(at))
+		s.on_member = along
+		return s
 	var g := (p / grid_step).round() * grid_step
 	return Snap.new(g, null, anchorable(g))
 
@@ -152,7 +168,7 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 	if length > mat.max_length + 1e-6:
 		r.msg = too_long_text % [length, mat.max_length]
 		return r
-	if a.node and b.node and _joined(a.node, b.node):
+	if (a.node and b.node and _joined(a.node, b.node)) or _same_member(a, b) or _same_member(b, a):
 		r.msg = already_joined_text
 		return r
 	if _through_ground(a.pos, b.pos):
@@ -173,8 +189,8 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 ## A blueprint is only a plan until commit_blueprints.
 func build(a: Snap, b: Snap, mat: BridgeMaterial, blueprint: bool = false) -> Member:
 	var m := Member.new()
-	m.a = a.node if a.node else _add_joint(a.pos)
-	m.b = b.node if b.node else _add_joint(b.pos)
+	m.a = _joint_for(a)
+	m.b = _joint_for(b)
 	m.length = a.pos.distance_to(b.pos)
 	m.material = mat
 	m.mass = m.length * mat.kg_per_m
@@ -572,6 +588,45 @@ func _draw_scaffold(p: Vector2) -> void:
 	while y < bottom - 0.5:
 		y += 1.0
 		draw_line(Vector2(p.x - 0.3, y) * px, Vector2(p.x + 0.3, y) * px, scaffold_color, maxf(1.0, 0.05 * px))
+
+
+## The joint a new member uses at s: the existing one, a split of the member it lands on, or a new one.
+func _joint_for(s: Snap) -> Joint:
+	if s.node:
+		return s.node
+	if s.on_member and not s.on_member.dead:
+		return split(s.on_member, s.pos)
+	return _add_joint(s.pos)
+
+
+## Cuts m in two at p (on m) with a new joint between the halves, keeping its state. Returns the joint.
+func split(m: Member, p: Vector2) -> Joint:
+	var t := clampf(m.a.pos.distance_to(p) / maxf(m.a.pos.distance_to(m.b.pos), 1e-6), 0.0, 1.0)
+	var j := _add_joint(p)
+	var rest := Member.new()
+	rest.a = j
+	rest.b = m.b
+	rest.material = m.material
+	rest.length = m.length * (1.0 - t)
+	rest.mass = rest.length * m.material.kg_per_m
+	rest.force = m.force
+	rest.blueprint = m.blueprint
+	rest.ordered = m.ordered
+	rest.scaffolded = m.scaffolded
+	rest.progress = m.progress
+	m.b = j
+	m.length *= t
+	m.mass = m.length * m.material.kg_per_m
+	members.append(rest)
+	_recompute_mass()
+	return j
+
+
+## Does a land on b's member, or on one of that member's ends.
+func _same_member(a: Snap, b: Snap) -> bool:
+	if a.on_member == null:
+		return false
+	return b.on_member == a.on_member or b.node == a.on_member.a or b.node == a.on_member.b
 
 
 func _joined(a: Joint, b: Joint) -> bool:

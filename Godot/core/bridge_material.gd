@@ -16,6 +16,8 @@ extends Resource
 @export_range(100.0, 100000.0, 100.0, "suffix:N") var break_force: float = 16000.0
 ## Ropes: only pull, never push.
 @export var tension_only: bool = false
+## New members may start or end anywhere along it, not only at its joints (logs yes, ropes no).
+@export var attach_along: bool = true
 ## Stops arrows once built (logs do, ropes do not).
 @export var blocks_arrows: bool = true
 ## Soldiers can walk on top of it.
