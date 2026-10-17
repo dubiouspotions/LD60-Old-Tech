@@ -205,3 +205,46 @@ func test_crew_walks_through_tunnel_not_over_hill() -> void:
 	for e in level.crew.engineers:
 		assert_gt(e.pos.x, 9.0, "came through")
 	assert_gt(highest[0], 5.5, "stayed in the tunnel")
+
+
+
+## Two pits: a 2 m one and a 5 m one, with ground between them.
+const TWO_PITS: Array = [
+	"........................",
+	"........................",
+	"........................",
+	"........................",
+	"........................",
+	"........................",
+	"######..########.....###",
+	"######..########.....###",
+	"######^^########^^^^^###",
+	"BBBBBBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_each_structure_comes_off_scaffolding_when_it_is_done() -> void:
+	level.terrain.clear()
+	level.terrain.rebuild()
+	for y in TWO_PITS.size():
+		for x in TWO_PITS[y].length():
+			var key: String = WorldFixture.LEGEND[TWO_PITS[y][x]]
+			if key != "":
+				level.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	# The crew stands between the pits, so both bridges are worked on at once.
+	level.army.spawn(1, 12.5)
+	level.crew.spawn(12.5)
+	var near := _plan(Vector2(6, 6), Vector2(8, 6))
+	var far: Array[Bridge.Member] = [
+		_plan(Vector2(16, 6), Vector2(18.5, 6)),
+		_plan(Vector2(18.5, 6), Vector2(21, 6)),
+		_plan(Vector2(16, 8), Vector2(18.5, 6), SUPPORT),
+		_plan(Vector2(21, 8), Vector2(18.5, 6), SUPPORT),
+	]
+	level.bridge.order_blueprints()
+	_run(30.0, func() -> bool: return not near.blueprint and not near.scaffolded)
+	assert_false(near.scaffolded, "near bridge struck on its own")
+	assert_true(far.any(func(m: Bridge.Member) -> bool: return m.blueprint or m.scaffolded), "far bridge still in work")
+	_run(60.0, func() -> bool: return far.all(func(m: Bridge.Member) -> bool: return not m.blueprint and not m.scaffolded))
+	for m in far:
+		assert_false(m.scaffolded, "far bridge struck when done")

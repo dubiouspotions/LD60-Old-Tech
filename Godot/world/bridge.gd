@@ -274,16 +274,54 @@ func has_scaffolding() -> bool:
 	return members.any(func(m: Member) -> bool: return m.scaffolded)
 
 
-## Releases every scaffolded member to the physics. Returns how many.
-func strike_scaffolding() -> int:
+## Releases scaffolded members to the physics: those in only, or every one when only is empty. Returns how many.
+func strike_scaffolding(only: Array[Member] = []) -> int:
 	var n := 0
-	for m in members:
+	for m in (only if not only.is_empty() else members):
 		if m.scaffolded:
 			m.scaffolded = false
 			n += 1
 	if n > 0:
 		_recompute_mass()
 	return n
+
+
+## Separate structures: groups of built or ordered members joined through shared joints.
+## Plans not yet ordered belong to no structure and join nothing.
+func structures() -> Array[Array]:
+	var out: Array[Array] = []
+	var seen := {}
+	for m in members:
+		if not seen.has(m) and _in_structure(m):
+			var group := structure_of(m)
+			for g in group:
+				seen[g] = true
+			out.append(group)
+	return out
+
+
+## Every built or ordered member joined to m through shared joints, m included.
+func structure_of(m: Member) -> Array[Member]:
+	var out: Array[Member] = []
+	if not _in_structure(m):
+		return out
+	var joints := {m.a: true, m.b: true}
+	var grew := true
+	while grew:
+		grew = false
+		for o in members:
+			if _in_structure(o) and (joints.has(o.a) or joints.has(o.b)) and not (joints.has(o.a) and joints.has(o.b)):
+				joints[o.a] = true
+				joints[o.b] = true
+				grew = true
+	for o in members:
+		if _in_structure(o) and joints.has(o.a) and joints.has(o.b):
+			out.append(o)
+	return out
+
+
+func _in_structure(m: Member) -> bool:
+	return not m.blueprint or m.ordered
 
 
 func member_at(p: Vector2, radius: float) -> Member:
