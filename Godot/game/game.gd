@@ -47,6 +47,8 @@ func _ready() -> void:
 	_hud.retry_pressed.connect(_retry)
 	_hud.restart_pressed.connect(_restart)
 	_camera.follow_changed.connect(_hud.set_follow)
+	_hud.set_volumes(Audio.volume(_hud.music_bus), Audio.volume(_hud.sound_bus))
+	_hud.volume_changed.connect(Audio.set_volume)
 	_world.camp_made.connect(_on_camp_made)
 	_world.march_ordered.connect(_on_march_ordered)
 	_world.night_changed.connect(_on_night_changed)

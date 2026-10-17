@@ -181,6 +181,79 @@ toggle_mode = true
 button_pressed = true
 text = "Follow"
 
+[node name="SoundButton" type="Button" parent="Root/Margin/Column/Rack"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Music and sound volume"
+toggle_mode = true
+text = "Sound"
+
+[node name="SoundPanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -316.0
+offset_top = -196.0
+offset_right = -16.0
+offset_bottom = -68.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="Rows" type="VBoxContainer" parent="Root/SoundPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Root/SoundPanel/Rows"]
+layout_mode = 2
+theme_type_variation = &"Display"
+text = "Volume"
+
+[node name="Music" type="HBoxContainer" parent="Root/SoundPanel/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/SoundPanel/Rows/Music"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "Music"
+
+[node name="MusicSlider" type="HSlider" parent="Root/SoundPanel/Rows/Music"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+focus_mode = 0
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="Sound" type="HBoxContainer" parent="Root/SoundPanel/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/SoundPanel/Rows/Sound"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "Sound"
+
+[node name="SoundSlider" type="HSlider" parent="Root/SoundPanel/Rows/Sound"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+focus_mode = 0
+max_value = 1.0
+step = 0.01
+value = 1.0
+
 [node name="PausedTag" type="Label" parent="Root"]
 unique_name_in_owner = true
 visible = false

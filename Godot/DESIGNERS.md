@@ -63,7 +63,7 @@ At the start of every level the column makes camp: the soldiers sleep, night fal
 - `data/sounds/*.tres` are SoundEffect resources. Each has a list of streams (one is picked at random each play), a volume, and a pitch spread. Point any sound slot in the Inspector at one.
 - Music is set per level, on the level root's **Music**; it starts when the column breaks camp. The campaign's **Camp Music** plays during the night. Any stream loops.
 - `audio/` holds synthesized placeholder WAVs. Drop in real files and re-point the resources.
-- Buses: Master, Music, SFX (`audio/default_bus_layout.tres`).
+- Buses: Master, Music, SFX (`audio/default_bus_layout.tres`). The bus volumes there are the full-volume mix; the player's **Sound** panel (Music and Sound sliders) scales them and remembers the setting in `user://settings.cfg`. Which buses the sliders drive: **Music Bus** / **Sound Bus** on the **HUD** node in `ui/hud.tscn`.
 
 ## Dev scripts (`dev/`, not exported)
 
