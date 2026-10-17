@@ -118,7 +118,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     # Auto-run only on the `deploy` branch; workflow_dispatch always allowed.
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/deploy'
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     container:
       image: docker://barichello/godot-ci:4.6.2
     defaults:
