@@ -363,3 +363,37 @@ func test_engineer_falls_when_the_bridge_under_it_breaks() -> void:
 		world.bridge.break_member(other, true)
 	_run(2.0)
 	assert_gt(e.pos.y, 7.5, "fell into the pit")
+
+
+## Ground at row 6 on the left, a 2 m step up from x = 8.
+const STEP: Array = [
+	"..................",
+	"..................",
+	"..................",
+	"..................",
+	"........##########",
+	"........##########",
+	"##################",
+	"BBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_crew_climbs_a_step_without_entering_the_rock() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in STEP.size():
+		for x in STEP[y].length():
+			var key: String = WorldFixture.LEGEND[STEP[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 16.5)
+	world.crew.spawn(4.0)
+	var inside := [false]
+	_run(6.0, func() -> bool:
+		for e in world.crew.engineers:
+			for h in [0.1, 0.8, 1.5]:
+				inside[0] = inside[0] or world.terrain.is_solid(Grid.cell_of(e.pos - Vector2(0, h)))
+		return false)
+	assert_false(inside[0], "nobody walks into the rock")
+	for e in world.crew.engineers:
+		assert_almost_eq(e.pos.y, 4.0, 0.05, "up on the step")

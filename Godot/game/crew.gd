@@ -314,22 +314,30 @@ func _route_down(j: Bridge.Joint) -> Array[Bridge.Joint]:
 func _walk_to(e: Engineer, x: float, dt: float) -> void:
 	var dx := x - e.pos.x
 	var facing := signi(roundi(dx * 100))
-	var ground := _next_y(e.pos.y, e.pos.x)
-	if not is_nan(ground) and absf(ground - e.pos.y) > 0.02:
-		e.pos.y = move_toward(e.pos.y, ground, rules.climb_speed * dt)
-		_show(e, true, facing)
-		return
-	if absf(dx) <= 0.05:
-		_show(e, false, facing)
-		return
 	var nx := e.pos.x + clampf(dx, -rules.walk_speed * dt, rules.walk_speed * dt)
 	# Look ahead for edges, but never past the target: a joint on a cliff edge is reached from this side.
 	var look := nx + signf(dx) * ENGINEER_HALF_WIDTH
 	var limit := x - signf(dx) * EDGE
 	if signf(dx) * (look - limit) > 0.0:
 		look = limit
-	if is_nan(_next_y(e.pos.y, look)):
+	var ahead := _next_y(e.pos.y, look) if absf(dx) > 0.05 else NAN
+	var ground := _next_y(e.pos.y, e.pos.x)
+	# Climbing the face of a higher ledge ahead: stay up on the face instead of settling back to the ground.
+	var on_face := not is_nan(ahead) and not is_nan(ground) and ahead < ground - 0.02 and e.pos.y < ground
+	if not is_nan(ground) and absf(ground - e.pos.y) > 0.02 and not on_face:
+		e.pos.y = move_toward(e.pos.y, ground, rules.climb_speed * dt)
+		_show(e, true, facing)
+		return
+	if absf(dx) <= 0.05:
 		_show(e, false, facing)
+		return
+	if is_nan(ahead):
+		_show(e, false, facing)
+		return
+	# Climb a higher ledge up its face first, then step onto it, so the body never enters the rock.
+	if ahead < e.pos.y - 0.02:
+		e.pos.y = move_toward(e.pos.y, ahead, rules.climb_speed * dt)
+		_show(e, true, facing)
 		return
 	e.pos.x = nx
 	_show(e, true, facing)
