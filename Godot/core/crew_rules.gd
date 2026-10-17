@@ -18,6 +18,9 @@ extends Resource
 ## Engineers dig a marked cell whose centre is within this distance of their chest.
 ## How long the digging takes is set per terrain type (Dig Time).
 @export_range(0.5, 5.0, 0.1, "suffix:m") var dig_reach: float = 1.6
+## An ordered plan that is not connected to ground or finished work is built from the ground by an engineer
+## standing where one of its ends is within this distance of their chest.
+@export_range(0.5, 5.0, 0.1, "suffix:m") var build_reach: float = 1.6
 ## Metres of member one engineer builds per second. Engineers on the same member add up.
 @export_range(0.05, 10.0, 0.05, "suffix:m/s") var build_speed: float = 1.6
 ## Idle engineers trail this far behind the front soldier...

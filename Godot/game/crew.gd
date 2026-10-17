@@ -3,7 +3,8 @@ extends Node2D
 ## The engineers. Ordered blueprints are built one member at a time, outward from the ground or finished
 ## structure. Finished members stay on scaffolding until their structure is done: nothing of it left to build
 ## and no engineer on it. Then its scaffolding is struck and the physics decides. Separate structures (not
-## joined by built or ordered members) are struck separately. Cells marked for digging are dug from a spot within reach.
+## joined by built or ordered members) are struck separately. Cells marked for digging are dug from a spot within reach;
+## plans connected to nothing are built from a spot on the ground within reach of an end.
 ## Each engineer takes the closest free job of either kind, or helps with a taken one when none is free. While
 ## plans wait to be ordered, idle engineers stand ready beside them. Engineer nodes only show state. Tuning lives in CrewRules.
 
@@ -41,6 +42,8 @@ class Engineer:
 	var spot_x: float
 	## Working this tick (building or digging).
 	var working: bool = false
+	## Builds the job from the ground standing at this x (a plan not connected to anything), else NAN.
+	var reach_x: float = NAN
 
 
 @export var rules: CrewRules
@@ -84,7 +87,7 @@ func step(dt: float) -> void:
 			e.route.clear()
 		if e.at and e.route.is_empty():
 			e.pos = e.at.pos
-		if e.job and (e.job.dead or not e.job.blueprint or (e.route.is_empty() and e.at != e.goal)):
+		if e.job and (e.job.dead or not e.job.blueprint or (e.route.is_empty() and e.at != e.goal and is_nan(e.reach_x))):
 			_drop(e)
 		if e.digging and not terrain.is_marked(e.dig):
 			e.digging = false
@@ -93,9 +96,10 @@ func step(dt: float) -> void:
 			e.think = THINK_INTERVAL
 			_take_job(e)
 		if e.job and e.route.is_empty():
-			e.working = true
-			_work(e, dt)
-			_show(e, false, 1)
+			if is_nan(e.reach_x) or _reach_step(e, dt):
+				e.working = true
+				_work(e, dt)
+				_show(e, false, signi(roundi((e.goal.pos.x - e.pos.x) * 100)) if e.goal else 1)
 		elif not e.route.is_empty():
 			_follow_route(e, dt)
 		elif e.at:
@@ -114,6 +118,7 @@ func step(dt: float) -> void:
 ## engineer stands, or over safe ground to a bolted joint and then along the structure. A marked cell is
 ## dug from a spot on safe ground within dig_reach.
 func _take_job(e: Engineer) -> void:
+	e.reach_x = NAN
 	var reachable := {}
 	var starts := func(n: Bridge.Joint) -> bool:
 		if e.at:
@@ -143,6 +148,23 @@ func _take_job(e: Engineer) -> void:
 				e.goal = j
 				e.route = route
 	if e.at == null:
+		# Plans with nothing to build from are built from the ground below an end.
+		for m in bridge.members:
+			if not (m.blueprint and m.ordered) or not bridge.work_ends(m).is_empty():
+				continue
+			var taker := _builder_of(m)
+			var ends: Array[Bridge.Joint] = [m.a, m.b]
+			if taker:
+				ends = [taker.goal]
+			for j in ends:
+				var x := _spot_within_reach(e.pos, j.pos, rules.build_reach)
+				var cost := absf(x - e.pos.x) + (HELP_COST if taker else 0.0)
+				if not is_nan(x) and cost < best_cost:
+					best_cost = cost
+					e.job = m
+					e.goal = j
+					e.route.clear()
+					e.reach_x = x
 		for cell in terrain.marked_cells():
 			var x := _dig_spot(e.pos, cell)
 			var cost := absf(x - e.pos.x) + (HELP_COST if _dig_taken(cell) else 0.0)
@@ -162,17 +184,37 @@ func _dig_taken(cell: Vector2i) -> bool:
 
 ## Closest x to p on safe ground from where the cell (a tree's base for trees) is within dig_reach, or NAN.
 func _dig_spot(p: Vector2, cell: Vector2i) -> float:
-	var work := terrain.work_cell(cell)
-	var target := Vector2(work) + Vector2(0.5, 0.5)
+	return _spot_within_reach(p, Vector2(terrain.work_cell(cell)) + Vector2(0.5, 0.5), rules.dig_reach)
+
+
+## Closest x to p on safe ground from where target is within reach of the engineer's chest, or NAN.
+func _spot_within_reach(p: Vector2, target: Vector2, reach: float) -> float:
 	var best := NAN
 	for k in range(-4, 5):
-		var x := work.x + 0.5 + k * 0.5
+		var x := target.x + k * 0.5
 		var y := _walk_y(p, x)
-		if is_nan(y) or Vector2(x, y - 0.5).distance_to(target) > rules.dig_reach:
+		if is_nan(y) or Vector2(x, y - 0.5).distance_to(target) > reach:
 			continue
 		if is_nan(best) or absf(x - p.x) < absf(best - p.x):
 			best = x
 	return best
+
+
+## Walks to the spot below a plan's end. True once there and within reach; gives the job up if the way or
+## the reach is lost.
+func _reach_step(e: Engineer, dt: float) -> bool:
+	var ground := _next_y(e.pos.y, e.pos.x)
+	var arrived := absf(e.reach_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
+	if not arrived:
+		var was := e.pos
+		_walk_to(e, e.reach_x, dt)
+		if e.pos == was:
+			_drop(e)
+		return false
+	if (e.pos - Vector2(0, 0.5)).distance_to(e.goal.pos) > rules.build_reach:
+		_drop(e)
+		return false
+	return true
 
 
 ## Walks to the dig spot, then digs. Gives the job up if the way or the reach is lost.
@@ -212,16 +254,18 @@ func _drop(e: Engineer) -> void:
 	e.goal = null
 	e.route.clear()
 	e.digging = false
+	e.reach_x = NAN
 
 
 func _work(e: Engineer, dt: float) -> void:
 	var m := e.job
-	m.from_joint = e.at
+	m.from_joint = e.at if e.at else e.goal
 	m.progress = minf(1.0, m.progress + dt * rules.build_speed / maxf(m.length, 0.1))
 	if m.progress >= 1.0:
 		bridge.finish(m)
 		e.job = null
 		e.goal = null
+		e.reach_x = NAN
 
 
 ## Climbs from joint to joint. Reaches the first joint over the ground when not on the structure yet.

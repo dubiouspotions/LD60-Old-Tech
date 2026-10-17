@@ -282,3 +282,18 @@ func test_each_structure_comes_off_scaffolding_when_it_is_done() -> void:
 	_run(60.0, func() -> bool: return far.all(func(m: Bridge.Member) -> bool: return not m.blueprint and not m.scaffolded))
 	for m in far:
 		assert_false(m.scaffolded, "far bridge struck when done")
+
+
+func test_crew_builds_a_floating_plan_it_can_reach_from_the_ground() -> void:
+	var m := _plan(Vector2(2, 4), Vector2(4, 4))
+	world.bridge.order_blueprints()
+	_run(15.0, func() -> bool: return not m.blueprint)
+	assert_false(m.blueprint, "built from the ground, not from a joint")
+	assert_true(m.scaffolded, "held up by scaffolding")
+
+
+func test_crew_leaves_a_floating_plan_out_of_reach() -> void:
+	var m := _plan(Vector2(2, 1), Vector2(4, 1))
+	world.bridge.order_blueprints()
+	_run(10.0)
+	assert_true(m.blueprint, "too high to reach from the ground")
