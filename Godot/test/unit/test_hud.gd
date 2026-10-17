@@ -46,15 +46,15 @@ func test_widening_again_unfolds() -> void:
 
 func test_recruit_button_shows_at_camp_and_reports_clicks() -> void:
 	watch_signals(hud)
-	hud.set_recruit(true, 5, true)
+	hud.set_recruit(true, 5, true, Vector2.ZERO)
 	var b: Button = hud.get_node("%RecruitButton")
 	assert_true(b.visible)
 	assert_string_contains(b.text, "5")
 	b.pressed.emit()
 	assert_signal_emitted(hud, "recruit_pressed")
-	hud.set_recruit(true, 5, false)
+	hud.set_recruit(true, 5, false, Vector2.ZERO)
 	assert_true(b.disabled, "greyed out when gold is short")
-	hud.set_recruit(false, 5, true)
+	hud.set_recruit(false, 5, true, Vector2.ZERO)
 	assert_false(b.visible)
 
 
@@ -70,3 +70,11 @@ func test_build_buttons_float_above_plans() -> void:
 	assert_signal_emitted_with_parameters(hud, "build_pressed", [1])
 	hud.set_build_spots([], [])
 	assert_false(hud.get_node("%WorldButtons").get_children().any(func(b: Node) -> bool: return b.visible))
+
+
+func test_recruit_button_floats_above_the_camp() -> void:
+	hud.set_recruit(true, 5, true, Vector2(400, 300))
+	var b: WorldButton = hud.get_node("%RecruitButton")
+	assert_eq(b.get_parent(), hud.get_node("%WorldButtons"))
+	assert_almost_eq(b.position.x + b.size.x / 2, 400.0, 1.0)
+	assert_almost_eq(b.position.y + b.size.y, 300.0, 1.0)

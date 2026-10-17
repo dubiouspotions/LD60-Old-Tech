@@ -101,13 +101,16 @@ func set_march(waiting: bool) -> void:
 		_fit.call_deferred()
 
 
-## Shows the Recruit button while the column camps; greyed out when a soldier can not be bought.
-func set_recruit(at_camp: bool, gold: int, can_buy: bool) -> void:
-	%RecruitButton.text = recruit_text % gold
-	%RecruitButton.disabled = not can_buy
-	if %RecruitButton.visible != at_camp:
-		%RecruitButton.visible = at_camp
-		_fit.call_deferred()
+## Shows the Recruit button above the camp (world pixels) while the column camps; greyed out when a soldier
+## can not be bought.
+func set_recruit(at_camp: bool, gold: int, can_buy: bool, world_px: Vector2) -> void:
+	var b: WorldButton = %RecruitButton
+	b.visible = at_camp
+	if not at_camp:
+		return
+	b.text = recruit_text % gold
+	b.disabled = not can_buy
+	b.pin(_to_screen(world_px))
 
 
 ## Folds the rows to fit width pixels: tool hints go first, then the title.

@@ -29,6 +29,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Sleeping soldier pose and the "z" | **Asleep** node and the "sleep" animation in `objects/soldier/soldier.tscn` |
 | Night colours, fade time, cursor lantern strength | **DayNight** node in `game/main.tscn` (lantern light: **Lantern** node) |
 | Camp music, dawn bugle | `data/campaign.tres` → Camp group |
+| Recruit button text and height above the camp | **Recruit Text** on the **HUD** node in `ui/hud.tscn`; **Recruit Button Rise** on the **Game** node in `game/main.tscn` |
 | Price of a recruit, its sound and text | **Recruit Cost** / **Recruit Sound** / **Recruit Text** in `data/army_rules.tres` (the army limit is **Max Soldiers** there) |
 | Where gold comes from | Gold ore tiles (`data/terrain/crystal.tres`), the campaign's **Start Supplies**, and each level's **Supply Drop** |
 | Do archers shoot at night | **Rests At Night** on `objects/archer/archer.tscn` |

@@ -125,14 +125,6 @@ theme_type_variation = &"Display"
 theme_override_font_sizes/font_size = 20
 text = "Awaiting orders"
 
-[node name="RecruitButton" type="Button" parent="Root/Margin/Column/TopBar"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-focus_mode = 0
-tooltip_text = "Buy a soldier with gold; they join the camp (R)"
-text = "Recruit"
-
 [node name="MarchButton" type="Button" parent="Root/Margin/Column/TopBar"]
 unique_name_in_owner = true
 visible = false
@@ -268,6 +260,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="RecruitButton" parent="Root/WorldButtons" instance=ExtResource("6")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+tooltip_text = "Buy a soldier with gold; they join the camp (R)"
+text = "Recruit"
 
 [node name="PausedTag" type="Label" parent="Root"]
 unique_name_in_owner = true
