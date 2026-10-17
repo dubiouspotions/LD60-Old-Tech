@@ -45,14 +45,14 @@ func _physics_process(dt: float) -> void:
 
 
 func explode() -> void:
-	var level := Level.of(self)
-	if level == null or is_queued_for_deletion():
+	var world := World.of(self)
+	if world == null or is_queued_for_deletion():
 		return
 	var center := Grid.to_m(center_px())
 	queue_free()
-	GameState.gain(level.terrain.blast(center, blast_radius))
-	level.bridge.blast(center, blast_radius)
-	level.army.blast(center, blast_radius + soldier_margin, kill_text)
+	GameState.gain(world.terrain.blast(center, blast_radius))
+	world.bridge.blast(center, blast_radius)
+	world.army.blast(center, blast_radius + soldier_margin, kill_text)
 	for other in get_parent().get_children():
 		if other is Charge and other != self and Grid.to_m(other.center_px()).distance_to(center) <= blast_radius + 0.5:
 			other.time_left = minf(other.time_left, chain_fuse)

@@ -197,3 +197,53 @@ func test_attacks_archer_it_reaches_then_marches_on() -> void:
 	assert_false(archer.alive(), "slain")
 	_run(a, 2.0)
 	assert_gt(a.lead().pos.x, 8.0, "marched on")
+
+
+func test_resting_column_closes_up_to_camp_then_sleeps() -> void:
+	var a := _world(["..............................", "##############################", "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"])
+	a.spawn(2, 20.5)
+	var straggler := a.soldiers[1]
+	straggler.pos.x = 12.5
+	a.camp_x = 20.5
+	a.resting = true
+	_run(a, 1.0)
+	assert_false(straggler.sleeping, "still walking to camp")
+	assert_true(a.lead().sleeping, "the front lies down once it has stopped")
+	_run(a, 8.0)
+	assert_almost_eq(a.lead().pos.x, 20.5, 0.01, "nobody passes the camp")
+	assert_almost_eq(straggler.pos.x, 20.5 - a.rules.camp_spacing, 0.15, "joined the camp")
+	assert_true(straggler.sleeping)
+
+
+func test_waking_stands_everyone_up() -> void:
+	var a := _world(["..........", "##########", "BBBBBBBBBB"])
+	a.spawn(2, 5.5)
+	a.camp_x = 5.5
+	a.resting = true
+	_run(a, 2.0)
+	assert_true(a.soldiers.all(func(s: Soldier) -> bool: return s.sleeping))
+	a.resting = false
+	assert_false(a.soldiers.any(func(s: Soldier) -> bool: return s.sleeping))
+
+
+func test_dense_column_spreads_out_into_camp() -> void:
+	var a := _world(["..............................", "##############################", "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"])
+	a.spawn(4, 20.5)
+	a.camp_x = 20.5
+	a.resting = true
+	_run(a, 8.0)
+	for i in a.soldiers.size():
+		assert_almost_eq(a.soldiers[i].pos.x, 20.5 - i * a.rules.camp_spacing, 0.1, "soldier %d on its spot" % i)
+		assert_true(a.soldiers[i].sleeping)
+
+
+func test_camp_squeezes_in_when_there_is_no_room_behind() -> void:
+	var a := _world(["..........", "##########", "BBBBBBBBBB"])
+	a.spawn(6, 3.5)
+	a.camp_x = 3.5
+	a.resting = true
+	_run(a, 6.0)
+	var xs := a.soldiers.map(func(s: Soldier) -> float: return s.pos.x)
+	for i in range(1, xs.size()):
+		assert_gt(xs[i - 1] - xs[i], 0.4, "soldiers %d and %d do not pile up" % [i - 1, i])
+	assert_gte(xs[-1], 0.25, "nobody pressed into the edge")

@@ -20,11 +20,11 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 - While you plan, idle engineers (orange) walk over and wait beside it. **Enter** or the **Build** button hands the plan to them. They build it member by member, starting from the ground or finished parts and climbing along what is already up. With only one thing to build or dig, they all work on it together. Finished parts are held on scaffolding and can't be walked on yet. Each separate structure comes down off its scaffolding once it's finished and no engineer is on it, and your design holds or it doesn't. The column doesn't wait for it: a soldier walking onto an unfinished bridge falls.
 - Bridge ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down.
 - Joints are hinges, so build triangles or hang the deck from ropes. Members glow red as they near breaking, and each soldier adds 80 kg.
-- Each level the column waits at the start until the king loses patience (30 s by default). Use the time to build ahead, and press **M** or **March** to set off early once you're ready.
+- The march is one long road: each level joins the last. At the start of every level the column makes camp and sleeps through the night while your engineers keep working, until the king loses patience (30 s by default). Use the night to build ahead, and press **M** or **March** to break camp early. Archers hold their fire while the column sleeps.
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
-- **F** toggles 2× speed. **C** makes the camera follow the column again.
+- **F** toggles 2× speed. **C** makes the camera follow the column again. **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.
 - Move the view with **WASD**/arrow keys, right or middle drag, or the mouse wheel.
-- Reaching a level's exit flag brings reinforcements and supplies. If the column falls, you retry the level with the army and supplies you had when it began.
+- Reaching a level's exit flag means camp, reinforcements and supplies. If the column falls, you retry from that camp with the army and supplies you had when you got there; work done since is undone.
 
 ## Running
 

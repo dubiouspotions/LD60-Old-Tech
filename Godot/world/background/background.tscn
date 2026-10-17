@@ -28,6 +28,8 @@ fill_to = Vector2(1, 0.5)
 [node name="Background" type="CanvasLayer" unique_id=339266599]
 layer = -10
 
+[node name="SkyTint" type="CanvasModulate" parent="."]
+
 [node name="Sky" type="TextureRect" parent="." unique_id=489870164]
 anchors_preset = 15
 anchor_right = 1.0

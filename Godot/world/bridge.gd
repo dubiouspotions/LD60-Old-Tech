@@ -443,6 +443,15 @@ func clear() -> void:
 	nodes.clear()
 
 
+## Removes every member, built or planned, with an end left of lo or right of hi (metres).
+func remove_outside(lo: float, hi: float) -> void:
+	for m in members.duplicate():
+		if minf(m.a.pos.x, m.b.pos.x) < lo or maxf(m.a.pos.x, m.b.pos.x) > hi:
+			m.dead = true
+			members.erase(m)
+	_recompute_mass()
+
+
 func _draw() -> void:
 	var px := Grid.PX
 	for n in nodes:

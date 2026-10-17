@@ -19,11 +19,22 @@ var soldiers: Array[Soldier] = []
 var halt_reason: String = ""
 ## Danger the front soldier is marching toward (a deep drop, a hazard), or "". A warning only.
 var danger: String = ""
-## Enemies soldiers fight when they reach them (archers). Set by the level each tick.
+## Enemies soldiers fight when they reach them (archers). Set by the world each tick.
 ## Each needs feet_m(), alive() and hit(damage).
 var foes: Array = []
 ## Waiting for the order to march. Soldiers still fall, but do not walk.
 var hold: bool = false
+## Camp is made: each soldier walks to its spot behind camp_x (camp_spacing apart, backwards if the column
+## is too dense) and lies down once it has stood still a moment. Turning it off wakes everyone.
+var resting: bool = false:
+	set(v):
+		resting = v
+		if not v:
+			for s in soldiers:
+				s.sleeping = false
+				s.still_time = 0.0
+## Where the camp is (metres), or NAN. Nobody walks past it.
+var camp_x: float = NAN
 
 
 func lead() -> Soldier:
@@ -41,6 +52,17 @@ func spawn(count: int, x: float) -> void:
 	soldiers.clear()
 	for i in count:
 		_add(maxf(0.5, x - i * rules.spawn_spacing))
+	_update_leader()
+	count_changed.emit(soldiers.size())
+
+
+## Adds count soldiers behind the rear (reinforcements). They join asleep if the column is camped.
+func reinforce(count: int) -> void:
+	if count <= 0:
+		return
+	var back := rear().pos.x if rear() else 0.5
+	for i in count:
+		_add(maxf(0.5, back - (i + 1) * rules.spawn_spacing))
 	_update_leader()
 	count_changed.emit(soldiers.size())
 
@@ -65,11 +87,16 @@ func step(dt: float) -> void:
 		s.moving = false
 		if not _settle_vertical(s, dt):
 			continue
-		if s.airborne:
+		if s.airborne or s.sleeping:
 			continue
 		if hold:
 			if i == 0:
 				halt_reason = rules.hold_text
+			continue
+		if resting and not is_nan(camp_x):
+			_walk_to_camp(s, i, dt)
+			if i == 0:
+				halt_reason = rules.camp_text
 			continue
 		var foe: Node2D = _foe_in_reach(s)
 		if foe:
@@ -96,7 +123,40 @@ func step(dt: float) -> void:
 			s.stand_on(sup)
 	_remove_dead()
 	for s in soldiers:
+		_settle_down(s, dt)
 		s.sync()
+
+
+## Walks soldier rank i toward its camp spot, forward or back. Spots squeeze together when the world ends
+## close behind the camp. Unlike the march it never steps off a ledge
+## or into a hazard; a soldier who can not get there lies down where it is.
+func _walk_to_camp(s: Soldier, i: int, dt: float) -> void:
+	var room := camp_x - terrain.min_x - 0.5
+	var gap := minf(rules.camp_spacing, room / maxi(soldiers.size() - 1, 1))
+	var to := camp_x - i * gap - s.pos.x
+	if absf(to) < 0.05:
+		s.facing = 1
+		return
+	var dx := clampf(to, -s.speed * dt, s.speed * dt)
+	var edge := surface_at(s.pos.x + signf(dx) * rules.foot_half_width + dx, s.pos.y - rules.step_up)
+	if not _blocked_ahead(s, dx).is_empty() or edge.hazard != null or edge.y > s.pos.y + rules.step_up:
+		return
+	s.pos.x += dx
+	s.moving = true
+	s.facing = signi(roundi(dx * 1000))
+	var sup := _support(s, s.pos.y - rules.step_up)
+	if sup.hazard == null and sup.y <= s.pos.y + 0.2:
+		s.pos.y = sup.y
+		s.stand_on(sup)
+
+
+## While resting, a soldier who has stood still on the ground for settle_time lies down.
+func _settle_down(s: Soldier, dt: float) -> void:
+	if not resting or s.sleeping:
+		return
+	s.still_time = s.still_time + dt if not s.moving and not s.airborne else 0.0
+	if s.still_time >= rules.settle_time:
+		s.sleeping = true
 
 
 ## Damages one soldier. Returns true if it died.
@@ -196,9 +256,9 @@ func _fight(s: Soldier, foe: Node2D, dt: float) -> void:
 	foe.hit(rules.melee_damage)
 
 
-## Wall text if the soldier can not take the next dx step, else "". Drops and hazards never block.
+## Wall text if the soldier can not take the next dx step (either way), else "". Drops and hazards never block.
 func _blocked_ahead(s: Soldier, dx: float) -> String:
-	var xp := s.pos.x + rules.foot_half_width + dx
+	var xp := s.pos.x + signf(dx) * rules.foot_half_width + dx
 	var sup := surface_at(xp, s.pos.y - rules.step_up)
 	var col := floori(xp)
 	var head_blocked: bool = terrain.is_solid(Vector2i(floori(s.pos.x), floori(s.pos.y - 1.5))) and sup.y < s.pos.y - 0.5

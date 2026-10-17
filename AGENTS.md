@@ -34,15 +34,16 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 | --- | --- | --- |
 | Data types | `core/supplies.gd`, `terrain_type.gd`, `bridge_material.gd`, `tool_definition.gd`, `army_rules.gd`, `campaign.gd`, `sound_effect.gd` | Resources, all `@tool`. |
 | Autoloads | `GameState` (campaign progress, supplies, checkpoint, best level in `user://`), `Audio`, `Effects` (`core/effects.tscn`: debris, floating text, shake) | |
-| Level | `levels/level.gd`, `level_base.tscn` | Every level inherits `level_base.tscn`. `Level.of(node)` finds the owning level. |
+| World | `game/world.gd`, `world.tscn` | One continuous world: Terrain, Bridge, Army, Crew, Objects, Flags. Levels are stitched on (`Terrain.stamp`), streamed in with `ResourceLoader.load_threaded_request`, unloaded behind (`Terrain.unload_before`, `min_x`), and rewound for retries. Owns the camp/night cycle (`army.hold`). `World.of(node)` finds it. |
+| Level | `levels/level.gd`, `level_base.tscn` | Templates only, never in the tree while playing: Terrain, Objects, StartFlag, ExitFlag plus settings. Every level inherits `level_base.tscn`. `campaign.levels` holds their paths. |
 | Terrain | `world/terrain.gd` (TileMapLayer) | Behaviour comes from the "terrain" custom data (a `TerrainType`). It caches cells. `settle()` detaches falling tiles and collapses unsupported structures. |
-| Bridge | `world/bridge.gd` | XPBD truss in SI units (m, kg, N). It only advances when `Level._physics_process` steps it. |
+| Bridge | `world/bridge.gd` | XPBD truss in SI units (m, kg, N). It only advances when `World._physics_process` steps it. |
 | Army | `game/army.gd`, `objects/soldier/` | Column logic ported from the original `updateUnits`. Soldier nodes only display state. |
 | Flow | `game/game.gd`, `tool_controller.gd`, `camera_rig.gd`, `ui/hud.gd` | The HUD only displays state and emits signals; the Game connects them. |
 
 **Units.** Simulation is in metres (1 tile = 1 m, y points down). Node positions are pixels. Convert with `Grid.to_px` / `Grid.to_m` / `Grid.cell_of` (`Grid.PX = 32`).
 
-**Pausing.** `LevelHolder` is pausable. The Game, ToolController, Camera, Terrain (`settle`), Bridge drawing, Audio and Effects keep running while paused, so the player can build during a pause. Speed is `Engine.time_scale`.
+**Pausing.** `LevelHolder` (holding the World) is pausable. The Game, ToolController, Camera, Terrain (`settle`), Bridge drawing, Audio and Effects keep running while paused, so the player can build during a pause. Speed is `Engine.time_scale`.
 
 ## Gotchas found the hard way
 
@@ -50,7 +51,9 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 - Godot has no script API that saves *inherited* scenes, so `dev/generate_levels.gd` writes the `.tscn` text itself (`instance=ExtResource(base)`, then overrides). Keep levels inherited so changes to `level_base.tscn` reach every level.
 - The tile atlas goes through two passes: `build_tileset.gd -- art`, then `--import`, then `-- tileset`.
 - Under typed GDScript, `var x := dict.key` fails to compile ("cannot infer type"). Write `var x: T = dict.key`.
-- `Terrain.size` only grows. Digging the last tile of a column must not move the level edge.
+- `Terrain.size` only grows while playing; digging the last tile of a column must not move the level edge. Only `stamp`/`clear_from` move the right edge and `unload_before` the left (`min_x`).
+- A level's cells left of its StartFlag column are dropped when it is stitched onto another level; keep stitch seams flat (`test_levels` checks them).
+- `level_01.tscn` once referenced `archer.tscn` by a UID the cache did not know, which logs an engine error on load. Prefer path-only `ext_resource` lines in hand-written scenes.
 
 ## Conventions
 

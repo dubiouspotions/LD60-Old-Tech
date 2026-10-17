@@ -11,6 +11,8 @@ signal march_pressed
 signal begin_pressed
 signal retry_pressed
 signal restart_pressed
+## The player moved a volume slider (0..1) for bus.
+signal volume_changed(bus: StringName, value: float)
 
 enum Mood { NORMAL, HALT, FIRE }
 
@@ -20,6 +22,9 @@ enum Mood { NORMAL, HALT, FIRE }
 @export var normal_color: Color = Color("ece4d2")
 @export_range(0.5, 10.0, 0.1, "suffix:s") var banner_time: float = 3.0
 @export var click_sound: SoundEffect
+## Audio buses behind the Music and Sound sliders.
+@export var music_bus: StringName = &"Music"
+@export var sound_bus: StringName = &"SFX"
 ## Build button text with blueprints waiting (%d = count), and with none.
 @export var commit_text: String = "Build %d"
 @export var commit_empty_text: String = "Build"
@@ -38,10 +43,17 @@ func _ready() -> void:
 	%RetryButton.pressed.connect(_emit.bind(retry_pressed))
 	%NewWorldButton.pressed.connect(_emit.bind(restart_pressed))
 	%AgainButton.pressed.connect(_emit.bind(restart_pressed))
+	%SoundButton.toggled.connect(func(on: bool) -> void: %SoundPanel.visible = on)
+	%MusicSlider.value_changed.connect(func(v: float) -> void: volume_changed.emit(music_bus, v))
+	%SoundSlider.value_changed.connect(func(v: float) -> void: volume_changed.emit(sound_bus, v))
+	# A click after moving the sound slider, so the new level can be heard.
+	%SoundSlider.drag_ended.connect(func(_changed: bool) -> void: Audio.play(click_sound))
 	GameState.supplies_changed.connect(_refresh_supplies)
 	GameState.soldiers_changed.connect(func(n: int) -> void: %Army.set_value(str(n)))
 	GameState.best_changed.connect(func(n: int) -> void: %Best.set_value("L%d" % n))
 	%Banner.modulate.a = 0.0
+	get_viewport().size_changed.connect(_fit)
+	_fit.call_deferred()
 	_refresh_supplies()
 	%Best.set_value("L%d" % GameState.best_level)
 
@@ -59,6 +71,7 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 			Audio.play(click_sound)
 			tool_pressed.emit(i))
 		_tool_buttons.append(b)
+	_fit.call_deferred()
 
 
 func set_tool(index: int) -> void:
@@ -77,13 +90,33 @@ func set_speed(speed: float) -> void:
 
 ## Shows the March button while the column waits for the king.
 func set_march(waiting: bool) -> void:
-	%MarchButton.visible = waiting
+	if %MarchButton.visible != waiting:
+		%MarchButton.visible = waiting
+		_fit.call_deferred()
+
+
+## Folds the rows to fit width pixels: tool hints go first, then the title.
+func fit_to(width: float) -> void:
+	for b in _tool_buttons:
+		b.set_compact(false)
+	%Title.visible = true
+	if %Rack.get_combined_minimum_size().x > width or %TopBar.get_combined_minimum_size().x > width:
+		for b in _tool_buttons:
+			b.set_compact(true)
+	if %TopBar.get_combined_minimum_size().x > width:
+		%Title.visible = false
 
 
 ## Shows how many blueprints the Build button will build.
 func set_plan(count: int) -> void:
 	%CommitButton.text = commit_text % count if count > 0 else commit_empty_text
 	%CommitButton.disabled = count == 0
+
+
+## Shows the current volumes (0..1) without reporting them back.
+func set_volumes(music: float, sound: float) -> void:
+	%MusicSlider.set_value_no_signal(music)
+	%SoundSlider.set_value_no_signal(sound)
 
 
 func set_follow(on: bool) -> void:
@@ -145,6 +178,12 @@ func hide_cards() -> void:
 
 func any_card_open() -> bool:
 	return %Intro.visible or %Lost.visible or %Victory.visible
+
+
+func _fit() -> void:
+	var margin: MarginContainer = $Root/Margin
+	var sides := margin.get_theme_constant(&"margin_left") + margin.get_theme_constant(&"margin_right")
+	fit_to(margin.get_viewport_rect().size.x - sides)
 
 
 func _refresh_supplies() -> void:

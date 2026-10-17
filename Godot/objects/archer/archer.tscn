@@ -117,4 +117,4 @@ position = Vector2(22, -44)
 sprite_frames = SubResource("SpriteFrames_4pjgo")
 animation = &"flagwavered"
 autoplay = "flagwavered"
-frame_progress = 0.3937253
+frame_progress = 0.4108122

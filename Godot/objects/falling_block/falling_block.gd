@@ -12,10 +12,10 @@ var _vy: float = 0.0
 
 
 func _physics_process(dt: float) -> void:
-	var level := Level.of(self)
-	if level == null:
+	var world := World.of(self)
+	if world == null:
 		return
-	var t := level.terrain
+	var t := world.terrain
 	var x := floori(position.x / Grid.PX)
 	_vy = minf(_vy + gravity * dt, max_speed)
 	position.y += _vy * dt * Grid.PX
