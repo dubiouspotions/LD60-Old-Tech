@@ -6,6 +6,8 @@ extends Node2D
 
 @export var hurt_flash_color: Color = Color.WHITE
 @export_range(0.0, 2.0, 0.05, "suffix:s") var hurt_flash_time: float = 0.3
+## Seconds standing still before the idle animation starts, so brief stops do not restart the walk cycle.
+@export_range(0.0, 2.0, 0.05, "suffix:s") var idle_delay: float = 0.25
 
 ## Simulation state, in metres. Owned by Army.
 var pos: Vector2
@@ -25,6 +27,9 @@ var sleeping: bool = false
 var still_time: float = 0.0
 ## 1 faces east (the march), -1 west.
 var facing: int = 1
+
+## Seconds since the soldier last moved.
+var _stood: float = INF
 ## Seconds until the next strike while fighting.
 var attack_cooldown: float = 0.0
 
@@ -57,10 +62,15 @@ func sync() -> void:
 	if _asleep:
 		_asleep.visible = lying
 	_body.visible = not lying
-	var want := &"sleep" if lying else (&"walk" if moving else &"idle")
+	var walking := moving or _stood < idle_delay
+	var want := &"sleep" if lying else (&"walk" if walking else &"idle")
 	if _anim.current_animation != want:
 		_anim.play(want)
 	_anim.speed_scale = speed / 1.7
+
+
+func _process(delta: float) -> void:
+	_stood = 0.0 if moving else _stood + delta
 
 
 func flash_hurt() -> void:
