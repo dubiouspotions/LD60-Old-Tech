@@ -16,6 +16,8 @@ var bridge: Bridge
 var soldiers: Array[Soldier] = []
 ## Why the front soldier is not moving, or "" while it marches.
 var halt_reason: String = ""
+## Waiting for the order to march. Soldiers still fall, but do not walk.
+var hold: bool = false
 
 
 func lead() -> Soldier:
@@ -57,6 +59,10 @@ func step(dt: float) -> void:
 		if not _settle_vertical(s, dt):
 			continue
 		if s.airborne:
+			continue
+		if hold:
+			if i == 0:
+				halt_reason = rules.hold_text
 			continue
 		var ahead: Soldier = soldiers[i - 1] if i > 0 else null
 		if ahead and not ahead.dead and ahead.pos.x - s.pos.x < rules.spacing and absf(ahead.pos.y - s.pos.y) < rules.queue_height:

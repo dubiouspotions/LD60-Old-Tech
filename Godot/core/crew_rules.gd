@@ -4,10 +4,10 @@ extends Resource
 ## How the engineer crew builds ordered blueprints. Units: metres and seconds.
 
 @export_range(1, 12) var crew_size: int = 3
-## Walking speed on the ground.
-@export_range(0.1, 10.0, 0.05, "suffix:m/s") var walk_speed: float = 2.4
+## Walking speed on the ground. Engineers carry no armour, so they should outpace the column (ArmyRules march speed).
+@export_range(0.1, 10.0, 0.05, "suffix:m/s") var walk_speed: float = 3.4
 ## Speed climbing along scaffolding and finished members, and up or down terrain.
-@export_range(0.1, 10.0, 0.05, "suffix:m/s") var climb_speed: float = 1.5
+@export_range(0.1, 10.0, 0.05, "suffix:m/s") var climb_speed: float = 2.4
 ## Ledges up to this high are stepped onto. Higher ones are climbed only when the way at the
 ## engineer's own level is blocked, so tunnels are walked through rather than climbed over.
 @export_range(0.0, 5.0, 0.05, "suffix:m") var step_up: float = 1.05

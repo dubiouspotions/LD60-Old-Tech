@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="TerrainType" format=3]
+[gd_resource type="Resource" script_class="TerrainType" format=3 uid="uid://c04be2d7tcrnh"]
 
-[ext_resource type="Script" path="res://core/supplies.gd" id="1_kixym"]
+[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="1_kixym"]
 [ext_resource type="Resource" path="res://data/sounds/dig.tres" id="2_4pqph"]
-[ext_resource type="Script" path="res://core/terrain_type.gd" id="3_8jium"]
+[ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="3_8jium"]
 
 [sub_resource type="Resource" id="Resource_mcdww"]
 script = ExtResource("1_kixym")

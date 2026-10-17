@@ -1,13 +1,15 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://game/game.gd" id="1"]
 [ext_resource type="PackedScene" path="res://world/background/background.tscn" id="2"]
 [ext_resource type="Script" path="res://game/tool_controller.gd" id="3"]
 [ext_resource type="Script" path="res://game/camera_rig.gd" id="4"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="5"]
+[ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6"]
 
 [node name="Game" type="Node"]
 script = ExtResource("1")
+march_sound = ExtResource("6")
 
 [node name="Background" parent="." instance=ExtResource("2")]
 

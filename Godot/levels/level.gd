@@ -5,6 +5,8 @@ extends Node2D
 
 signal exit_reached
 signal army_lost
+## The column starts marching: ordered by the player, or by the king when his patience runs out.
+signal march_ordered(by_player: bool)
 
 @export var display_name: String = ""
 @export var music: AudioStream
@@ -12,6 +14,9 @@ signal army_lost
 @export_range(0, 50) var reinforcements: int = 3
 ## Supplies dropped when the column arrives here (not on the first level).
 @export var supply_drop: Supplies
+## Seconds the column waits at the start before the king orders the march. 0 marches at once.
+## The player can order the march earlier.
+@export_range(0.0, 300.0, 1.0, "suffix:s") var march_delay: float = 30.0
 ## Scene spawned when a fill tile falls loose.
 @export var falling_block_scene: PackedScene
 
@@ -25,6 +30,7 @@ signal army_lost
 @onready var exit_flag: CheckpointFlag = %ExitFlag
 
 var _done: bool = false
+var _march_left: float = 0.0
 
 
 static func of(node: Node) -> Level:
@@ -53,11 +59,17 @@ func start(soldiers: int, level_number: int) -> void:
 	exit_flag.label = "L%d" % (level_number + 1)
 	army.spawn(soldiers, start_flag.metres().x)
 	crew.spawn(start_flag.metres().x)
+	_march_left = march_delay
+	army.hold = march_delay > 0.0
 
 
 func _physics_process(dt: float) -> void:
 	if _done:
 		return
+	if army.hold:
+		_march_left -= dt
+		if _march_left <= 0.0:
+			_order_march(false)
 	bridge.step(dt, army.bridge_loads())
 	army.step(dt)
 	crew.step(dt)
@@ -66,6 +78,23 @@ func _physics_process(dt: float) -> void:
 		_done = true
 		exit_flag.reached = true
 		exit_reached.emit()
+
+
+## Orders the column to march now, before the king does.
+func march() -> void:
+	_order_march(true)
+
+
+## Seconds until the king orders the march, or 0 once the column marches.
+func march_left() -> float:
+	return maxf(_march_left, 0.0) if army.hold else 0.0
+
+
+func _order_march(by_player: bool) -> void:
+	if not army.hold:
+		return
+	army.hold = false
+	march_ordered.emit(by_player)
 
 
 func _on_army_count(count: int) -> void:

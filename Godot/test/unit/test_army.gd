@@ -99,3 +99,16 @@ func test_queue_keeps_spacing() -> void:
 	var s := a.soldiers
 	assert_gte(s[0].pos.x - s[1].pos.x, a.rules.spacing - 0.05)
 	assert_gte(s[1].pos.x - s[2].pos.x, a.rules.spacing - 0.05)
+
+
+func test_holds_until_released() -> void:
+	var a := _world(["....................", "####################", "BBBBBBBBBBBBBBBBBBBB"])
+	a.spawn(1, 2.5)
+	a.hold = true
+	var x0: float = a.lead().pos.x
+	_run(a, 1.0)
+	assert_eq(a.lead().pos.x, x0, "waits")
+	assert_eq(a.halt_reason, a.rules.hold_text)
+	a.hold = false
+	_run(a, 1.0)
+	assert_gt(a.lead().pos.x, x0 + 1.0, "marches")

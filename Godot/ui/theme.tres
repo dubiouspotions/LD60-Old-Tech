@@ -1,24 +1,10 @@
-[gd_resource type="Theme" load_steps=10 format=3]
+[gd_resource type="Theme" format=3 uid="uid://c7hi6c0spmofy"]
 
 [ext_resource type="FontVariation" path="res://ui/fonts/body.tres" id="f_body"]
 [ext_resource type="FontVariation" path="res://ui/fonts/display.tres" id="f_display"]
 [ext_resource type="FontVariation" path="res://ui/fonts/display_semibold.tres" id="f_semi"]
 
-[sub_resource type="StyleBoxFlat" id="btn_normal"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.1255, 0.1725, 0.2275, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.2667, 0.3529, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+[sub_resource type="StyleBoxEmpty" id="focus"]
 
 [sub_resource type="StyleBoxFlat" id="btn_hover"]
 content_margin_left = 10.0
@@ -47,6 +33,22 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 3
 border_color = Color(0.9137, 0.6627, 0.2314, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="btn_normal"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.1255, 0.1725, 0.2275, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.2667, 0.3529, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -84,34 +86,32 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxEmpty" id="focus"]
-
 [resource]
 default_font = ExtResource("f_body")
 default_font_size = 15
-Button/fonts/font = ExtResource("f_semi")
-Button/font_sizes/font_size = 18
 Button/colors/font_color = Color(0.9255, 0.8941, 0.8235, 1)
 Button/colors/font_hover_color = Color(0.9255, 0.8941, 0.8235, 1)
 Button/colors/font_pressed_color = Color(0.9255, 0.8941, 0.8235, 1)
+Button/font_sizes/font_size = 18
+Button/fonts/font = ExtResource("f_semi")
 Button/styles/focus = SubResource("focus")
 Button/styles/hover = SubResource("btn_hover")
 Button/styles/hover_pressed = SubResource("btn_pressed")
 Button/styles/normal = SubResource("btn_normal")
 Button/styles/pressed = SubResource("btn_pressed")
+Caption/base_type = &"Label"
+Caption/colors/font_color = Color(0.6039, 0.651, 0.7059, 1)
+Caption/font_sizes/font_size = 11
+Display/base_type = &"Label"
+Display/font_sizes/font_size = 18
+Display/fonts/font = ExtResource("f_semi")
+Heading/base_type = &"Label"
+Heading/colors/font_color = Color(0.9137, 0.6627, 0.2314, 1)
+Heading/font_sizes/font_size = 40
+Heading/fonts/font = ExtResource("f_display")
 Label/colors/font_color = Color(0.9255, 0.8941, 0.8235, 1)
 PanelContainer/styles/panel = SubResource("panel")
 StatusPanel/base_type = &"PanelContainer"
 StatusPanel/styles/panel = SubResource("status")
-Caption/base_type = &"Label"
-Caption/colors/font_color = Color(0.6039, 0.651, 0.7059, 1)
-Caption/font_sizes/font_size = 11
 Value/base_type = &"Label"
 Value/font_sizes/font_size = 16
-Heading/base_type = &"Label"
-Heading/fonts/font = ExtResource("f_display")
-Heading/colors/font_color = Color(0.9137, 0.6627, 0.2314, 1)
-Heading/font_sizes/font_size = 40
-Display/base_type = &"Label"
-Display/fonts/font = ExtResource("f_semi")
-Display/font_sizes/font_size = 18

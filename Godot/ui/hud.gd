@@ -7,6 +7,7 @@ signal pause_pressed
 signal speed_pressed
 signal follow_pressed
 signal commit_pressed
+signal march_pressed
 signal begin_pressed
 signal retry_pressed
 signal restart_pressed
@@ -32,6 +33,7 @@ func _ready() -> void:
 	%SpeedButton.pressed.connect(_emit.bind(speed_pressed))
 	%FollowButton.pressed.connect(_emit.bind(follow_pressed))
 	%CommitButton.pressed.connect(_emit.bind(commit_pressed))
+	%MarchButton.pressed.connect(_emit.bind(march_pressed))
 	%BeginButton.pressed.connect(_emit.bind(begin_pressed))
 	%RetryButton.pressed.connect(_emit.bind(retry_pressed))
 	%NewWorldButton.pressed.connect(_emit.bind(restart_pressed))
@@ -71,6 +73,11 @@ func set_paused(paused: bool, show_tag: bool) -> void:
 
 func set_speed(speed: float) -> void:
 	%SpeedButton.text = "Speed %d×" % roundi(speed)
+
+
+## Shows the March button while the column waits for the king.
+func set_march(waiting: bool) -> void:
+	%MarchButton.visible = waiting
 
 
 ## Shows how many blueprints the Build button will build.

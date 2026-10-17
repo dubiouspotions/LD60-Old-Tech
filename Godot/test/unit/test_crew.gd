@@ -52,6 +52,10 @@ func _run(seconds: float, done: Callable = func() -> bool: return false, speed: 
 			return
 
 
+func test_engineers_outpace_the_column() -> void:
+	assert_gt(level.crew.rules.walk_speed, level.army.rules.march_speed * 1.5)
+
+
 func test_crew_size_comes_from_rules() -> void:
 	assert_eq(level.crew.engineers.size(), level.crew.rules.crew_size)
 

@@ -9,6 +9,13 @@ extends Node
 ## Banner title when the level has no display name.
 @export var arrival_title: String = "Level %d"
 @export var arrival_text: String = "Checkpoint · +%d soldiers · supplies"
+@export_group("March")
+## Status while the column waits (%d = seconds left).
+@export var patience_text: String = "The king waits · %d s"
+@export var march_title: String = "Forward, march!"
+@export var march_player_text: String = "The column advances on your order"
+@export var march_king_text: String = "The king has lost his patience"
+@export var march_sound: SoundEffect
 
 @onready var _holder: Node2D = %LevelHolder
 @onready var _tools: ToolController = %ToolController
@@ -31,6 +38,7 @@ func _ready() -> void:
 	_hud.speed_pressed.connect(_toggle_speed)
 	_hud.follow_pressed.connect(_camera.snap_to_lead)
 	_hud.commit_pressed.connect(_tools.commit)
+	_hud.march_pressed.connect(_march)
 	_hud.begin_pressed.connect(_begin)
 	_hud.retry_pressed.connect(_retry)
 	_hud.restart_pressed.connect(_restart)
@@ -47,6 +55,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle_pause()
 	elif event.is_action_pressed(&"speed"):
 		_toggle_speed()
+	elif event.is_action_pressed(&"march"):
+		_march()
 
 
 func _process(_delta: float) -> void:
@@ -55,6 +65,7 @@ func _process(_delta: float) -> void:
 	var lead := level.army.lead()
 	_hud.set_level(GameState.level_number(), floori(lead.pos.x) if lead else 0)
 	_hud.set_plan(level.bridge.blueprint_count())
+	_hud.set_march(level.army.hold and not _over)
 	_update_status()
 	_update_lead_marker(lead)
 
@@ -63,6 +74,16 @@ func _begin() -> void:
 	_hud.hide_cards()
 	_tools.enabled = true
 	_set_paused(false)
+
+
+func _march() -> void:
+	if level and not _over and not _hud.any_card_open():
+		level.march()
+
+
+func _on_march_ordered(by_player: bool) -> void:
+	_hud.banner(march_title, march_player_text if by_player else march_king_text)
+	Audio.play(march_sound)
 
 
 func _toggle_pause() -> void:
@@ -104,6 +125,7 @@ func _load_level(index: int, arriving: bool) -> void:
 	level.start(GameState.soldiers, GameState.level_number())
 	level.exit_reached.connect(_on_exit_reached, CONNECT_DEFERRED)
 	level.army_lost.connect(_on_army_lost, CONNECT_DEFERRED)
+	level.march_ordered.connect(_on_march_ordered)
 	_tools.level = level
 	_camera.level = level
 	_camera.snap_to_lead()
@@ -158,6 +180,8 @@ func _update_status() -> void:
 		_hud.set_status("Column lost", Hud.Mood.FIRE)
 	elif get_tree().paused:
 		_hud.set_status("Paused" if not _hud.any_card_open() else "Awaiting orders", Hud.Mood.HALT)
+	elif level.army.hold:
+		_hud.set_status(patience_text % ceili(level.march_left()), Hud.Mood.HALT)
 	elif under_fire:
 		_hud.set_status("Under fire · %s" % reason if reason else "Under fire", Hud.Mood.FIRE)
 	elif reason:
