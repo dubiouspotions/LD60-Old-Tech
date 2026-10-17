@@ -409,3 +409,55 @@ func test_column_follows_the_engineer_out_onto_a_piece_being_built() -> void:
 		if m.blueprint and world.army.lead():
 			furthest[0] = maxf(furthest[0], world.army.lead().pos.x)
 	assert_gt(furthest[0], 6.5, "out on the built part before the piece is finished")
+
+
+## A flat 40 m strip, with the crew's view set to x 10..25.
+func _flat_strip_with_view() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for x in 40:
+		world.terrain.set_type(Vector2i(x, 6), WorldFixture.type("soil"))
+		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("bedrock"))
+	world.crew.view = Rect2(10, -10, 15, 30)
+	world.army.spawn(1, 20.5)
+	world.crew.spawn(18.0)
+
+
+func _all_in_view() -> bool:
+	var v := world.crew.view
+	return world.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.pos.x >= v.position.x and e.pos.x <= v.end.x)
+
+
+func test_crew_leaves_work_outside_the_view_alone() -> void:
+	_flat_strip_with_view()
+	world.terrain.mark(Vector2i(3, 6))
+	var stayed := [true]
+	_run(8.0, func() -> bool:
+		stayed[0] = stayed[0] and _all_in_view()
+		return false)
+	assert_true(stayed[0], "nobody runs off screen to the old site")
+	assert_true(world.terrain.is_marked(Vector2i(3, 6)))
+
+
+func test_crew_does_work_inside_the_view() -> void:
+	_flat_strip_with_view()
+	world.terrain.mark(Vector2i(14, 6))
+	_run(8.0, func() -> bool: return world.terrain.type_at(Vector2i(14, 6)) == null)
+	assert_null(world.terrain.type_at(Vector2i(14, 6)))
+
+
+func test_idle_crew_stays_in_view_when_the_army_is_off_screen() -> void:
+	_flat_strip_with_view()
+	world.army.spawn(1, 38.5)
+	var stayed := [true]
+	_run(8.0, func() -> bool:
+		stayed[0] = stayed[0] and _all_in_view()
+		return false)
+	assert_true(stayed[0])
+
+
+func test_crew_outside_the_view_walks_back_in() -> void:
+	_flat_strip_with_view()
+	world.crew.spawn(3.0)
+	_run(8.0)
+	assert_true(_all_in_view())
