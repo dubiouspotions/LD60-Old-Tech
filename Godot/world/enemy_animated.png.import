@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d33q41mhfggd7"
-path="res://.godot/imported/soilderenemy.png-3cbcf68aab4ce4422d6676ce0caf9b2f.ctex"
+uid="uid://bydp0wj23xm6k"
+path="res://.godot/imported/enemy_animated.png-a80cc38a0e45e763a5b88678777ad9cc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://world/soilderenemy.png"
-dest_files=["res://.godot/imported/soilderenemy.png-3cbcf68aab4ce4422d6676ce0caf9b2f.ctex"]
+source_file="res://world/enemy_animated.png"
+dest_files=["res://.godot/imported/enemy_animated.png-a80cc38a0e45e763a5b88678777ad9cc.ctex"]
 
 [params]
 
