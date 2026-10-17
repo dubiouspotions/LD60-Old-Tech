@@ -397,3 +397,15 @@ func test_crew_climbs_a_step_without_entering_the_rock() -> void:
 	assert_false(inside[0], "nobody walks into the rock")
 	for e in world.crew.engineers:
 		assert_almost_eq(e.pos.y, 4.0, 0.05, "up on the step")
+
+
+func test_column_follows_the_engineer_out_onto_a_piece_being_built() -> void:
+	world.army.spawn(3, 3.5)
+	var m := _plan(Vector2(6, 6), Vector2(10, 6))
+	world.bridge.order_blueprints()
+	var furthest := [0.0]
+	for i in 600:
+		world._physics_process(1.0 / 60.0)
+		if m.blueprint and world.army.lead():
+			furthest[0] = maxf(furthest[0], world.army.lead().pos.x)
+	assert_gt(furthest[0], 6.5, "out on the built part before the piece is finished")
