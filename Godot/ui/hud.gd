@@ -52,6 +52,8 @@ func _ready() -> void:
 	GameState.soldiers_changed.connect(func(n: int) -> void: %Army.set_value(str(n)))
 	GameState.best_changed.connect(func(n: int) -> void: %Best.set_value("L%d" % n))
 	%Banner.modulate.a = 0.0
+	get_viewport().size_changed.connect(_fit)
+	_fit.call_deferred()
 	_refresh_supplies()
 	%Best.set_value("L%d" % GameState.best_level)
 
@@ -69,6 +71,7 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 			Audio.play(click_sound)
 			tool_pressed.emit(i))
 		_tool_buttons.append(b)
+	_fit.call_deferred()
 
 
 func set_tool(index: int) -> void:
@@ -87,7 +90,21 @@ func set_speed(speed: float) -> void:
 
 ## Shows the March button while the column waits for the king.
 func set_march(waiting: bool) -> void:
-	%MarchButton.visible = waiting
+	if %MarchButton.visible != waiting:
+		%MarchButton.visible = waiting
+		_fit.call_deferred()
+
+
+## Folds the rows to fit width pixels: tool hints go first, then the title.
+func fit_to(width: float) -> void:
+	for b in _tool_buttons:
+		b.set_compact(false)
+	%Title.visible = true
+	if %Rack.get_combined_minimum_size().x > width or %TopBar.get_combined_minimum_size().x > width:
+		for b in _tool_buttons:
+			b.set_compact(true)
+	if %TopBar.get_combined_minimum_size().x > width:
+		%Title.visible = false
 
 
 ## Shows how many blueprints the Build button will build.
@@ -161,6 +178,12 @@ func hide_cards() -> void:
 
 func any_card_open() -> bool:
 	return %Intro.visible or %Lost.visible or %Victory.visible
+
+
+func _fit() -> void:
+	var margin: MarginContainer = $Root/Margin
+	var sides := margin.get_theme_constant(&"margin_left") + margin.get_theme_constant(&"margin_right")
+	fit_to(margin.get_viewport_rect().size.x - sides)
 
 
 func _refresh_supplies() -> void:
