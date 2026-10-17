@@ -1,7 +1,8 @@
 extends Node
 ## Starts the game, presses Begin, plays for a while and saves a screenshot. For checking the build by eye.
-##   godot res://dev/screenshot.tscn -- out=<png path> [seconds=4] [level=1] [march] [look=<x metres>]
-## march orders the march at once (skips the night camp); look parks the camera with its left edge at x.
+##   godot res://dev/screenshot.tscn -- out=<png path> [seconds=4] [level=1] [march] [look=<x metres>] [press=<Name>]
+## march orders the march at once (skips the night camp); look parks the camera with its left edge at x;
+## press clicks the HUD button with that unique name (e.g. press=SoundButton).
 
 func _ready() -> void:
 	var out := "user://screenshot.png"
@@ -9,6 +10,7 @@ func _ready() -> void:
 	var level := 1
 	var march := false
 	var look := NAN
+	var press := ""
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="):
 			out = a.get_slice("=", 1)
@@ -20,6 +22,8 @@ func _ready() -> void:
 			march = true
 		elif a.begins_with("look="):
 			look = float(a.get_slice("=", 1))
+		elif a.begins_with("press="):
+			press = a.get_slice("=", 1)
 	var game: Game = load("res://game/main.tscn").instantiate()
 	add_child(game)
 	await get_tree().process_frame
@@ -28,6 +32,8 @@ func _ready() -> void:
 	game.call(&"_begin")
 	if march:
 		game.call(&"_march")
+	if not press.is_empty():
+		(game.get_node(^"%HUD").get_node("%" + press) as BaseButton).button_pressed = true
 	var camera: CameraRig = game.get_node(^"%Camera")
 	var left := Time.get_ticks_msec() + seconds * 1000.0
 	while Time.get_ticks_msec() < left:
