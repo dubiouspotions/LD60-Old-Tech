@@ -204,6 +204,32 @@ tracks/1/keys = {
 "update": 0,
 "values": [Vector2(0, 0)]
 }
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Body/AnimatedSprite2D")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"stop"
+}]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Body/AnimatedSprite2D:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
 
 [sub_resource type="Animation" id="walk"]
 resource_name = "walk"
@@ -232,6 +258,20 @@ tracks/1/keys = {
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "update": 0,
 "values": [Vector2(0, 0), Vector2(-2.2, 0), Vector2(0, 0), Vector2(2.2, 0), Vector2(0, 0)]
+}
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Body/AnimatedSprite2D")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [&"soilder_walk", 1.0, false],
+"method": &"play"
+}]
 }
 
 [sub_resource type="Animation" id="sleep"]
@@ -330,7 +370,6 @@ position = Vector2(-2.000002, -25.999998)
 scale = Vector2(0.35937503, 0.40625003)
 sprite_frames = SubResource("SpriteFrames_4pjgo")
 animation = &"soilder_walk"
-autoplay = "soilder_walk"
 frame_progress = 0.62080973
 
 [node name="Spear" type="Line2D" parent="Body" unique_id=1391842286]
