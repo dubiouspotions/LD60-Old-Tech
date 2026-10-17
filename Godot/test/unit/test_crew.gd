@@ -470,3 +470,67 @@ func test_idle_crew_waits_in_front_of_the_camp_at_night() -> void:
 	assert_false(behind[0], "nobody heads back along the sleeping column")
 	for e in world.crew.engineers:
 		assert_gte(e.pos.x, lead - 0.1, "waiting in front of the camp")
+
+
+## Flat ground at row 10 with a 4 m tower from x = 10, a deck from the tower out to x = 6 on a support.
+const TOWER: Array = [
+	"..............",
+	"..............",
+	"..............",
+	"..............",
+	"..............",
+	"..............",
+	"..........####",
+	"..........####",
+	"..........####",
+	"..........####",
+	"##############",
+	"BBBBBBBBBBBBBB",
+]
+
+
+func _tower_with_deck() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in TOWER.size():
+		for x in TOWER[y].length():
+			var key: String = WorldFixture.LEGEND[TOWER[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	var bridge := world.bridge
+	bridge.build(bridge.snap_point(Vector2(8, 10)), bridge.snap_point(Vector2(6, 6)), SUPPORT)
+	bridge.build(bridge.snap_point(Vector2(6, 6)), bridge.snap_point(Vector2(10, 6)), LOG)
+	world.army.spawn(1, 3.5)
+
+
+func test_idle_engineer_climbs_down_the_support_to_the_column() -> void:
+	_tower_with_deck()
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.at = world.bridge.snap_point(Vector2(6, 6)).node
+	e.route.clear()
+	e.pos = e.at.pos
+	_run(10.0)
+	assert_almost_eq(e.pos.y, 10.0, 0.05, "down on the ground")
+	assert_lt(e.pos.x, 6.0, "back with the column")
+
+
+func test_idle_engineer_on_the_deck_climbs_down_the_support() -> void:
+	_tower_with_deck()
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.at = null
+	e.route.clear()
+	e.pos = Vector2(7.0, 6.0)
+	_run(10.0)
+	assert_almost_eq(e.pos.y, 10.0, 0.05, "down on the ground")
+	assert_lt(e.pos.x, 6.0, "back with the column")
+
+
+func test_idle_engineer_on_the_tower_climbs_down_the_support() -> void:
+	_tower_with_deck()
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.at = null
+	e.route.clear()
+	e.pos = Vector2(11.5, 6.0)
+	_run(10.0)
+	assert_almost_eq(e.pos.y, 10.0, 0.05, "down on the ground")
+	assert_lt(e.pos.x, 6.0, "back with the column")

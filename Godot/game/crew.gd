@@ -99,6 +99,8 @@ func step(dt: float) -> void:
 		if e.job == null and not e.digging and e.route.is_empty() and e.think <= 0.0:
 			e.think = THINK_INTERVAL
 			_take_job(e)
+			if e.job == null and not e.digging and e.at == null:
+				e.route = _route_toward(e, _idle_x(i))
 		if e.job and e.route.is_empty():
 			if is_nan(e.reach_x) or _reach_step(e, dt):
 				e.working = true
@@ -107,7 +109,9 @@ func step(dt: float) -> void:
 		elif not e.route.is_empty():
 			_follow_route(e, dt)
 		elif e.at:
-			e.route = _route_down(e.at)
+			e.route = _route_toward(e, _idle_x(i))
+			if e.route.is_empty():
+				e.route = _route_down(e.at)
 			if e.route.is_empty():
 				e.at = null
 		elif e.digging:
@@ -160,9 +164,7 @@ func _take_job(e: Engineer) -> void:
 			var route := bridge.route(j, starts)
 			if route.is_empty() or not _in_zone(route[0].pos.x):
 				continue
-			var cost := absf(route[0].pos.x - e.pos.x) if e.at == null else 0.0
-			for k in range(1, route.size()):
-				cost += route[k - 1].pos.distance_to(route[k].pos)
+			var cost := _route_cost(e, route)
 			if cost < best_cost:
 				best_cost = cost
 				e.job = m
@@ -195,6 +197,14 @@ func _take_job(e: Engineer) -> void:
 				e.spot_x = x
 	if e.job and e.at:
 		e.route.erase(e.at)
+
+
+## Walking distance to a route's first joint plus the climb along it.
+func _route_cost(e: Engineer, route: Array[Bridge.Joint]) -> float:
+	var cost := absf(route[0].pos.x - e.pos.x) if e.at == null else 0.0
+	for k in range(1, route.size()):
+		cost += route[k - 1].pos.distance_to(route[k].pos)
+	return cost
 
 
 func _dig_taken(cell: Vector2i) -> bool:
@@ -299,7 +309,7 @@ func _follow_route(e: Engineer, dt: float) -> void:
 		e.pos = target.pos
 		e.at = target
 		e.route.pop_front()
-		if e.job == null and target.pinned:
+		if e.job == null and target.pinned and e.route.is_empty():
 			e.at = null
 	else:
 		e.pos += to.normalized() * stepped
@@ -312,6 +322,36 @@ func _route_down(j: Bridge.Joint) -> Array[Bridge.Joint]:
 	r.reverse()
 	r.erase(j)
 	return r
+
+
+## Route over the structure to a bolted joint from where x can be walked to, for an engineer that can not
+## walk there (a deck it walked out on ends in a drop). [] if the walk is clear or no such route exists.
+func _route_toward(e: Engineer, x: float) -> Array[Bridge.Joint]:
+	var none: Array[Bridge.Joint] = []
+	if e.at == null and not is_nan(_walk_y(e.pos, x)):
+		return none
+	var reachable := {}
+	var starts := func(n: Bridge.Joint) -> bool:
+		if e.at:
+			return n == e.at
+		if not reachable.has(n):
+			var y := _walk_y(e.pos, n.pos.x)
+			reachable[n] = not is_nan(y) and absf(y - n.pos.y) <= rules.step_up
+		return reachable[n]
+	var best := none
+	var best_cost := INF
+	for n in bridge.nodes:
+		if not n.pinned or n == e.at or is_nan(_walk_y(n.pos, x)):
+			continue
+		var route := bridge.route(n, starts)
+		if route.is_empty():
+			continue
+		var cost := _route_cost(e, route)
+		if cost < best_cost:
+			best_cost = cost
+			best = route
+	best.erase(e.at)
+	return best
 
 
 ## Walks along safe ground toward x: climbs to the surface first, stops at hazards, walls and drops.
