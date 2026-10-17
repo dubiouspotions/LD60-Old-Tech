@@ -106,7 +106,9 @@ func _march() -> void:
 
 ## A Build button above each plan, a little over its highest point.
 func _show_plans() -> void:
-	_plans = _world.bridge.plans() if not _over else []
+	_plans.clear()
+	if not _over:
+		_plans = _world.bridge.plans()
 	var spots: Array = []
 	var counts: Array = []
 	for plan in _plans:
