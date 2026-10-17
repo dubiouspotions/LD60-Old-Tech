@@ -309,3 +309,33 @@ func test_idle_crew_walks_behind_the_army() -> void:
 	var rear := world.army.rear().pos.x
 	for e in world.crew.engineers:
 		assert_lt(e.pos.x, rear, "behind the last soldier")
+
+
+func test_each_material_builds_at_its_own_speed() -> void:
+	var quick: BridgeMaterial = LOG.duplicate()
+	quick.build_speed = 8.0
+	var slow: BridgeMaterial = LOG.duplicate()
+	slow.build_speed = 0.5
+	var fast_member := _plan(Vector2(6, 6), Vector2(8, 6), quick)
+	world.bridge.order_blueprints()
+	_run(5.0, func() -> bool: return not fast_member.blueprint)
+	var slow_member := _plan(Vector2(10, 6), Vector2(12, 6), slow)
+	world.bridge.order_blueprints()
+	var started := [false]
+	_run(5.0, func() -> bool:
+		started[0] = started[0] or slow_member.progress > 0.0
+		return started[0])
+	_run(1.0)
+	assert_lt(slow_member.progress, 0.5, "0.5 m/s takes 4 s for 2 m")
+
+
+func test_dig_speed_scales_digging() -> void:
+	world.crew.rules = world.crew.rules.duplicate()
+	world.crew.rules.dig_speed = 4.0
+	world.terrain.mark(Vector2i(3, 6))
+	var seconds := [0.0]
+	_run(5.0, func() -> bool:
+		if world.crew.engineers.any(func(e: Crew.Engineer) -> bool: return e.working):
+			seconds[0] += 1.0 / 60.0
+		return world.terrain.type_at(Vector2i(3, 6)) == null)
+	assert_lt(seconds[0], WorldFixture.type("soil").dig_time / 4.0 + 0.1, "digs four times as fast")

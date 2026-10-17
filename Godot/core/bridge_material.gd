@@ -8,6 +8,9 @@ extends Resource
 ## Shown when the player can not afford it.
 @export var no_supply_text: String = "No logs. Fell a tree"
 
+## Metres of it one engineer builds per second.
+@export_range(0.05, 10.0, 0.05, "suffix:m/s") var build_speed: float = 1.6
+
 @export_group("Physics")
 @export_range(0.5, 30.0, 0.5, "suffix:m") var max_length: float = 5.0
 @export_range(0.1, 100.0, 0.1, "suffix:kg/m") var kg_per_m: float = 20.0

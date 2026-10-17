@@ -226,7 +226,7 @@ func _dig_step(e: Engineer, dt: float) -> void:
 		return
 	e.working = true
 	var t := terrain.type_at(e.dig)
-	var done := terrain.dig_progress(e.dig) + dt / t.dig_time
+	var done := terrain.dig_progress(e.dig) + dt * rules.dig_speed / t.dig_time
 	terrain.set_dig_progress(e.dig, done)
 	_show(e, false, signi(roundi((target.x - e.pos.x) * 100)))
 	if done >= 1.0:
@@ -253,7 +253,7 @@ func _drop(e: Engineer) -> void:
 func _work(e: Engineer, dt: float) -> void:
 	var m := e.job
 	m.from_joint = e.at if e.at else e.goal
-	m.progress = minf(1.0, m.progress + dt * rules.build_speed / maxf(m.length, 0.1))
+	m.progress = minf(1.0, m.progress + dt * m.material.build_speed / maxf(m.length, 0.1))
 	if m.progress >= 1.0:
 		bridge.finish(m)
 		e.job = null
