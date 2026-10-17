@@ -297,3 +297,10 @@ func test_crew_leaves_a_floating_plan_out_of_reach() -> void:
 	world.bridge.order_blueprints()
 	_run(10.0)
 	assert_true(m.blueprint, "too high to reach from the ground")
+
+
+func test_idle_crew_walks_behind_the_army() -> void:
+	_run(3.0)
+	var rear := world.army.rear().pos.x
+	for e in world.crew.engineers:
+		assert_lt(e.pos.x, rear, "behind the last soldier")

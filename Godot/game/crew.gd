@@ -352,14 +352,14 @@ func _walk_y(p: Vector2, x: float) -> float:
 	return y
 
 
-## Where idle engineer i stands: ready beside a plan waiting to be ordered, else behind the column.
+## Where idle engineer i stands: ready beside a plan waiting to be ordered, else behind the last soldier.
 func _idle_x(i: int) -> float:
 	if not is_nan(_ready_x):
 		return maxf(0.5, _ready_x - _ready_side * (READY_GAP + i * rules.spacing))
-	var lead := army.lead() if army else null
-	if lead == null:
+	var rear := army.rear() if army else null
+	if rear == null:
 		return engineers[i].pos.x
-	return maxf(0.5, lead.pos.x - rules.follow_gap - i * rules.spacing)
+	return maxf(0.5, rear.pos.x - rules.follow_gap - i * rules.spacing)
 
 
 ## Strikes each structure's scaffolding once it is done and clear of engineers for strike_delay.

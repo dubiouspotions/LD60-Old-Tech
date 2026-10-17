@@ -23,7 +23,7 @@ extends Resource
 @export_range(0.5, 5.0, 0.1, "suffix:m") var build_reach: float = 1.6
 ## Metres of member one engineer builds per second. Engineers on the same member add up.
 @export_range(0.05, 10.0, 0.05, "suffix:m/s") var build_speed: float = 1.6
-## Idle engineers trail this far behind the front soldier...
+## Idle engineers trail this far behind the last soldier...
 @export_range(0.0, 10.0, 0.1, "suffix:m") var follow_gap: float = 1.2
 ## ...and this far apart.
 @export_range(0.1, 3.0, 0.05, "suffix:m") var spacing: float = 0.6
