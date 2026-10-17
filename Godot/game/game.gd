@@ -22,8 +22,6 @@ extends Node
 @export var march_sound: SoundEffect
 ## How far above a plan its Build button floats.
 @export var plan_button_rise: float = 0.4
-## How far above the sleeping column the Recruit button floats.
-@export var recruit_button_rise: float = 1.6
 
 @onready var _world: World = %World
 @onready var _tools: ToolController = %ToolController
@@ -88,7 +86,8 @@ func _process(_delta: float) -> void:
 	_hud.set_march(_world.camping() and not _over)
 	var rules := _world.army.rules
 	var room := _world.army.soldiers.size() < rules.max_soldiers
-	_hud.set_recruit(_world.camping() and not _over, rules.recruit_cost.gold, room and GameState.supplies.can_afford(rules.recruit_cost), _camp_spot())
+	var camp: Camp = _world.camp()
+	_hud.set_recruit(_world.camping() and camp != null and not _over, rules.recruit_cost.gold, room and GameState.supplies.can_afford(rules.recruit_cost), camp.button_spot() if camp else Vector2.ZERO)
 	_update_status()
 	_update_lead_marker(lead)
 
@@ -102,15 +101,6 @@ func _begin() -> void:
 func _march() -> void:
 	if not _over and not _hud.any_card_open():
 		_world.march()
-
-
-## Above the middle of the column, for the Recruit button.
-func _camp_spot() -> Vector2:
-	var lead := _world.army.lead()
-	var rear := _world.army.rear()
-	if lead == null:
-		return Vector2.ZERO
-	return Grid.to_px(Vector2((lead.pos.x + rear.pos.x) / 2, lead.pos.y - recruit_button_rise))
 
 
 ## A Build button above each plan, a little over its highest point.

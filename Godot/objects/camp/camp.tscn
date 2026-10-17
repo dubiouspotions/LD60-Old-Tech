@@ -66,6 +66,10 @@ polygon = PackedVector2Array(-34.0, 0.0, 0.0, -44.0, 34.0, 0.0)
 color = Color(0.18, 0.15, 0.12, 1)
 polygon = PackedVector2Array(-10.0, 0.0, 0.0, -20.0, 10.0, 0.0)
 
+[node name="ButtonSpot" type="Marker2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(-142, -52)
+
 [node name="Fire" type="Node2D" parent="."]
 position = Vector2(-44, 0)
 

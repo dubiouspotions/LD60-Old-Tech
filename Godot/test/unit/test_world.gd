@@ -212,3 +212,11 @@ func test_no_recruiting_past_the_army_limit() -> void:
 	GameState.supplies.gold = 100
 	assert_false(world.recruit())
 	assert_eq(GameState.supplies.gold, 100)
+
+
+func test_camp_marks_where_its_buttons_go() -> void:
+	world.begin(0, 3)
+	var camp: Camp = world.camp()
+	var spot: Marker2D = camp.get_node("%ButtonSpot")
+	assert_eq(camp.button_spot(), camp.global_position + spot.position)
+	assert_lt(spot.position.y, -40.0, "above the tents")
