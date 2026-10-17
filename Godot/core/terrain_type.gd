@@ -43,10 +43,10 @@ enum DigAction { NONE, REMOVE, FELL }
 @export var dig_sound: SoundEffect
 
 @export_group("Bulk yield")
-## Given by blasts, collapses and felled trees: bulk_yield for every bulk_tiles_per_yield tiles.
+## Given by collapses and felled trees: bulk_yield for every bulk_tiles_per_yield tiles.
 @export var bulk_yield: Supplies
 @export_range(1, 20) var bulk_tiles_per_yield: int = 1
-## Given once per blast/fell when at least one tile of this type was taken.
+## Given once per collapse/fell when at least one tile of this type was taken.
 @export var bulk_bonus: Supplies
 
 @export_group("Look")

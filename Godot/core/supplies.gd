@@ -2,7 +2,7 @@
 class_name Supplies
 extends Resource
 ## A bundle of the four engineering supplies.
-## Used for starting stock, checkpoint bonuses, tool and member costs, and dig/blast yields.
+## Used for starting stock, checkpoint bonuses, tool and member costs, and dig, fell and collapse yields.
 
 @export var earth: int = 0
 @export var logs: int = 0

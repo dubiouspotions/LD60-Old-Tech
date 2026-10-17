@@ -378,7 +378,7 @@ func remove_member(m: Member) -> void:
 	_recompute_mass()
 
 
-## Breaks a member with debris. quiet skips the message (blasts, player removal).
+## Breaks a member with debris. quiet skips the message (player removal).
 func break_member(m: Member, quiet: bool = false) -> void:
 	var mid := (m.a.pos + m.b.pos) / 2
 	var text := ""

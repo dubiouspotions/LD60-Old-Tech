@@ -57,7 +57,7 @@ class Chunk:
 @onready var bridge: Bridge = %Bridge
 @onready var army: Army = %Army
 @onready var crew: Crew = %Crew
-## Falling blocks, charges, arrows and the levels' objects.
+## Falling blocks, arrows, the camp and the levels' objects.
 @onready var objects: Node2D = %Objects
 @onready var flags: Node2D = %Flags
 
