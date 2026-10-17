@@ -56,6 +56,15 @@ func test_engineers_outpace_the_column() -> void:
 	assert_gt(level.crew.rules.walk_speed, level.army.rules.march_speed * 1.5)
 
 
+## Engineers have their own look, so new soldier art does not turn them into soldiers.
+func test_engineer_scene_does_not_inherit_soldier_art() -> void:
+	var scene: PackedScene = level.crew.engineer_scene
+	assert_null(scene.get_state().get_node_instance(0), "not an inherited scene")
+	var engineer: Node = scene.instantiate()
+	assert_eq(engineer.find_children("*", "Sprite2D", true, false).size(), 0, "no soldier sprites")
+	engineer.free()
+
+
 func test_crew_size_comes_from_rules() -> void:
 	assert_eq(level.crew.engineers.size(), level.crew.rules.crew_size)
 
