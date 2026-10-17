@@ -184,20 +184,25 @@ func test_crew_gets_ready_beside_a_new_plan() -> void:
 		assert_between(e.pos.x, 13.0, 16.0, "waiting at the near end of the plan")
 
 
-func test_whole_crew_helps_with_a_single_member() -> void:
+func test_only_one_engineer_builds_a_member() -> void:
 	var m := _plan(Vector2(6, 6), Vector2(8, 6))
 	world.bridge.order_blueprints()
-	_run(10.0, func() -> bool: return world.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.job == m and e.working))
-	for e in world.crew.engineers:
-		assert_eq(e.job, m, "everyone on it")
-		assert_true(e.working)
+	var most := [0]  # an array, so the lambda can write to it
+	_run(10.0, func() -> bool:
+		most[0] = maxi(most[0], world.crew.engineers.filter(func(e: Crew.Engineer) -> bool: return e.job == m).size())
+		return not m.blueprint)
+	assert_false(m.blueprint, "built")
+	assert_eq(most[0], 1, "one engineer per member")
 
 
-func test_whole_crew_helps_dig_a_single_cell() -> void:
+func test_only_one_engineer_digs_a_cell() -> void:
 	world.terrain.mark(Vector2i(3, 6))
-	_run(1.0, func() -> bool: return world.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.digging))
-	for e in world.crew.engineers:
-		assert_true(e.digging and e.dig == Vector2i(3, 6), "everyone digging it")
+	var most := [0]
+	_run(5.0, func() -> bool:
+		most[0] = maxi(most[0], world.crew.engineers.filter(func(e: Crew.Engineer) -> bool: return e.digging and e.dig == Vector2i(3, 6)).size())
+		return world.terrain.type_at(Vector2i(3, 6)) == null)
+	assert_null(world.terrain.type_at(Vector2i(3, 6)), "dug")
+	assert_eq(most[0], 1, "one engineer per cell")
 
 
 func test_crew_idles_without_orders() -> void:

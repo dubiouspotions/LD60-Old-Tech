@@ -21,7 +21,7 @@ extends Resource
 ## An ordered plan that is not connected to ground or finished work is built from the ground by an engineer
 ## standing where one of its ends is within this distance of their chest.
 @export_range(0.5, 5.0, 0.1, "suffix:m") var build_reach: float = 1.6
-## Metres of member one engineer builds per second. Engineers on the same member add up.
+## Metres of member an engineer builds per second. One engineer works on a member at a time.
 @export_range(0.05, 10.0, 0.05, "suffix:m/s") var build_speed: float = 1.6
 ## Idle engineers trail this far behind the last soldier...
 @export_range(0.0, 10.0, 0.1, "suffix:m") var follow_gap: float = 1.2

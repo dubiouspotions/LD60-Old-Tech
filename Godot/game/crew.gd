@@ -5,7 +5,7 @@ extends Node2D
 ## and no engineer on it. Then its scaffolding is struck and the physics decides. Separate structures (not
 ## joined by built or ordered members) are struck separately. Cells marked for digging are dug from a spot within reach;
 ## plans connected to nothing are built from a spot on the ground within reach of an end.
-## Each engineer takes the closest free job of either kind, or helps with a taken one when none is free. While
+## Each engineer takes the closest free job of either kind; a job has one engineer at a time. While
 ## plans wait to be ordered, idle engineers stand ready beside them. Engineer nodes only show state. Tuning lives in CrewRules.
 
 signal scaffolding_struck
@@ -18,8 +18,6 @@ const THINK_INTERVAL: float = 0.2
 const ENGINEER_HALF_WIDTH: float = 0.2
 ## Joints on a cell edge are reached from the side the engineer comes from.
 const EDGE: float = 0.01
-## Added to the cost of a job someone already has, so free jobs come first and helping is the fallback.
-const HELP_COST: float = 10000.0
 ## Idle engineers wait this far short of a plan's start joint.
 const READY_GAP: float = 0.4
 
@@ -130,16 +128,13 @@ func _take_job(e: Engineer) -> void:
 		return reachable[n]
 	var best_cost := INF
 	for m in bridge.members:
-		var taker := _builder_of(m)
-		# Helpers work from the same end as the engineer already on it.
-		var ends: Array[Bridge.Joint] = bridge.work_ends(m)
-		if taker:
-			ends = [taker.goal]
-		for j in ends:
+		if _builder_of(m):
+			continue
+		for j in bridge.work_ends(m):
 			var route := bridge.route(j, starts)
 			if route.is_empty():
 				continue
-			var cost := (absf(route[0].pos.x - e.pos.x) if e.at == null else 0.0) + (HELP_COST if taker else 0.0)
+			var cost := absf(route[0].pos.x - e.pos.x) if e.at == null else 0.0
 			for k in range(1, route.size()):
 				cost += route[k - 1].pos.distance_to(route[k].pos)
 			if cost < best_cost:
@@ -150,15 +145,11 @@ func _take_job(e: Engineer) -> void:
 	if e.at == null:
 		# Plans with nothing to build from are built from the ground below an end.
 		for m in bridge.members:
-			if not (m.blueprint and m.ordered) or not bridge.work_ends(m).is_empty():
+			if not (m.blueprint and m.ordered) or not bridge.work_ends(m).is_empty() or _builder_of(m):
 				continue
-			var taker := _builder_of(m)
-			var ends: Array[Bridge.Joint] = [m.a, m.b]
-			if taker:
-				ends = [taker.goal]
-			for j in ends:
+			for j: Bridge.Joint in [m.a, m.b]:
 				var x := _spot_within_reach(e.pos, j.pos, rules.build_reach)
-				var cost := absf(x - e.pos.x) + (HELP_COST if taker else 0.0)
+				var cost := absf(x - e.pos.x)
 				if not is_nan(x) and cost < best_cost:
 					best_cost = cost
 					e.job = m
@@ -166,8 +157,10 @@ func _take_job(e: Engineer) -> void:
 					e.route.clear()
 					e.reach_x = x
 		for cell in terrain.marked_cells():
+			if _dig_taken(cell):
+				continue
 			var x := _dig_spot(e.pos, cell)
-			var cost := absf(x - e.pos.x) + (HELP_COST if _dig_taken(cell) else 0.0)
+			var cost := absf(x - e.pos.x)
 			if not is_nan(x) and cost < best_cost:
 				best_cost = cost
 				_drop(e)
