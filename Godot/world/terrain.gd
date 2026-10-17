@@ -7,7 +7,7 @@ extends TileMapLayer
 
 ## A fill-type tile fell loose; the level spawns a falling block for it.
 signal tile_detached(cell: Vector2i, type: TerrainType)
-## Structures with no ground under them fell apart.
+## Structures with no ground under them fell apart, or a tree lost the ground it stood on.
 signal collapsed(found: Supplies, cells: Array[Vector2i])
 
 const CUSTOM_DATA: String = "terrain"
@@ -23,6 +23,7 @@ var size: Vector2i = Vector2i.ZERO
 var _types: Dictionary = {} # Vector2i -> TerrainType
 var _tile_for: Dictionary = {} # TerrainType -> [source_id, atlas_coords]
 var _dirty_cols: Dictionary = {} # int -> true
+var _marks: Dictionary = {} # Vector2i -> dig progress 0..1
 
 
 func _ready() -> void:
@@ -38,6 +39,7 @@ func _process(_delta: float) -> void:
 func rebuild() -> void:
 	_types.clear()
 	_tile_for.clear()
+	_marks.clear()
 	size = Vector2i.ZERO
 	_index_tileset()
 	for cell in get_used_cells():
@@ -75,6 +77,8 @@ func surface_row(x: int) -> int:
 
 ## Changes one cell. null makes it air. Marks the area for settle().
 func set_type(cell: Vector2i, type: TerrainType) -> void:
+	if type != _types.get(cell):
+		_marks.erase(cell)
 	if type == null:
 		_types.erase(cell)
 		erase_cell(cell)
@@ -92,7 +96,45 @@ func set_type(cell: Vector2i, type: TerrainType) -> void:
 	_dirty_cols[cell.x] = true
 
 
-## Digs one cell with the Dig tool. Returns what was gained, or null if the tile can not be dug.
+func can_dig(cell: Vector2i) -> bool:
+	var t := type_at(cell)
+	return t != null and t.dig_action != TerrainType.DigAction.NONE and _inside(cell)
+
+
+## Marks a cell for the engineers to dig. Returns false if it can not be dug.
+func mark(cell: Vector2i) -> bool:
+	if not can_dig(cell):
+		return false
+	if not _marks.has(cell):
+		_marks[cell] = 0.0
+	return true
+
+
+func unmark(cell: Vector2i) -> void:
+	_marks.erase(cell)
+
+
+func is_marked(cell: Vector2i) -> bool:
+	return _marks.has(cell)
+
+
+func marked_cells() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	out.assign(_marks.keys())
+	return out
+
+
+## Share of a marked cell dug so far, 0..1.
+func dig_progress(cell: Vector2i) -> float:
+	return _marks.get(cell, 0.0)
+
+
+func set_dig_progress(cell: Vector2i, progress: float) -> void:
+	if _marks.has(cell):
+		_marks[cell] = clampf(progress, 0.0, 1.0)
+
+
+## Digs one cell. Returns what was gained, or null if the tile can not be dug.
 func dig(cell: Vector2i) -> Supplies:
 	var t := type_at(cell)
 	if t == null or t.dig_action == TerrainType.DigAction.NONE or not _inside(cell):
@@ -109,6 +151,29 @@ func dig(cell: Vector2i) -> Supplies:
 ## Removes every connected tile that fells with this one (a whole tree). Returns the bulk yield.
 func fell(cell: Vector2i) -> Supplies:
 	var counts := {}
+	for c in _fell_group(cell):
+		var t := type_at(c)
+		counts[t] = counts.get(t, 0) + 1
+		set_type(c, null)
+		Effects.debris(cell_center_px(c), t.debris_color, 1, 70.0)
+	return TerrainType.bulk_total(counts)
+
+
+## The cell engineers work on to dig this one: the base of the tree for trees, else the cell itself.
+func work_cell(cell: Vector2i) -> Vector2i:
+	var t := type_at(cell)
+	if t == null or t.dig_action != TerrainType.DigAction.FELL:
+		return cell
+	var base := cell
+	for c in _fell_group(cell):
+		if c.y > base.y:
+			base = c
+	return base
+
+
+## Every tile connected to cell that fells with it.
+func _fell_group(cell: Vector2i) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
 	var stack: Array[Vector2i] = [cell]
 	var seen := {}
 	while not stack.is_empty():
@@ -119,11 +184,9 @@ func fell(cell: Vector2i) -> Supplies:
 		var t := type_at(c)
 		if t == null or t.dig_action != TerrainType.DigAction.FELL:
 			continue
-		counts[t] = counts.get(t, 0) + 1
-		set_type(c, null)
-		Effects.debris(cell_center_px(c), t.debris_color, 1, 70.0)
+		out.append(c)
 		stack.append_array([c + Vector2i.RIGHT, c + Vector2i.LEFT, c + Vector2i.DOWN, c + Vector2i.UP])
-	return TerrainType.bulk_total(counts)
+	return out
 
 
 ## Clears every cell whose centre lies within radius (metres) of center. Trees caught are felled whole.
@@ -159,6 +222,7 @@ func settle() -> void:
 	xs.sort()
 	_dirty_cols.clear()
 	_detach_loose(xs)
+	_fell_unstanding(xs)
 	# group nearby columns so one flood fill covers each cluster
 	var a: int = xs[0]
 	var b: int = xs[0]
@@ -190,6 +254,25 @@ func _detach_loose(xs: Array) -> void:
 					_types.erase(cell)
 					erase_cell(cell)
 					tile_detached.emit(cell, t)
+
+
+## Fells trees near the changed columns that no longer stand on anything solid. Gives the same yield as cutting.
+func _fell_unstanding(xs: Array) -> void:
+	var seen := {}
+	for x: int in xs:
+		for xx in range(x - 1, x + 2):
+			for y in size.y:
+				var cell := Vector2i(xx, y)
+				var t := type_at(cell)
+				if seen.has(cell) or t == null or t.dig_action != TerrainType.DigAction.FELL:
+					continue
+				var group := _fell_group(cell)
+				for c in group:
+					seen[c] = true
+				if group.any(func(c: Vector2i) -> bool: return is_solid(c + Vector2i.DOWN)):
+					continue
+				Audio.play(t.dig_sound, cell_center_px(work_cell(cell)))
+				collapsed.emit(fell(cell), group)
 
 
 func _collapse_unsupported(xa: int, xb: int, ca: int, cb: int) -> void:

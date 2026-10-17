@@ -2,9 +2,12 @@ class_name Crew
 extends Node2D
 ## The engineers. Ordered blueprints are built one member at a time, outward from the ground or finished
 ## structure. Finished members stay on scaffolding until every engineer is back on the ground; then the
-## scaffolding is struck and the physics decides. Engineer nodes only show state. Tuning lives in CrewRules.
+## scaffolding is struck and the physics decides. Cells marked for digging are dug from a spot within reach.
+## Each engineer takes the closest job of either kind. Engineer nodes only show state. Tuning lives in CrewRules.
 
 signal scaffolding_struck
+## An engineer finished digging a marked cell. The level takes the tile and its supplies.
+signal dig_finished(cell: Vector2i)
 
 ## Seconds between looks for work by an idle engineer.
 const THINK_INTERVAL: float = 0.2
@@ -26,6 +29,12 @@ class Engineer:
 	var at: Bridge.Joint
 	## Seconds until the next look for work.
 	var think: float = 0.0
+	## Has a cell to dig, and digs it standing at spot_x.
+	var digging: bool = false
+	var dig: Vector2i
+	var spot_x: float
+	## Working this tick (building or digging).
+	var working: bool = false
 
 
 @export var rules: CrewRules
@@ -56,9 +65,9 @@ func spawn(x: float) -> void:
 
 
 func step(dt: float) -> void:
-	var working := false
 	for i in engineers.size():
 		var e := engineers[i]
+		e.working = false
 		if e.at and e.at.degree == 0:
 			e.at = null
 			e.route.clear()
@@ -66,12 +75,14 @@ func step(dt: float) -> void:
 			e.pos = e.at.pos
 		if e.job and (e.job.dead or not e.job.blueprint or (e.route.is_empty() and e.at != e.goal)):
 			_drop(e)
+		if e.digging and not terrain.is_marked(e.dig):
+			e.digging = false
 		e.think -= dt
-		if e.job == null and e.route.is_empty() and e.think <= 0.0:
+		if e.job == null and not e.digging and e.route.is_empty() and e.think <= 0.0:
 			e.think = THINK_INTERVAL
 			_take_job(e)
 		if e.job and e.route.is_empty():
-			working = true
+			e.working = true
 			_work(e, dt)
 			_show(e, false, 1)
 		elif not e.route.is_empty():
@@ -80,10 +91,12 @@ func step(dt: float) -> void:
 			e.route = _route_down(e.at)
 			if e.route.is_empty():
 				e.at = null
+		elif e.digging:
+			_dig_step(e, dt)
 		else:
 			_walk_to(e, _idle_x(i), dt)
 	_update_strike(dt)
-	_update_work_sound(dt, working)
+	_update_work_sound(dt)
 
 
 ## Is any engineer building or on its way to build.
@@ -91,8 +104,9 @@ func busy() -> bool:
 	return engineers.any(func(e: Engineer) -> bool: return e.job != null)
 
 
-## Picks the closest member the engineer can reach: along the structure from where it stands,
-## or over safe ground to a bolted joint and then along the structure.
+## Picks the closest job the engineer can reach. A member is reached along the structure from where the
+## engineer stands, or over safe ground to a bolted joint and then along the structure. A marked cell is
+## dug from a spot on safe ground within dig_reach.
 func _take_job(e: Engineer) -> void:
 	var reachable := {}
 	var starts := func(n: Bridge.Joint) -> bool:
@@ -101,7 +115,7 @@ func _take_job(e: Engineer) -> void:
 		if not n.pinned:
 			return false
 		if not reachable.has(n):
-			reachable[n] = _ground_reachable(e.pos, n.pos.x)
+			reachable[n] = not is_nan(_walk_y(e.pos, n.pos.x))
 		return reachable[n]
 	var best_cost := INF
 	for m in bridge.members:
@@ -119,8 +133,62 @@ func _take_job(e: Engineer) -> void:
 				e.job = m
 				e.goal = j
 				e.route = route
+	if e.at == null:
+		for cell in terrain.marked_cells():
+			if _dig_taken(cell):
+				continue
+			var x := _dig_spot(e.pos, cell)
+			if not is_nan(x) and absf(x - e.pos.x) < best_cost:
+				best_cost = absf(x - e.pos.x)
+				_drop(e)
+				e.digging = true
+				e.dig = cell
+				e.spot_x = x
 	if e.job and e.at:
 		e.route.erase(e.at)
+
+
+func _dig_taken(cell: Vector2i) -> bool:
+	return engineers.any(func(e: Engineer) -> bool: return e.digging and e.dig == cell)
+
+
+## Closest x to p on safe ground from where the cell (a tree's base for trees) is within dig_reach, or NAN.
+func _dig_spot(p: Vector2, cell: Vector2i) -> float:
+	var work := terrain.work_cell(cell)
+	var target := Vector2(work) + Vector2(0.5, 0.5)
+	var best := NAN
+	for k in range(-4, 5):
+		var x := work.x + 0.5 + k * 0.5
+		var y := _walk_y(p, x)
+		if is_nan(y) or Vector2(x, y - 0.5).distance_to(target) > rules.dig_reach:
+			continue
+		if is_nan(best) or absf(x - p.x) < absf(best - p.x):
+			best = x
+	return best
+
+
+## Walks to the dig spot, then digs. Gives the job up if the way or the reach is lost.
+func _dig_step(e: Engineer, dt: float) -> void:
+	var ground := _next_y(e.pos.y, e.pos.x)
+	var arrived := absf(e.spot_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
+	if not arrived:
+		var was := e.pos
+		_walk_to(e, e.spot_x, dt)
+		if e.pos == was:
+			e.digging = false
+		return
+	var target := Vector2(terrain.work_cell(e.dig)) + Vector2(0.5, 0.5)
+	if (e.pos - Vector2(0, 0.5)).distance_to(target) > rules.dig_reach:
+		e.digging = false
+		return
+	e.working = true
+	var t := terrain.type_at(e.dig)
+	var done := terrain.dig_progress(e.dig) + dt / t.dig_time
+	terrain.set_dig_progress(e.dig, done)
+	_show(e, false, signi(roundi((target.x - e.pos.x) * 100)))
+	if done >= 1.0:
+		e.digging = false
+		dig_finished.emit(e.dig)
 
 
 func _taken(m: Bridge.Member) -> bool:
@@ -131,6 +199,7 @@ func _drop(e: Engineer) -> void:
 	e.job = null
 	e.goal = null
 	e.route.clear()
+	e.digging = false
 
 
 func _work(e: Engineer, dt: float) -> void:
@@ -211,17 +280,20 @@ func _surface_y(y: float, x: float, up: float) -> float:
 	return s.y
 
 
-## Can an engineer at p walk over safe ground to x. A joint on a cell edge counts as reached from either side.
-func _ground_reachable(p: Vector2, x: float) -> bool:
+## Height an engineer at p stands at after walking over safe ground to x, or NAN if it can not get there.
+## A spot on a cell edge counts as reached from the side the engineer comes from.
+func _walk_y(p: Vector2, x: float) -> float:
 	var y := p.y
 	var at := p.x
 	x = move_toward(x, p.x, EDGE)
-	while absf(x - at) > 0.001:
+	var first := true
+	while first or absf(x - at) > 0.001:
+		first = false
 		at = move_toward(at, x, 0.25)
 		y = _next_y(y, at)
 		if is_nan(y):
-			return false
-	return true
+			return NAN
+	return y
 
 
 func _idle_x(i: int) -> float:
@@ -242,13 +314,13 @@ func _update_strike(dt: float) -> void:
 		scaffolding_struck.emit()
 
 
-func _update_work_sound(dt: float, working: bool) -> void:
+func _update_work_sound(dt: float) -> void:
 	_work_sound_left -= dt
-	if not working or _work_sound_left > 0.0:
+	if _work_sound_left > 0.0:
 		return
-	_work_sound_left = rules.work_sound_interval
 	for e in engineers:
-		if e.job and e.route.is_empty():
+		if e.working:
+			_work_sound_left = rules.work_sound_interval
 			Audio.play(rules.work_sound, Grid.to_px(e.pos))
 			return
 

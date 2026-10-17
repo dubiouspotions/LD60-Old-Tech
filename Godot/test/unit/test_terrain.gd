@@ -61,6 +61,26 @@ func test_dig_tree_fells_whole_tree() -> void:
 	assert_null(t.type_at(Vector2i(5, 3)))
 
 
+func test_tree_falls_when_its_ground_is_dug() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	watch_signals(t)
+	t.dig(Vector2i(5, 6))
+	t.settle()
+	assert_null(t.type_at(Vector2i(5, 5)), "trunk fell")
+	assert_null(t.type_at(Vector2i(4, 2)), "leaves fell")
+	assert_signal_emitted(t, "collapsed")
+	var found: Supplies = get_signal_parameters(t, "collapsed")[0]
+	assert_eq(found.logs, 5, "same as cutting it")
+	assert_eq(found.rope, 3)
+
+
+func test_tree_with_ground_stays() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	t.dig(Vector2i(4, 6))
+	t.settle()
+	assert_eq(t.type_at(Vector2i(5, 5)), WorldFixture.type("trunk"))
+
+
 func test_unsupported_fill_detaches() -> void:
 	var t := WorldFixture.terrain(self, MAP)
 	watch_signals(t)
