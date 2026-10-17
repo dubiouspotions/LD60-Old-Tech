@@ -9,6 +9,8 @@ extends Resource
 @export_range(0.05, 0.5, 0.01, "suffix:m") var foot_half_width: float = 0.25
 ## Highest ledge a soldier steps onto.
 @export_range(0.0, 3.0, 0.05, "suffix:m") var step_up: float = 1.05
+## Free height a soldier needs to pass; lower gaps halt the column.
+@export_range(1.0, 5.0, 1.0, "suffix:m") var headroom: float = 2.0
 ## Minimum gap between soldiers.
 @export_range(0.1, 3.0, 0.05, "suffix:m") var spacing: float = 0.55
 ## Deeper step-downs are warned about (the column still walks off them).
@@ -54,6 +56,7 @@ extends Resource
 ## How far ahead the front soldier spots deep drops and hazards. Only a warning in the status bar.
 @export_range(0.5, 20.0, 0.5, "suffix:m") var warn_distance: float = 3.0
 @export var wall_text: String = "%d m wall ahead"
+@export var low_text: String = "Too low to pass"
 @export var drop_text: String = "%d m drop ahead"
 @export var chasm_text: String = "Chasm ahead"
 ## Drops deeper than this are reported as a chasm.

@@ -247,3 +247,30 @@ func test_camp_squeezes_in_when_there_is_no_room_behind() -> void:
 	for i in range(1, xs.size()):
 		assert_gt(xs[i - 1] - xs[i], 0.4, "soldiers %d and %d do not pile up" % [i - 1, i])
 	assert_gte(xs[-1], 0.25, "nobody pressed into the edge")
+
+
+func test_needs_two_metres_of_headroom() -> void:
+	var a := _world([
+		"..............",
+		"......########",
+		"..............",
+		"##############",
+		"BBBBBBBBBBBBBB",
+	])
+	a.spawn(1, 2.5)
+	_run(a, 4.0)
+	assert_lt(a.lead().pos.x, 6.0, "a 1 m gap is too low")
+	assert_eq(a.halt_reason, a.rules.low_text)
+
+
+func test_walks_through_a_two_metre_tunnel() -> void:
+	var a := _world([
+		"......########",
+		"..............",
+		"..............",
+		"##############",
+		"BBBBBBBBBBBBBB",
+	])
+	a.spawn(1, 2.5)
+	_run(a, 4.0)
+	assert_gt(a.lead().pos.x, 8.0)

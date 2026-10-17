@@ -260,6 +260,9 @@ func _blocked_ahead(s: Soldier, dx: float) -> String:
 		while h < 14 and terrain.is_solid(Vector2i(col, r - 1 - h)):
 			h += 1
 		return rules.wall_text % maxi(h, 2)
+	for k in range(1, ceili(rules.headroom)):
+		if terrain.is_solid(Vector2i(col, floori(sup.y - 0.5) - k)):
+			return rules.low_text
 	return ""
 
 

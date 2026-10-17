@@ -2,7 +2,7 @@
 
 A Ludum Dare 60 game ("Old Tech") made in Godot 4.7.
 
-The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. You are the engineers above the field. Dig, fill, bridge and blast a way through before the archers' towers thin the ranks.
+The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m or a gap lower than 2 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. You are the engineers above the field. Dig, fill, bridge and blast a way through before the archers' towers thin the ranks.
 
 ## How to play
 
