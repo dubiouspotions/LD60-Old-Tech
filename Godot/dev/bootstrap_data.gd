@@ -77,7 +77,9 @@ func _terrain() -> void:
 
 func _bridge() -> void:
 	var log_m := BridgeMaterial.new()
-	log_m.display_name = "Log"
+	log_m.display_name = "Bridge"
+	log_m.snapped_text = "Bridge pulled apart"
+	log_m.buckled_text = "Bridge buckled"
 	log_m.cost = Supplies.make(0, 1)
 	log_m.place_sound = _snd("log_place")
 	log_m.break_sound = _snd("member_snap")
@@ -146,7 +148,7 @@ func _tools() -> void:
 	_tool("2_fill", {kind = ToolDefinition.Kind.FILL, display_name = "Fill", hint = "1 earth · falls",
 		action = &"tool_fill", key_label = "2", repeat_interval = 0.11, cost = Supplies.make(1),
 		no_supply_text = "No earth. Dig some", spawn_scene = load("res://objects/falling_block/falling_block.tscn")})
-	_tool("3_log", {kind = ToolDefinition.Kind.BUILD, display_name = "Log", hint = "1 log · ≤ 5 m · push + pull",
+	_tool("3_log", {kind = ToolDefinition.Kind.BUILD, display_name = "Bridge", hint = "1 log · ≤ 5 m · push + pull",
 		action = &"tool_log", key_label = "3", bridge_material = load("res://data/bridge/log.tres")})
 	_tool("4_support", {kind = ToolDefinition.Kind.BUILD, display_name = "Support", hint = "1 log · ≤ 5 m · not walked on",
 		action = &"tool_support", key_label = "4", bridge_material = load("res://data/bridge/support.tres")})

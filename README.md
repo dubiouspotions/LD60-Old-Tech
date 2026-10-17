@@ -10,11 +10,11 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 | --- | --- | --- |
 | Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope) and gold ore (+1 gold) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
 | Fill | 2 | Drops a block of earth that falls until it lands. Costs 1 earth. |
-| Log | 3 | Drag from point to point to plan a deck log. Takes push and pull, up to 5 m. Costs 1 log. |
+| Bridge | 3 | Drag from point to point to plan a bridge deck (a log soldiers walk on). Takes push and pull, up to 5 m. Costs 1 log. |
 | Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
 | Rope | 5 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
 
-- Log, Support and Rope place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
+- Bridge, Support and Rope place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
 - While you plan, idle engineers (orange) walk over and wait beside it. **Build** above a plan hands that plan to them; **Enter** hands over every plan. They build it member by member, starting from the ground or finished parts and climbing along what is already up. With only one thing to build or dig, they all work on it together. Finished parts are held on scaffolding and can't be walked on yet. Each separate structure comes down off its scaffolding once it's finished and no engineer is on it, and your design holds or it doesn't. The column doesn't wait for it: a soldier walking onto an unfinished bridge falls.
 - Bridge ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down. A plan may start anywhere, even in mid-air, but the engineers can only build it once it connects to ground or finished work.
 - Joints are hinges, so build triangles or hang the deck from ropes. Members glow red as they near breaking, and each soldier adds 80 kg.

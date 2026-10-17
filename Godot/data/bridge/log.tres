@@ -11,6 +11,9 @@ logs = 1
 
 [resource]
 script = ExtResource("4_am5kb")
+display_name = "Bridge"
+snapped_text = "Bridge pulled apart"
+buckled_text = "Bridge buckled"
 cost = SubResource("Resource_ipm0b")
 place_sound = ExtResource("3_u0lpy")
 break_sound = ExtResource("1_ue7ld")

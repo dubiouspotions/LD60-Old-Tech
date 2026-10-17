@@ -52,7 +52,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |
 | Engineer crew: size, walk/climb/build speed, dig reach, step-up, ground climb and drop limits, strike delay, sounds | `data/crew_rules.tres` |
 | Engineer look | `objects/engineer/engineer.tscn` (its own placeholder until engineer art exists; keep the Body, Wounded and AnimationPlayer nodes the soldier script uses) |
-| Log / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres`, `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
+| Bridge / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list) |
 | Arrows | `objects/arrow/arrow.tscn` |
 | Falling fill | `objects/falling_block/falling_block.tscn` |

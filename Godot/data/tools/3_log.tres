@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("2_pb6ww")
 kind = 2
-display_name = "Log"
+display_name = "Bridge"
 hint = "1 log · ≤ 5 m · push + pull"
 action = &"tool_log"
 key_label = "3"

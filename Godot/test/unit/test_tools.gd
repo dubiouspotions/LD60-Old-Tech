@@ -98,7 +98,7 @@ func test_fill_without_earth_does_nothing() -> void:
 
 
 func test_log_build_spends_a_log() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Log")
+	_select(ToolDefinition.Kind.BUILD, "Bridge")
 	var logs := GameState.supplies.logs
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
@@ -110,7 +110,7 @@ func test_log_build_spends_a_log() -> void:
 
 
 func test_commit_orders_the_plan() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Log")
+	_select(ToolDefinition.Kind.BUILD, "Bridge")
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
 	tools._mouse_m = Vector2(9, 6)
@@ -130,7 +130,7 @@ func test_support_tool_places_support() -> void:
 
 
 func test_dig_member_refunds_it() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Log")
+	_select(ToolDefinition.Kind.BUILD, "Bridge")
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
 	tools._mouse_m = Vector2(9, 6)
@@ -140,3 +140,8 @@ func test_dig_member_refunds_it() -> void:
 	_click(Vector2(7.5, 6.05))
 	assert_eq(world.bridge.members.size(), 0)
 	assert_eq(GameState.supplies.logs, logs + 1)
+
+func test_bridge_tool_is_called_bridge() -> void:
+	var names := tools.tools.map(func(t: ToolDefinition) -> String: return t.display_name)
+	assert_true("Bridge" in names)
+	assert_false("Log" in names)
