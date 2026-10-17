@@ -208,7 +208,6 @@ func _physics_process(dt: float) -> void:
 	if _done:
 		return
 	_advance_phase(dt)
-	crew.view = _camera_view_m()
 	bridge.step(dt, army.bridge_loads())
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
 	army.step(dt)
@@ -434,21 +433,13 @@ func _free_objects(hit: Callable) -> void:
 
 ## The camera's view in metres, or the column's span when there is no camera.
 func _view_m() -> Rect2:
-	var seen := _camera_view_m()
-	if seen.size.x > 0.0:
-		return seen
+	var cam := get_viewport().get_camera_2d()
+	if cam:
+		var size := get_viewport_rect().size / cam.zoom
+		return Rect2(Grid.to_m(cam.get_screen_center_position() - size / 2), Grid.to_m(size))
 	var lead := army.lead()
 	var rear := army.rear()
 	return Rect2(rear.pos.x if rear else 0.0, 0, (lead.pos.x - rear.pos.x) if lead else 0.0, 0)
-
-
-## What the camera shows, in metres, or an empty rect without a camera.
-func _camera_view_m() -> Rect2:
-	var cam := get_viewport().get_camera_2d()
-	if cam == null:
-		return Rect2()
-	var size := get_viewport_rect().size / cam.zoom
-	return Rect2(Grid.to_m(cam.get_screen_center_position() - size / 2), Grid.to_m(size))
 
 
 func _on_army_count(count: int) -> void:

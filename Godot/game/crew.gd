@@ -53,8 +53,6 @@ var terrain: Terrain
 var bridge: Bridge
 var army: Army
 var engineers: Array[Engineer] = []
-## The screen in metres, set by the World from the camera. Engineers stay inside it. Empty means no limit.
-var view: Rect2 = Rect2()
 
 ## Where idle engineers wait for a plan to be ordered: a start joint's x, and the side they come from. NAN if none.
 var _ready_x: float = NAN
@@ -95,7 +93,7 @@ func step(dt: float) -> void:
 			_drop(e)
 		if e.digging and not terrain.is_marked(e.dig):
 			e.digging = false
-		if (e.job and e.goal and not _in_view(e.goal.pos.x)) or (e.digging and not _in_view(e.dig.x + 0.5)):
+		if (e.job and e.goal and not _in_zone(e.goal.pos.x)) or (e.digging and not _in_zone(e.dig.x + 0.5)):
 			_drop(e)
 		e.think -= dt
 		if e.job == null and not e.digging and e.route.is_empty() and e.think <= 0.0:
@@ -157,10 +155,10 @@ func _take_job(e: Engineer) -> void:
 		if _builder_of(m):
 			continue
 		for j in bridge.work_ends(m):
-			if not _in_view(j.pos.x):
+			if not _in_zone(j.pos.x):
 				continue
 			var route := bridge.route(j, starts)
-			if route.is_empty() or not _in_view(route[0].pos.x):
+			if route.is_empty() or not _in_zone(route[0].pos.x):
 				continue
 			var cost := absf(route[0].pos.x - e.pos.x) if e.at == null else 0.0
 			for k in range(1, route.size()):
@@ -178,18 +176,18 @@ func _take_job(e: Engineer) -> void:
 			for j: Bridge.Joint in [m.a, m.b]:
 				var x := _spot_within_reach(e.pos, j.pos, rules.build_reach)
 				var cost := absf(x - e.pos.x)
-				if not is_nan(x) and cost < best_cost and _in_view(x) and _in_view(j.pos.x):
+				if not is_nan(x) and cost < best_cost and _in_zone(x) and _in_zone(j.pos.x):
 					best_cost = cost
 					e.job = m
 					e.goal = j
 					e.route.clear()
 					e.reach_x = x
 		for cell in terrain.marked_cells():
-			if _dig_taken(cell) or not _in_view(cell.x + 0.5):
+			if _dig_taken(cell) or not _in_zone(cell.x + 0.5):
 				continue
 			var x := _dig_spot(e.pos, cell)
 			var cost := absf(x - e.pos.x)
-			if not is_nan(x) and cost < best_cost and _in_view(x):
+			if not is_nan(x) and cost < best_cost and _in_zone(x):
 				best_cost = cost
 				_drop(e)
 				e.digging = true
@@ -384,23 +382,27 @@ func _walk_y(p: Vector2, x: float) -> float:
 ## Where idle engineer i stands: ready beside a plan waiting to be ordered, else behind the last soldier.
 func _idle_x(i: int) -> float:
 	if not is_nan(_ready_x):
-		return _keep_in_view(maxf(0.5, _ready_x - _ready_side * (READY_GAP + i * rules.spacing)))
+		return _keep_in_zone(maxf(0.5, _ready_x - _ready_side * (READY_GAP + i * rules.spacing)))
 	if army == null or army.lead() == null:
-		return _keep_in_view(engineers[i].pos.x)
+		return _keep_in_zone(engineers[i].pos.x)
 	# At camp the crew waits in front of the column, never back along the sleeping line.
 	if army.resting or army.hold:
-		return _keep_in_view(army.lead().pos.x + rules.follow_gap + i * rules.spacing)
-	return _keep_in_view(maxf(0.5, army.rear().pos.x - rules.follow_gap - i * rules.spacing))
+		return _keep_in_zone(army.lead().pos.x + rules.follow_gap + i * rules.spacing)
+	return _keep_in_zone(maxf(0.5, army.rear().pos.x - rules.follow_gap - i * rules.spacing))
 
 
-func _in_view(x: float) -> bool:
-	return view.size.x <= 0.0 or (x >= view.position.x + rules.view_margin and x <= view.end.x - rules.view_margin)
+## Is x within the crew's work area: not further behind the last soldier than work_behind.
+func _in_zone(x: float) -> bool:
+	return x >= _zone_start()
 
 
-func _keep_in_view(x: float) -> float:
-	if view.size.x <= 0.0:
-		return x
-	return clampf(x, view.position.x + rules.view_margin, maxf(view.position.x + rules.view_margin, view.end.x - rules.view_margin))
+func _keep_in_zone(x: float) -> float:
+	return maxf(x, _zone_start())
+
+
+func _zone_start() -> float:
+	var rear := army.rear() if army else null
+	return rear.pos.x - rules.work_behind if rear else -INF
 
 
 ## Strikes each structure's scaffolding once it is done and clear of engineers for strike_delay.
@@ -418,7 +420,7 @@ func _update_ready_spot(dt: float) -> void:
 			continue
 		for j: Bridge.Joint in [m.a, m.b]:
 			var d := absf(j.pos.x - from.x)
-			if (j.pinned or j.built) and d < best and _in_view(j.pos.x) and not is_nan(_walk_y(from, j.pos.x)):
+			if (j.pinned or j.built) and d < best and _in_zone(j.pos.x) and not is_nan(_walk_y(from, j.pos.x)):
 				best = d
 				_ready_x = j.pos.x
 				_ready_side = 1.0 if j.pos.x >= from.x else -1.0

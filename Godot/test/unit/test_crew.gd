@@ -270,8 +270,9 @@ func test_each_structure_comes_off_scaffolding_when_it_is_done() -> void:
 			var key: String = WorldFixture.LEGEND[TWO_PITS[y][x]]
 			if key != "":
 				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
-	# The crew stands between the pits, so both bridges are worked on at once.
-	world.army.spawn(1, 12.5)
+	# The crew stands between the pits, so both bridges are worked on at once. The column waits behind both,
+	# so neither counts as an old site behind it.
+	world.army.spawn(1, 2.5)
 	world.crew.spawn(12.5)
 	var near := _plan(Vector2(6, 6), Vector2(8, 6))
 	var far: Array[Bridge.Member] = [
@@ -411,56 +412,45 @@ func test_column_follows_the_engineer_out_onto_a_piece_being_built() -> void:
 	assert_gt(furthest[0], 6.5, "out on the built part before the piece is finished")
 
 
-## A flat 40 m strip, with the crew's view set to x 10..25.
-func _flat_strip_with_view() -> void:
+## A flat 40 m strip with the column at x 20.5 and the crew around it.
+func _flat_strip() -> void:
 	world.terrain.clear()
 	world.terrain.rebuild()
 	for x in 40:
 		world.terrain.set_type(Vector2i(x, 6), WorldFixture.type("soil"))
 		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("bedrock"))
-	world.crew.view = Rect2(10, -10, 15, 30)
 	world.army.spawn(1, 20.5)
-	world.crew.spawn(18.0)
+	world.crew.spawn(20.5)
 
 
-func _all_in_view() -> bool:
-	var v := world.crew.view
-	return world.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.pos.x >= v.position.x and e.pos.x <= v.end.x)
+func _nobody_behind() -> bool:
+	var edge := world.army.rear().pos.x - world.crew.rules.work_behind
+	return world.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.pos.x >= edge - 0.05)
 
 
-func test_crew_leaves_work_outside_the_view_alone() -> void:
-	_flat_strip_with_view()
+func test_crew_leaves_old_sites_behind_the_column_alone() -> void:
+	_flat_strip()
 	world.terrain.mark(Vector2i(3, 6))
 	var stayed := [true]
 	_run(8.0, func() -> bool:
-		stayed[0] = stayed[0] and _all_in_view()
+		stayed[0] = stayed[0] and _nobody_behind()
 		return false)
-	assert_true(stayed[0], "nobody runs off screen to the old site")
+	assert_true(stayed[0], "nobody runs back to the old site")
 	assert_true(world.terrain.is_marked(Vector2i(3, 6)))
 
 
-func test_crew_does_work_inside_the_view() -> void:
-	_flat_strip_with_view()
-	world.terrain.mark(Vector2i(14, 6))
-	_run(8.0, func() -> bool: return world.terrain.type_at(Vector2i(14, 6)) == null)
-	assert_null(world.terrain.type_at(Vector2i(14, 6)))
+func test_crew_builds_ahead_of_the_column_wherever_the_camera_is() -> void:
+	_flat_strip()
+	world.terrain.mark(Vector2i(34, 6))
+	_run(10.0, func() -> bool: return world.terrain.type_at(Vector2i(34, 6)) == null)
+	assert_null(world.terrain.type_at(Vector2i(34, 6)), "far ahead, still done")
 
 
-func test_idle_crew_stays_in_view_when_the_army_is_off_screen() -> void:
-	_flat_strip_with_view()
-	world.army.spawn(1, 38.5)
-	var stayed := [true]
-	_run(8.0, func() -> bool:
-		stayed[0] = stayed[0] and _all_in_view()
-		return false)
-	assert_true(stayed[0])
-
-
-func test_crew_outside_the_view_walks_back_in() -> void:
-	_flat_strip_with_view()
+func test_crew_left_behind_catches_up_with_the_column() -> void:
+	_flat_strip()
 	world.crew.spawn(3.0)
 	_run(8.0)
-	assert_true(_all_in_view())
+	assert_true(_nobody_behind())
 
 
 func test_idle_crew_waits_in_front_of_the_camp_at_night() -> void:
