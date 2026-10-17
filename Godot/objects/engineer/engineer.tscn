@@ -1,64 +1,165 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://c7tcju3njyxvf"]
 
-[ext_resource type="Script" path="res://objects/soldier/soldier.gd" id="1"]
+[ext_resource type="Script" uid="uid://cv6d17o3vdyex" path="res://objects/soldier/soldier.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://da2uiu4sygq30" path="res://world/engineer_animation.png" id="2_8k416"]
 
-[sub_resource type="Animation" id="walk"]
-resource_name = "walk"
-length = 0.57
-loop_mode = 1
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Body/LegL:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0.000, 0.142, 0.285, 0.427, 0.570),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
-"update": 0,
-"values": [Vector2(0.00, 0), Vector2(2.20, 0), Vector2(0.00, 0), Vector2(-2.20, 0), Vector2(0.00, 0)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("Body/LegR:position")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0.000, 0.142, 0.285, 0.427, 0.570),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
-"update": 0,
-"values": [Vector2(0.00, 0), Vector2(-2.20, 0), Vector2(0.00, 0), Vector2(2.20, 0), Vector2(0.00, 0)]
-}
+[sub_resource type="AtlasTexture" id="AtlasTexture_clonx"]
+atlas = ExtResource("2_8k416")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6w2u6"]
+atlas = ExtResource("2_8k416")
+region = Rect2(128, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pg126"]
+atlas = ExtResource("2_8k416")
+region = Rect2(256, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bq11a"]
+atlas = ExtResource("2_8k416")
+region = Rect2(384, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xj1tt"]
+atlas = ExtResource("2_8k416")
+region = Rect2(512, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_p4f2b"]
+atlas = ExtResource("2_8k416")
+region = Rect2(640, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_n31f2"]
+atlas = ExtResource("2_8k416")
+region = Rect2(768, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yphvi"]
+atlas = ExtResource("2_8k416")
+region = Rect2(896, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bma1j"]
+atlas = ExtResource("2_8k416")
+region = Rect2(1024, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_osgdf"]
+atlas = ExtResource("2_8k416")
+region = Rect2(1152, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cbnay"]
+atlas = ExtResource("2_8k416")
+region = Rect2(1280, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dbsv7"]
+atlas = ExtResource("2_8k416")
+region = Rect2(1408, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_84qxn"]
+atlas = ExtResource("2_8k416")
+region = Rect2(1536, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o5js0"]
+atlas = ExtResource("2_8k416")
+region = Rect2(1664, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5kby7"]
+atlas = ExtResource("2_8k416")
+region = Rect2(1792, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4dxkh"]
+atlas = ExtResource("2_8k416")
+region = Rect2(1920, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pex3i"]
+atlas = ExtResource("2_8k416")
+region = Rect2(2048, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qcf6y"]
+atlas = ExtResource("2_8k416")
+region = Rect2(2176, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g22ot"]
+atlas = ExtResource("2_8k416")
+region = Rect2(2304, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ket4h"]
+atlas = ExtResource("2_8k416")
+region = Rect2(2432, 0, 128, 128)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4pjgo"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_clonx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6w2u6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pg126")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bq11a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xj1tt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_p4f2b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_n31f2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yphvi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bma1j")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_osgdf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cbnay")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dbsv7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_84qxn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o5js0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5kby7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4dxkh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pex3i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qcf6y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g22ot")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ket4h")
+}],
+"loop": 1,
+"name": &"engineer",
+"speed": 20.0
+}]
 
 [sub_resource type="Animation" id="idle"]
 resource_name = "idle"
 length = 0.5
 loop_mode = 1
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Body/LegL:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0.000),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(0.00, 0)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("Body/LegR:position")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0.000),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(0.00, 0)]
-}
+
+[sub_resource type="Animation" id="walk"]
+resource_name = "walk"
+length = 0.57
+loop_mode = 1
 
 [sub_resource type="AnimationLibrary" id="lib"]
 _data = {
@@ -66,74 +167,62 @@ _data = {
 &"walk": SubResource("walk")
 }
 
-[node name="Engineer" type="Node2D"]
+[node name="Engineer" type="Node2D" unique_id=837474487]
 script = ExtResource("1")
 
-[node name="Body" type="Node2D" parent="."]
+[node name="Body" type="Node2D" parent="." unique_id=692712909]
 unique_name_in_owner = true
 scale = Vector2(1.15, 1.5)
 
-[node name="LegL" type="Polygon2D" parent="Body"]
-color = Color(0.333, 0.243, 0.157, 1)
-polygon = PackedVector2Array(-5.44, -9.60, -1.28, -9.60, -1.28, 0.00, -5.44, 0.00)
-
-[node name="LegR" type="Polygon2D" parent="Body"]
-color = Color(0.333, 0.243, 0.157, 1)
-polygon = PackedVector2Array(1.28, -9.60, 5.44, -9.60, 5.44, 0.00, 1.28, 0.00)
-
-[node name="Torso" type="Polygon2D" parent="Body"]
-color = Color(0.851, 0.561, 0.231, 1)
-polygon = PackedVector2Array(-6.40, -21.12, 6.40, -21.12, 6.40, -8.96, -6.40, -8.96)
-
-[node name="Head" type="Polygon2D" parent="Body"]
-color = Color(0.945, 0.827, 0.69, 1)
-polygon = PackedVector2Array(4.16, -24.96, 3.60, -22.88, 2.08, -21.36, 0.00, -20.80, -2.08, -21.36, -3.60, -22.88, -4.16, -24.96, -3.60, -27.04, -2.08, -28.56, -0.00, -29.12, 2.08, -28.56, 3.60, -27.04)
-
-[node name="Helmet" type="Polygon2D" parent="Body"]
-color = Color(0.478, 0.329, 0.18, 1)
-polygon = PackedVector2Array(-4.80, -25.60, -4.43, -27.44, -3.39, -28.99, -1.84, -30.03, -0.00, -30.40, 1.84, -30.03, 3.39, -28.99, 4.43, -27.44, 4.80, -25.60)
-
-[node name="Spear" type="Line2D" parent="Body"]
+[node name="Spear" type="Line2D" parent="Body" unique_id=1543933060]
 unique_name_in_owner = true
 visible = false
-points = PackedVector2Array(7.04, -8.00, 10.24, -40.00)
+points = PackedVector2Array(7.04, -8, 10.24, -40)
 width = 1.6
 default_color = Color(0.847, 0.824, 0.769, 1)
 
-[node name="Handle" type="Line2D" parent="Body"]
-points = PackedVector2Array(6.4, -12.0, 9.6, -26.0)
+[node name="Handle" type="Line2D" parent="Body" unique_id=1775224277]
+visible = false
+points = PackedVector2Array(6.4, -12, 9.6, -26)
 width = 1.6
 default_color = Color(0.62, 0.45, 0.27, 1)
 
-[node name="HammerHead" type="Polygon2D" parent="Body"]
+[node name="HammerHead" type="Polygon2D" parent="Body" unique_id=1287030436]
+visible = false
 color = Color(0.604, 0.651, 0.706, 1)
-polygon = PackedVector2Array(6.4, -28.0, 12.8, -26.6, 12.4, -24.6, 6.0, -26.0)
+polygon = PackedVector2Array(6.4, -28, 12.8, -26.6, 12.4, -24.6, 6, -26)
 
-[node name="Flag" type="Node2D" parent="Body"]
+[node name="Flag" type="Node2D" parent="Body" unique_id=220707796]
 unique_name_in_owner = true
 visible = false
 
-[node name="Pole" type="Line2D" parent="Body/Flag"]
-points = PackedVector2Array(7.68, -6.40, 7.68, -54.40)
+[node name="Pole" type="Line2D" parent="Body/Flag" unique_id=2121545057]
+points = PackedVector2Array(7.68, -6.4, 7.68, -54.4)
 width = 1.6
 default_color = Color(0.847, 0.824, 0.769, 1)
 
-[node name="Cloth" type="Polygon2D" parent="Body/Flag"]
+[node name="Cloth" type="Polygon2D" parent="Body/Flag" unique_id=1224611119]
 color = Color(0.302, 0.545, 0.941, 1)
-polygon = PackedVector2Array(7.68, -54.40, 27.20, -49.60, 7.68, -43.20)
+polygon = PackedVector2Array(7.68, -54.4, 27.2, -49.6, 7.68, -43.2)
 
-[node name="Stripe" type="Polygon2D" parent="Body/Flag"]
+[node name="Stripe" type="Polygon2D" parent="Body/Flag" unique_id=739610935]
 color = Color(0.925, 0.894, 0.824, 1)
-polygon = PackedVector2Array(9.60, -50.56, 16.64, -50.56, 16.64, -48.32, 9.60, -48.32)
+polygon = PackedVector2Array(9.6, -50.56, 16.64, -50.56, 16.64, -48.32, 9.6, -48.32)
 
-[node name="Wounded" type="Polygon2D" parent="Body"]
+[node name="Wounded" type="Polygon2D" parent="Body" unique_id=98119386]
 unique_name_in_owner = true
 visible = false
 color = Color(1, 0.416, 0.333, 1)
-polygon = PackedVector2Array(-6.40, -33.92, -2.56, -33.92, -2.56, -30.08, -6.40, -30.08)
+polygon = PackedVector2Array(-6.4, -33.92, -2.56, -33.92, -2.56, -30.08, -6.4, -30.08)
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body" unique_id=1164224951]
+position = Vector2(7.6847825, -16.400248)
+scale = Vector2(0.34188178, 0.2528501)
+sprite_frames = SubResource("SpriteFrames_4pjgo")
+animation = &"engineer"
+autoplay = "engineer"
+frame_progress = 0.3830967
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1804179121]
 unique_name_in_owner = true
-libraries = {
-&"": SubResource("lib")
-}
+libraries/ = SubResource("lib")

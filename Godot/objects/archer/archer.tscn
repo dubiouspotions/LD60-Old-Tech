@@ -119,11 +119,11 @@ color = Color(0.478, 0.165, 0.133, 1)
 polygon = PackedVector2Array(-4.8, -9.6, 4.8, -9.6, 4.8, 0, -4.8, 0)
 
 [node name="AnimatedSprite2D2" type="AnimatedSprite2D" parent="." unique_id=802048814]
-position = Vector2(6.0000076, -19.999996)
-scale = Vector2(0.32031253, 0.32031253)
+position = Vector2(2.2500036, -23.749998)
+scale = Vector2(0.3789063, 0.3789063)
 sprite_frames = SubResource("SpriteFrames_ppky4")
 autoplay = "default"
-frame_progress = 0.68010753
+frame_progress = 0.6631592
 
 [node name="Torso" type="Polygon2D" parent="." unique_id=603410038]
 visible = false
@@ -141,4 +141,4 @@ position = Vector2(22, -44)
 sprite_frames = SubResource("SpriteFrames_4pjgo")
 animation = &"flagwavered"
 autoplay = "flagwavered"
-frame_progress = 0.5220371
+frame_progress = 0.89163345
