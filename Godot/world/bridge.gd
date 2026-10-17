@@ -3,6 +3,8 @@ extends Node2D
 ## The player's truss: joints are hinges, members are logs (push + pull) or ropes (pull only).
 ## Simulated with XPBD (small-steps variant, one iteration per substep). SI units: m, kg, s, N.
 ## Joints touching solid ground are bolted down.
+## New members start as blueprints: drawn, but not simulated or walkable. Ordered blueprints are built one by one
+## by the Crew (finish), held on scaffolding, and released to the physics when the crew strikes the scaffolding.
 
 signal member_built(member: Member)
 signal member_broken(member: Member, text: String)
@@ -16,6 +18,13 @@ class Joint:
 	var load: float = 0.0
 	var inv_mass: float = 0.0
 	var degree: int = 0
+	## Touched by at least one built member. Joints of a blueprint alone stay put.
+	var built: bool = false
+	## Held in place by scaffolding.
+	var scaffolded: bool = false
+
+	func fixed() -> bool:
+		return pinned or scaffolded or not built
 
 
 class Member:
@@ -28,6 +37,15 @@ class Member:
 	var force: float = 0.0
 	var _acc: float = 0.0
 	var dead: bool = false
+	## Planned but not built yet.
+	var blueprint: bool = false
+	## Handed to the crew.
+	var ordered: bool = false
+	## Built, still held by scaffolding.
+	var scaffolded: bool = false
+	## Share built so far (0..1), growing from from_joint.
+	var progress: float = 0.0
+	var from_joint: Joint
 
 	func stress() -> float:
 		return absf(force) / material.break_force
@@ -86,6 +104,13 @@ class Snap:
 @export var bolt_color: Color = Color("2b2f36")
 @export var bolt_head_color: Color = Color("9aa6b4")
 @export var highlight_color: Color = Color(1, 0.92, 0.78, 0.25)
+@export var blueprint_color: Color = Color(0.55, 0.78, 1.0, 0.8)
+## Blueprints handed to the crew.
+@export var ordered_color: Color = Color(1.0, 0.85, 0.45, 0.9)
+@export var blueprint_dash: float = 6.0
+@export var scaffold_color: Color = Color(0.62, 0.55, 0.42, 0.85)
+## Scaffold poles reach down at most this far.
+@export var scaffold_max_depth: float = 24.0
 
 var terrain: Terrain
 var nodes: Array[Joint] = []
@@ -154,18 +179,111 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 
 
 ## Adds the member without any cost or validity check (see check_build).
-func build(a: Snap, b: Snap, mat: BridgeMaterial) -> Member:
+## A blueprint is only a plan until commit_blueprints.
+func build(a: Snap, b: Snap, mat: BridgeMaterial, blueprint: bool = false) -> Member:
 	var m := Member.new()
 	m.a = a.node if a.node else _add_joint(a.pos)
 	m.b = b.node if b.node else _add_joint(b.pos)
 	m.length = a.pos.distance_to(b.pos)
 	m.material = mat
 	m.mass = m.length * mat.kg_per_m
+	m.blueprint = blueprint
 	members.append(m)
 	_recompute_mass()
-	Audio.play(mat.place_sound, Grid.to_px((m.a.pos + m.b.pos) / 2))
-	member_built.emit(m)
+	if not blueprint:
+		Audio.play(mat.place_sound, Grid.to_px((m.a.pos + m.b.pos) / 2))
+		member_built.emit(m)
 	return m
+
+
+## Blueprints not yet handed to the crew.
+func blueprint_count() -> int:
+	return members.reduce(func(n: int, m: Member) -> int: return n + int(m.blueprint and not m.ordered), 0)
+
+
+## Hands every unordered blueprint to the crew. Returns how many.
+func order_blueprints() -> int:
+	var n := 0
+	for m in members:
+		if m.blueprint and not m.ordered:
+			m.ordered = true
+			n += 1
+	return n
+
+
+## Ends of an ordered blueprint the crew can work from: bolted down or on a built member.
+func work_ends(m: Member) -> Array[Joint]:
+	var out: Array[Joint] = []
+	if m.blueprint and m.ordered:
+		for j: Joint in [m.a, m.b]:
+			if j.pinned or j.built:
+				out.append(j)
+	return out
+
+
+## Shortest walk from a bolted joint along built members to j, both ends included. [] if j is not reachable.
+func route_from_ground(j: Joint) -> Array[Joint]:
+	return route(j, func(n: Joint) -> bool: return n.pinned)
+
+
+## Shortest walk along built members from a joint that matches is_start to goal. [] if none.
+func route(goal: Joint, is_start: Callable) -> Array[Joint]:
+	var came := {goal: null}
+	var queue: Array[Joint] = [goal]
+	while not queue.is_empty():
+		var n: Joint = queue.pop_front()
+		if is_start.call(n):
+			var out: Array[Joint] = []
+			while n != null:
+				out.append(n)
+				n = came[n]
+			return out
+		for m in members:
+			if m.blueprint:
+				continue
+			var o: Joint = m.b if m.a == n else (m.a if m.b == n else null)
+			if o and not came.has(o):
+				came[o] = n
+				queue.append(o)
+	return []
+
+
+## Builds one blueprint and holds it on scaffolding.
+func finish(m: Member) -> void:
+	m.blueprint = false
+	m.ordered = false
+	m.scaffolded = true
+	m.progress = 1.0
+	_recompute_mass()
+	Audio.play(m.material.place_sound, Grid.to_px((m.a.pos + m.b.pos) / 2))
+	member_built.emit(m)
+
+
+## Is a walkable member being built (ordered or on scaffolding) at x, with some of it between heights top and bottom.
+func under_construction(x: float, top: float, bottom: float) -> bool:
+	for m in members:
+		if not (m.material.walkable and ((m.blueprint and m.ordered) or m.scaffolded)):
+			continue
+		if x >= minf(m.a.pos.x, m.b.pos.x) and x <= maxf(m.a.pos.x, m.b.pos.x) \
+				and minf(m.a.pos.y, m.b.pos.y) <= bottom and maxf(m.a.pos.y, m.b.pos.y) >= top:
+			return true
+	return false
+
+
+func has_scaffolding() -> bool:
+	return members.any(func(m: Member) -> bool: return m.scaffolded)
+
+
+## Releases every scaffolded member to the physics. Returns how many.
+func strike_scaffolding() -> int:
+	var n := 0
+	for m in members:
+		if m.scaffolded:
+			m.scaffolded = false
+			n += 1
+	if n > 0:
+		_recompute_mass()
+	return n
 
 
 func member_at(p: Vector2, radius: float) -> Member:
@@ -197,10 +315,10 @@ func break_member(m: Member, quiet: bool = false) -> void:
 	member_broken.emit(m, text)
 
 
-## Breaks members within radius and pushes nearby joints away.
+## Breaks built members within radius and pushes nearby joints away.
 func blast(center: Vector2, radius: float) -> void:
 	for m in members.duplicate():
-		if _seg_dist(center, m.a.pos, m.b.pos) < radius:
+		if not m.blueprint and _seg_dist(center, m.a.pos, m.b.pos) < radius:
 			break_member(m, true)
 	var reach := radius * blast_push_range
 	for n in nodes:
@@ -213,7 +331,7 @@ func blast(center: Vector2, radius: float) -> void:
 func walk_surface(x: float, y_from: float) -> Dictionary:
 	var best := {}
 	for m in members:
-		if not m.material.walkable:
+		if m.blueprint or m.scaffolded or not m.material.walkable:
 			continue
 		var a := m.a.pos
 		var b := m.b.pos
@@ -244,14 +362,14 @@ func step(dt: float, loads: Array = []) -> void:
 		m.a.load += l[2] * (1.0 - l[1])
 		m.b.load += l[2] * l[1]
 	for n in nodes:
-		n.inv_mass = 0.0 if n.pinned else 1.0 / (n.mass + n.load)
+		n.inv_mass = 0.0 if n.fixed() else 1.0 / (n.mass + n.load)
 	for m in members:
 		m._acc = 0.0
 	var h := dt / substeps
 	var h2 := h * h
 	for s in substeps:
 		for n in nodes:
-			if n.pinned:
+			if n.fixed():
 				continue
 			var v := (n.pos - n.prev) * damping
 			var ay := gravity
@@ -263,7 +381,7 @@ func step(dt: float, loads: Array = []) -> void:
 			n.pos += v + Vector2(0, ay * h2)
 		for m in members:
 			var w := m.a.inv_mass + m.b.inv_mass
-			if w == 0.0:
+			if w == 0.0 or m.blueprint:
 				continue
 			var d := m.b.pos - m.a.pos
 			var dist := maxf(d.length(), 1e-6)
@@ -276,10 +394,12 @@ func step(dt: float, loads: Array = []) -> void:
 			m.b.pos += dir * (m.b.inv_mass * dl)
 			m._acc -= dl / h2
 		for n in nodes:
-			if not n.pinned:
+			if not n.fixed():
 				_collide(n)
 	var broken: Array[Member] = []
 	for m in members:
+		if m.blueprint:
+			continue
 		m.force += (m._acc / substeps - m.force) * force_smoothing
 		if absf(m.force) > m.material.break_force:
 			broken.append(m)
@@ -287,7 +407,7 @@ func step(dt: float, loads: Array = []) -> void:
 		break_member(m)
 	var bottom := (terrain.size.y + 2) if terrain else 1000
 	for m in members.duplicate():
-		if m.a.pos.y > bottom or m.b.pos.y > bottom:
+		if not m.blueprint and m.a.pos.y > bottom or m.b.pos.y > bottom:
 			remove_member(m)
 
 
@@ -298,10 +418,22 @@ func clear() -> void:
 
 func _draw() -> void:
 	var px := Grid.PX
-	for m in members:
+	for n in nodes:
+		if n.scaffolded and not n.pinned:
+			_draw_scaffold(n.pos)
+	var layered := members.duplicate()
+	layered.sort_custom(func(x: Member, y: Member) -> bool: return x.material.draw_layer < y.material.draw_layer)
+	for m: Member in layered:
 		var a := m.a.pos * px
 		var b := m.b.pos * px
 		var mat := m.material
+		if m.blueprint:
+			draw_dashed_line(a, b, ordered_color if m.ordered else blueprint_color, maxf(2.0, mat.thickness * 0.6 * px), blueprint_dash)
+			if m.progress > 0.0 and m.from_joint:
+				var from := m.from_joint.pos * px
+				var to := (m.b.pos if m.from_joint == m.a else m.a.pos) * px
+				draw_line(from, from.lerp(to, m.progress), mat.color, mat.thickness * px)
+			continue
 		var hot := mat.color.lerp(mat.hot_color, clampf((m.stress() - 0.3) / 0.7, 0.0, 1.0))
 		if mat.draw_as_rope:
 			var dist := m.a.pos.distance_to(m.b.pos)
@@ -320,7 +452,9 @@ func _draw() -> void:
 			draw_circle(b, mat.thickness * 0.75 * px, mat.edge_color)
 	for n in nodes:
 		var p := n.pos * px
-		if n.pinned:
+		if not n.built:
+			draw_arc(p, 0.13 * px, 0, TAU, 12, blueprint_color, 1.5)
+		elif n.pinned:
 			draw_rect(Rect2(p - Vector2.ONE * 0.15 * px, Vector2.ONE * 0.3 * px), bolt_color)
 			draw_rect(Rect2(p - Vector2.ONE * 0.04 * px, Vector2.ONE * 0.08 * px), bolt_head_color)
 		else:
@@ -340,12 +474,36 @@ func _recompute_mass() -> void:
 	for n in nodes:
 		n.mass = 0.0
 		n.degree = 0
+		n.built = false
+		n.scaffolded = false
 	for m in members:
-		m.a.mass += m.mass / 2
-		m.b.mass += m.mass / 2
 		m.a.degree += 1
 		m.b.degree += 1
+		if m.blueprint:
+			continue
+		if m.scaffolded:
+			m.a.scaffolded = true
+			m.b.scaffolded = true
+		m.a.mass += m.mass / 2
+		m.b.mass += m.mass / 2
+		m.a.built = true
+		m.b.built = true
 	nodes = nodes.filter(func(n: Joint) -> bool: return n.degree > 0)
+
+
+## A pole from p down to the ground with a ledger every metre.
+func _draw_scaffold(p: Vector2) -> void:
+	var px := Grid.PX
+	var x := floori(p.x)
+	var y := p.y
+	var top := ceili(p.y)
+	var bottom := top
+	while bottom < top + scaffold_max_depth and not terrain.is_solid(Vector2i(x, bottom)):
+		bottom += 1
+	draw_line(p * px, Vector2(p.x, bottom) * px, scaffold_color, maxf(1.5, 0.07 * px))
+	while y < bottom - 0.5:
+		y += 1.0
+		draw_line(Vector2(p.x - 0.3, y) * px, Vector2(p.x + 0.3, y) * px, scaffold_color, maxf(1.0, 0.05 * px))
 
 
 func _joined(a: Joint, b: Joint) -> bool:

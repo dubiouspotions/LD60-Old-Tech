@@ -6,6 +6,8 @@ signal tool_pressed(index: int)
 signal pause_pressed
 signal speed_pressed
 signal follow_pressed
+signal commit_pressed
+signal march_pressed
 signal begin_pressed
 signal retry_pressed
 signal restart_pressed
@@ -18,6 +20,9 @@ enum Mood { NORMAL, HALT, FIRE }
 @export var normal_color: Color = Color("ece4d2")
 @export_range(0.5, 10.0, 0.1, "suffix:s") var banner_time: float = 3.0
 @export var click_sound: SoundEffect
+## Build button text with blueprints waiting (%d = count), and with none.
+@export var commit_text: String = "Build %d"
+@export var commit_empty_text: String = "Build"
 
 var _tool_buttons: Array[ToolButton] = []
 var _group := ButtonGroup.new()
@@ -27,6 +32,8 @@ func _ready() -> void:
 	%PauseButton.pressed.connect(_emit.bind(pause_pressed))
 	%SpeedButton.pressed.connect(_emit.bind(speed_pressed))
 	%FollowButton.pressed.connect(_emit.bind(follow_pressed))
+	%CommitButton.pressed.connect(_emit.bind(commit_pressed))
+	%MarchButton.pressed.connect(_emit.bind(march_pressed))
 	%BeginButton.pressed.connect(_emit.bind(begin_pressed))
 	%RetryButton.pressed.connect(_emit.bind(retry_pressed))
 	%NewWorldButton.pressed.connect(_emit.bind(restart_pressed))
@@ -66,6 +73,17 @@ func set_paused(paused: bool, show_tag: bool) -> void:
 
 func set_speed(speed: float) -> void:
 	%SpeedButton.text = "Speed %d×" % roundi(speed)
+
+
+## Shows the March button while the column waits for the king.
+func set_march(waiting: bool) -> void:
+	%MarchButton.visible = waiting
+
+
+## Shows how many blueprints the Build button will build.
+func set_plan(count: int) -> void:
+	%CommitButton.text = commit_text % count if count > 0 else commit_empty_text
+	%CommitButton.disabled = count == 0
 
 
 func set_follow(on: bool) -> void:

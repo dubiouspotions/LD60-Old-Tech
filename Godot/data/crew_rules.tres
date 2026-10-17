@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CrewRules" format=3]
+
+[ext_resource type="Script" path="res://core/crew_rules.gd" id="1_crew"]
+[ext_resource type="Resource" path="res://data/sounds/dig.tres" id="2_crew"]
+[ext_resource type="Resource" path="res://data/sounds/rope_place.tres" id="3_crew"]
+
+[resource]
+script = ExtResource("1_crew")
+work_sound = ExtResource("2_crew")
+strike_sound = ExtResource("3_crew")

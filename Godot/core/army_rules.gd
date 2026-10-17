@@ -27,6 +27,10 @@ extends Resource
 @export_range(0.1, 5.0, 0.1, "suffix:m") var queue_height: float = 1.5
 
 @export_group("Messages")
+## Shown while the column waits for the king's order to march.
+@export var hold_text: String = "Awaiting the king's order"
+## Shown while the column waits for engineers building a walkable member ahead.
+@export var construction_text: String = "Engineers at work ahead"
 @export var wall_text: String = "%d m wall ahead"
 @export var drop_text: String = "%d m drop ahead"
 @export var chasm_text: String = "Chasm ahead"

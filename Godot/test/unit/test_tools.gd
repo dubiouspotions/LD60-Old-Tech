@@ -92,7 +92,28 @@ func test_log_build_spends_a_log() -> void:
 	tools._mouse_m = Vector2(9, 6)
 	tools._release()
 	assert_eq(level.bridge.members.size(), 1)
+	assert_true(level.bridge.members[0].blueprint, "placed as a plan")
 	assert_eq(GameState.supplies.logs, logs - 1)
+
+
+func test_commit_orders_the_plan() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	tools._mouse_m = Vector2(6, 6)
+	tools._press()
+	tools._mouse_m = Vector2(9, 6)
+	tools._release()
+	assert_eq(tools.commit(), 1)
+	assert_true(level.bridge.members[0].ordered, "handed to the crew")
+
+
+func test_support_tool_places_support() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Support")
+	tools._mouse_m = Vector2(6, 6)
+	tools._press()
+	tools._mouse_m = Vector2(9, 6)
+	tools._release()
+	assert_eq(level.bridge.members.size(), 1)
+	assert_false(level.bridge.members[0].material.walkable)
 
 
 func test_dig_member_refunds_it() -> void:
