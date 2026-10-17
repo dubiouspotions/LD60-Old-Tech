@@ -15,6 +15,9 @@ extends Resource
 ## has to be crossed over the structure.
 @export_range(0.0, 20.0, 0.5, "suffix:m") var max_climb: float = 3.0
 @export_range(0.0, 20.0, 0.5, "suffix:m") var max_drop: float = 3.0
+## Engineers dig a marked cell whose centre is within this distance of their chest.
+## How long the digging takes is set per terrain type (Dig Time).
+@export_range(0.5, 5.0, 0.1, "suffix:m") var dig_reach: float = 1.6
 ## Metres of member one engineer builds per second.
 @export_range(0.05, 10.0, 0.05, "suffix:m/s") var build_speed: float = 0.8
 ## Idle engineers trail this far behind the front soldier...

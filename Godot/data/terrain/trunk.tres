@@ -18,6 +18,7 @@ display_name = "Tree trunk"
 solid = false
 anchor = false
 dig_action = 2
+dig_time = 2.5
 dig_sound = ExtResource("2_a56ly")
 bulk_yield = SubResource("Resource_y2kgi")
 bulk_bonus = SubResource("Resource_yncak")

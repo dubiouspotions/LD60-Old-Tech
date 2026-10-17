@@ -102,6 +102,61 @@ func test_crew_reaches_edge_joint_at_double_speed() -> void:
 	assert_false(m.blueprint)
 
 
+func test_crew_digs_marked_soil() -> void:
+	var earth := GameState.supplies.earth
+	level.terrain.mark(Vector2i(3, 6))
+	_run(10.0, func() -> bool: return level.terrain.type_at(Vector2i(3, 6)) == null)
+	assert_null(level.terrain.type_at(Vector2i(3, 6)))
+	assert_false(level.terrain.is_marked(Vector2i(3, 6)))
+	assert_eq(GameState.supplies.earth, earth + 1)
+
+
+func test_crew_digs_down_into_its_own_hole() -> void:
+	level.terrain.mark(Vector2i(3, 6))
+	level.terrain.mark(Vector2i(3, 7))
+	_run(15.0, func() -> bool: return level.terrain.type_at(Vector2i(3, 7)) == null)
+	assert_null(level.terrain.type_at(Vector2i(3, 6)))
+	assert_null(level.terrain.type_at(Vector2i(3, 7)))
+
+
+func test_crew_fells_marked_tree() -> void:
+	var trunk := WorldFixture.type("trunk")
+	var leaves := WorldFixture.type("leaves")
+	level.terrain.set_type(Vector2i(2, 5), trunk)
+	level.terrain.set_type(Vector2i(2, 4), trunk)
+	level.terrain.set_type(Vector2i(1, 4), leaves)
+	level.terrain.set_type(Vector2i(3, 4), leaves)
+	var logs := GameState.supplies.logs
+	level.terrain.mark(Vector2i(2, 5))
+	_run(15.0, func() -> bool: return level.terrain.type_at(Vector2i(2, 5)) == null)
+	assert_null(level.terrain.type_at(Vector2i(2, 4)), "whole tree felled")
+	assert_gt(GameState.supplies.logs, logs)
+
+
+func test_crew_fells_tree_marked_at_the_top() -> void:
+	var trunk := WorldFixture.type("trunk")
+	var leaves := WorldFixture.type("leaves")
+	for y in [3, 4, 5]:
+		level.terrain.set_type(Vector2i(2, y), trunk)
+	for x in [1, 2, 3]:
+		level.terrain.set_type(Vector2i(x, 2), leaves)
+	level.terrain.mark(Vector2i(2, 2))
+	_run(15.0, func() -> bool: return level.terrain.type_at(Vector2i(2, 5)) == null)
+	assert_null(level.terrain.type_at(Vector2i(2, 5)), "cut at the base")
+	assert_null(level.terrain.type_at(Vector2i(2, 2)))
+
+
+func test_crew_leaves_unreachable_marks() -> void:
+	level.terrain.mark(Vector2i(11, 6))
+	var in_pit := [false]  # an array, so the lambda can write to it
+	_run(10.0, func() -> bool:
+		for e in level.crew.engineers:
+			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.5)
+		return false)
+	assert_true(level.terrain.is_marked(Vector2i(11, 6)), "across the pit")
+	assert_false(in_pit[0], "nobody walks through the spikes")
+
+
 func test_crew_idles_without_orders() -> void:
 	_plan(Vector2(6, 6), Vector2(8, 6))
 	_run(1.0)

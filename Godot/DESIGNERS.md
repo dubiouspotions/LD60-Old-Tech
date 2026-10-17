@@ -29,7 +29,8 @@ Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with 
 | March speed, step-up, fall damage, max army, messages | `data/army_rules.tres` |
 | How long the column waits before the king orders the march | **March Delay** on each level's root node (default in `levels/level_base.tscn`) |
 | March banner texts and sound, "king waits" status | **Game** node in `game/main.tscn` |
-| Engineer crew: size, walk/climb/build speed, step-up, ground climb and drop limits, strike delay, sounds | `data/crew_rules.tres` |
+| How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |
+| Engineer crew: size, walk/climb/build speed, dig reach, step-up, ground climb and drop limits, strike delay, sounds | `data/crew_rules.tres` |
 | Engineer look | `objects/engineer/engineer.tscn` (inherits the soldier scene) |
 | Log / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres`, `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list) |

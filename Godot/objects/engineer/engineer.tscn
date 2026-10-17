@@ -24,6 +24,6 @@ points = PackedVector2Array(6.4, -12.0, 9.6, -26.0)
 width = 1.6
 default_color = Color(0.62, 0.45, 0.27, 1)
 
-[node name="Head" type="Polygon2D" parent="Body"]
+[node name="HammerHead" type="Polygon2D" parent="Body"]
 color = Color(0.604, 0.651, 0.706, 1)
 polygon = PackedVector2Array(6.4, -28.0, 12.8, -26.6, 12.4, -24.6, 6.0, -26.0)

@@ -15,6 +15,7 @@ solid = false
 anchor = false
 fill_replaces = true
 dig_action = 2
+dig_time = 0.8
 dig_sound = ExtResource("2_m3hq1")
 bulk_yield = SubResource("Resource_uh8wy")
 bulk_tiles_per_yield = 2
