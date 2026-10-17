@@ -67,7 +67,7 @@ func _physics_process(dt: float) -> void:
 	if not world.terrain.is_solid(Grid.cell_of(feet_m() + Vector2(0, 0.5))):
 		_go_down(down_text)
 		return
-	if rests_at_night and world.army.hold:
+	if rests_at_night and world.at_camp():
 		engaging = false
 		return
 	_cooldown -= dt

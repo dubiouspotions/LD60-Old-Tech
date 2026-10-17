@@ -12,6 +12,8 @@ extends Node
 @export_group("March")
 ## Status while the column camps (%d = seconds until the king orders the march).
 @export var patience_text: String = "Night camp · %d s"
+## Status while the column gets up and breaks camp.
+@export var morning_text: String = "Morning · breaking camp"
 ## Status while the column marches toward a deep drop or hazard (%s = what).
 @export var danger_text: String = "Marching · %s"
 @export var march_title: String = "Forward, march!"
@@ -74,7 +76,7 @@ func _process(_delta: float) -> void:
 	var lead := _world.army.lead()
 	_hud.set_level(GameState.level_number(), floori(lead.pos.x) if lead else 0)
 	_hud.set_plan(_world.bridge.blueprint_count())
-	_hud.set_march(_world.army.hold and not _over)
+	_hud.set_march(_world.camping() and not _over)
 	_update_status()
 	_update_lead_marker(lead)
 
@@ -99,8 +101,8 @@ func _on_march_ordered(by_player: bool) -> void:
 		Audio.play_music(c.level.music)
 
 
-func _on_night_changed(night: bool) -> void:
-	_day_night.set_night(night)
+func _on_night_changed(night: bool, seconds: float) -> void:
+	_day_night.set_night(night, false, seconds)
 	if night and GameState.campaign.camp_music:
 		Audio.play_music(GameState.campaign.camp_music)
 
@@ -133,7 +135,7 @@ func _start_at_level(index: int) -> void:
 	_camera.snap_to_lead()
 	_over = false
 	var c := _world.current_chunk()
-	if not _world.army.hold:
+	if not _world.at_camp():
 		Audio.play_music(c.level.music)
 
 
@@ -188,8 +190,10 @@ func _update_status() -> void:
 		_hud.set_status("Column lost", Hud.Mood.FIRE)
 	elif get_tree().paused:
 		_hud.set_status("Paused" if not _hud.any_card_open() else "Awaiting orders", Hud.Mood.HALT)
-	elif _world.army.hold:
+	elif _world.camping():
 		_hud.set_status(patience_text % ceili(_world.march_left()), Hud.Mood.HALT)
+	elif _world.at_camp():
+		_hud.set_status(morning_text, Hud.Mood.HALT)
 	elif under_fire:
 		_hud.set_status("Under fire · %s" % reason if reason else "Under fire", Hud.Mood.FIRE)
 	elif reason:

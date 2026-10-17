@@ -36,11 +36,11 @@ func test_column_waits_for_the_king() -> void:
 	watch_signals(world)
 	var x0 := world.army.lead().pos.x
 	_run(1.0)
-	assert_true(world.army.hold)
+	assert_true(world.camping())
 	assert_almost_eq(world.march_left(), 1.0, 0.05)
 	assert_eq(world.army.lead().pos.x, x0)
 	_run(1.5)
-	assert_false(world.army.hold, "king lost patience")
+	assert_false(world.camping(), "king lost patience")
 	assert_signal_emitted_with_parameters(world, "march_ordered", [false])
 	assert_eq(world.march_left(), 0.0)
 
@@ -49,7 +49,7 @@ func test_player_can_march_early() -> void:
 	world.start_at(6.5, 2, 30.0)
 	watch_signals(world)
 	world.march()
-	assert_false(world.army.hold)
+	assert_false(world.camping())
 	assert_signal_emitted_with_parameters(world, "march_ordered", [true])
 	world.march()
 	assert_signal_emit_count(world, "march_ordered", 1, "only once")
@@ -57,4 +57,4 @@ func test_player_can_march_early() -> void:
 
 func test_no_delay_marches_at_once() -> void:
 	world.start_at(6.5, 2, 0.0)
-	assert_false(world.army.hold)
+	assert_false(world.camping())

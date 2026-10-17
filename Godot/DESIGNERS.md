@@ -18,11 +18,13 @@ Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with 
 
 ## Night camp
 
-At the start of every level the column makes camp: the soldiers sleep, night falls, and the engineers keep digging and building. Dawn comes when the player presses **March** (M) or when the king loses patience.
+At the start of every level the column makes camp. **Dusk**: night falls while every soldier walks to their spot behind the camp flag (back or forward) and lies down. **Night**: the soldiers sleep and the engineers keep digging and building. **Morning**: when the player presses **March** (M) or the king loses patience, day breaks, everyone gets up and the camp is struck, then the column marches.
 
 | What | Where |
 | --- | --- |
-| Length of the night | **March Delay** on the level's root node. 0 means no camp. |
+| Length of the night | **March Delay** on the level's root node, counted from arrival (dusk included). 0 means no camp. |
+| Length of dusk and morning | **Dusk Time** / **Morning Time** on `game/world.tscn` |
+| Gap between sleepers, how long a soldier stands before lying down | **Camp Spacing** / **Settle Time** in `data/army_rules.tres` (the gap shrinks if the world ends close behind the camp) |
 | Tents, fire, firelight, crackle | `objects/camp/camp.tscn` (its origin is the camp flag; the column sleeps to its left) |
 | Sleeping soldier pose and the "z" | **Asleep** node and the "sleep" animation in `objects/soldier/soldier.tscn` |
 | Night colours, fade time, cursor lantern strength | **DayNight** node in `game/main.tscn` (lantern light: **Lantern** node) |

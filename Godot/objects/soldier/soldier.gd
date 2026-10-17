@@ -21,6 +21,10 @@ var on_t: float = 0.0
 var dead: bool = false
 ## Camped for the night. Owned by Army.
 var sleeping: bool = false
+## Seconds stood still while the column makes camp. Owned by Army.
+var still_time: float = 0.0
+## 1 faces east (the march), -1 west.
+var facing: int = 1
 ## Seconds until the next strike while fighting.
 var attack_cooldown: float = 0.0
 
@@ -47,6 +51,7 @@ func stand_on(surface: Dictionary) -> void:
 ## Copies sim state to the node. Called by Army after each step.
 func sync() -> void:
 	position = Grid.to_px(pos)
+	scale.x = facing
 	%Wounded.visible = hp < max_hp
 	var lying := sleeping and _asleep != null
 	if _asleep:

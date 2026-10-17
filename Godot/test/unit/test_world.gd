@@ -26,9 +26,10 @@ func test_begin_places_first_level_and_camps() -> void:
 	assert_eq(world.army.soldiers.size(), 5)
 	assert_almost_eq(world.army.lead().pos.x, c0.start_flag.metres().x, 0.01)
 	assert_eq(world.crew.engineers.size(), world.crew.rules.crew_size)
-	assert_true(world.army.hold, "camped until the march is ordered")
-	assert_true(world.army.lead().sleeping)
+	assert_true(world.camping(), "camped until the march is ordered")
 	assert_not_null(world.camp(), "camp pitched")
+	_run(world.dusk_time)
+	assert_true(world.army.lead().sleeping, "asleep by nightfall")
 
 
 func test_next_level_stitches_onto_the_exit_flag() -> void:
@@ -85,8 +86,9 @@ func test_column_arrives_and_camps_at_the_next_level() -> void:
 	assert_eq(world.current, 1)
 	assert_eq(GameState.level_index, 1)
 	assert_eq(world.army.soldiers.size(), 3 + joined, "reinforcements join the camp")
-	assert_true(world.army.hold)
-	assert_true(world.army.soldiers.all(func(s: Soldier) -> bool: return s.sleeping))
+	assert_true(world.camping())
+	_run(world.dusk_time + 2.0)
+	assert_true(world.army.soldiers.all(func(s: Soldier) -> bool: return s.sleeping), "everyone joined the camp")
 
 
 func test_camp_sleeps_while_engineers_work() -> void:
@@ -104,13 +106,15 @@ func test_march_breaks_camp() -> void:
 	world.begin(0, 3)
 	watch_signals(world)
 	world.march()
-	assert_false(world.army.hold)
-	assert_false(world.army.lead().sleeping)
-	assert_signal_emitted_with_parameters(world, "night_changed", [false])
+	assert_false(world.camping())
+	assert_false(world.army.lead().sleeping, "up at first light")
+	assert_signal_emitted_with_parameters(world, "night_changed", [false, world.morning_time])
 	assert_signal_emitted_with_parameters(world, "march_ordered", [true])
 	var x := world.army.lead().pos.x
-	_run(1.0)
-	assert_gt(world.army.lead().pos.x, x)
+	_run(world.morning_time * 0.5)
+	assert_eq(world.army.lead().pos.x, x, "the morning is for breaking camp")
+	_run(world.morning_time * 0.5 + 1.0)
+	assert_gt(world.army.lead().pos.x, x, "then the march")
 
 
 func test_king_ends_the_night() -> void:
@@ -118,7 +122,7 @@ func test_king_ends_the_night() -> void:
 	world.start_at(world.chunk(0).start_flag.metres().x, 3, 1.0)
 	watch_signals(world)
 	_run(1.5)
-	assert_false(world.army.hold)
+	assert_false(world.camping())
 	assert_signal_emitted_with_parameters(world, "march_ordered", [false])
 
 
@@ -158,5 +162,6 @@ func test_archers_hold_fire_while_the_column_sleeps() -> void:
 	await wait_physics_frames(90)
 	assert_eq(shots[0], 0, "no arrows at night")
 	world.march()
+	_run(world.morning_time + 0.1)
 	await wait_physics_frames(30)
 	assert_gt(shots[0], 0, "shoots by day")

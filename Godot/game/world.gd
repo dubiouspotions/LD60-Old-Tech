@@ -3,19 +3,23 @@ extends Node2D
 ## One continuous world built from the campaign's level scenes. Each level is stitched on so its StartFlag meets
 ## the previous level's ExitFlag. The next level streams in on a background thread as the view nears the end of
 ## the ground; levels far behind the column and the view are unloaded.
-## At every level start the column camps: it sleeps through the night while the engineers keep working, until
-## the player orders the march or the king loses patience (the level's march_delay).
+## At every level start the column camps. Dusk: the column closes up to the camp and lies down as night falls.
+## Night: it sleeps while the engineers keep working, until the player orders the march or the king loses
+## patience (the level's march_delay, counted from arrival). Morning: day breaks and the column gets up and
+## breaks camp, then marches.
 
 signal army_lost
 ## The column starts marching: ordered by the player, or by the king when his patience runs out.
 signal march_ordered(by_player: bool)
 ## The column reached level index and made camp. joined soldiers arrived with the supplies.
 signal camp_made(index: int, joined: int)
-## Night falls when the column camps and ends when it marches.
-signal night_changed(night: bool)
+## Night falls over seconds at dusk, and day breaks over seconds in the morning.
+signal night_changed(night: bool, seconds: float)
 ## The front soldier passed the last level's exit.
 signal victory
 signal level_streamed(index: int)
+
+enum Phase { DAY, DUSK, NIGHT, MORNING }
 
 
 ## One stitched level.
@@ -44,6 +48,10 @@ class Chunk:
 @export_range(5.0, 500.0, 1.0, "suffix:m") var stream_ahead: float = 60.0
 ## Unload a level once its end is this far behind both the rear soldier and the view's left edge.
 @export_range(5.0, 500.0, 1.0, "suffix:m") var unload_behind: float = 40.0
+## Seconds from arriving at camp to full night: the column closes up and lies down meanwhile.
+@export_range(0.0, 30.0, 0.5, "suffix:s") var dusk_time: float = 4.0
+## Seconds from the march order to the march: day breaks, the column gets up and breaks camp.
+@export_range(0.0, 30.0, 0.5, "suffix:s") var morning_time: float = 2.5
 
 @onready var terrain: Terrain = %Terrain
 @onready var bridge: Bridge = %Bridge
@@ -60,7 +68,9 @@ var _chunks: Dictionary = {} # index -> Chunk
 ## index -> [offset, seam], so a rewound level lands where it was.
 var _placements: Dictionary = {}
 var _loading: int = -1
+var phase: Phase = Phase.DAY
 var _march_left: float = 0.0
+var _phase_left: float = 0.0
 var _done: bool = false
 var _camp: Node2D
 
@@ -166,18 +176,25 @@ func march() -> void:
 	_order_march(true)
 
 
-## Seconds until the king orders the march, or 0 once the column marches.
+## Seconds until the king orders the march, or 0 when not camping.
 func march_left() -> float:
-	return maxf(_march_left, 0.0) if army.hold else 0.0
+	return maxf(_march_left, 0.0) if camping() else 0.0
+
+
+## At camp before the march order (dusk or night).
+func camping() -> bool:
+	return phase == Phase.DUSK or phase == Phase.NIGHT
+
+
+## At camp, from dusk until the column marches off in the morning.
+func at_camp() -> bool:
+	return phase != Phase.DAY
 
 
 func _physics_process(dt: float) -> void:
 	if _done:
 		return
-	if army.hold:
-		_march_left -= dt
-		if _march_left <= 0.0:
-			_order_march(false)
+	_advance_phase(dt)
 	bridge.step(dt, army.bridge_loads())
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
 	army.step(dt)
@@ -219,27 +236,60 @@ func _arrive(index: int) -> void:
 	camp_made.emit(index, joined)
 
 
+## Pitches camp at x for delay seconds (0 marches on without camping).
 func _make_camp(x: float, delay: float) -> void:
 	_strike_camp()
 	_march_left = delay
-	army.hold = delay > 0.0
-	if not army.hold:
-		night_changed.emit(false)
+	if delay <= 0.0:
+		_set_day()
+		night_changed.emit(false, 0.0)
 		return
+	phase = Phase.DUSK
+	_phase_left = dusk_time
+	army.hold = false
+	army.camp_x = x
+	army.resting = true
 	if camp_scene:
 		_camp = camp_scene.instantiate()
 		_camp.position = Grid.to_px(Vector2(x, terrain.surface_row(floori(x))))
 		objects.add_child(_camp)
-	night_changed.emit(true)
+	night_changed.emit(true, dusk_time)
 
 
-func _order_march(by_player: bool) -> void:
-	if not army.hold:
+func _advance_phase(dt: float) -> void:
+	if phase == Phase.DAY:
 		return
-	army.hold = false
+	_phase_left -= dt
+	if camping():
+		_march_left -= dt
+		if phase == Phase.DUSK and _phase_left <= 0.0:
+			phase = Phase.NIGHT
+		if _march_left <= 0.0:
+			_order_march(false)
+	elif phase == Phase.MORNING and _phase_left <= 0.0:
+		_set_day()
+
+
+## Morning: everyone gets up while day breaks; the march starts when the morning is over.
+func _order_march(by_player: bool) -> void:
+	if not camping():
+		return
+	phase = Phase.MORNING
+	_phase_left = morning_time
+	army.resting = false
+	army.hold = true
 	_strike_camp()
-	night_changed.emit(false)
+	night_changed.emit(false, morning_time)
 	march_ordered.emit(by_player)
+	if morning_time <= 0.0:
+		_set_day()
+
+
+func _set_day() -> void:
+	phase = Phase.DAY
+	army.hold = false
+	army.resting = false
+	army.camp_x = NAN
 
 
 func _strike_camp() -> void:

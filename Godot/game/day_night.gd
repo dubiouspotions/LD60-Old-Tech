@@ -21,11 +21,12 @@ func _ready() -> void:
 	set_night(false, true)
 
 
-func set_night(on: bool, instant: bool = false) -> void:
+## Fades to night or day over seconds (fade_time when negative).
+func set_night(on: bool, instant: bool = false, seconds: float = -1.0) -> void:
 	night = on
 	if _tween:
 		_tween.kill()
-	var t := 0.0 if instant else fade_time
+	var t := 0.0 if instant else (seconds if seconds >= 0.0 else fade_time)
 	_tween = create_tween().set_parallel()
 	if world_tint:
 		_tween.tween_property(world_tint, ^"color", night_world_color if on else day_color, maxf(t, 0.01))
