@@ -29,7 +29,7 @@ extends Resource
 @export_range(0.05, 10.0, 0.05) var dig_speed: float = 1.0
 ## Engineers keep this far inside the edges of the screen: no jobs or waiting spots beyond it.
 @export_range(0.0, 10.0, 0.1, "suffix:m") var view_margin: float = 1.0
-## Idle engineers trail this far behind the last soldier...
+## Idle engineers trail this far behind the last soldier (at camp: this far in front of the first)...
 @export_range(0.0, 10.0, 0.1, "suffix:m") var follow_gap: float = 1.2
 ## ...and this far apart.
 @export_range(0.1, 3.0, 0.05, "suffix:m") var spacing: float = 0.6

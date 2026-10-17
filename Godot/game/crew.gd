@@ -387,6 +387,9 @@ func _idle_x(i: int) -> float:
 		return _keep_in_view(maxf(0.5, _ready_x - _ready_side * (READY_GAP + i * rules.spacing)))
 	if army == null or army.lead() == null:
 		return _keep_in_view(engineers[i].pos.x)
+	# At camp the crew waits in front of the column, never back along the sleeping line.
+	if army.resting or army.hold:
+		return _keep_in_view(army.lead().pos.x + rules.follow_gap + i * rules.spacing)
 	return _keep_in_view(maxf(0.5, army.rear().pos.x - rules.follow_gap - i * rules.spacing))
 
 

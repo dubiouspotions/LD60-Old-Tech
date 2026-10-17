@@ -461,3 +461,22 @@ func test_crew_outside_the_view_walks_back_in() -> void:
 	world.crew.spawn(3.0)
 	_run(8.0)
 	assert_true(_all_in_view())
+
+
+func test_idle_crew_waits_in_front_of_the_camp_at_night() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for x in 40:
+		world.terrain.set_type(Vector2i(x, 6), WorldFixture.type("soil"))
+		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("bedrock"))
+	world.start_at(30.5, 6, 30.0)
+	world.crew.spawn(29.5)
+	var behind := [false]
+	_run(10.0, func() -> bool:
+		var lead := world.army.lead().pos.x
+		behind[0] = behind[0] or world.crew.engineers.any(func(e: Crew.Engineer) -> bool: return e.pos.x < lead - 0.1 and e.pos.x < 25.0)
+		return false)
+	var lead := world.army.lead().pos.x
+	assert_false(behind[0], "nobody heads back along the sleeping column")
+	for e in world.crew.engineers:
+		assert_gte(e.pos.x, lead - 0.1, "waiting in front of the camp")
