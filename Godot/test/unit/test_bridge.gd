@@ -166,7 +166,7 @@ func test_finished_member_stays_on_scaffolding_until_struck() -> void:
 	b.finish(m)
 	assert_false(m.blueprint)
 	assert_true(m.scaffolded)
-	assert_true(b.walk_surface(4.5, 0.0).is_empty(), "nobody walks on scaffolding")
+	assert_eq(b.walk_surface(4.5, 0.0).member, m, "finished parts can be walked on while still scaffolded")
 	_run(b, 0.5)
 	assert_almost_eq(m.b.pos.y, 2.0, 0.001, "scaffolding holds it")
 	assert_eq(b.strike_scaffolding(), 1)
@@ -329,3 +329,15 @@ func test_can_not_join_a_bridge_to_its_own_end() -> void:
 	var deck := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
 	var plenty := Supplies.make(9, 9, 9, 9)
 	assert_false(b.check_build(b.snap_point(Vector2(5, 2)), b.snap_point(deck.b.pos), LOG, plenty).ok)
+
+
+func test_only_finished_parts_of_a_plan_are_walkable() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var first := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 2)), LOG, true)
+	var second := b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	b.order_blueprints()
+	b.finish(first)
+	second.progress = 0.5
+	assert_eq(b.walk_surface(4.0, 0.0).member, first)
+	assert_true(b.walk_surface(6.0, 0.0).is_empty(), "the piece being built is not")

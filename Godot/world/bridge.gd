@@ -406,7 +406,8 @@ func arrow_block(a: Vector2, b: Vector2) -> Variant:
 func walk_surface(x: float, y_from: float) -> Dictionary:
 	var best := {}
 	for m in members:
-		if m.blueprint or m.scaffolded or not m.material.walkable:
+		# Finished pieces are walkable even while still on scaffolding; pieces being built are not.
+		if m.blueprint or not m.material.walkable:
 			continue
 		var a := m.a.pos
 		var b := m.b.pos
