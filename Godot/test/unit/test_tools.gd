@@ -51,20 +51,33 @@ func _click(at: Vector2) -> void:
 	tools._release()
 
 
-func test_dig_soil_adds_earth() -> void:
+func test_dig_marks_soil_for_the_engineers() -> void:
 	_select(ToolDefinition.Kind.DIG)
 	var earth := GameState.supplies.earth
 	_click(Vector2(8.5, 6.5))
-	assert_eq(GameState.supplies.earth, earth + 1)
-	assert_null(level.terrain.type_at(Vector2i(8, 6)))
+	assert_true(level.terrain.is_marked(Vector2i(8, 6)))
+	assert_eq(level.terrain.type_at(Vector2i(8, 6)), WorldFixture.type("soil"), "not dug yet")
+	assert_eq(GameState.supplies.earth, earth, "nothing gained yet")
 
 
-func test_dig_tree_adds_logs_and_rope() -> void:
+func test_dig_marked_cell_again_unmarks() -> void:
 	_select(ToolDefinition.Kind.DIG)
-	var logs := GameState.supplies.logs
+	_click(Vector2(8.5, 6.5))
+	_click(Vector2(8.5, 6.5))
+	assert_false(level.terrain.is_marked(Vector2i(8, 6)))
+
+
+func test_dig_does_not_mark_rock() -> void:
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(5.5, 7.5))
+	assert_false(level.terrain.is_marked(Vector2i(5, 7)))
+
+
+func test_dig_marks_tree() -> void:
+	_select(ToolDefinition.Kind.DIG)
 	_click(Vector2(3.5, 5.5))
-	assert_eq(GameState.supplies.logs, logs + 4, "2 trunk + 2 bonus")
-	assert_eq(GameState.supplies.rope, GameState.campaign.start_supplies.rope + 1, "2 leaves")
+	assert_true(level.terrain.is_marked(Vector2i(3, 5)))
+	assert_eq(level.terrain.type_at(Vector2i(3, 5)), WorldFixture.type("trunk"))
 
 
 func test_fill_spends_earth_and_drops_block() -> void:

@@ -53,7 +53,16 @@ func _run(seconds: float, done: Callable = func() -> bool: return false, speed: 
 
 
 func test_engineers_outpace_the_column() -> void:
-	assert_gt(level.crew.rules.walk_speed, level.army.rules.march_speed * 1.5)
+	assert_gt(level.crew.rules.walk_speed, level.army.rules.march_speed * 3.5)
+
+
+## Engineers have their own look, so new soldier art does not turn them into soldiers.
+func test_engineer_scene_does_not_inherit_soldier_art() -> void:
+	var scene: PackedScene = level.crew.engineer_scene
+	assert_null(scene.get_state().get_node_instance(0), "not an inherited scene")
+	var engineer: Node = scene.instantiate()
+	assert_eq(engineer.find_children("*", "Sprite2D", true, false).size(), 0, "no soldier sprites")
+	engineer.free()
 
 
 func test_crew_size_comes_from_rules() -> void:
@@ -82,10 +91,11 @@ func test_crew_climbs_finished_parts_to_reach_far_members() -> void:
 		_plan(Vector2(8, 6), Vector2(10, 8), ROPE),
 	]
 	level.bridge.order_blueprints()
+	# Standing in the pit means y >= 8. Climbing the support or rope stays above that.
 	var in_pit := [false]  # an array, so the lambda can write to it
 	_run(60.0, func() -> bool:
 		for e in level.crew.engineers:
-			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.5)
+			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.9)
 		return plan.all(func(m: Bridge.Member) -> bool: return not m.blueprint))
 	for m in plan:
 		assert_false(m.blueprint, "%s built" % m.material.display_name)
@@ -100,6 +110,94 @@ func test_crew_reaches_edge_joint_at_double_speed() -> void:
 	level.bridge.order_blueprints()
 	_run(10.0, func() -> bool: return not m.blueprint, 2.0)
 	assert_false(m.blueprint)
+
+
+func test_crew_digs_marked_soil() -> void:
+	var earth := GameState.supplies.earth
+	level.terrain.mark(Vector2i(3, 6))
+	_run(10.0, func() -> bool: return level.terrain.type_at(Vector2i(3, 6)) == null)
+	assert_null(level.terrain.type_at(Vector2i(3, 6)))
+	assert_false(level.terrain.is_marked(Vector2i(3, 6)))
+	assert_eq(GameState.supplies.earth, earth + 1)
+
+
+func test_crew_digs_down_into_its_own_hole() -> void:
+	level.terrain.mark(Vector2i(3, 6))
+	level.terrain.mark(Vector2i(3, 7))
+	_run(15.0, func() -> bool: return level.terrain.type_at(Vector2i(3, 7)) == null)
+	assert_null(level.terrain.type_at(Vector2i(3, 6)))
+	assert_null(level.terrain.type_at(Vector2i(3, 7)))
+
+
+func test_crew_fells_marked_tree() -> void:
+	var trunk := WorldFixture.type("trunk")
+	var leaves := WorldFixture.type("leaves")
+	level.terrain.set_type(Vector2i(2, 5), trunk)
+	level.terrain.set_type(Vector2i(2, 4), trunk)
+	level.terrain.set_type(Vector2i(1, 4), leaves)
+	level.terrain.set_type(Vector2i(3, 4), leaves)
+	var logs := GameState.supplies.logs
+	level.terrain.mark(Vector2i(2, 5))
+	_run(15.0, func() -> bool: return level.terrain.type_at(Vector2i(2, 5)) == null)
+	assert_null(level.terrain.type_at(Vector2i(2, 4)), "whole tree felled")
+	assert_gt(GameState.supplies.logs, logs)
+
+
+func test_crew_fells_tree_marked_at_the_top() -> void:
+	var trunk := WorldFixture.type("trunk")
+	var leaves := WorldFixture.type("leaves")
+	for y in [3, 4, 5]:
+		level.terrain.set_type(Vector2i(2, y), trunk)
+	for x in [1, 2, 3]:
+		level.terrain.set_type(Vector2i(x, 2), leaves)
+	level.terrain.mark(Vector2i(2, 2))
+	_run(15.0, func() -> bool: return level.terrain.type_at(Vector2i(2, 5)) == null)
+	assert_null(level.terrain.type_at(Vector2i(2, 5)), "cut at the base")
+	assert_null(level.terrain.type_at(Vector2i(2, 2)))
+
+
+func test_crew_leaves_unreachable_marks() -> void:
+	level.terrain.mark(Vector2i(11, 6))
+	var in_pit := [false]  # an array, so the lambda can write to it
+	_run(10.0, func() -> bool:
+		for e in level.crew.engineers:
+			in_pit[0] = in_pit[0] or (e.pos.x > 6.3 and e.pos.x < 9.7 and e.pos.y > 7.9)
+		return false)
+	assert_true(level.terrain.is_marked(Vector2i(11, 6)), "across the pit")
+	assert_false(in_pit[0], "nobody walks through the spikes")
+
+
+func test_crew_gets_ready_beside_a_new_plan() -> void:
+	level.terrain.clear()
+	level.terrain.rebuild()
+	for y in TWO_PITS.size():
+		for x in TWO_PITS[y].length():
+			var key: String = WorldFixture.LEGEND[TWO_PITS[y][x]]
+			if key != "":
+				level.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	level.army.spawn(1, 10.5)
+	level.crew.spawn(10.5)
+	_plan(Vector2(16, 6), Vector2(18.5, 6))
+	_run(5.0)
+	for e in level.crew.engineers:
+		assert_null(e.job, "not ordered yet")
+		assert_between(e.pos.x, 13.0, 16.0, "waiting at the near end of the plan")
+
+
+func test_whole_crew_helps_with_a_single_member() -> void:
+	var m := _plan(Vector2(6, 6), Vector2(8, 6))
+	level.bridge.order_blueprints()
+	_run(10.0, func() -> bool: return level.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.job == m and e.working))
+	for e in level.crew.engineers:
+		assert_eq(e.job, m, "everyone on it")
+		assert_true(e.working)
+
+
+func test_whole_crew_helps_dig_a_single_cell() -> void:
+	level.terrain.mark(Vector2i(3, 6))
+	_run(1.0, func() -> bool: return level.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.digging))
+	for e in level.crew.engineers:
+		assert_true(e.digging and e.dig == Vector2i(3, 6), "everyone digging it")
 
 
 func test_crew_idles_without_orders() -> void:
@@ -141,3 +239,46 @@ func test_crew_walks_through_tunnel_not_over_hill() -> void:
 	for e in level.crew.engineers:
 		assert_gt(e.pos.x, 9.0, "came through")
 	assert_gt(highest[0], 5.5, "stayed in the tunnel")
+
+
+
+## Two pits: a 2 m one and a 5 m one, with ground between them.
+const TWO_PITS: Array = [
+	"........................",
+	"........................",
+	"........................",
+	"........................",
+	"........................",
+	"........................",
+	"######..########.....###",
+	"######..########.....###",
+	"######^^########^^^^^###",
+	"BBBBBBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_each_structure_comes_off_scaffolding_when_it_is_done() -> void:
+	level.terrain.clear()
+	level.terrain.rebuild()
+	for y in TWO_PITS.size():
+		for x in TWO_PITS[y].length():
+			var key: String = WorldFixture.LEGEND[TWO_PITS[y][x]]
+			if key != "":
+				level.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	# The crew stands between the pits, so both bridges are worked on at once.
+	level.army.spawn(1, 12.5)
+	level.crew.spawn(12.5)
+	var near := _plan(Vector2(6, 6), Vector2(8, 6))
+	var far: Array[Bridge.Member] = [
+		_plan(Vector2(16, 6), Vector2(18.5, 6)),
+		_plan(Vector2(18.5, 6), Vector2(21, 6)),
+		_plan(Vector2(16, 8), Vector2(18.5, 6), SUPPORT),
+		_plan(Vector2(21, 8), Vector2(18.5, 6), SUPPORT),
+	]
+	level.bridge.order_blueprints()
+	_run(30.0, func() -> bool: return not near.blueprint and not near.scaffolded)
+	assert_false(near.scaffolded, "near bridge struck on its own")
+	assert_true(far.any(func(m: Bridge.Member) -> bool: return m.blueprint or m.scaffolded), "far bridge still in work")
+	_run(60.0, func() -> bool: return far.all(func(m: Bridge.Member) -> bool: return not m.blueprint and not m.scaffolded))
+	for m in far:
+		assert_false(m.scaffolded, "far bridge struck when done")

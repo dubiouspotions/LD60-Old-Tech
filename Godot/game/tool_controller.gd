@@ -1,7 +1,8 @@
 class_name ToolController
 extends Node2D
 ## Turns mouse and tool keys into Dig / Fill / Build / Charge actions on the current level, and draws the cursor.
-## Build tools place blueprints; commit builds them. Works while the game is paused so the player can plan before resuming.
+## Dig marks cells for the engineers (and takes back bridge members at once). Build tools place blueprints; commit
+## hands them to the engineers. Works while the game is paused so the player can plan before resuming.
 
 signal tool_changed(index: int)
 
@@ -12,6 +13,8 @@ signal tool_changed(index: int)
 @export var joint_color: Color = Color("ece4d2")
 @export var loose_color: Color = Color(0.925, 0.894, 0.824, 0.45)
 @export var text_shadow: Color = Color("17202b")
+## Outline and progress bar of cells marked for digging.
+@export var mark_color: Color = Color("e9a93b")
 @export var preview_font_size: int = 16
 
 var tools: Array[ToolDefinition] = []
@@ -25,6 +28,8 @@ var _hover: bool = false
 var _holding: bool = false
 var _hold_left: float = 0.0
 var _build_from: Bridge.Snap
+## While Dig is held: true marks cells, false clears marks (decided by the first cell clicked).
+var _dig_marking: bool = true
 var _radius_cache: Dictionary = {}
 
 
@@ -141,16 +146,15 @@ func _use(cell: Vector2i, first: bool) -> void:
                 else:
                     level.bridge.break_member(m, true)
                 return
-            var got := terrain.dig(cell)
-            if got == null:
-                if first and here:
+            if first:
+                _dig_marking = not terrain.is_marked(cell)
+            if not _dig_marking:
+                terrain.unmark(cell)
+            elif not terrain.is_marked(cell):
+                if terrain.mark(cell):
+                    Audio.play(t.use_sound, Grid.to_px(center))
+                elif first and here:
                     _say(center - Vector2(0, 0.5), here.too_hard_text, ok_color)
-                return
-            GameState.gain(got)
-            if here.dig_action == TerrainType.DigAction.FELL:
-                _say(center - Vector2(0, 0.5), got.describe(), joint_color)
-            else:
-                _say(center - Vector2(0, 0.5), here.dig_text, here.debris_color)
         ToolDefinition.Kind.FILL:
             if (here and not here.fill_replaces) or _falling_at(cell):
                 return
@@ -194,7 +198,10 @@ func _say(at_m: Vector2, text: String, color: Color) -> void:
 
 
 func _draw() -> void:
-    if not enabled or not _hover or level == null or tool() == null:
+    if level == null:
+        return
+    _draw_marks()
+    if not enabled or not _hover or tool() == null:
         return
     var t := tool()
     var px := Grid.PX
@@ -225,6 +232,17 @@ func _draw() -> void:
         for i in range(0, n, 2):
             draw_arc(r.get_center(), radius * px, TAU * i / n, TAU * (i + 1) / n, 3, Color(ok_color if ok else bad_color, 0.7), 1.5)
     draw_rect(r.grow(-1), ok_color if ok else bad_color, false, 2.0)
+
+
+func _draw_marks() -> void:
+    var px := Grid.PX
+    for cell in level.terrain.marked_cells():
+        var r := Rect2(Vector2(cell) * px, Vector2.ONE * px).grow(-3)
+        draw_rect(r, mark_color, false, 2.0)
+        draw_line(r.position, r.end, Color(mark_color, 0.5), 1.5)
+        var done := level.terrain.dig_progress(cell)
+        if done > 0.0:
+            draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x * done, 4)), mark_color)
 
 
 func _draw_build(mat: BridgeMaterial) -> void:

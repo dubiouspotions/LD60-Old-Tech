@@ -56,13 +56,13 @@ func _t(file: String, name: String, props: Dictionary) -> void:
 
 func _terrain() -> void:
 	var too_hard := "Too hard. Use a charge"
-	_t("soil", "Soil", {dig_action = TerrainType.DigAction.REMOVE, dig_yield = Supplies.make(1),
+	_t("soil", "Soil", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.4, dig_yield = Supplies.make(1),
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), debris_color = Color("7b5131")})
-	_t("fill", "Fill", {falls = true, dig_action = TerrainType.DigAction.REMOVE, dig_yield = Supplies.make(1),
+	_t("fill", "Fill", {falls = true, dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.3, dig_yield = Supplies.make(1),
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), debris_color = Color("a0703f")})
 	_t("rock", "Rock", {too_hard_text = too_hard, debris_color = Color("5b6472")})
 	_t("bedrock", "Bedrock", {blast_proof = true, debris_color = Color("262a33")})
-	_t("crystal", "Powder crystal", {dig_action = TerrainType.DigAction.REMOVE, dig_yield = Supplies.make(0, 0, 0, 1),
+	_t("crystal", "Powder crystal", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.8, dig_yield = Supplies.make(0, 0, 0, 1),
 		dig_text = "+1 powder", bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), debris_color = Color("8ff0e0")})
 	_t("brick", "Brick", {anchor = false, structure = true, too_hard_text = too_hard,
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})
@@ -70,9 +70,9 @@ func _terrain() -> void:
 		hazard = TerrainType.Hazard.WATER, death_text = "Drowned", ahead_text = "Water ahead", debris_color = Color("3480b6")})
 	_t("spikes", "Spikes", {solid = false, anchor = false, hazard = TerrainType.Hazard.SPIKES,
 		death_text = "Spiked", ahead_text = "Spikes ahead", debris_color = Color("cfd4da")})
-	_t("trunk", "Tree trunk", {solid = false, anchor = false, dig_action = TerrainType.DigAction.FELL,
+	_t("trunk", "Tree trunk", {solid = false, anchor = false, dig_action = TerrainType.DigAction.FELL, dig_time = 1.25,
 		bulk_yield = Supplies.make(0, 1), bulk_bonus = Supplies.make(0, 2), dig_sound = _snd("tree_fell"), debris_color = Color("5b3a22")})
-	_t("leaves", "Leaves", {solid = false, anchor = false, fill_replaces = true, dig_action = TerrainType.DigAction.FELL,
+	_t("leaves", "Leaves", {solid = false, anchor = false, fill_replaces = true, dig_action = TerrainType.DigAction.FELL, dig_time = 0.4,
 		bulk_yield = Supplies.make(0, 0, 1), bulk_tiles_per_yield = 2, dig_sound = _snd("tree_fell"), debris_color = Color("3f6e34")})
 
 
@@ -123,6 +123,7 @@ func _army() -> void:
 	var r := ArmyRules.new()
 	r.death_sound = _snd("soldier_death")
 	r.hurt_sound = _snd("soldier_hurt")
+	r.attack_sound = _snd("arrow_hit")
 	_save(r, "res://data/army_rules.tres")
 
 

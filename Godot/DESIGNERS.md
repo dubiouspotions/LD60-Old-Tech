@@ -9,7 +9,7 @@ Everything below is done in the Godot editor (4.7). No code needed.
 | New level | Scene → New Inherited Scene → `levels/level_base.tscn`. Save as `levels/level_NN.tscn`. |
 | Paint ground | Select **Terrain**, open the TileMap panel, paint. Every tile's behaviour comes from its TerrainType (below). Left, right and below the painted area count as bedrock. Above is open sky. |
 | Start / end | Move **StartFlag** (the column starts here) and **ExitFlag** (the level ends when the front soldier passes it). Put each flag's origin on the ground. |
-| Enemies | Drag `objects/archer/archer.tscn` under **Objects**. Its origin is its feet, so put it on top of a solid tile. It dies when that tile is blasted. Tune range and reload in the Inspector. |
+| Enemies | Drag `objects/archer/archer.tscn` under **Objects** (the game only finds archers there, and the level checks flag one placed anywhere else). Its origin is its feet, so put it on top of a solid tile. It dies when that tile is blasted, or when soldiers reach it and cut it down. Tune range, reload and **Hit Points** in the Inspector. |
 | Music, reinforcements, supply drop | Select the root node and use the Inspector. The supply drop and reinforcements are given on arrival, but not on the first level. |
 | Order of levels | `data/campaign.tres` → **Levels**. Starting soldiers, starting supplies, tools and jingles are set there too. |
 
@@ -26,11 +26,12 @@ Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with 
 | What | Where |
 | --- | --- |
 | Soldier look and walk cycle | `objects/soldier/soldier.tscn` (polygons + AnimationPlayer "walk"/"idle") |
-| March speed, step-up, fall damage, max army, messages | `data/army_rules.tres` |
+| March speed, step-up, fall damage, how far ahead dangers are warned about, melee reach/speed/damage against archers, max army, messages | `data/army_rules.tres` |
 | How long the column waits before the king orders the march | **March Delay** on each level's root node (default in `levels/level_base.tscn`) |
 | March banner texts and sound, "king waits" status | **Game** node in `game/main.tscn` |
-| Engineer crew: size, walk/climb/build speed, step-up, ground climb and drop limits, strike delay, sounds | `data/crew_rules.tres` |
-| Engineer look | `objects/engineer/engineer.tscn` (inherits the soldier scene) |
+| How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |
+| Engineer crew: size, walk/climb/build speed, dig reach, step-up, ground climb and drop limits, strike delay, sounds | `data/crew_rules.tres` |
+| Engineer look | `objects/engineer/engineer.tscn` (its own placeholder until engineer art exists; keep the Body, Wounded and AnimationPlayer nodes the soldier script uses) |
 | Log / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres`, `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list) |
 | Charge fuse, radius, chain fuse, explosion | `objects/charge/charge.tscn` |

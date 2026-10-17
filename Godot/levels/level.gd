@@ -49,6 +49,7 @@ func _ready() -> void:
 	terrain.tile_detached.connect(_on_tile_detached)
 	terrain.collapsed.connect(func(found: Supplies, _cells: Array[Vector2i]) -> void: GameState.gain(found))
 	bridge.member_broken.connect(_on_member_broken)
+	crew.dig_finished.connect(_on_dig_finished)
 	army.count_changed.connect(_on_army_count)
 	start_flag.reached = true
 
@@ -71,6 +72,7 @@ func _physics_process(dt: float) -> void:
 		if _march_left <= 0.0:
 			_order_march(false)
 	bridge.step(dt, army.bridge_loads())
+	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
 	army.step(dt)
 	crew.step(dt)
 	var lead := army.lead()
@@ -111,6 +113,20 @@ func _on_tile_detached(cell: Vector2i, type: TerrainType) -> void:
 	block.type = type
 	block.position = Grid.to_px(Vector2(cell))
 	objects.add_child(block)
+
+
+## An engineer finished digging a marked cell: take the tile and its supplies.
+func _on_dig_finished(cell: Vector2i) -> void:
+	var here := terrain.type_at(cell)
+	var got := terrain.dig(cell)
+	if got == null:
+		return
+	GameState.gain(got)
+	var at := Grid.to_px(Vector2(cell) + Vector2(0.5, 0))
+	if here.dig_action == TerrainType.DigAction.FELL:
+		Effects.say(at, got.describe(), Color("ece4d2"))
+	else:
+		Effects.say(at, here.dig_text, here.debris_color)
 
 
 func _on_member_broken(member: Bridge.Member, text: String) -> void:

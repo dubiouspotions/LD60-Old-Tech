@@ -1,6 +1,7 @@
 class_name Army
 extends Node2D
-## The marching column. Moves every soldier east each tick, halting at what it can not cross.
+## The marching column. Once ordered to march it never stops by choice: soldiers walk off drops, into hazards and
+## onto unfinished bridges. Only a wall they can not climb halts them. The front soldier warns of danger ahead.
 ## Front soldier carries the flag. Tuning lives in the ArmyRules resource.
 
 signal soldier_died(pos: Vector2, text: String)
@@ -16,6 +17,11 @@ var bridge: Bridge
 var soldiers: Array[Soldier] = []
 ## Why the front soldier is not moving, or "" while it marches.
 var halt_reason: String = ""
+## Danger the front soldier is marching toward (a deep drop, a hazard), or "". A warning only.
+var danger: String = ""
+## Enemies soldiers fight when they reach them (archers). Set by the level each tick.
+## Each needs feet_m(), alive() and hit(damage).
+var foes: Array = []
 ## Waiting for the order to march. Soldiers still fall, but do not walk.
 var hold: bool = false
 
@@ -51,6 +57,7 @@ func bridge_loads() -> Array:
 func step(dt: float) -> void:
 	soldiers.sort_custom(func(a: Soldier, b: Soldier) -> bool: return a.pos.x > b.pos.x)
 	halt_reason = ""
+	danger = ""
 	for i in soldiers.size():
 		var s := soldiers[i]
 		if s.dead:
@@ -64,10 +71,18 @@ func step(dt: float) -> void:
 			if i == 0:
 				halt_reason = rules.hold_text
 			continue
+		var foe: Node2D = _foe_in_reach(s)
+		if foe:
+			_fight(s, foe, dt)
+			if i == 0:
+				halt_reason = rules.fight_text
+			continue
 		var ahead: Soldier = soldiers[i - 1] if i > 0 else null
 		if ahead and not ahead.dead and ahead.pos.x - s.pos.x < rules.spacing and absf(ahead.pos.y - s.pos.y) < rules.queue_height:
 			continue
 		var dx := s.speed * dt
+		if i == 0:
+			danger = _danger_ahead(s)
 		var block := _blocked_ahead(s, dx)
 		if not block.is_empty():
 			if i == 0:
@@ -161,12 +176,29 @@ func _settle_vertical(s: Soldier, dt: float) -> bool:
 	return true
 
 
-## Reason text if the soldier can not take the next dx step, else "".
+## A living foe just ahead of the soldier and about level with it, or null.
+func _foe_in_reach(s: Soldier) -> Node2D:
+	for f: Node2D in foes:
+		if not is_instance_valid(f) or not f.alive():
+			continue
+		var d: Vector2 = f.feet_m() - s.pos
+		if d.x > -rules.foot_half_width and d.x < rules.melee_reach and absf(d.y) < rules.step_up:
+			return f
+	return null
+
+
+func _fight(s: Soldier, foe: Node2D, dt: float) -> void:
+	s.attack_cooldown -= dt
+	if s.attack_cooldown > 0.0:
+		return
+	s.attack_cooldown = rules.attack_interval
+	Audio.play(rules.attack_sound, Grid.to_px(s.pos))
+	foe.hit(rules.melee_damage)
+
+
+## Wall text if the soldier can not take the next dx step, else "". Drops and hazards never block.
 func _blocked_ahead(s: Soldier, dx: float) -> String:
 	var xp := s.pos.x + rules.foot_half_width + dx
-	# Wait for the engineers rather than walk under a ramp or onto a deck that is not finished.
-	if bridge and bridge.under_construction(xp, s.pos.y - rules.step_up, s.pos.y + rules.max_drop):
-		return rules.construction_text
 	var sup := surface_at(xp, s.pos.y - rules.step_up)
 	var col := floori(xp)
 	var head_blocked: bool = terrain.is_solid(Vector2i(floori(s.pos.x), floori(s.pos.y - 1.5))) and sup.y < s.pos.y - 0.5
@@ -176,11 +208,23 @@ func _blocked_ahead(s: Soldier, dx: float) -> String:
 		while h < 14 and terrain.is_solid(Vector2i(col, r - 1 - h)):
 			h += 1
 		return rules.wall_text % maxi(h, 2)
-	var drop: float = sup.y - s.pos.y
-	if sup.hazard != null:
-		return rules.chasm_text if drop > rules.max_drop else (sup.hazard as TerrainType).ahead_text
-	if drop > rules.max_drop:
-		return rules.chasm_text if drop > rules.chasm_depth else rules.drop_text % roundi(drop)
+	return ""
+
+
+## Warning text for the first deep drop or hazard within warn_distance ahead of the soldier, else "".
+func _danger_ahead(s: Soldier) -> String:
+	var x := s.pos.x + rules.foot_half_width
+	var end := x + rules.warn_distance
+	while x < end:
+		x += 0.25
+		var sup := surface_at(x, s.pos.y - rules.step_up)
+		if terrain.is_solid(Vector2i(floori(x), floori(sup.y - 0.5))):
+			return ""
+		var drop: float = sup.y - s.pos.y
+		if sup.hazard != null:
+			return rules.chasm_text if drop > rules.max_drop else (sup.hazard as TerrainType).ahead_text
+		if drop > rules.max_drop:
+			return rules.chasm_text if drop > rules.chasm_depth else rules.drop_text % roundi(drop)
 	return ""
 
 
