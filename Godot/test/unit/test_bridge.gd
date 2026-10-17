@@ -43,7 +43,7 @@ func test_check_build_rejects() -> void:
 	var b := WorldFixture.bridge(self, t)
 	var plenty := Supplies.make(9, 9, 9, 9)
 	assert_false(b.check_build(b.snap_point(Vector2(1, 2)), b.snap_point(Vector2(8, 2)), LOG, plenty).ok, "too long")
-	assert_false(b.check_build(b.snap_point(Vector2(5, 0)), b.snap_point(Vector2(6, 0)), LOG, plenty).ok, "floating")
+	assert_true(b.check_build(b.snap_point(Vector2(5, 0)), b.snap_point(Vector2(6, 0)), LOG, plenty).ok, "may start in mid-air")
 	assert_false(b.check_build(b.snap_point(Vector2(1, 2)), b.snap_point(Vector2(1, 5)), LOG, plenty).ok, "through ground")
 	assert_false(b.check_build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, Supplies.new()).ok, "no logs")
 	assert_true(b.check_build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, plenty).ok)

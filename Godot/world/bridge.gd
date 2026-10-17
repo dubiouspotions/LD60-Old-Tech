@@ -87,7 +87,6 @@ class Snap:
 @export var min_length: float = 0.45
 
 @export_group("Messages")
-@export var need_anchor_text: String = "Start on ground or a joint"
 @export var already_joined_text: String = "Already joined"
 @export var through_ground_text: String = "Runs through ground"
 @export var too_many_text: String = "Too many members"
@@ -152,9 +151,6 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 		return r
 	if length > mat.max_length + 1e-6:
 		r.msg = too_long_text % [length, mat.max_length]
-		return r
-	if not a.node and not a.anchor and not b.node and not b.anchor:
-		r.msg = need_anchor_text
 		return r
 	if a.node and b.node and _joined(a.node, b.node):
 		r.msg = already_joined_text
