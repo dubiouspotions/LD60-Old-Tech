@@ -176,3 +176,39 @@ func test_falling_block_looks_like_its_tile() -> void:
 	var sprite: Sprite2D = block.get_node("Sprite")
 	assert_eq((sprite.texture as AtlasTexture).region, (world.terrain.tile_texture(fill) as AtlasTexture).region)
 	assert_eq((sprite.texture as AtlasTexture).atlas, (world.terrain.tile_texture(fill) as AtlasTexture).atlas)
+
+
+func test_recruit_at_camp_spends_gold_and_joins_the_camp() -> void:
+	world.begin(0, 3)
+	var cost: Supplies = world.army.rules.recruit_cost
+	GameState.supplies.gold = cost.gold * 2
+	assert_true(world.recruit())
+	assert_eq(world.army.soldiers.size(), 4)
+	assert_eq(GameState.supplies.gold, cost.gold)
+	assert_eq(GameState.soldiers, 4)
+	_run(world.dusk_time + 3.0)
+	assert_true(world.army.soldiers.all(func(s: Soldier) -> bool: return s.sleeping), "the recruit sleeps in camp")
+
+
+func test_no_recruiting_by_day() -> void:
+	world.begin(0, 3)
+	GameState.supplies.gold = 100
+	world.march()
+	_run(world.morning_time + 0.1)
+	assert_false(world.recruit())
+	assert_eq(world.army.soldiers.size(), 3)
+	assert_eq(GameState.supplies.gold, 100)
+
+
+func test_no_recruiting_without_gold() -> void:
+	world.begin(0, 3)
+	GameState.supplies.gold = world.army.rules.recruit_cost.gold - 1
+	assert_false(world.recruit())
+	assert_eq(world.army.soldiers.size(), 3)
+
+
+func test_no_recruiting_past_the_army_limit() -> void:
+	world.begin(0, world.army.rules.max_soldiers)
+	GameState.supplies.gold = 100
+	assert_false(world.recruit())
+	assert_eq(GameState.supplies.gold, 100)

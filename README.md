@@ -20,6 +20,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 - Bridge ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down.
 - Joints are hinges, so build triangles or hang the deck from ropes. Members glow red as they near breaking, and each soldier adds 80 kg.
 - The march is one long road: each level joins the last. At the start of every level the column makes camp and sleeps through the night while your engineers keep working, until the king loses patience (30 s by default). Use the night to build ahead, and press **M** or **March** to break camp early. Archers hold their fire while the column sleeps.
+- **Gold** comes from gold ore, your starting supplies and each camp's supply drop. While the column camps, press **R** or **Recruit** to buy another soldier (5 gold); recruits join the camp.
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
 - **F** toggles 2× speed. **C** makes the camera follow the column again. **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.
 - Move the view with **WASD**/arrow keys, right or middle drag, or the mouse wheel.

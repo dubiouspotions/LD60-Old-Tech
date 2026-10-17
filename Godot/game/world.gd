@@ -171,6 +171,19 @@ func unload(index: int) -> void:
 	_drop(index, true)
 
 
+## Buys one soldier with gold while the column camps; it joins the camp. Returns false when not camping,
+## short of gold, or at the army limit.
+func recruit() -> bool:
+	var rules := army.rules
+	if not camping() or army.soldiers.size() >= rules.max_soldiers or not GameState.spend(rules.recruit_cost):
+		return false
+	army.reinforce(1)
+	var at := army.rear().pos
+	Audio.play(rules.recruit_sound, Grid.to_px(at))
+	Effects.say(Grid.to_px(at - Vector2(0, 1.4)), rules.recruit_text, Color("ece4d2"))
+	return true
+
+
 ## Orders the column to march now, before the king does.
 func march() -> void:
 	_order_march(true)

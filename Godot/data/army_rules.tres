@@ -4,9 +4,17 @@
 [ext_resource type="Resource" path="res://data/sounds/soldier_hurt.tres" id="2_epn7y"]
 [ext_resource type="Script" uid="uid://d055yaujmwfi2" path="res://core/army_rules.gd" id="3_16x7n"]
 [ext_resource type="Resource" path="res://data/sounds/arrow_hit.tres" id="4_melee"]
+[ext_resource type="Script" path="res://core/supplies.gd" id="5_supplies"]
+[ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6_recruit"]
+
+[sub_resource type="Resource" id="recruit_cost"]
+script = ExtResource("5_supplies")
+gold = 5
 
 [resource]
 script = ExtResource("3_16x7n")
+recruit_cost = SubResource("recruit_cost")
+recruit_sound = ExtResource("6_recruit")
 attack_sound = ExtResource("4_melee")
 death_sound = ExtResource("1_nkii1")
 hurt_sound = ExtResource("2_epn7y")

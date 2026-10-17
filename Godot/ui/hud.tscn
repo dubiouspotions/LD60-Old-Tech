@@ -123,6 +123,14 @@ theme_type_variation = &"Display"
 theme_override_font_sizes/font_size = 20
 text = "Awaiting orders"
 
+[node name="RecruitButton" type="Button" parent="Root/Margin/Column/TopBar"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Buy a soldier with gold; they join the camp (R)"
+text = "Recruit"
+
 [node name="MarchButton" type="Button" parent="Root/Margin/Column/TopBar"]
 unique_name_in_owner = true
 visible = false
@@ -365,7 +373,7 @@ bbcode_enabled = true
 text = "[ul][b]Dig[/b] marks soft earth (+1 earth), trees (trunk → logs, leaves → rope) and gold ore (+1 gold); the engineers walk over and dig them. Dig a bridge member or a planned one to take it back.
 [b]Fill[/b] drops a block of earth that falls until it lands.
 [b]Log[/b], [b]Support[/b] and [b]Rope[/b]: drag from point to point to plan a member, then press [b]Build[/b] (Enter): the engineers build it piece by piece from the ground outward on scaffolding, and strike the scaffolding when done. Ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down. Joints are hinges, so build triangles or hang the deck from ropes. Logs take push and pull up to 5 m long and can be walked on; supports are logs nobody walks on; ropes only pull, up to 12 m. Members glow red as they near breaking, and each soldier adds 80 kg.
-At the start of each level the column camps for the night: the soldiers sleep, the archers rest and your engineers keep working until the king loses patience; press [b]March[/b] (M) to break camp earlier. Plan while paused (Space), build, then resume to load the bridge. Pan with right-drag, the wheel, A/D, or the Pan tool. F toggles speed, C follows the column.[/ul]"
+At the start of each level the column camps for the night: the soldiers sleep, the archers rest and your engineers keep working until the king loses patience; press [b]March[/b] (M) to break camp earlier. At camp you can buy more soldiers with gold: [b]Recruit[/b] (R). Plan while paused (Space), build, then resume to load the bridge. Pan with right-drag, the wheel, A/D, or the Pan tool. F toggles speed, C follows the column.[/ul]"
 fit_content = true
 
 [node name="Buttons" type="HBoxContainer" parent="Root/Intro/Center/Card/Rows"]

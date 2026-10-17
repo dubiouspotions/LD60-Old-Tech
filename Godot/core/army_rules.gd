@@ -33,6 +33,12 @@ extends Resource
 @export_range(0.0, 10.0, 0.1, "suffix:s") var settle_time: float = 0.6
 @export var camp_text: String = "Making camp"
 
+@export_group("Recruits")
+## Price of one soldier bought at camp.
+@export var recruit_cost: Supplies
+@export var recruit_text: String = "+1 soldier"
+@export var recruit_sound: SoundEffect
+
 @export_group("Melee")
 ## A soldier fights an enemy (archer) whose feet are at most this far ahead and about level with its own.
 @export_range(0.1, 3.0, 0.05, "suffix:m") var melee_reach: float = 0.9

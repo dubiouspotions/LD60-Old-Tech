@@ -42,3 +42,17 @@ func test_widening_again_unfolds() -> void:
 	hud.fit_to(4000.0)
 	assert_true(_hints_shown())
 	assert_true(hud.get_node("%Title").visible)
+
+
+func test_recruit_button_shows_at_camp_and_reports_clicks() -> void:
+	watch_signals(hud)
+	hud.set_recruit(true, 5, true)
+	var b: Button = hud.get_node("%RecruitButton")
+	assert_true(b.visible)
+	assert_string_contains(b.text, "5")
+	b.pressed.emit()
+	assert_signal_emitted(hud, "recruit_pressed")
+	hud.set_recruit(true, 5, false)
+	assert_true(b.disabled, "greyed out when gold is short")
+	hud.set_recruit(false, 5, true)
+	assert_false(b.visible)

@@ -8,6 +8,7 @@ signal speed_pressed
 signal follow_pressed
 signal commit_pressed
 signal march_pressed
+signal recruit_pressed
 signal begin_pressed
 signal retry_pressed
 signal restart_pressed
@@ -28,6 +29,8 @@ enum Mood { NORMAL, HALT, FIRE }
 ## Build button text with blueprints waiting (%d = count), and with none.
 @export var commit_text: String = "Build %d"
 @export var commit_empty_text: String = "Build"
+## Recruit button text (%d = gold per soldier).
+@export var recruit_text: String = "Recruit · %d gold"
 
 var _tool_buttons: Array[ToolButton] = []
 var _group := ButtonGroup.new()
@@ -39,6 +42,7 @@ func _ready() -> void:
 	%FollowButton.pressed.connect(_emit.bind(follow_pressed))
 	%CommitButton.pressed.connect(_emit.bind(commit_pressed))
 	%MarchButton.pressed.connect(_emit.bind(march_pressed))
+	%RecruitButton.pressed.connect(_emit.bind(recruit_pressed))
 	%BeginButton.pressed.connect(_emit.bind(begin_pressed))
 	%RetryButton.pressed.connect(_emit.bind(retry_pressed))
 	%NewWorldButton.pressed.connect(_emit.bind(restart_pressed))
@@ -92,6 +96,15 @@ func set_speed(speed: float) -> void:
 func set_march(waiting: bool) -> void:
 	if %MarchButton.visible != waiting:
 		%MarchButton.visible = waiting
+		_fit.call_deferred()
+
+
+## Shows the Recruit button while the column camps; greyed out when a soldier can not be bought.
+func set_recruit(at_camp: bool, gold: int, can_buy: bool) -> void:
+	%RecruitButton.text = recruit_text % gold
+	%RecruitButton.disabled = not can_buy
+	if %RecruitButton.visible != at_camp:
+		%RecruitButton.visible = at_camp
 		_fit.call_deferred()
 
 

@@ -45,6 +45,7 @@ func _ready() -> void:
 	_hud.follow_pressed.connect(_camera.snap_to_lead)
 	_hud.commit_pressed.connect(_tools.commit)
 	_hud.march_pressed.connect(_march)
+	_hud.recruit_pressed.connect(_recruit)
 	_hud.begin_pressed.connect(_begin)
 	_hud.retry_pressed.connect(_retry)
 	_hud.restart_pressed.connect(_restart)
@@ -70,6 +71,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle_speed()
 	elif event.is_action_pressed(&"march"):
 		_march()
+	elif event.is_action_pressed(&"recruit"):
+		_recruit()
 
 
 func _process(_delta: float) -> void:
@@ -77,6 +80,9 @@ func _process(_delta: float) -> void:
 	_hud.set_level(GameState.level_number(), floori(lead.pos.x) if lead else 0)
 	_hud.set_plan(_world.bridge.blueprint_count())
 	_hud.set_march(_world.camping() and not _over)
+	var rules := _world.army.rules
+	var room := _world.army.soldiers.size() < rules.max_soldiers
+	_hud.set_recruit(_world.camping() and not _over, rules.recruit_cost.gold, room and GameState.supplies.can_afford(rules.recruit_cost))
 	_update_status()
 	_update_lead_marker(lead)
 
@@ -90,6 +96,11 @@ func _begin() -> void:
 func _march() -> void:
 	if not _over and not _hud.any_card_open():
 		_world.march()
+
+
+func _recruit() -> void:
+	if not _over and not _hud.any_card_open():
+		_world.recruit()
 
 
 func _on_march_ordered(by_player: bool) -> void:
