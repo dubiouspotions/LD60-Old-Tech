@@ -1,6 +1,7 @@
 class_name Arrow
 extends Node2D
-## A flying arrow. Sticks in ground, wounds the first soldier it passes through.
+## A flying arrow. Sticks in ground and in arrow-blocking bridge members (logs), wounds the first soldier
+## it passes through.
 
 @export var kill_text: String = "Shot"
 @export var hit_sound: SoundEffect
@@ -33,10 +34,17 @@ func _physics_process(dt: float) -> void:
 	if world == null:
 		return
 	_age += dt
+	var from := Grid.to_m(position)
 	position += velocity * dt * Grid.PX
 	velocity.y += gravity * dt
 	rotation = velocity.angle()
 	var p := Grid.to_m(position)
+	var block: Variant = world.bridge.arrow_block(from, p)
+	if block != null:
+		position = Grid.to_px(block)
+		Audio.play(hit_sound, position)
+		_stuck = stuck_time
+		return
 	var cell := Grid.cell_of(p)
 	var own_tower := _age < 0.12 and absi(cell.x - shooter_column) <= 1
 	if not own_tower and world.terrain.is_solid(cell):

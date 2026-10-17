@@ -237,3 +237,18 @@ func test_structures_are_separate_unless_connected() -> void:
 	assert_false(plan in b.structure_of(m1))
 	b.order_blueprints()
 	assert_eq(b.structures().size(), 1, "an ordered member joins them")
+
+
+func test_logs_block_arrow_paths_ropes_and_plans_do_not() -> void:
+	var t := WorldFixture.terrain(self, CRANE)
+	var b := WorldFixture.bridge(self, t)
+	var post := b.build(b.snap_point(Vector2(4, 1)), b.snap_point(Vector2(4, 4)), LOG)
+	var hit: Variant = b.arrow_block(Vector2(2, 2.5), Vector2(6, 2.5))
+	assert_true(hit is Vector2, "a log stops the arrow")
+	assert_almost_eq((hit as Vector2).x, 4.0, 0.01)
+	assert_null(b.arrow_block(Vector2(2, 5.5), Vector2(6, 5.5)), "passes under the log")
+	b.remove_member(post)
+	b.build(b.snap_point(Vector2(4, 1)), b.snap_point(Vector2(4, 4)), ROPE)
+	assert_null(b.arrow_block(Vector2(2, 2.5), Vector2(6, 2.5)), "ropes do not block")
+	b.build(b.snap_point(Vector2(5, 1)), b.snap_point(Vector2(5, 4)), LOG, true)
+	assert_null(b.arrow_block(Vector2(2, 2.5), Vector2(6, 2.5)), "plans do not block")

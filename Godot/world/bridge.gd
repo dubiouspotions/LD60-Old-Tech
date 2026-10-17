@@ -337,6 +337,18 @@ func break_member(m: Member, quiet: bool = false) -> void:
 	member_broken.emit(m, text)
 
 
+## Where a path from a to b (metres) first hits a built member that blocks arrows, or null.
+func arrow_block(a: Vector2, b: Vector2) -> Variant:
+	var best: Variant = null
+	for m in members:
+		if m.blueprint or not m.material.blocks_arrows:
+			continue
+		var hit: Variant = Geometry2D.segment_intersects_segment(a, b, m.a.pos, m.b.pos)
+		if hit != null and (best == null or a.distance_to(hit) < a.distance_to(best)):
+			best = hit
+	return best
+
+
 ## Highest walkable deck at x that is at or below y_from. {y, member, t} or {} if none.
 func walk_surface(x: float, y_from: float) -> Dictionary:
 	var best := {}
