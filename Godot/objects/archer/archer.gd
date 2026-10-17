@@ -90,6 +90,7 @@ func _physics_process(dt: float) -> void:
 	arrow.velocity = vel
 	arrow.gravity = arrow_gravity
 	arrow.shooter_column = floori(feet_m().x)
+	arrow.shooter_feet_y = feet_m().y
 	arrow.position = Grid.to_px(origin)
 	world.objects.add_child(arrow)
 	Audio.play(shoot_sound, position)

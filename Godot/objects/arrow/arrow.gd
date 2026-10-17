@@ -13,8 +13,9 @@ extends Node2D
 ## Metres per second; set by the archer.
 var velocity: Vector2
 var gravity: float = 12.0
-## The archer's own tower column is ignored right after the shot.
+## Right after the shot the archer's own crenellations (its column and the next, above its feet) are ignored.
 var shooter_column: int = -999
+var shooter_feet_y: float = INF
 
 var _age: float = 0.0
 var _stuck: float = -1.0
@@ -46,7 +47,7 @@ func _physics_process(dt: float) -> void:
 		_stuck = stuck_time
 		return
 	var cell := Grid.cell_of(p)
-	var own_tower := _age < 0.12 and absi(cell.x - shooter_column) <= 1
+	var own_tower := _age < 0.12 and absi(cell.x - shooter_column) <= 1 and p.y < shooter_feet_y
 	if not own_tower and world.terrain.is_solid(cell):
 		_stuck = stuck_time
 		return

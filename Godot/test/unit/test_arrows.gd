@@ -55,3 +55,25 @@ func test_log_wall_stops_the_arrow() -> void:
 	assert_eq(world.army.lead().hp, hp, "the soldier is unhurt")
 	assert_true(is_instance_valid(arrow), "stuck in the log")
 	assert_almost_eq(Grid.to_m(arrow.position).x, 8.0, 0.3)
+
+
+func test_archer_can_not_shoot_down_through_its_own_tower() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for x in 18:
+		world.terrain.set_type(Vector2i(x, 6), WorldFixture.type("soil"))
+		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("bedrock"))
+		if x >= 8 and x <= 10:
+			for y in range(2, 6):
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type("brick"))
+	world.army.spawn(1, 7.4)
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(8.5, 2))
+	archer.first_shot_delay = 0.0
+	archer.aim_error = 0.0
+	world.objects.add_child(archer)
+	var hp := world.army.lead().hp
+	await wait_physics_frames(180)
+	assert_eq(world.army.soldiers.size(), 1, "the tower's own wall is in the way")
+	if world.army.lead():
+		assert_eq(world.army.lead().hp, hp, "not even wounded")
