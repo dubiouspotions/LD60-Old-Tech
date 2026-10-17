@@ -21,6 +21,8 @@ var on_t: float = 0.0
 var dead: bool = false
 ## Camped for the night. Owned by Army.
 var sleeping: bool = false
+## Seconds until the next strike while fighting.
+var attack_cooldown: float = 0.0
 
 @onready var _anim: AnimationPlayer = %AnimationPlayer
 @onready var _body: CanvasItem = %Body

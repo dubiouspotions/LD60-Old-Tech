@@ -10,7 +10,7 @@ Everything below is done in the Godot editor (4.7). No code needed.
 | Paint ground | Select **Terrain**, open the TileMap panel, paint. Every tile's behaviour comes from its TerrainType (below). Left, right and below the painted area count as bedrock. Above is open sky. |
 | Start / end | Move **StartFlag** (the column camps here) and **ExitFlag** (the level ends when the front soldier passes it). Put each flag's origin on the ground. |
 | How levels join | The game is one continuous march. Each level is attached so its **StartFlag** lands on the previous level's **ExitFlag**, moved up or down to match. Ground left of the StartFlag column is only used on the first level, so keep the area right of the ExitFlag a flat run at the same height as the next level's start. The next level loads in the background while the column is still on this one, and levels far behind are removed. |
-| Enemies | Drag `objects/archer/archer.tscn` under **Objects**. Its origin is its feet, so put it on top of a solid tile. It dies when that tile is blasted. Tune range and reload in the Inspector. |
+| Enemies | Drag `objects/archer/archer.tscn` under **Objects** (the game only finds archers there, and the level checks flag one placed anywhere else). Its origin is its feet, so put it on top of a solid tile. It dies when that tile is blasted, or when soldiers reach it and cut it down. Tune range, reload and **Hit Points** in the Inspector. |
 | Music, reinforcements, supply drop | Select the root node and use the Inspector. The supply drop and reinforcements are given on arrival, but not on the first level. |
 | Order of levels | `data/campaign.tres` → **Levels** (a list of level files). Starting soldiers, starting supplies, tools, jingles, the camp music and the dawn bugle are set there too. |
 
@@ -41,7 +41,7 @@ At the start of every level the column makes camp: the soldiers sleep, night fal
 | What | Where |
 | --- | --- |
 | Soldier look and walk cycle | `objects/soldier/soldier.tscn` (sprite + AnimationPlayer "walk"/"idle"/"sleep") |
-| March speed, step-up, fall damage, max army, messages | `data/army_rules.tres` |
+| March speed, step-up, fall damage, how far ahead dangers are warned about, melee reach/speed/damage against archers, max army, messages | `data/army_rules.tres` |
 | How long the column camps before the king orders the march | **March Delay** on each level's root node (default in `levels/level_base.tscn`) |
 | March and camp banner texts, march sound, camp status | **Game** node in `game/main.tscn` |
 | How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |

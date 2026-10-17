@@ -12,6 +12,8 @@ extends Node
 @export_group("March")
 ## Status while the column camps (%d = seconds until the king orders the march).
 @export var patience_text: String = "Night camp · %d s"
+## Status while the column marches toward a deep drop or hazard (%s = what).
+@export var danger_text: String = "Marching · %s"
 @export var march_title: String = "Forward, march!"
 @export var march_player_text: String = "The column breaks camp on your order"
 @export var march_king_text: String = "The king has lost his patience"
@@ -190,6 +192,8 @@ func _update_status() -> void:
 		_hud.set_status("Under fire · %s" % reason if reason else "Under fire", Hud.Mood.FIRE)
 	elif reason:
 		_hud.set_status("Halted · %s" % reason, Hud.Mood.HALT)
+	elif not _world.army.danger.is_empty():
+		_hud.set_status(danger_text % _world.army.danger, Hud.Mood.FIRE)
 	else:
 		_hud.set_status("Marching", Hud.Mood.NORMAL)
 

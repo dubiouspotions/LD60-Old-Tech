@@ -51,3 +51,11 @@ func test_levels_stitch_into_one_walkable_world() -> void:
 		var t := world.terrain
 		assert_lte(absi(t.surface_row(c.seam) - t.surface_row(c.seam - 1)), 1, "seam into level %d is walkable" % (i + 1))
 		assert_false(t.is_solid(Grid.cell_of(c.start_flag.metres() - Vector2(0, 0.5))), "camp %d not buried" % (i + 1))
+
+
+## The game finds archers (to fight, and for the "under fire" status) only under Objects.
+func test_archers_are_under_objects() -> void:
+	for level: Level in _levels():
+		for o in level.find_children("*", "Node2D", true, false):
+			if o is Archer:
+				assert_eq(o.get_parent(), level.objects(), "%s %s belongs under Objects" % [level.name, o.name])

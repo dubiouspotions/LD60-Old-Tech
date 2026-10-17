@@ -276,7 +276,7 @@ text = "Sappers' March"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(490, 0)
 layout_mode = 2
-text = "The column marches east on its own. It halts at anything it can't cross: walls over 1 m, drops over 3 m, water, spikes. You are the engineers above the field. Dig, fill, bridge and blast a way through before the towers thin the ranks."
+text = "The column marches east on its own, and orders are orders: once it sets off it walks off ravines, into water and spikes, and onto unfinished bridges. Only a wall over 1 m stops it, or an archer it reaches and cuts down. You are the engineers above the field. Dig, fill, bridge and blast a way through before the towers thin the ranks."
 autowrap_mode = 3
 
 [node name="Rules" type="RichTextLabel" parent="Root/Intro/Center/Card/Rows"]

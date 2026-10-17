@@ -3,6 +3,127 @@
 [ext_resource type="Script" uid="uid://cv6d17o3vdyex" path="res://objects/soldier/soldier.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://bwfwi0ulhbpaf" path="res://world/soilder.png" id="2_ddl4y"]
 [ext_resource type="Texture2D" uid="uid://csjqg38nc21d5" path="res://world/soilder_green.png" id="3_fity6"]
+[ext_resource type="Texture2D" uid="uid://c78yrurvjdt8p" path="res://world/soilder_walk.png" id="4_yrtfe"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lxyqk"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(1024, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dsnea"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(1152, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1h75m"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(1280, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hy68d"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(1408, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cdl2c"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(1536, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1ok1j"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(1664, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_saknv"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(1792, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6mu8c"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(1920, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7o2qs"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vk71i"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(128, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o02ed"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(256, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xf3bp"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(384, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o4dtv"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(512, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t3wpa"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(640, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7aebk"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(768, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3uxvx"]
+atlas = ExtResource("4_yrtfe")
+region = Rect2(896, 0, 128, 128)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4pjgo"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lxyqk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dsnea")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1h75m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hy68d")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cdl2c")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1ok1j")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_saknv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6mu8c")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7o2qs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vk71i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o02ed")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xf3bp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o4dtv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t3wpa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7aebk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3uxvx")
+}],
+"loop": 1,
+"name": &"soilder_walk",
+"speed": 27.0
+}]
 
 [sub_resource type="Animation" id="idle"]
 resource_name = "idle"
@@ -148,9 +269,18 @@ scale = Vector2(1.5937498, 1.5937498)
 texture = ExtResource("2_ddl4y")
 
 [node name="Sprite2D2" type="Sprite2D" parent="Body" unique_id=1390574391]
+visible = false
 position = Vector2(-2.9999979, -25.499996)
 scale = Vector2(1.5937498, 1.5937498)
 texture = ExtResource("3_fity6")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body" unique_id=1693547775]
+position = Vector2(-2.000002, -25.999998)
+scale = Vector2(0.35937503, 0.40625003)
+sprite_frames = SubResource("SpriteFrames_4pjgo")
+animation = &"soilder_walk"
+autoplay = "soilder_walk"
+frame_progress = 0.84113437
 
 [node name="Spear" type="Line2D" parent="Body" unique_id=1391842286]
 unique_name_in_owner = true

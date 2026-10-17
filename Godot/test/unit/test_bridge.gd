@@ -237,3 +237,19 @@ func test_remove_outside_drops_members_with_an_end_beyond() -> void:
 	b.remove_outside(2.0, 100.0)
 	assert_eq(b.members.size(), 0)
 	assert_eq(b.nodes.size(), 0)
+
+
+func test_structures_are_separate_unless_connected() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m1 := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 2)), LOG)
+	var m2 := b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	var m3 := b.build(b.snap_point(Vector2(8, 2)), b.snap_point(Vector2(8, 0)), LOG)
+	b.order_blueprints()
+	var plan := b.build(b.snap_point(Vector2(7, 2)), b.snap_point(Vector2(8, 0)), ROPE, true)
+	assert_eq(b.structures().size(), 2, "an unordered plan does not join them")
+	assert_true(m1 in b.structure_of(m2))
+	assert_false(m3 in b.structure_of(m1))
+	assert_false(plan in b.structure_of(m1))
+	b.order_blueprints()
+	assert_eq(b.structures().size(), 1, "an ordered member joins them")
