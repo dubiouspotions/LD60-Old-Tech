@@ -8,4 +8,4 @@ kind = 4
 display_name = "Pan"
 hint = "drag the view"
 action = &"tool_pan"
-key_label = "6"
+key_label = "7"

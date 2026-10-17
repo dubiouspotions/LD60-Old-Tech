@@ -3,6 +3,7 @@ extends Node2D
 ## The player's truss: joints are hinges, members are logs (push + pull) or ropes (pull only).
 ## Simulated with XPBD (small-steps variant, one iteration per substep). SI units: m, kg, s, N.
 ## Joints touching solid ground are bolted down.
+## New members start as blueprints: drawn, but not simulated or walkable until committed.
 
 signal member_built(member: Member)
 signal member_broken(member: Member, text: String)
@@ -16,6 +17,8 @@ class Joint:
 	var load: float = 0.0
 	var inv_mass: float = 0.0
 	var degree: int = 0
+	## Touched by at least one built member. Joints of a blueprint alone stay put.
+	var built: bool = false
 
 
 class Member:
@@ -28,6 +31,8 @@ class Member:
 	var force: float = 0.0
 	var _acc: float = 0.0
 	var dead: bool = false
+	## Planned but not built yet.
+	var blueprint: bool = false
 
 	func stress() -> float:
 		return absf(force) / material.break_force
@@ -86,6 +91,8 @@ class Snap:
 @export var bolt_color: Color = Color("2b2f36")
 @export var bolt_head_color: Color = Color("9aa6b4")
 @export var highlight_color: Color = Color(1, 0.92, 0.78, 0.25)
+@export var blueprint_color: Color = Color(0.55, 0.78, 1.0, 0.8)
+@export var blueprint_dash: float = 6.0
 
 var terrain: Terrain
 var nodes: Array[Joint] = []
@@ -154,18 +161,44 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 
 
 ## Adds the member without any cost or validity check (see check_build).
-func build(a: Snap, b: Snap, mat: BridgeMaterial) -> Member:
+## A blueprint is only a plan until commit_blueprints.
+func build(a: Snap, b: Snap, mat: BridgeMaterial, blueprint: bool = false) -> Member:
 	var m := Member.new()
 	m.a = a.node if a.node else _add_joint(a.pos)
 	m.b = b.node if b.node else _add_joint(b.pos)
 	m.length = a.pos.distance_to(b.pos)
 	m.material = mat
 	m.mass = m.length * mat.kg_per_m
+	m.blueprint = blueprint
 	members.append(m)
 	_recompute_mass()
-	Audio.play(mat.place_sound, Grid.to_px((m.a.pos + m.b.pos) / 2))
-	member_built.emit(m)
+	if not blueprint:
+		Audio.play(mat.place_sound, Grid.to_px((m.a.pos + m.b.pos) / 2))
+		member_built.emit(m)
 	return m
+
+
+func blueprint_count() -> int:
+	return members.reduce(func(n: int, m: Member) -> int: return n + int(m.blueprint), 0)
+
+
+## Builds every blueprint at once. Returns how many were built.
+func commit_blueprints() -> int:
+	var done: Array[Member] = []
+	var sounds := {}
+	for m in members:
+		if m.blueprint:
+			m.blueprint = false
+			done.append(m)
+			sounds[m.material.place_sound] = (m.a.pos + m.b.pos) / 2
+	if done.is_empty():
+		return 0
+	_recompute_mass()
+	for sfx: SoundEffect in sounds:
+		Audio.play(sfx, Grid.to_px(sounds[sfx]))
+	for m in done:
+		member_built.emit(m)
+	return done.size()
 
 
 func member_at(p: Vector2, radius: float) -> Member:
@@ -197,10 +230,10 @@ func break_member(m: Member, quiet: bool = false) -> void:
 	member_broken.emit(m, text)
 
 
-## Breaks members within radius and pushes nearby joints away.
+## Breaks built members within radius and pushes nearby joints away.
 func blast(center: Vector2, radius: float) -> void:
 	for m in members.duplicate():
-		if _seg_dist(center, m.a.pos, m.b.pos) < radius:
+		if not m.blueprint and _seg_dist(center, m.a.pos, m.b.pos) < radius:
 			break_member(m, true)
 	var reach := radius * blast_push_range
 	for n in nodes:
@@ -213,7 +246,7 @@ func blast(center: Vector2, radius: float) -> void:
 func walk_surface(x: float, y_from: float) -> Dictionary:
 	var best := {}
 	for m in members:
-		if not m.material.walkable:
+		if m.blueprint or not m.material.walkable:
 			continue
 		var a := m.a.pos
 		var b := m.b.pos
@@ -244,14 +277,14 @@ func step(dt: float, loads: Array = []) -> void:
 		m.a.load += l[2] * (1.0 - l[1])
 		m.b.load += l[2] * l[1]
 	for n in nodes:
-		n.inv_mass = 0.0 if n.pinned else 1.0 / (n.mass + n.load)
+		n.inv_mass = 0.0 if n.pinned or not n.built else 1.0 / (n.mass + n.load)
 	for m in members:
 		m._acc = 0.0
 	var h := dt / substeps
 	var h2 := h * h
 	for s in substeps:
 		for n in nodes:
-			if n.pinned:
+			if n.pinned or not n.built:
 				continue
 			var v := (n.pos - n.prev) * damping
 			var ay := gravity
@@ -263,7 +296,7 @@ func step(dt: float, loads: Array = []) -> void:
 			n.pos += v + Vector2(0, ay * h2)
 		for m in members:
 			var w := m.a.inv_mass + m.b.inv_mass
-			if w == 0.0:
+			if w == 0.0 or m.blueprint:
 				continue
 			var d := m.b.pos - m.a.pos
 			var dist := maxf(d.length(), 1e-6)
@@ -276,10 +309,12 @@ func step(dt: float, loads: Array = []) -> void:
 			m.b.pos += dir * (m.b.inv_mass * dl)
 			m._acc -= dl / h2
 		for n in nodes:
-			if not n.pinned:
+			if n.built and not n.pinned:
 				_collide(n)
 	var broken: Array[Member] = []
 	for m in members:
+		if m.blueprint:
+			continue
 		m.force += (m._acc / substeps - m.force) * force_smoothing
 		if absf(m.force) > m.material.break_force:
 			broken.append(m)
@@ -287,7 +322,7 @@ func step(dt: float, loads: Array = []) -> void:
 		break_member(m)
 	var bottom := (terrain.size.y + 2) if terrain else 1000
 	for m in members.duplicate():
-		if m.a.pos.y > bottom or m.b.pos.y > bottom:
+		if not m.blueprint and m.a.pos.y > bottom or m.b.pos.y > bottom:
 			remove_member(m)
 
 
@@ -298,10 +333,15 @@ func clear() -> void:
 
 func _draw() -> void:
 	var px := Grid.PX
-	for m in members:
+	var ordered := members.duplicate()
+	ordered.sort_custom(func(x: Member, y: Member) -> bool: return x.material.draw_layer < y.material.draw_layer)
+	for m: Member in ordered:
 		var a := m.a.pos * px
 		var b := m.b.pos * px
 		var mat := m.material
+		if m.blueprint:
+			draw_dashed_line(a, b, blueprint_color, maxf(2.0, mat.thickness * 0.6 * px), blueprint_dash)
+			continue
 		var hot := mat.color.lerp(mat.hot_color, clampf((m.stress() - 0.3) / 0.7, 0.0, 1.0))
 		if mat.draw_as_rope:
 			var dist := m.a.pos.distance_to(m.b.pos)
@@ -320,7 +360,9 @@ func _draw() -> void:
 			draw_circle(b, mat.thickness * 0.75 * px, mat.edge_color)
 	for n in nodes:
 		var p := n.pos * px
-		if n.pinned:
+		if not n.built:
+			draw_arc(p, 0.13 * px, 0, TAU, 12, blueprint_color, 1.5)
+		elif n.pinned:
 			draw_rect(Rect2(p - Vector2.ONE * 0.15 * px, Vector2.ONE * 0.3 * px), bolt_color)
 			draw_rect(Rect2(p - Vector2.ONE * 0.04 * px, Vector2.ONE * 0.08 * px), bolt_head_color)
 		else:
@@ -340,11 +382,16 @@ func _recompute_mass() -> void:
 	for n in nodes:
 		n.mass = 0.0
 		n.degree = 0
+		n.built = false
 	for m in members:
-		m.a.mass += m.mass / 2
-		m.b.mass += m.mass / 2
 		m.a.degree += 1
 		m.b.degree += 1
+		if m.blueprint:
+			continue
+		m.a.mass += m.mass / 2
+		m.b.mass += m.mass / 2
+		m.a.built = true
+		m.b.built = true
 	nodes = nodes.filter(func(n: Joint) -> bool: return n.degree > 0)
 
 

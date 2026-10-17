@@ -2,6 +2,7 @@ extends GutTest
 
 const LOG := preload("res://data/bridge/log.tres")
 const ROPE := preload("res://data/bridge/rope.tres")
+const SUPPORT := preload("res://data/bridge/support.tres")
 
 ## Rock ceiling at row 0, rock wall in column 0, open air in between.
 const CRANE: Array = [
@@ -127,3 +128,68 @@ func test_blast_breaks_members_in_radius() -> void:
 	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
 	b.blast(Vector2(5, 2.5), 2.6)
 	assert_eq(b.members.size(), 0)
+
+
+func test_blueprint_is_not_simulated() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(6, 2)), LOG, true)
+	_run(b, 0.5)
+	assert_true(m.blueprint)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.001, "plan does not fall")
+
+
+func test_blueprint_is_not_walkable() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	assert_true(b.walk_surface(5.0, 0.0).is_empty())
+
+
+func test_blueprint_adds_no_weight_to_built_joint() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var deck := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 2)), LOG)
+	var built_mass := deck.b.mass
+	b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 0)), LOG, true)
+	assert_almost_eq(deck.b.mass, built_mass, 0.001)
+
+
+func test_commit_turns_plan_into_bridge() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	assert_eq(b.blueprint_count(), 1)
+	assert_eq(b.commit_blueprints(), 1)
+	assert_false(m.blueprint)
+	assert_eq(b.blueprint_count(), 0)
+	assert_eq(b.walk_surface(5.0, 0.0).member, m)
+	_run(b, 2.0)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.05)
+
+
+func test_committed_hinge_swings_down() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(6, 2)), LOG, true)
+	b.commit_blueprints()
+	_run(b, 0.5)
+	assert_gt(m.b.pos.y, 2.5)
+
+
+func test_blast_spares_blueprints() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	b.blast(Vector2(5, 2.5), 2.6)
+	assert_eq(b.members.size(), 1)
+
+
+func test_support_holds_but_is_not_walkable() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), SUPPORT)
+	assert_true(b.walk_surface(5.0, 0.0).is_empty())
+	_run(b, 2.0)
+	assert_true(m in b.members)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.05)

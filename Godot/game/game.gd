@@ -30,6 +30,7 @@ func _ready() -> void:
 	_hud.pause_pressed.connect(_toggle_pause)
 	_hud.speed_pressed.connect(_toggle_speed)
 	_hud.follow_pressed.connect(_camera.snap_to_lead)
+	_hud.commit_pressed.connect(_tools.commit)
 	_hud.begin_pressed.connect(_begin)
 	_hud.retry_pressed.connect(_retry)
 	_hud.restart_pressed.connect(_restart)
@@ -53,6 +54,7 @@ func _process(_delta: float) -> void:
 		return
 	var lead := level.army.lead()
 	_hud.set_level(GameState.level_number(), floori(lead.pos.x) if lead else 0)
+	_hud.set_plan(level.bridge.blueprint_count())
 	_update_status()
 	_update_lead_marker(lead)
 

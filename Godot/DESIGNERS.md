@@ -27,7 +27,7 @@ Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with 
 | --- | --- |
 | Soldier look and walk cycle | `objects/soldier/soldier.tscn` (polygons + AnimationPlayer "walk"/"idle") |
 | March speed, step-up, fall damage, max army, messages | `data/army_rules.tres` |
-| Log / rope strength, length, mass, cost, colours | `data/bridge/log.tres`, `data/bridge/rope.tres` |
+| Log / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres`, `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list) |
 | Charge fuse, radius, chain fuse, explosion | `objects/charge/charge.tscn` |
 | Arrows | `objects/arrow/arrow.tscn` |
@@ -35,7 +35,8 @@ Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with 
 | Debris, floating text, explosion flash | `objects/effects/` |
 | Sky, sun, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |
-| Bridge physics feel, build messages | **Bridge** node in `levels/level_base.tscn` |
+| Bridge physics feel, build messages, blueprint colour | **Bridge** node in `levels/level_base.tscn` |
+| Build button text | **HUD** node in `ui/hud.tscn` (Commit Text) |
 
 ## Sound and music
 
