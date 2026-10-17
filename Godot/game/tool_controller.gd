@@ -1,7 +1,7 @@
 class_name ToolController
 extends Node2D
 ## Turns mouse and tool keys into Dig / Fill / Build / Charge actions on the current level, and draws the cursor.
-## Works while the game is paused so the player can build before resuming.
+## Build tools place blueprints; commit builds them. Works while the game is paused so the player can plan before resuming.
 
 signal tool_changed(index: int)
 
@@ -46,6 +46,13 @@ func cancel() -> void:
     _holding = false
 
 
+## Hands every blueprint on the level to the crew. Returns how many.
+func commit() -> int:
+    if not enabled or level == null:
+        return 0
+    return level.bridge.order_blueprints()
+
+
 func _unhandled_input(event: InputEvent) -> void:
     for i in tools.size():
         if tools[i].action != &"" and event.is_action_pressed(tools[i].action):
@@ -54,6 +61,10 @@ func _unhandled_input(event: InputEvent) -> void:
             return
     if event.is_action_pressed(&"cancel"):
         cancel()
+    if event.is_action_pressed(&"commit_build"):
+        commit()
+        get_viewport().set_input_as_handled()
+        return
     if event is InputEventMouseMotion:
         _hover = true
     if not enabled or level == null or tool() == null or tool().kind == ToolDefinition.Kind.PAN:
@@ -108,7 +119,8 @@ func _release() -> void:
     var to := level.bridge.snap_point(_mouse_m, from.node)
     var check := level.bridge.check_build(from, to, mat, GameState.supplies)
     if check.ok and GameState.spend(mat.cost):
-        level.bridge.build(from, to, mat)
+        level.bridge.build(from, to, mat, true)
+        Audio.play(tool().use_sound, Grid.to_px((from.pos + to.pos) / 2))
     elif not check.msg.is_empty():
         _say(to.pos - Vector2(0, 0.6), check.msg, ok_color)
 
@@ -124,7 +136,10 @@ func _use(cell: Vector2i, first: bool) -> void:
             var m := level.bridge.member_at(_mouse_m, member_pick_radius)
             if m:
                 GameState.gain(m.material.cost)
-                level.bridge.break_member(m, true)
+                if m.blueprint:
+                    level.bridge.remove_member(m)
+                else:
+                    level.bridge.break_member(m, true)
                 return
             var got := terrain.dig(cell)
             if got == null:

@@ -29,6 +29,8 @@ extends Resource
 @export var edge_color: Color = Color("5c3b1c")
 @export var hot_color: Color = Color("ff462d")
 @export_range(0.02, 0.5, 0.01, "suffix:m") var thickness: float = 0.2
+## Members with a lower layer are drawn first, behind the others. Soldiers are always in front.
+@export_range(-5, 5) var draw_layer: int = 0
 ## Ropes sag when slack and draw dashed while being placed.
 @export var draw_as_rope: bool = false
 

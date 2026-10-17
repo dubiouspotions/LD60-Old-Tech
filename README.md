@@ -10,14 +10,18 @@ The column marches east on its own. It halts at anything it can't cross: walls o
 | --- | --- | --- |
 | Dig | 1 | Digs soft earth (+1 earth) and fells trees (trunk gives logs, leaves give rope). Mines cyan crystals (+1 powder). Digging a bridge member takes it back. |
 | Fill | 2 | Drops a block of earth that falls until it lands. Costs 1 earth. |
-| Log | 3 | Drag from point to point. Takes push and pull, up to 5 m. Costs 1 log. |
-| Rope | 4 | Drag from point to point. Only pulls, up to 12 m. Costs 1 rope. |
-| Charge | 5 | Blasts rock, brick, bridges and your own soldiers within 2.6 m. Costs 1 powder. |
-| Pan | 6 | Drag to move the view. |
+| Log | 3 | Drag from point to point to plan a deck log. Takes push and pull, up to 5 m. Costs 1 log. |
+| Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
+| Rope | 5 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
+| Charge | 6 | Blasts rock, brick, bridges and your own soldiers within 2.6 m. Costs 1 powder. |
+| Pan | 7 | Drag to move the view. |
 
+- Log, Support and Rope place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
+- **Enter** or the **Build** button hands the plan to the engineers (orange). They build it member by member, starting from the ground or finished parts and climbing along what is already up. Finished parts are held on scaffolding, and the column can't cross them yet. When the last engineer is back on the ground the scaffolding comes down, and your design holds or it doesn't. The column waits at any deck or ramp still being built.
 - Bridge ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down.
 - Joints are hinges, so build triangles or hang the deck from ropes. Members glow red as they near breaking, and each soldier adds 80 kg.
-- **Space** pauses. Build while paused, then resume to load the bridge.
+- Each level the column waits at the start until the king loses patience (30 s by default). Use the time to build ahead, and press **M** or **March** to set off early once you're ready.
+- **Space** pauses. Plan and build while paused, then resume to load the bridge.
 - **F** toggles 2× speed. **C** makes the camera follow the column again.
 - Move the view with **WASD**/arrow keys, right or middle drag, or the mouse wheel.
 - Reaching a level's exit flag brings reinforcements and supplies. If the column falls, you retry the level with the army and supplies you had when it began.

@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="TerrainType" format=3]
+[gd_resource type="Resource" script_class="TerrainType" format=3 uid="uid://cjvmcjvjjnnq5"]
 
-[ext_resource type="Script" path="res://core/supplies.gd" id="1_vsu0j"]
+[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="1_vsu0j"]
 [ext_resource type="Resource" path="res://data/sounds/crystal.tres" id="2_bulby"]
-[ext_resource type="Script" path="res://core/terrain_type.gd" id="3_5712y"]
+[ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="3_5712y"]
 
 [sub_resource type="Resource" id="Resource_cqta2"]
 script = ExtResource("1_vsu0j")

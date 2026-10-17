@@ -2,6 +2,7 @@ extends GutTest
 
 const LOG := preload("res://data/bridge/log.tres")
 const ROPE := preload("res://data/bridge/rope.tres")
+const SUPPORT := preload("res://data/bridge/support.tres")
 
 ## Rock ceiling at row 0, rock wall in column 0, open air in between.
 const CRANE: Array = [
@@ -127,3 +128,98 @@ func test_blast_breaks_members_in_radius() -> void:
 	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
 	b.blast(Vector2(5, 2.5), 2.6)
 	assert_eq(b.members.size(), 0)
+
+
+func test_blueprint_is_not_simulated() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(6, 2)), LOG, true)
+	_run(b, 0.5)
+	assert_true(m.blueprint)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.001, "plan does not fall")
+
+
+func test_blueprint_is_not_walkable() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	assert_true(b.walk_surface(5.0, 0.0).is_empty())
+
+
+func test_blueprint_adds_no_weight_to_built_joint() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var deck := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 2)), LOG)
+	var built_mass := deck.b.mass
+	b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 0)), LOG, true)
+	assert_almost_eq(deck.b.mass, built_mass, 0.001)
+
+
+func test_order_does_not_build_yet() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	assert_eq(b.blueprint_count(), 1)
+	assert_eq(b.order_blueprints(), 1)
+	assert_true(m.blueprint, "waits for the crew")
+	assert_true(m.ordered)
+	assert_eq(b.blueprint_count(), 0, "no unordered plans left")
+
+
+func test_finished_member_stays_on_scaffolding_until_struck() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(6, 2)), LOG, true)
+	b.order_blueprints()
+	b.finish(m)
+	assert_false(m.blueprint)
+	assert_true(m.scaffolded)
+	assert_true(b.walk_surface(4.5, 0.0).is_empty(), "nobody walks on scaffolding")
+	_run(b, 0.5)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.001, "scaffolding holds it")
+	assert_eq(b.strike_scaffolding(), 1)
+	assert_eq(b.walk_surface(4.5, 0.0).member, m)
+	_run(b, 0.5)
+	assert_gt(m.b.pos.y, 2.5, "hinge swings once struck")
+
+
+func test_crossing_plan_holds_after_strike() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	b.order_blueprints()
+	b.finish(m)
+	b.strike_scaffolding()
+	_run(b, 2.0)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.05)
+
+
+func test_work_starts_from_ground_or_finished_structure() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m1 := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(5, 2)), LOG, true)
+	var m2 := b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 0)), LOG, true)
+	b.order_blueprints()
+	assert_eq(b.work_ends(m1), [m1.a] as Array[Bridge.Joint], "bolted end")
+	assert_eq(b.work_ends(m2), [] as Array[Bridge.Joint], "nothing to stand on yet")
+	b.finish(m1)
+	assert_eq(b.work_ends(m2), [m1.b] as Array[Bridge.Joint])
+	assert_eq(b.route_from_ground(m1.b), [m1.a, m1.b] as Array[Bridge.Joint])
+
+
+func test_blast_spares_blueprints() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	b.blast(Vector2(5, 2.5), 2.6)
+	assert_eq(b.members.size(), 1)
+
+
+func test_support_holds_but_is_not_walkable() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), SUPPORT)
+	assert_true(b.walk_surface(5.0, 0.0).is_empty())
+	_run(b, 2.0)
+	assert_true(m in b.members)
+	assert_almost_eq(m.b.pos.y, 2.0, 0.05)

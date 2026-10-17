@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="BridgeMaterial" format=3]
+[gd_resource type="Resource" script_class="BridgeMaterial" format=3 uid="uid://dhve7dfvpqtep"]
 
 [ext_resource type="Resource" path="res://data/sounds/member_snap.tres" id="1_ue7ld"]
-[ext_resource type="Script" path="res://core/supplies.gd" id="2_qvngx"]
+[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="2_qvngx"]
 [ext_resource type="Resource" path="res://data/sounds/log_place.tres" id="3_u0lpy"]
-[ext_resource type="Script" path="res://core/bridge_material.gd" id="4_am5kb"]
+[ext_resource type="Script" uid="uid://dihsek0i6d5w5" path="res://core/bridge_material.gd" id="4_am5kb"]
 
 [sub_resource type="Resource" id="Resource_ipm0b"]
 script = ExtResource("2_qvngx")
