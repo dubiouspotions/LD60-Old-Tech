@@ -165,3 +165,14 @@ func test_archers_hold_fire_while_the_column_sleeps() -> void:
 	_run(world.morning_time + 0.1)
 	await wait_physics_frames(30)
 	assert_gt(shots[0], 0, "shoots by day")
+
+
+func test_falling_block_looks_like_its_tile() -> void:
+	world.begin(0, 3)
+	var fill := load("res://data/terrain/fill.tres") as TerrainType
+	var block: FallingBlock = world.falling_block_scene.instantiate()
+	block.type = fill
+	world.objects.add_child(block)
+	var sprite: Sprite2D = block.get_node("Sprite")
+	assert_eq((sprite.texture as AtlasTexture).region, (world.terrain.tile_texture(fill) as AtlasTexture).region)
+	assert_eq((sprite.texture as AtlasTexture).atlas, (world.terrain.tile_texture(fill) as AtlasTexture).atlas)

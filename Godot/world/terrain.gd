@@ -280,6 +280,20 @@ func _erase_columns(hit: Callable) -> void:
             _dirty_cols.erase(x)
 
 
+## Picture of the first tile in the TileSet with this terrain type, for showing it off the map (falling fill).
+func tile_texture(type: TerrainType) -> Texture2D:
+    if _tile_for.is_empty():
+        _index_tileset()
+    var tile: Array = _tile_for.get(type, [])
+    if tile.is_empty():
+        return null
+    var src := tile_set.get_source(tile[0]) as TileSetAtlasSource
+    var tex := AtlasTexture.new()
+    tex.atlas = src.texture
+    tex.region = Rect2(src.get_tile_texture_region(tile[1]))
+    return tex
+
+
 func cell_center_px(cell: Vector2i) -> Vector2:
     return Grid.to_px(Vector2(cell) + Vector2(0.5, 0.5))
 

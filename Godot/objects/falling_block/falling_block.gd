@@ -1,7 +1,7 @@
 class_name FallingBlock
 extends Node2D
 ## A tile falling straight down until it lands, then it becomes that tile again.
-## The node origin is the top-left of the cell.
+## The node origin is the top-left of the cell. It shows the TileSet's picture of its terrain type.
 
 @export var type: TerrainType
 @export var gravity: float = 30.0
@@ -9,6 +9,12 @@ extends Node2D
 @export var land_sound: SoundEffect
 
 var _vy: float = 0.0
+
+
+func _ready() -> void:
+	var world := World.of(self)
+	if world and type:
+		$Sprite.texture = world.terrain.tile_texture(type)
 
 
 func _physics_process(dt: float) -> void:

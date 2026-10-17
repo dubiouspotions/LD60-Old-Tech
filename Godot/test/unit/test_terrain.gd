@@ -181,3 +181,15 @@ func test_clear_from_makes_right_side_a_wall() -> void:
 func test_terrain_type_prints_its_name() -> void:
 	assert_eq(str(WorldFixture.type("soil")), "Soil")
 	assert_eq(str(WorldFixture.type("water")), "Water")
+
+
+## Anything that shows a tile outside the map (falling fill) takes its picture from the TileSet.
+func test_tile_texture_comes_from_the_tileset() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	var fill := WorldFixture.type("fill")
+	t.set_type(Vector2i(0, 0), fill)
+	var src := t.tile_set.get_source(t.get_cell_source_id(Vector2i(0, 0))) as TileSetAtlasSource
+	var tex := t.tile_texture(fill) as AtlasTexture
+	assert_not_null(tex)
+	assert_eq(tex.atlas, src.texture)
+	assert_eq(tex.region, Rect2(src.get_tile_texture_region(t.get_cell_atlas_coords(Vector2i(0, 0)))))
