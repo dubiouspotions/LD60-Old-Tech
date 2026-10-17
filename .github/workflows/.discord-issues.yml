@@ -1,0 +1,86 @@
+name: Discord issue notifications
+
+on:
+  issues:
+    types:
+      - opened
+      - closed
+      - reopened
+      - assigned
+      - unassigned
+      - labeled
+      - unlabeled
+      - edited
+      - milestoned
+      - demilestoned
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Build Discord message
+        id: payload
+        env:
+          ACTION: ${{ github.event.action }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_STATE: ${{ github.event.issue.state }}
+          ACTOR: ${{ github.actor }}
+          ASSIGNEE: ${{ github.event.assignee.login || '' }}
+          LABEL: ${{ github.event.label.name || '' }}
+          MILESTONE: ${{ github.event.milestone.title || '' }}
+        run: |
+          python3 << 'PY'
+          import json
+          import os
+
+          action = os.getenv("ACTION", "")
+          repo = os.getenv("REPO", "")
+          number = os.getenv("ISSUE_NUMBER", "")
+          title = os.getenv("ISSUE_TITLE", "")
+          url = os.getenv("ISSUE_URL", "")
+          state = os.getenv("ISSUE_STATE", "")
+          actor = os.getenv("ACTOR", "")
+          assignee = os.getenv("ASSIGNEE", "")
+          label = os.getenv("LABEL", "")
+          milestone = os.getenv("MILESTONE", "")
+
+          if action == "opened":
+              text = f"🆕 **New issue** in `{repo}`: #{number} {title} — opened by **{actor}**\n<{url}>"
+          elif action == "closed":
+              text = f"✅ **Issue closed** in `{repo}`: #{number} {title} — closed by **{actor}**\n<{url}>"
+          elif action == "reopened":
+              text = f"♻️ **Issue reopened** in `{repo}`: #{number} {title} — reopened by **{actor}**\n<{url}>"
+          elif action == "assigned":
+              text = f"👤 **Issue assigned** in `{repo}`: #{number} {title} — assigned to **{assignee}** by **{actor}**\n<{url}>"
+          elif action == "unassigned":
+              text = f"👤 **Issue unassigned** in `{repo}`: #{number} {title} — changed by **{actor}**\n<{url}>"
+          elif action == "labeled":
+              text = f"🏷️ **Label added** in `{repo}`: #{number} {title} — label **{label}** added by **{actor}**\n<{url}>"
+          elif action == "unlabeled":
+              text = f"🏷️ **Label removed** in `{repo}`: #{number} {title} — label **{label}** removed by **{actor}**\n<{url}>"
+          elif action == "edited":
+              text = f"✏️ **Issue edited** in `{repo}`: #{number} {title} — edited by **{actor}**\n<{url}>"
+          elif action == "milestoned":
+              text = f"📌 **Milestone added** in `{repo}`: #{number} {title} — milestone **{milestone}** set by **{actor}**\n<{url}>"
+          elif action == "demilestoned":
+              text = f"📌 **Milestone removed** in `{repo}`: #{number} {title} — changed by **{actor}**\n<{url}>"
+          else:
+              text = f"ℹ️ Issue updated in `{repo}`: #{number} {title} ({state}) by **{actor}**\n<{url}>"
+
+          payload = {"content": text}
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+              f.write(f"json={json.dumps(payload)}\n")
+          PY
+
+      - name: Send to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          JSON_PAYLOAD: ${{ steps.payload.outputs.json }}
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d "$JSON_PAYLOAD" \
+               "$DISCORD_WEBHOOK_URL"

@@ -1,0 +1,178 @@
+name: "godot-ci export"
+on:
+  push:
+    branches:
+      - "main"
+      - "deploy"
+  workflow_dispatch: {}
+
+env:
+  GODOT_VERSION: 4.7.2
+  EXPORT_NAME: LD60-OldTech
+  # Set up these as Github Secrets:
+  ITCHIO_API_KEY: ${{ secrets.ITCHIO_API_KEY }}
+  ITCHIO_USERNAME: ${{ secrets.ITCHIO_USERNAME }}
+  ITCHIO_GAME: ${{ secrets.ITCHIO_GAME }}
+  LOGFILE: build.log
+
+concurrency: 
+  group: "godot-export"
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+    working-directory: Godot
+
+jobs:
+  build:
+    timeout-minutes: 5
+    name: Godot Export
+    runs-on: ubuntu-latest
+    container:
+      image: docker://barichello/godot-ci:4.7.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: 'true'
+        
+      - name: Setup
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates/
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Web Build
+        run: |
+            mkdir -v -p build/web
+            godot --headless -v --export-release "Web" build/web/index.html 2>&1 | tee -a $LOGFILE
+
+      - name: Mac Build
+        run: |
+          mkdir -v -p build/mac
+          godot --headless --verbose --export-release "MacOS" build/mac/$EXPORT_NAME.zip 2>&1 | tee -a $LOGFILE
+
+      - name: Windows Build
+        run: |
+          mkdir -v -p build/windows
+          godot --headless --verbose --export-release "Windows Desktop" build/windows/$EXPORT_NAME.zip 2>&1 | tee -a $LOGFILE
+
+      - name: Linux Build
+        run: |
+          mkdir -v -p build/linux
+          godot --headless --verbose --export-release "Linux" build/linux/$EXPORT_NAME.zip 2>&1 | tee -a $LOGFILE
+
+      - name: Upload Artifact web
+        uses: actions/upload-artifact@v4
+        with:
+          name: Web
+          path: ./Godot/build/web/
+
+      - name: Upload Artifact Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows
+          path: ./Godot/build/windows/
+
+      - name: Upload Artifact MacOS
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOS
+          path: ./Godot/build/mac/
+
+      - name: Upload Artifact Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux
+          path: ./Godot/build/linux/
+  
+      - name: Notify Discord of failure
+        if: failure()
+        shell: bash
+        run: |
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          commit_url="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          msg="There was a problem with the build for $commit_url."
+          embeds="[{\"title\": \"Build Failed\", \"description\": \"See details here: ${run_url}\", \"url\": \"${run_url}\", \"color\": 10038562}]"
+          data="{\"content\": \"$msg\", \"username\": \"Buildbot\", \"embeds\": $embeds}"
+          wget --header="Content-Type: application/json" --post-data="$data" "${{ secrets.DISCORD_WEBHOOK_URL }}"
+      
+      - name: Grep log for errors and send to discord
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          ERRORS=$(grep "ERROR" build.log | sort -u | sed 's/\\/\\\\/g; s/"/\\"/g')
+          if [ -n "$ERRORS" ]; then
+            count=$(printf '%s\n' "$ERRORS" | wc -l | tr -d ' ')
+            run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            commit_url="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+            msg="The build succeeded, but Godot printed $count errors during export.\n\n$ERRORS"
+            embeds="[{\"title\": \"Build error report\", \"description\": \"See details here: ${run_url}\", \"url\": \"${run_url}\", \"color\": 10038562}]"
+            data="{\"content\": \"$msg\", \"username\": \"Buildbot\", \"embeds\": $embeds}"
+            wget --header="Content-Type: application/json" --post-data="$data" "${{ secrets.DISCORD_WEBHOOK_URL }}"
+          fi
+
+  deploy:
+    name: Itch.io Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    # Auto-run only on the `deploy` branch; workflow_dispatch always allowed.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/deploy'
+    container:
+      image: docker://barichello/godot-ci:4.6.2
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - name: Download Web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Web
+          path: ./build/web
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Windows
+          path: ./build/windows
+
+      - name: Download MacOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MacOS
+          path: ./build/mac
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Linux
+          path: ./build/linux
+
+      - name: Itch.io web
+        if: env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != ''
+        run: BUTLER_API_KEY=${ITCHIO_API_KEY} butler push ./build/web ${ITCHIO_USERNAME}/${ITCHIO_GAME}:web
+
+      - name: Itch.io MacOS
+        if: env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != ''
+        run: BUTLER_API_KEY=${ITCHIO_API_KEY} butler push ./build/mac/$EXPORT_NAME.zip ${ITCHIO_USERNAME}/${ITCHIO_GAME}:mac
+
+      - name: Itch.io Windows
+        if: env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != ''
+        run: BUTLER_API_KEY=${ITCHIO_API_KEY} butler push ./build/windows/$EXPORT_NAME.zip ${ITCHIO_USERNAME}/${ITCHIO_GAME}:windows
+
+      - name: Itch.io Linux
+        if: env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != ''
+        run: BUTLER_API_KEY=${ITCHIO_API_KEY} butler push ./build/linux/$EXPORT_NAME.zip ${ITCHIO_USERNAME}/${ITCHIO_GAME}:linux
+
+      - name: Notify Discord of deploy failure
+        if: failure()
+        shell: bash
+        run: |
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          commit_url="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          msg="Itch.io deploy failed for $commit_url."
+          embeds="[{\"title\": \"Deploy Failed\", \"description\": \"See details here: ${run_url}\", \"url\": \"${run_url}\", \"color\": 10038562}]"
+          data="{\"content\": \"$msg\", \"username\": \"Buildbot\", \"embeds\": $embeds}"
+          wget --header="Content-Type: application/json" --post-data="$data" "${{ secrets.DISCORD_WEBHOOK_URL }}"

@@ -1,0 +1,31 @@
+name: Discord main commits
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send commit to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+          COMPARE: ${{ github.event.compare }}
+        # The commit payload lives on disk at $GITHUB_EVENT_PATH. Reading it
+        # there (instead of interpolating `${{ toJson(github.event) }}` into
+        # the shell script) avoids shell-injection when commit messages
+        # contain apostrophes, parens, or other shell-meaningful characters.
+        # jq -n --arg builds the final JSON so newlines and quotes survive.
+        run: |
+          COMMITS=$(jq -r '.commits[] | "- \(.message | split("\n") | .[0]) by \(.author.name)"' "$GITHUB_EVENT_PATH")
+          CONTENT="🚀 Push to main in ${REPO}:
+          ${COMMITS}
+          <${COMPARE}>"
+          PAYLOAD=$(jq -n --arg content "$CONTENT" '{content: $content}')
+          curl -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "$WEBHOOK"
