@@ -190,6 +190,8 @@ func set_recruit(at_camp: bool, gold: int, can_buy: bool, world_px: Vector2) -> 
 		return
 	b.text = recruit_text % gold
 	b.disabled = not can_buy
+	# Greyed out, it lets clicks through to the world behind it.
+	b.mouse_filter = Control.MOUSE_FILTER_STOP if can_buy else Control.MOUSE_FILTER_IGNORE
 	b.pin(_to_screen(world_px))
 
 
