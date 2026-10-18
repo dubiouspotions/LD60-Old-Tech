@@ -220,6 +220,7 @@ func _physics_process(dt: float) -> void:
 	_step_bridge(dt, bodies, blocks)
 	for b: FallingBlock in blocks:
 		b.step(dt, self, bodies)
+	_crush_under_weight(bodies, blocks)
 	army.step(dt)
 	crew.step(dt)
 	_check_exit()
@@ -512,6 +513,25 @@ func _step_bridge(dt: float, bodies: Array, blocks: Array) -> void:
 	for pair: Array in bodies:
 		if (pair[1] as Bridge.Body).crushed:
 			crush(pair[0])
+
+
+## Crushes every soldier and archer carrying more than the bridge's Crush Weight: bridge pieces lying on them
+## (with what those carry) and falling blocks resting on them, through any stack of blocks.
+func _crush_under_weight(bodies: Array, blocks: Array) -> void:
+	var weight := {}
+	for pair: Array in bodies:
+		weight[pair[0]] = (pair[1] as Bridge.Body).load
+	for b: FallingBlock in blocks:
+		var under: Node2D = b.resting_on
+		for depth in blocks.size():
+			if not (under is FallingBlock):
+				break
+			under = (under as FallingBlock).resting_on
+		if under and weight.has(under):
+			weight[under] += b.mass
+	for who: Node2D in weight:
+		if weight[who] > bridge.crush_weight:
+			crush(who)
 
 
 ## Kills a soldier or archer crushed by something heavy.

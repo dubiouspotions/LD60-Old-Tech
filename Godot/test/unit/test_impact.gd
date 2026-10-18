@@ -168,14 +168,46 @@ func test_falling_fill_crushes_the_soldier_it_lands_on() -> void:
 	assert_eq(world.army.soldiers.size(), 0, "crushed")
 
 
-func test_fill_let_go_just_above_a_soldier_rests_on_him() -> void:
+func test_a_box_let_go_just_above_a_soldier_crushes_him_by_its_weight() -> void:
 	world.army.spawn(1, 5.5)
 	world.army.hold = true
-	var block := _drop_fill(Vector2i(5, 3))
+	_drop_fill(Vector2i(5, 3))
 	_run(2.0)
-	assert_eq(world.army.soldiers.size(), 1, "not crushed")
-	assert_true(is_instance_valid(block), "still a block, resting")
-	assert_null(world.terrain.type_at(Vector2i(5, 5)), "not in the soldier's cell")
+	assert_eq(world.army.soldiers.size(), 0, "600 kg is too much to carry")
+
+
+## An archer at x 5.5 with n light boxes (kg each) stacked on him, let go gently.
+func _stack_on_archer(n: int, kg: float) -> Archer:
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(5.5, 6))
+	world.objects.add_child(archer)
+	for k in n:
+		var block := _drop_fill(Vector2i(5, 3 - k))
+		block.mass = kg
+	return archer
+
+
+func test_a_light_box_rests_on_an_archer() -> void:
+	var archer := _stack_on_archer(1, 100.0)
+	_run(3.0)
+	assert_true(archer.alive(), "100 kg is carried")
+
+
+func test_a_stack_of_boxes_crushes_an_archer_by_its_weight() -> void:
+	var archer := _stack_on_archer(3, 100.0)
+	_run(3.0)
+	assert_false(archer.alive(), "300 kg through the stack crushes him")
+
+
+func test_a_box_on_a_log_lying_on_a_soldier_crushes_him() -> void:
+	world.army.spawn(1, 5.5)
+	world.army.hold = true
+	_drop_log(4.5, 6.5, 6.0 - 1.8 - 0.3)
+	_run(2.0)
+	assert_eq(world.army.soldiers.size(), 1, "the log alone is carried")
+	_drop_fill(Vector2i(5, 0))
+	_run(3.0)
+	assert_eq(world.army.soldiers.size(), 0, "the box's weight comes through the log")
 
 
 func test_fill_lands_on_a_bridge_instead_of_falling_through() -> void:

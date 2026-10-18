@@ -67,6 +67,8 @@ class Body:
 	## The member it stands on, which never touches it.
 	var skip: Member
 	var crushed: bool = false
+	## Weight (kg) of bridge pieces, and what they carry, resting on it this tick.
+	var load: float = 0.0
 
 	func _init(p_center: Vector2, p_radius: float, p_vel: Vector2 = Vector2.ZERO, p_skip: Member = null) -> void:
 		center = p_center
@@ -121,6 +123,8 @@ class Snap:
 ## A built piece hitting a soldier or archer at least this fast (m/s) crushes it (slower ones are stopped by
 ## it); hitting ground this fast breaks a cell that can be dug, or batters a tower.
 @export var harm_speed: float = 6.0
+## Weight (kg) resting on a soldier or archer (pieces, what they carry, falling blocks) that crushes them.
+@export var crush_weight: float = 250.0
 ## Seconds of siege a tower cell takes per kJ of impact energy (½·m·v² of the joint and its load).
 @export var siege_per_kj: float = 10.0
 
@@ -999,6 +1003,9 @@ func _collide_body(b: Body, h: float) -> void:
 		if -(va.lerp(vb, t) / h - b.vel).dot(n) >= harm_speed:
 			b.crushed = true
 			return
+		if n.y < -0.5:
+			# Lying on the body: it carries the piece's weight there, and what the piece carries.
+			b.load += (m.a.mass + m.a.load) * (1.0 - t) + (m.b.mass + m.b.load) * t
 		var wa := m.a.inv_mass * (1.0 - t)
 		var wb := m.b.inv_mass * t
 		var w := wa * (1.0 - t) + wb * t

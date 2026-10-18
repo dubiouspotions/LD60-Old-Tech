@@ -14,6 +14,8 @@ extends Node2D
 
 ## The bridge piece it rests on (and where along it), else null.
 var on_member: Bridge.Member
+## The soldier, archer or block it rests on, else null.
+var resting_on: Node2D
 var on_t: float = 0.0
 var _vy: float = 0.0
 
@@ -34,12 +36,14 @@ func step(dt: float, world: World, bodies: Array) -> void:
 	var next := bottom + _vy * dt
 	var rest := INF
 	on_member = null
+	resting_on = null
 	for k: float in [0.15, 0.5, 0.85]:
 		var deck := world.bridge.walk_surface(x + k, bottom - 0.05, false)
 		if not deck.is_empty() and deck.y <= next and deck.y < rest:
 			rest = deck.y
 			on_member = deck.member
 			on_t = deck.t
+			resting_on = null
 	for pair: Array in bodies:
 		var b: Bridge.Body = pair[1]
 		var head := b.top()
@@ -50,6 +54,7 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		elif head < rest:
 			rest = head
 			on_member = null
+			resting_on = pair[0]
 	if rest < INF:
 		next = rest
 		_vy = 0.0
