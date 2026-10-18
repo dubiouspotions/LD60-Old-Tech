@@ -296,6 +296,19 @@ func test_the_bridge_button_shows_its_materials_as_icons_on_itself() -> void:
 	assert_false(dig.get_node("%Materials").visible, "no icons on a tool with one material")
 
 
+## Picking a material keeps a folded rack folded: no hint line pops back onto the button.
+func test_picking_a_material_keeps_the_rack_folded() -> void:
+	GameState.new_campaign()
+	var tools := GameState.campaign.tools
+	var i := tools.map(func(t: ToolDefinition) -> String: return t.display_name).find("Bridge")
+	var b: ToolButton = hud.get_node("%Tools").get_child(i)
+	hud.fit_to(10.0)
+	assert_false(b.get_node("%Hint").visible, "folded: no hint")
+	hud.set_tool(i, tools[i].materials()[1])
+	assert_false(b.get_node("%Hint").visible, "still folded after the pick")
+	assert_eq(b.get_node("%Hint").text, tools[i].materials()[1].hint, "the hint follows the pick for when it unfolds")
+
+
 func test_the_lost_card_fades_the_screen_then_slides_in_from_below() -> void:
 	var lost: ColorRect = hud.get_node("%Lost")
 	var center: Control = lost.get_node("Center")

@@ -19,6 +19,8 @@ var affordable: bool = true
 var build_material: BridgeMaterial
 ## The tool the material icons were made for.
 var _icons_for: ToolDefinition
+## Folded by set_compact: the hint line is hidden.
+var _compact: bool = false
 
 
 ## colors: supply key (&"earth", &"logs", ...) -> swatch colour, the same as the supply readouts. mat: the
@@ -39,7 +41,7 @@ func setup(def: ToolDefinition, colors: Dictionary = {}, mat: BridgeMaterial = n
         tooltip_text += "\n" + hint
     _fill_cost(price, colors, per)
     _fill_materials(def, mat)
-    set_compact(false)
+    set_compact(_compact)
 
 
 func set_affordable(ok: bool) -> void:
@@ -106,5 +108,6 @@ func _fill_materials(def: ToolDefinition, mat: BridgeMaterial) -> void:
 
 ## Compact buttons hide the hint line to save width.
 func set_compact(compact: bool) -> void:
+    _compact = compact
     %Hint.visible = not compact and not %Hint.text.is_empty()
     custom_minimum_size.x = $Row.get_combined_minimum_size().x + 20

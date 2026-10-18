@@ -145,6 +145,8 @@ func set_tool(index: int, material: BridgeMaterial = null) -> void:
     if material and material != b.build_material:
         b.setup(_tools[index], _colors, material)
         _refresh_supplies()
+        # The new pick's hint may be longer or shorter: fold or unfold the rack to fit again.
+        _fit.call_deferred()
 
 
 func set_paused(paused: bool, show_tag: bool) -> void:
