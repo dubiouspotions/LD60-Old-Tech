@@ -103,7 +103,7 @@ func step(dt: float) -> void:
 		var e := engineers[i]
 		e.working = false
 		if e.at and e.at.degree == 0:
-			e.at = null
+			_let_go(e)
 			e.route.clear()
 		if e.at and e.route.is_empty():
 			e.pos = e.at.pos
@@ -134,7 +134,7 @@ func step(dt: float) -> void:
 			if e.route.is_empty():
 				e.route = _route_down(e.at)
 			if e.route.is_empty():
-				e.at = null
+				_let_go(e)
 		elif e.digging:
 			_dig_step(e, dt)
 		else:
@@ -385,6 +385,18 @@ func _work(e: Engineer, dt: float) -> void:
 		e.reach_x = NAN
 
 
+## Takes the engineer off the joint it holds. A joint bolted to a wall lies on the wall's line, which counts as the
+## wall; the engineer steps to its open side, so the ground under it is the ground there and not the wall's top.
+func _let_go(e: Engineer) -> void:
+	e.at = null
+	for side: int in [-1, 1]:
+		var wall := terrain.is_solid(Grid.cell_of(e.pos + Vector2(side * EDGE, -0.3)))
+		var open := not terrain.is_solid(Grid.cell_of(e.pos + Vector2(-side * EDGE, -0.3)))
+		if wall and open:
+			e.pos.x -= side * EDGE * 2.0
+			return
+
+
 ## Climbs from joint to joint. Reaches the first joint over the ground when not on the structure yet.
 func _follow_route(e: Engineer, dt: float) -> void:
 	var target := e.route[0]
@@ -398,7 +410,7 @@ func _follow_route(e: Engineer, dt: float) -> void:
 		e.at = target
 		e.route.pop_front()
 		if e.job == null and target.pinned and e.route.is_empty():
-			e.at = null
+			_let_go(e)
 	else:
 		e.pos += to.normalized() * stepped
 	_show(e, true, signi(roundi(to.x * 100)))
