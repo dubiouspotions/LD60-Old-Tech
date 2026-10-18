@@ -83,6 +83,7 @@ var _alts: Dictionary = {} # v2 atlas coords -> {TerrainType, or AIR_KEY for air
 var _hits: Dictionary = {} # Vector2i -> seconds since it was hit
 var _ripple: Dictionary = {} # Vector2i -> seconds after the latest tower hit that the ripple reaches it
 var _ripple_age: float = 0.0 # seconds since the latest tower hit
+var _painted: Dictionary = {} # Vector2i -> true: cells painted in the editor, re-picked around after the paint
 
 
 func _ready() -> void:
@@ -168,6 +169,23 @@ func ripple_offset_at(cell: Vector2i) -> Vector2i:
 ## The tile at cell's colour now: hit_flash while it blinks, else white.
 func hit_flash_at(cell: Vector2i) -> Color:
 	return hit_flash if _hits.has(cell) and _hits[cell] < hit_time * hit_flash_share else Color.WHITE
+
+
+## In the editor, the tiles around cells painted by hand are re-picked after the paint (not inside this update:
+## cells set here are not drawn).
+func _update_cells(coords: Array[Vector2i], _forced_cleanup: bool) -> void:
+	if not Engine.is_editor_hint() or coords.is_empty():
+		return
+	if _painted.is_empty():
+		_retile_painted_later.call_deferred()
+	for c in coords:
+		_painted[c] = true
+
+
+func _retile_painted_later() -> void:
+	var cells := _painted.keys()
+	_painted.clear()
+	retile_painted(cells)
 
 
 func _use_tile_data_runtime_update(coords: Vector2i) -> bool:
@@ -291,6 +309,13 @@ func retile_all() -> void:
 		var editor := Engine.get_singleton(&"EditorInterface")
 		if editor:
 			editor.call(&"mark_scene_as_unsaved")
+
+
+## Reads the painted tiles again and re-picks the tiles around cells, painted by hand (the TileMap editor does
+## this as you paint).
+func retile_painted(cells: Array) -> void:
+	rebuild()
+	_retile_around(cells)
 
 
 func _v2() -> bool:

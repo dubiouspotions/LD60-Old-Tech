@@ -88,9 +88,10 @@ v2 sheet; nothing uses it any more.
   tunnel roof meets its wall get the bottom inner corners. Digging a tunnel in play picks them for you.
 - **Rock in the dirt is drawn for you.** Paint rock cells with the full rock tile. The rounded dirt-to-rock edges are
   an overlay on the half-cell grid, and it shows in the editor as you paint.
-- **Retile** (select the level's **Terrain** node, then the button at the top of the Inspector) fixes every cell whose
-  tile does not fit its neighbours and keeps every tile that does. Paint roughly with any tile of the right material,
-  press Retile, then save. Variants you picked by hand stay as long as they still fit.
+- **Painting re-picks the tiles around it.** Paint roughly with any tile of the right material: the tiles around what
+  you painted that no longer fit their neighbours are re-picked as you go, and the rock overlay follows. Variants you
+  picked by hand stay as long as they still fit. **Retile** (select the level's **Terrain** node, then the button at
+  the top of the Inspector) does the same for every cell at once, for example after the roles changed.
 - **Decorations are kept.** An old tile with no material painted in the air (source 0) is never touched by Retile or
   by digging next to it.
 - **While playing,** the same rules re-pick the tiles around anything that changes the ground (digging, collapses,

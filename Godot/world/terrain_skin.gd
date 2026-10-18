@@ -37,6 +37,9 @@ func refresh() -> void:
     var look := _terrain.look
     var on := look != null and look.enabled and look.texture != null
     if Engine.is_editor_hint():
+        # Painting does not emit changed; the Terrain re-reads the painted tiles (a rebuild) after each paint.
+        if _terrain.take_changes().all:
+            _editor_dirty = true
         if on and (_editor_dirty or not _on):
             _editor_dirty = false
             _on = true

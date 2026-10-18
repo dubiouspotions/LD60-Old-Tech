@@ -59,6 +59,7 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 - Scripts that reference autoloads (`GameState`, `Audio`, `Effects`) **fail to compile under `godot -s script.gd`**. Run such tools as a scene (see `dev/*.tscn`). Only pure-Resource scripts can run via `-s`.
 - Godot has no script API that saves *inherited* scenes, so `dev/generate_levels.gd` writes the `.tscn` text itself (`instance=ExtResource(base)`, then overrides). Keep levels inherited so changes to `level_base.tscn` reach every level.
 - The tile atlas goes through two passes: `build_tileset.gd -- art`, then `--import`, then `-- tileset`.
+- In 4.7.2 painting or `set_cell` does not emit `TileMapLayer.changed`; `_update_cells` is the hook, and cells set inside it are never drawn, so `Terrain` defers its re-pick (`_retile_painted_later`).
 - Under typed GDScript, `var x := dict.key` fails to compile ("cannot infer type"). Write `var x: T = dict.key`.
 - `Terrain.size` only grows while playing; digging the last tile of a column must not move the level edge. Only `stamp`/`clear_from` move the right edge and `unload_before` the left (`min_x`).
 - A level's cells left of its StartFlag column are dropped when it is stitched onto another level; keep stitch seams flat (`test_levels` checks them).

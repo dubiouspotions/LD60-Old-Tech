@@ -155,6 +155,33 @@ func test_overlay_has_every_tile_it_draws() -> void:
 		assert_not_null(body.get_cell_tile_data(c), "overlay tile at %s exists" % c)
 
 
+## Paints cell with the tile at coords as material t, without re-picking anything (as the TileMap editor does).
+func _paint(cell: Vector2i, coords: Vector2i, t: TerrainType) -> void:
+	var src := terrain.tile_set.get_source(look.source_id) as TileSetAtlasSource
+	for k in src.get_alternative_tiles_count(coords):
+		var alt := src.get_alternative_tile_id(coords, k)
+		if src.get_tile_data(coords, alt).get_custom_data("terrain") == t:
+			terrain.set_cell(cell, look.source_id, coords, alt)
+			return
+	fail_test("no %s alternative of %s" % [t, coords])
+
+
+func test_painting_repicks_the_tiles_around_it() -> void:
+	_paint(Vector2i(5, 1), look.dirt[0], _type("soil"))
+	terrain.retile_painted([Vector2i(5, 1)])
+	assert_eq(terrain.type_at(Vector2i(5, 1)), _type("soil"), "painted ground is ground")
+	assert_has(look.flat_tops, _tile(Vector2i(5, 1)), "it gets the grass top")
+	assert_has(look.inner_tl, _tile(Vector2i(5, 2)), "the old top under it is an inner corner now")
+
+
+func test_painted_rock_shows_in_the_overlay() -> void:
+	_paint(Vector2i(2, 5), look.rock[0], _type("rock"))
+	terrain.retile_painted([Vector2i(2, 5)])
+	skin.refresh()
+	assert_eq(_body(Vector2i(1, 4)), look.body[8])
+	assert_eq(_body(Vector2i(2, 5)), look.body[1])
+
+
 func test_materials_without_v2_art_keep_their_old_tile() -> void:
 	var old := terrain.atlas_tile(_type("brick"))
 	assert_eq(terrain.get_cell_source_id(Vector2i(10, 2)), old[0])
