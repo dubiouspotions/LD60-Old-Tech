@@ -161,6 +161,8 @@ func _walk_to_camp(s: Soldier, i: int, dt: float) -> void:
 	var gap := minf(rules.camp_spacing, room / maxi(soldiers.size() - 1, 1))
 	var to := (camp_x if i == 0 else soldiers[i - 1].pos.x - gap) - s.pos.x
 	if absf(to) < 0.05:
+		# Settle exactly on the spot, so small misses do not add up along the camp line.
+		s.pos.x += to
 		s.facing = 1
 		return
 	var dx := clampf(to, -s.speed * dt, s.speed * dt)
