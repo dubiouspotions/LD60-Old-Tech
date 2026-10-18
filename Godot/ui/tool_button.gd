@@ -24,11 +24,13 @@ func setup(def: ToolDefinition, colors: Dictionary = {}, mat: BridgeMaterial = n
 	%Hint.text = hint
 	tooltip_text = "%s (%s)" % [def.display_name, def.key_label]
 	var price := def.price(mat)
+	# Build tools pay per started metre of what is planned.
+	var per := "/m" if def.kind == ToolDefinition.Kind.BUILD else ""
 	if not price.is_empty():
-		tooltip_text += "\nCosts " + price.describe_cost()
+		tooltip_text += "\nCosts " + price.describe_cost() + (" per started metre" if per else "")
 	if not hint.is_empty():
 		tooltip_text += "\n" + hint
-	_fill_cost(price, colors)
+	_fill_cost(price, colors, per)
 	set_compact(false)
 
 
@@ -39,7 +41,7 @@ func set_affordable(ok: bool) -> void:
 
 
 ## One swatch and count per supply the price asks for.
-func _fill_cost(price: Supplies, colors: Dictionary) -> void:
+func _fill_cost(price: Supplies, colors: Dictionary, per: String = "") -> void:
 	var row: HBoxContainer = %Cost
 	for c in row.get_children():
 		c.free()
@@ -54,7 +56,7 @@ func _fill_cost(price: Supplies, colors: Dictionary) -> void:
 		swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(swatch)
 		var count := Label.new()
-		count.text = str(v)
+		count.text = str(v) + per
 		count.theme_type_variation = &"Caption"
 		count.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(count)

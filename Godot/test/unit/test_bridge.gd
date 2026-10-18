@@ -278,7 +278,7 @@ func test_cancel_plan_removes_it_and_returns_its_cost() -> void:
 	b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 0)), ROPE, true)
 	var plan: Array = b.plans().filter(func(p: Array) -> bool: return not kept in p)[0]
 	var refund := b.cancel_plan(plan)
-	assert_eq([refund.logs, refund.rope], [1, 1])
+	assert_eq([refund.logs, refund.rope], [2, 2], "a 2 m log and a 2 m rope, per started metre")
 	assert_eq(b.members, [kept] as Array[Bridge.Member])
 
 

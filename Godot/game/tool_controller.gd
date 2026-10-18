@@ -201,7 +201,7 @@ func _place_build() -> bool:
 	from = ends[0]
 	var to: Bridge.Snap = ends[1]
 	var check := world.bridge.check_build(from, to, mat, GameState.supplies)
-	if check.ok and GameState.spend(mat.cost):
+	if check.ok and GameState.spend(check.cost):
 		world.bridge.build(from, to, mat, true)
 		Audio.play(tool().use_sound, Grid.to_px((from.pos + to.pos) / 2))
 		return true
@@ -220,7 +220,7 @@ func _use(cell: Vector2i, first: bool) -> void:
 		ToolDefinition.Kind.DIG:
 			var m := world.bridge.member_at(_mouse_m, member_pick_radius)
 			if m:
-				world.gain(m.material.cost, (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6))
+				world.gain(m.paid, (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6))
 				if m.blueprint:
 					world.bridge.remove_member(m)
 				else:

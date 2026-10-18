@@ -131,7 +131,7 @@ func test_cancelling_a_plan_says_what_came_back() -> void:
 	watch_signals(Effects)
 	game._on_cancel_pressed(0)
 	assert_signal_emitted(Effects, "said")
-	assert_eq(get_signal_parameters(Effects, "said")[0], "+1 logs")
+	assert_eq(get_signal_parameters(Effects, "said")[0], "+2 logs", "the 2 m plan's price")
 
 
 func test_the_cheat_top_up_says_what_it_gave() -> void:

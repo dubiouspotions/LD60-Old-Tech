@@ -74,6 +74,21 @@ func describe_cost() -> String:
 	return " · ".join(parts)
 
 
+## This bundle n times over.
+func times(n: int) -> Supplies:
+	var s := Supplies.new()
+	s.add(self, n)
+	return s
+
+
+## The part of this bundle up to cap (each supply the smaller of the two).
+func up_to(cap: Supplies) -> Supplies:
+	var s := Supplies.new()
+	for k in KEYS:
+		s.set(k, mini(get(k), cap.get(k)))
+	return s
+
+
 func copy() -> Supplies:
 	var s := Supplies.new()
 	s.add(self)

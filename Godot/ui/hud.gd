@@ -139,7 +139,7 @@ func _show_picker(index: int, material: BridgeMaterial) -> void:
 		mb.toggle_mode = true
 		mb.button_group = group
 		mb.focus_mode = Control.FOCUS_NONE
-		mb.text = "%s · %s" % [m.display_name, m.cost.describe_cost() if m.cost else ""]
+		mb.text = "%s · %s/m" % [m.display_name, m.cost.describe_cost() if m.cost else ""]
 		mb.tooltip_text = m.hint
 		mb.button_pressed = m == chosen
 		mb.pressed.connect(func() -> void:

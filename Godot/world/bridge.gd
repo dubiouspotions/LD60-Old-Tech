@@ -43,6 +43,8 @@ class Member:
 	var b: Joint
 	var length: float
 	var material: BridgeMaterial
+	## What was paid for it (cost_for), given back when the plan is taken back.
+	var paid: Supplies = Supplies.new()
 	var mass: float
 	## Smoothed axial force in N, tension positive.
 	var force: float = 0.0
@@ -262,10 +264,15 @@ func fit_to_ground(a: Snap, b: Snap) -> Snap:
 	return Snap.new(p, null, anchorable(p))
 
 
-## {ok: bool, msg: String, length: float}
+## What a piece of mat this long costs: its cost for every started metre.
+static func cost_for(mat: BridgeMaterial, length: float) -> Supplies:
+	return mat.cost.times(maxi(1, ceili(length - 0.001))) if mat.cost else Supplies.new()
+
+
+## {ok: bool, msg: String, length: float, cost: Supplies}
 func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> Dictionary:
 	var length := a.pos.distance_to(b.pos)
-	var r := {ok = false, msg = "", length = length}
+	var r := {ok = false, msg = "", length = length, cost = cost_for(mat, length)}
 	if length < min_length:
 		return r
 	if length > mat.max_length + 1e-6:
@@ -280,11 +287,13 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 	if members.size() >= max_members:
 		r.msg = too_many_text
 		return r
-	if supplies and not supplies.can_afford(mat.cost):
+	if supplies and not supplies.can_afford(r.cost):
 		r.msg = mat.no_supply_text
 		return r
 	r.ok = true
 	r.msg = length_text % length
+	if not r.cost.is_empty():
+		r.msg += " · " + r.cost.describe_cost()
 	return r
 
 
@@ -296,6 +305,7 @@ func build(a: Snap, b: Snap, mat: BridgeMaterial, blueprint: bool = false) -> Me
 	m.b = _joint_for(b)
 	m.length = a.pos.distance_to(b.pos)
 	m.material = mat
+	m.paid = cost_for(mat, m.length)
 	m.mass = m.length * mat.kg_per_m
 	m.blueprint = blueprint
 	members.append(m)
@@ -351,7 +361,7 @@ func cancel_plan(plan: Array) -> Supplies:
 	var refund := Supplies.new()
 	for m: Member in plan:
 		if m.blueprint and not m.dead:
-			refund.add(m.material.cost)
+			refund.add(m.paid)
 			remove_member(m)
 	return refund
 
@@ -774,6 +784,11 @@ func split(m: Member, p: Vector2) -> Joint:
 	m.b = j
 	m.length *= t
 	m.mass = m.length * m.material.kg_per_m
+	# The halves share what was paid, so taking both back gives back no more than that.
+	var first := cost_for(m.material, m.length).up_to(m.paid)
+	rest.paid = m.paid.copy()
+	rest.paid.add(first, -1)
+	m.paid = first
 	members.append(rest)
 	_recompute_mass()
 	return j

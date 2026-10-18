@@ -173,7 +173,7 @@ func _right_click() -> InputEventMouseButton:
 	return e
 
 
-func test_log_build_spends_a_log() -> void:
+func test_log_build_spends_a_log_per_metre() -> void:
 	_select(ToolDefinition.Kind.BUILD, "Log")
 	var logs := GameState.supplies.logs
 	tools._mouse_m = Vector2(6, 6)
@@ -182,7 +182,7 @@ func test_log_build_spends_a_log() -> void:
 	tools._release()
 	assert_eq(world.bridge.members.size(), 1)
 	assert_true(world.bridge.members[0].blueprint, "placed as a plan")
-	assert_eq(GameState.supplies.logs, logs - 1)
+	assert_eq(GameState.supplies.logs, logs - 3, "3 m: 3 logs")
 
 
 func test_commit_orders_the_plan() -> void:
@@ -215,7 +215,7 @@ func test_dig_member_refunds_it() -> void:
 	_select(ToolDefinition.Kind.DIG)
 	_click(Vector2(7.5, 6.05))
 	assert_eq(world.bridge.members.size(), 0)
-	assert_eq(GameState.supplies.logs, logs + 1)
+	assert_eq(GameState.supplies.logs, logs + 3, "all 3 back")
 
 func test_bridge_tool_is_called_bridge() -> void:
 	var names := tools.tools.map(func(t: ToolDefinition) -> String: return t.display_name)
@@ -225,13 +225,13 @@ func test_bridge_tool_is_called_bridge() -> void:
 
 func test_stone_build_spends_stone_and_builds_a_heavy_member() -> void:
 	_select(ToolDefinition.Kind.BUILD, "Stone")
-	GameState.supplies.stone = 2
+	GameState.supplies.stone = 3
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
 	tools._mouse_m = Vector2(8, 6)
 	tools._release()
 	assert_eq(world.bridge.members.size(), 1)
-	assert_eq(GameState.supplies.stone, 1)
+	assert_eq(GameState.supplies.stone, 1, "2 m: 2 stone")
 	var stone := world.bridge.members[0].material
 	assert_gt(stone.kg_per_m, preload("res://data/bridge/log.tres").kg_per_m, "heavier than a log")
 	assert_gt(stone.break_force, preload("res://data/bridge/log.tres").break_force, "stronger than a log")
@@ -323,4 +323,50 @@ func test_digging_away_a_plan_says_what_came_back() -> void:
 	watch_signals(Effects)
 	_select(ToolDefinition.Kind.DIG)
 	_click(Vector2(7.5, 6.05))
-	assert_signal_emitted_with_parameters(Effects, "said", ["+1 logs", Grid.to_px(Vector2(7.5, 6) - Vector2(0, 0.6))])
+	assert_signal_emitted_with_parameters(Effects, "said", ["+3 logs", Grid.to_px(Vector2(7.5, 6) - Vector2(0, 0.6))])
+
+
+## Plans a log from from to to (a drag) and returns how many logs it took.
+func _logs_for(from: Vector2, to: Vector2) -> int:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	GameState.supplies.logs = 20
+	tools._mouse_m = from
+	tools._press()
+	tools._mouse_m = to
+	tools._release()
+	return 20 - GameState.supplies.logs
+
+
+func test_a_plan_costs_one_per_started_metre() -> void:
+	assert_eq(_logs_for(Vector2(6, 6), Vector2(7, 6)), 1, "1 m: 1 log")
+	assert_eq(_logs_for(Vector2(6, 5), Vector2(9.5, 5)), 4, "3.5 m: 4 logs")
+	assert_eq(_logs_for(Vector2(2, 4), Vector2(5, 0)), 5, "5 m: 5 logs")
+
+
+func test_a_plan_needs_its_full_price() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	GameState.supplies.logs = 2
+	tools._mouse_m = Vector2(6, 5)
+	tools._press()
+	tools._mouse_m = Vector2(9.5, 5)
+	tools._release()
+	assert_eq(world.bridge.members.size(), 0, "4 logs needed, 2 held")
+	assert_eq(GameState.supplies.logs, 2)
+
+
+func test_taking_a_plan_back_returns_what_it_cost() -> void:
+	_logs_for(Vector2(6, 5), Vector2(9.5, 5))
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(7.5, 5.05))
+	assert_eq(GameState.supplies.logs, 20, "all 4 back")
+
+
+func test_splitting_a_plan_does_not_make_logs() -> void:
+	_logs_for(Vector2(5, 5), Vector2(7.5, 5))
+	var paid := 20 - GameState.supplies.logs
+	var m: Bridge.Member = world.bridge.members[0]
+	world.bridge.split(m, Vector2(6.2, 5))
+	var back := Supplies.new()
+	for p: Bridge.Member in world.bridge.members:
+		back.add(p.paid)
+	assert_eq(back.logs, paid, "the two halves are worth what was paid")
