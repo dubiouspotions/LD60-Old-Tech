@@ -126,6 +126,7 @@ func _ready() -> void:
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
 	crew.dig_finished.connect(_on_dig_finished)
+	crew.dismantled.connect(func(m: Bridge.Member) -> void: gain(bridge.take_apart(m), (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6)))
 	army.count_changed.connect(_on_army_count)
 	crew.count_changed.connect(_on_crew_count)
 

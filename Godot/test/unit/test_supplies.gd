@@ -32,3 +32,8 @@ func test_stone_is_a_supply() -> void:
 	assert_eq(s.stone, 2)
 	assert_eq(s.describe(), "+2 stone")
 	assert_false(s.can_afford(Supplies.make(0, 0, 0, 0, 3)))
+
+
+func test_reclaimed_gives_one_less_of_each_but_at_least_one() -> void:
+	var r := Supplies.make(0, 3, 1, 0, 2).reclaimed()
+	assert_eq([r.earth, r.logs, r.rope, r.gold, r.stone], [0, 2, 1, 0, 1])

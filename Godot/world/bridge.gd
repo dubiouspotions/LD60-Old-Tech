@@ -56,8 +56,10 @@ class Member:
 	var ordered: bool = false
 	## Built, still held by scaffolding.
 	var scaffolded: bool = false
-	## Share built so far (0..1), growing from from_joint.
+	## Share built so far (0..1), growing from from_joint (shrinking again while it is taken apart).
 	var progress: float = 0.0
+	## Built, and marked (Dig tool) for the crew to take apart.
+	var dismantle: bool = false
 	## How far its middle sinks under the soldiers on it, in metres (see BridgeMaterial.flex).
 	var sag: float = 0.0
 
@@ -319,6 +321,7 @@ func build(a: Snap, b: Snap, mat: BridgeMaterial, blueprint: bool = false) -> Me
 	m.paid = cost_for(mat, m.length)
 	m.mass = m.length * mat.kg_per_m
 	m.blueprint = blueprint
+	m.progress = 0.0 if blueprint else 1.0
 	members.append(m)
 	_recompute_mass()
 	if not blueprint:
@@ -389,10 +392,15 @@ func order_blueprints() -> int:
 	return now.size()
 
 
-## Ends of an ordered blueprint the crew can work from: bolted down or on a built member.
+## Is m waiting for the crew: an ordered blueprint to build, or a built member marked to take apart.
+func needs_work(m: Member) -> bool:
+	return not m.dead and ((m.blueprint and m.ordered) or (m.dismantle and not m.blueprint))
+
+
+## Ends of a member waiting for the crew (needs_work) it can work from: bolted down or on a built member.
 func work_ends(m: Member) -> Array[Joint]:
 	var out: Array[Joint] = []
-	if m.blueprint and m.ordered:
+	if needs_work(m):
 		for j: Joint in [m.a, m.b]:
 			if j.pinned or j.built:
 				out.append(j)
@@ -500,6 +508,14 @@ func member_at(p: Vector2, radius: float) -> Member:
 			bd = d
 			best = m
 	return best
+
+
+## Takes a built member back (taken apart by the crew, or a rope taken down): it comes off with a little debris.
+## Returns what it gives back: what was paid for it, less one of each (Supplies.reclaimed).
+func take_apart(m: Member) -> Supplies:
+	Effects.debris(Grid.to_px((m.a.pos + m.b.pos) / 2), m.material.color, 4, 90.0)
+	remove_member(m)
+	return m.paid.reclaimed()
 
 
 func remove_member(m: Member) -> void:

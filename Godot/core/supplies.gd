@@ -89,6 +89,15 @@ func up_to(cap: Supplies) -> Supplies:
 	return s
 
 
+## What taking back something built gives: one less of each supply it cost, but at least one of each.
+func reclaimed() -> Supplies:
+	var s := Supplies.new()
+	for k in KEYS:
+		var v: int = get(k)
+		s.set(k, maxi(v - 1, 1) if v > 0 else 0)
+	return s
+
+
 func copy() -> Supplies:
 	var s := Supplies.new()
 	s.add(self)

@@ -449,3 +449,31 @@ func test_splitting_a_plan_does_not_make_logs() -> void:
 	for p: Bridge.Member in world.bridge.members:
 		back.add(p.paid)
 	assert_eq(back.logs, paid, "the two halves are worth what was paid")
+
+
+## A built log 3 m long, from (6, 6) to (9, 6).
+func _built_log() -> Bridge.Member:
+	var bridge := world.bridge
+	return bridge.build(bridge.snap_point(Vector2(6, 6)), bridge.snap_point(Vector2(9, 6)), load("res://data/bridge/log.tres"))
+
+
+func test_dig_on_a_built_piece_marks_it_for_the_crew_to_take_apart() -> void:
+	var m := _built_log()
+	var logs := GameState.supplies.logs
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(7.5, 6.05))
+	assert_true(m in world.bridge.members, "still there")
+	assert_true(m.dismantle, "marked for the crew")
+	assert_eq(GameState.supplies.logs, logs, "nothing back yet")
+	_click(Vector2(7.5, 6.05))
+	assert_false(m.dismantle, "a second click unmarks it")
+
+
+func test_dig_on_a_built_rope_takes_it_back_at_once_less_one() -> void:
+	var bridge := world.bridge
+	var m := bridge.build(bridge.snap_point(Vector2(6, 6)), bridge.snap_point(Vector2(9, 6)), load("res://data/bridge/rope.tres"))
+	var rope := GameState.supplies.rope
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(7.5, 6.05))
+	assert_false(m in bridge.members, "gone at once")
+	assert_eq(GameState.supplies.rope, rope + m.paid.rope - 1, "one less than it cost")

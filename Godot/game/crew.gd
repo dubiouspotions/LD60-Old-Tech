@@ -11,6 +11,8 @@ extends Node2D
 signal scaffolding_struck
 ## An engineer finished digging a marked cell. The level takes the tile and its supplies.
 signal dig_finished(cell: Vector2i)
+## An engineer finished taking apart a built member marked for it. The level takes it back.
+signal dismantled(m: Bridge.Member)
 ## A swing of the axe at a tree being felled (cell), on the beat of the work sound.
 signal chopped(cell: Vector2i)
 ## An engineer picked up a piece of wood. The level takes it and its log.
@@ -111,6 +113,8 @@ func step(dt: float) -> void:
 		for m in bridge.members.duplicate():
 			if m.blueprint and m.ordered:
 				bridge.finish(m)
+			elif bridge.needs_work(m):
+				dismantled.emit(m)
 		_finisher = null
 		for cell in terrain.marked_cells():
 			dig_finished.emit(cell)
@@ -128,7 +132,7 @@ func step(dt: float) -> void:
 			e.pos = e.at.pos
 		if _fall(e, dt):
 			continue
-		if e.job and (e.job.dead or not e.job.blueprint or (e.route.is_empty() and e.at != e.goal and is_nan(e.reach_x))):
+		if e.job and (not bridge.needs_work(e.job) or (e.route.is_empty() and e.at != e.goal and is_nan(e.reach_x))):
 			_drop(e)
 		if e.digging and not terrain.is_marked(e.dig):
 			e.digging = false
@@ -495,15 +499,24 @@ func _drop(e: Engineer) -> void:
 	e.reach_x = NAN
 
 
+## Builds the member it has the job of on, or takes it apart if it is marked for that.
 func _work(e: Engineer, dt: float) -> void:
 	var m := e.job
 	m.from_joint = e.at if e.at else e.goal
-	m.progress = minf(1.0, m.progress + dt * m.material.build_speed / maxf(m.length, 0.1))
-	if m.progress >= 1.0:
+	var step := dt * m.material.build_speed / maxf(m.length, 0.1)
+	if m.dismantle:
+		m.progress = maxf(0.0, m.progress - step)
+	else:
+		m.progress = minf(1.0, m.progress + step)
+	if m.progress > 0.0 and m.progress < 1.0:
+		return
+	e.job = null
+	e.goal = null
+	e.reach_x = NAN
+	if m.dismantle:
+		dismantled.emit(m)
+	else:
 		bridge.finish(m)
-		e.job = null
-		e.goal = null
-		e.reach_x = NAN
 
 
 ## Takes the engineer off the joint it holds. A joint bolted to a wall lies on the wall's line, which counts as the

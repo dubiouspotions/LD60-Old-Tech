@@ -255,11 +255,16 @@ func _use(cell: Vector2i, first: bool) -> void:
 		ToolDefinition.Kind.DIG:
 			var m := world.bridge.member_at(_mouse_m, member_pick_radius)
 			if m:
-				world.gain(m.paid, (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6))
+				var mid := (m.a.pos + m.b.pos) / 2.0
 				if m.blueprint:
+					# A plan was never built: all of it back.
+					world.gain(m.paid, mid - Vector2(0, 0.6))
 					world.bridge.remove_member(m)
-				else:
-					world.bridge.break_member(m, true)
+				elif m.material.dismantle_instantly:
+					world.gain(world.bridge.take_apart(m), mid - Vector2(0, 0.6))
+				elif first:
+					m.dismantle = not m.dismantle
+					Audio.play(t.use_sound, Grid.to_px(mid))
 				return
 			if first:
 				_dig_marking = not terrain.is_marked(cell)
@@ -334,6 +339,10 @@ func _draw_marks() -> void:
 		var done := world.terrain.dig_progress(cell)
 		if done > 0.0:
 			draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x * done, 4)), mark_color)
+	for m in world.bridge.members:
+		if m.dismantle and not m.blueprint:
+			draw_line(m.a.pos * px, m.b.pos * px, Color(mark_color, 0.35), 0.36 * px)
+			draw_line(m.a.pos * px, m.a.pos.lerp(m.b.pos, 1.0 - m.progress) * px, mark_color, 3.0)
 	for cell in world.terrain.besieged_cells():
 		var done := world.terrain.siege_progress(cell)
 		if done > 0.0:
