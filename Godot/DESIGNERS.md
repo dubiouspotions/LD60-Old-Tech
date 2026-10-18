@@ -109,7 +109,7 @@ godot --headless res://dev/convert_levels_v2.tscn           # optional: retile e
 | How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |
 | Engineer crew: size, walk and climb speed, dig speed, dig reach, step-up, ground climb and drop limits, fall gravity, strike delay, sounds | `data/crew_rules.tres` (how fast each piece type is built: **Build Speed** on `data/bridge/*.tres`) |
 | Engineer look | `objects/engineer/engineer.tscn` (its own placeholder until engineer art exists; keep the Body, Wounded and AnimationPlayer nodes the soldier script uses) |
-| Bridge / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
+| Bridge / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. **Flex** is how far the middle of a 5 m piece sinks with one soldier standing on it (it grows with the load and the length cubed; 0 is rigid; ropes never flex). |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list). Each button shows its cost as supply swatches (build tools use their material's cost) and dims when it can't be afforded; the dim look is on `ui/tool_button.tscn` |
 | Arrows | `objects/arrow/arrow.tscn` |
 | Falling fill | `objects/falling_block/falling_block.tscn` |
