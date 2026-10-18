@@ -30,6 +30,44 @@ func test_steps_up_one_metre() -> void:
 	assert_eq(a.halt_reason, "")
 
 
+## Walks the lead soldier from x to past end and returns its height at every tick.
+func _heights(a: Army, end: float) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	while a.lead().pos.x < end and out.size() < 600:
+		_run(a, 1.0 / 60.0)
+		out.append(a.lead().pos)
+	return out
+
+
+func _largest_jump(path: Array[Vector2]) -> float:
+	var most := 0.0
+	for i in range(1, path.size()):
+		most = maxf(most, absf(path[i].y - path[i - 1].y))
+	return most
+
+
+func test_walks_up_a_step_along_its_slope() -> void:
+	var a := _world(["..........", "......####", "##########", "BBBBBBBBBB"])
+	a.spawn(1, 3.5)
+	var path := _heights(a, 7.5)
+	assert_lt(_largest_jump(path), 0.1, "no jump up the step")
+	for p in path:
+		if absf(p.x - 5.5) < 0.05:
+			assert_almost_eq(p.y, 1.5, 0.05, "halfway up in the cell at the foot of the step")
+	assert_eq(path[-1].y, 1.0, "on top")
+
+
+func test_walks_down_a_step_along_its_slope() -> void:
+	var a := _world(["..........", "####......", "##########", "BBBBBBBBBB"])
+	a.spawn(1, 2.5)
+	var path := _heights(a, 6.5)
+	assert_lt(_largest_jump(path), 0.1, "no drop down the step")
+	for p in path:
+		if absf(p.x - 4.5) < 0.05:
+			assert_almost_eq(p.y, 1.5, 0.05, "halfway down in the cell at the foot of the step")
+	assert_eq(path[-1].y, 2.0, "at the bottom")
+
+
 func test_halts_at_two_metre_wall() -> void:
 	var a := _world(["..........", "......####", "......####", "##########", "BBBBBBBBBB"])
 	a.spawn(1, 2.5)

@@ -104,6 +104,19 @@ func surface_row(x: int) -> int:
     return size.y
 
 
+## Which way the open cell at the foot of a one-high step slopes up to the step: 1 to the right, -1 to the left,
+## 0 if it is no such cell. It is walked as a slope from its floor to the step's top, like its fillet tile.
+func ramp_at(cell: Vector2i) -> int:
+    var t := type_at(cell)
+    if (t != null and (t.solid or t.is_hazard())) or not is_solid(cell + Vector2i.DOWN):
+        return 0
+    for dir: int in [1, -1]:
+        var step := cell + Vector2i(dir, 0)
+        if is_solid(step) and not is_solid(step + Vector2i.UP) and not is_solid(cell - Vector2i(dir, 0)):
+            return dir
+    return 0
+
+
 ## Changes one cell. null makes it air. Re-picks the tiles around it and marks the area for settle().
 func set_type(cell: Vector2i, type: TerrainType) -> void:
     _changed[cell] = true
