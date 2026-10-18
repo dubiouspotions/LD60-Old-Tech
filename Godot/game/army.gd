@@ -412,7 +412,7 @@ func _desert(s: Soldier) -> void:
 ## Deserters walk west over the top of the ground, climbing any cliff (no armour to carry), and vanish.
 func _step_deserters(dt: float) -> void:
 	for d: Soldier in deserters.duplicate():
-		var top := float(terrain.surface_row(floori(d.pos.x - rules.foot_half_width)))
+		var top := _desert_top(d.pos.x - rules.foot_half_width, d.pos.y)
 		d.moving = true
 		if top < d.pos.y - 0.05:
 			d.pos.y = move_toward(d.pos.y, top, rules.desert_climb_speed * dt)
@@ -420,13 +420,20 @@ func _step_deserters(dt: float) -> void:
 			var dx := d.speed * dt
 			d.pos.x -= dx
 			d.desert_left -= dx
-			d.pos.y = move_toward(d.pos.y, float(terrain.surface_row(floori(d.pos.x))), rules.desert_climb_speed * dt)
+			d.pos.y = move_toward(d.pos.y, _desert_top(d.pos.x, d.pos.y), rules.desert_climb_speed * dt)
 		d.sync()
 		if d.desert_left <= 0.0 or d.pos.x < terrain.min_x:
 			deserters.erase(d)
 			var tw := d.create_tween()
 			tw.tween_property(d, ^"modulate:a", 0.0, 0.5)
 			tw.tween_callback(d.queue_free)
+
+
+## Where a deserter at height y walks at x: the top of the ground, or a deck it is on (within step_up) above it.
+func _desert_top(x: float, y: float) -> float:
+	var top := float(terrain.surface_row(floori(x)))
+	var deck: Dictionary = bridge.walk_surface(x, y - rules.step_up) if bridge else {}
+	return minf(top, deck.y) if not deck.is_empty() else top
 
 
 func _update_leader() -> void:
