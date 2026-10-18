@@ -268,8 +268,3 @@ func test_razed_tower_yields_stone() -> void:
 	assert_eq(got.earth, 0)
 
 
-func test_dig_box_gives_two_logs_back() -> void:
-	var t := WorldFixture.terrain(self, ["....", "F...", "####", "BBBB"])
-	var got := t.dig(Vector2i(0, 1))
-	assert_eq(got.logs, 2)
-	assert_eq(got.earth, 0)

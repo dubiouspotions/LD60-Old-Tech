@@ -596,6 +596,9 @@ func _on_dig_finished(cell: Vector2i) -> void:
 	var got := terrain.dig(cell)
 	if got == null:
 		return
+	var back := GameState.campaign.reclaim_for(here)
+	if back:
+		got = back
 	if feller:
 		crew.gather(feller, _dropped)
 	gain(got, Vector2(cell) + Vector2(0.5, 0), GAIN_COLOR if here.dig_action == TerrainType.DigAction.FELL else here.debris_color)

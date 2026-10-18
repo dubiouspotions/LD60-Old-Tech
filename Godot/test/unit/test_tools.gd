@@ -477,3 +477,13 @@ func test_dig_on_a_built_rope_takes_it_back_at_once_less_one() -> void:
 	_click(Vector2(7.5, 6.05))
 	assert_false(m in bridge.members, "gone at once")
 	assert_eq(GameState.supplies.rope, rope + m.paid.rope - 1, "one less than it cost")
+
+
+func test_digging_up_a_box_gives_back_what_it_cost_less_one() -> void:
+	var box_tool: ToolDefinition = tools.tools.filter(func(t: ToolDefinition) -> bool: return t.kind == ToolDefinition.Kind.FILL)[0]
+	var cell := Vector2i(8, 5)
+	world.terrain.set_type(cell, WorldFixture.type("fill"))
+	var had := GameState.supplies.logs
+	world._on_dig_finished(cell)
+	assert_null(world.terrain.type_at(cell), "dug up")
+	assert_eq(GameState.supplies.logs, had + box_tool.cost.logs - 1)

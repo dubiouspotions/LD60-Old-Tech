@@ -20,3 +20,18 @@ extends Resource
 @export var camp_music: AudioStream
 ## Plays when the column breaks camp.
 @export var dawn_sound: SoundEffect
+
+var _placed_by: Dictionary = {} # TerrainType -> the Fill tool that places it
+
+
+## What digging up a tile of type gives back when a tool places that type (the Box tool's boxes): the tool's cost
+## less one of each supply (Supplies.reclaimed), like any built thing taken back. null for other types.
+func reclaim_for(type: TerrainType) -> Supplies:
+	if _placed_by.is_empty():
+		for t in tools:
+			if t.kind == ToolDefinition.Kind.FILL and t.spawn_scene:
+				var block := t.spawn_scene.instantiate()
+				_placed_by[block.get(&"type")] = t
+				block.free()
+	var placer: ToolDefinition = _placed_by.get(type)
+	return placer.price().reclaimed() if placer else null
