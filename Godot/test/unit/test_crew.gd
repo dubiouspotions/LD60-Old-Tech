@@ -853,6 +853,66 @@ func test_crew_climbs_any_height_to_marks_it_can_not_reach_otherwise() -> void:
 	assert_null(world.terrain.type_at(Vector2i(10, 1)), "dug across the 5 m pit")
 
 
+## The way to a mark may lead away from it first: back off the ledge, down into the pit beside it, and along the
+## floor under the ledge.
+func test_crew_finds_a_way_round_to_a_mark_under_its_ledge() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var rows := [
+		"....................",
+		"###.....##########..",
+		"###.....##########..",
+		"###.....##########..",
+		"###.....##########..",
+		"###...............##",
+		"###...............##",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	]
+	for y in rows.size():
+		for x in rows[y].length():
+			var key: String = WorldFixture.LEGEND[rows[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 1.5)
+	world.crew.spawn(1.5)
+	world.army.lead().pos = Vector2(14.5, 7.0)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(13.5, 1.0)
+	world.terrain.mark(Vector2i(12, 7))
+	var jump := [0.0]
+	var last := [e.pos]
+	_run(30.0, func() -> bool:
+		jump[0] = maxf(jump[0], e.pos.distance_to(last[0]))
+		last[0] = e.pos
+		return world.terrain.type_at(Vector2i(12, 7)) == null)
+	assert_null(world.terrain.type_at(Vector2i(12, 7)), "dug from the floor under the ledge")
+	assert_lt(jump[0], 0.3, "walked and climbed there, never teleported")
+
+
+## Marks nobody can reach cost little: idle engineers keep looking for a way, without slowing the game down.
+func test_unreachable_marks_do_not_slow_the_crew_down() -> void:
+	_flat_strip()
+	for i in 4:
+		world.crew.hire(world.crew.engineers[0].pos.x)
+	for x in range(20, 40):
+		world.terrain.set_type(Vector2i(x, 8), WorldFixture.type("soil"))
+		world.terrain.mark(Vector2i(x, 8))
+	assert_eq(world.terrain.marked_cells().size(), 20, "under the bedrock: nobody can reach them")
+	_run(1.0)
+	var worst := 0.0
+	var total := 0.0
+	for i in 120:
+		var t := Time.get_ticks_usec()
+		_run(1.0 / 60.0)
+		var ms := (Time.get_ticks_usec() - t) / 1000.0
+		worst = maxf(worst, ms)
+		total += ms
+	gut.p("crew step with 20 unreachable marks: %.2f ms on average, %.2f ms at worst" % [total / 120.0, worst])
+	assert_lt(total / 120.0, 1.0, "ms per step on average")
+	assert_lt(worst, 8.0, "ms in the slowest step")
+
+
 func test_instant_work_cheat_finishes_ordered_plans_at_once() -> void:
 	var rules := world.crew.rules
 	rules.instant_work = true

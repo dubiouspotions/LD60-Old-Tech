@@ -72,6 +72,12 @@ class Engineer:
 	var stoop: float = 0.0
 	## The throw it has taken, thrown standing at spot_x; null if none.
 	var throwing: Throw
+	## The turns of its walk to the spot of its job (see CrewNav.path), walked one after another.
+	var path: Array[Vector2] = []
+	## Where it can walk (CrewNav) by way of walking, kept while it stands at nav_from and the ground is as it was.
+	var navs: Dictionary = {}
+	var nav_from: Vector2 = Vector2.INF
+	var nav_ground: Vector3i
 
 
 ## Something (a sandbag) ordered onto cell by a thrown Fill tool, waiting for an engineer to throw it there.
@@ -89,7 +95,13 @@ class Throw:
 ## Debris colours when an engineer dies.
 @export var body_colors: Array[Color] = [Color("8c2f2f"), Color("ece4d2")]
 
-var terrain: Terrain
+var terrain: Terrain:
+	set(v):
+		if terrain:
+			terrain.cell_changed.disconnect(_on_ground_changed)
+		terrain = v
+		if terrain:
+			terrain.cell_changed.connect(_on_ground_changed)
 var bridge: Bridge
 var army: Army
 var wood: Wood
@@ -105,6 +117,8 @@ var _strike_wait: Dictionary = {} # Member -> seconds its structure has been rea
 var _work_sound_left: float = 0.0
 ## The engineer that last finished digging, while dig_finished is handled.
 var _finisher: Engineer
+## Cells of ground changed so far, so the engineers know their CrewNav is out of date.
+var _ground_changes: int = 0
 
 
 ## Places the crew on the ground behind x.
@@ -286,6 +300,7 @@ func _take_job(e: Engineer) -> void:
 
 func _find_job(e: Engineer, any_height: bool) -> void:
 	e.reach_x = NAN
+	e.path.clear()
 	var starts := _starts_for(e, any_height)
 	var best_cost := INF
 	for m in bridge.members:
@@ -313,41 +328,41 @@ func _find_job(e: Engineer, any_height: bool) -> void:
 			for j: Bridge.Joint in [m.a, m.b]:
 				if j in ends:
 					continue
-				var x := _spot_within_reach(e.pos, j.pos, rules.build_reach, true, any_height)
-				var cost := absf(x - e.pos.x)
-				if not is_nan(x) and cost < best_cost and _in_zone(x) and _in_zone(j.pos.x):
-					best_cost = cost
+				var spot := _spot_within_reach(_nav(e, true, any_height), j.pos, rules.build_reach)
+				if not spot.is_empty() and spot.cost < best_cost and _in_zone(spot.x) and _in_zone(j.pos.x):
+					best_cost = spot.cost
 					e.job = m
 					e.goal = j
 					e.route.clear()
-					e.reach_x = x
+					e.reach_x = spot.x
+					e.path = spot.path
 		for cell in terrain.marked_cells():
 			if _dig_taken(cell) or not _in_zone(cell.x + 0.5):
 				continue
 			var under := false
-			var x := _dig_spot(e.pos, cell, true, any_height)
-			if is_nan(x):
+			var spot := _dig_spot(_nav(e, true, any_height), cell)
+			if spot.is_empty():
 				under = true
-				x = _dig_spot(e.pos, cell, false, any_height)
-			var cost := absf(x - e.pos.x)
-			if not is_nan(x) and cost < best_cost and _in_zone(x):
-				best_cost = cost
+				spot = _dig_spot(_nav(e, false, any_height), cell)
+			if not spot.is_empty() and spot.cost < best_cost and _in_zone(spot.x):
+				best_cost = spot.cost
 				_drop(e)
 				e.digging = true
 				e.dig = cell
-				e.spot_x = x
+				e.spot_x = spot.x
+				e.path = spot.path
 				e.under_decks = under
 		for t in throws:
 			if t.taker or not _in_zone(t.cell.x + 0.5):
 				continue
-			var x := _throw_spot(e.pos, t.cell, any_height)
-			var cost := absf(x - e.pos.x)
-			if not is_nan(x) and cost < best_cost and _in_zone(x):
-				best_cost = cost
+			var spot := _throw_spot(_nav(e, true, any_height), t.cell)
+			if not spot.is_empty() and spot.cost < best_cost and _in_zone(spot.x):
+				best_cost = spot.cost
 				_drop(e)
 				e.throwing = t
 				t.taker = e
-				e.spot_x = x
+				e.spot_x = spot.x
+				e.path = spot.path
 	if e.job and e.at:
 		e.route.erase(e.at)
 
@@ -377,33 +392,70 @@ func _dig_taken(cell: Vector2i) -> bool:
 	return engineers.any(func(e: Engineer) -> bool: return e.digging and e.dig == cell)
 
 
-## Closest x to p on safe ground from where the cell (a tree's base for trees) is within dig_reach, or NAN.
-## With decks false the engineer walks beneath decks instead of on them.
-func _dig_spot(p: Vector2, cell: Vector2i, decks: bool = true, any_height: bool = false) -> float:
-	return _spot_within_reach(p, Vector2(terrain.work_cell(cell)) + Vector2(0.5, 0.5), rules.dig_reach, decks, any_height)
+## The nearest spot nav can walk to from where the cell (a tree's base for trees) is within dig_reach (see
+## _spot_within_reach), or {}.
+func _dig_spot(nav: CrewNav, cell: Vector2i) -> Dictionary:
+	return _spot_within_reach(nav, Vector2(terrain.work_cell(cell)) + Vector2(0.5, 0.5), rules.dig_reach)
 
 
-## Closest x to p on safe ground from where target is within reach of the engineer's chest, or NAN.
-func _spot_within_reach(p: Vector2, target: Vector2, reach: float, decks: bool = true, any_height: bool = false) -> float:
-	var best := NAN
+## The nearest spot on safe ground nav can walk to from where target is within reach of the engineer's chest:
+## {x, y, cost (metres walked), path (CrewNav.path)}, or {}.
+func _spot_within_reach(nav: CrewNav, target: Vector2, reach: float) -> Dictionary:
+	var best := {}
 	for k in range(-4, 5):
 		var x := target.x + k * 0.5
-		var y := _walk_y(p, x, decks, any_height)
-		if is_nan(y) or Vector2(x, y - 0.5).distance_to(target) > reach:
-			continue
-		if is_nan(best) or absf(x - p.x) < absf(best - p.x):
-			best = x
+		for s in nav.spots_at(x):
+			if Vector2(x, s.y - 0.5).distance_to(target) <= reach and (best.is_empty() or s.cost < best.cost):
+				best = s
+	if not best.is_empty():
+		best.path = nav.path(best)
 	return best
+
+
+## Where engineer e can walk from where it stands, by way of walking: on or beneath decks, and any height. Kept
+## until it moves or the ground or the bridge changes.
+func _nav(e: Engineer, decks: bool, any_height: bool) -> CrewNav:
+	var built := 0
+	for m in bridge.members:
+		if not m.blueprint:
+			built += 1
+	var ground := Vector3i(_ground_changes, bridge.members.size(), built)
+	if e.nav_from.distance_to(e.pos) > 0.01 or e.nav_ground != ground:
+		e.navs.clear()
+		e.nav_from = e.pos
+		e.nav_ground = ground
+	var key := Vector2i(int(decks), int(any_height))
+	if not e.navs.has(key):
+		var z := _zone()
+		var span := Vector2(maxf(z.x, terrain.min_x), minf(z.y, terrain.size.x))
+		e.navs[key] = CrewNav.new(func(y: float, x: float) -> float: return _next_y(y, x, decks, any_height), e.pos, span)
+	return e.navs[key]
+
+
+func _on_ground_changed(_cell: Vector2i) -> void:
+	_ground_changes += 1
+
+
+## Drops the turns of e's path it has reached.
+func _trim_path(e: Engineer) -> void:
+	while not e.path.is_empty() and absf(e.path[0].x - e.pos.x) <= 0.05 and absf(e.path[0].y - e.pos.y) <= 0.05:
+		e.path.pop_front()
+
+
+## Walks e toward the next turn of its path, or toward x once all of it is behind.
+func _walk_on(e: Engineer, x: float, dt: float) -> void:
+	_walk_to(e, e.path[0].x if not e.path.is_empty() else x, dt)
 
 
 ## Walks to the spot below a plan's end. True once there and within reach; gives the job up if the way or
 ## the reach is lost.
 func _reach_step(e: Engineer, dt: float) -> bool:
 	var ground := _next_y(e.pos.y, e.pos.x)
-	var arrived := absf(e.reach_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
+	_trim_path(e)
+	var arrived := e.path.is_empty() and absf(e.reach_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
 	if not arrived:
 		var was := e.pos
-		_walk_to(e, e.reach_x, dt)
+		_walk_on(e, e.reach_x, dt)
 		if e.pos == was:
 			_drop(e)
 		return false
@@ -416,10 +468,11 @@ func _reach_step(e: Engineer, dt: float) -> bool:
 ## Walks to the dig spot, then digs. Gives the job up if the way or the reach is lost.
 func _dig_step(e: Engineer, dt: float) -> void:
 	var ground := _ground_of(e, e.pos.x)
-	var arrived := absf(e.spot_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
+	_trim_path(e)
+	var arrived := e.path.is_empty() and absf(e.spot_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
 	if not arrived:
 		var was := e.pos
-		_walk_to(e, e.spot_x, dt)
+		_walk_on(e, e.spot_x, dt)
 		if e.pos == was:
 			e.digging = false
 		return
@@ -473,26 +526,27 @@ func cancel_throw(t: Throw) -> void:
 	throws.erase(t)
 
 
-## The x on safe ground, reachable from p, from where an engineer throws at cell: at most throw_reach aside of it
+## The spot on safe ground nav can walk to from where an engineer throws at cell: at most throw_reach aside of it
 ## (any height) and not under it (what it throws falls from there), as near throw_distance aside as it can be
-## without a long way round (a quarter of the walk counts against a spot), and with a clear arc. NAN if none.
-func _throw_spot(p: Vector2, cell: Vector2i, any_height: bool = false) -> float:
+## without a long way round (a quarter of the walk counts against a spot), and with a clear arc. {} if none, else
+## as _spot_within_reach.
+func _throw_spot(nav: CrewNav, cell: Vector2i) -> Dictionary:
 	var target := Vector2(cell) + Vector2(0.5, 0.5)
-	var best := NAN
+	var best := {}
 	var best_score := INF
 	for k in range(-floori(rules.throw_reach * 2.0), floori(rules.throw_reach * 2.0) + 1):
 		var x := target.x + k * 0.5
 		var aside := absf(x - target.x)
 		if aside < 0.75:
 			continue
-		var score := absf(aside - rules.throw_distance) + 0.25 * absf(x - p.x)
-		if score >= best_score:
-			continue
-		var y := _walk_y(p, x, true, any_height)
-		if is_nan(y) or not ThrownBag.clear(terrain, bridge, rules, _hands(Vector2(x, y)), target):
-			continue
-		best = x
-		best_score = score
+		for s in nav.spots_at(x):
+			var score: float = absf(aside - rules.throw_distance) + 0.25 * s.cost
+			if score >= best_score or not ThrownBag.clear(terrain, bridge, rules, _hands(Vector2(x, s.y)), target):
+				continue
+			best = s
+			best_score = score
+	if not best.is_empty():
+		best.path = nav.path(best)
 	return best
 
 
@@ -506,10 +560,11 @@ func _throw_step(e: Engineer, dt: float) -> void:
 	var t := e.throwing
 	var target := Vector2(t.cell) + Vector2(0.5, 0.5)
 	var ground := _ground_of(e, e.pos.x)
-	var arrived := absf(e.spot_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
+	_trim_path(e)
+	var arrived := e.path.is_empty() and absf(e.spot_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
 	if not arrived:
 		var was := e.pos
-		_walk_to(e, e.spot_x, dt)
+		_walk_on(e, e.spot_x, dt)
 		if e.pos == was:
 			_drop(e)
 		return
@@ -631,6 +686,7 @@ func _drop(e: Engineer) -> void:
 	e.route.clear()
 	e.digging = false
 	e.reach_x = NAN
+	e.path.clear()
 
 
 ## Builds the member it has the job of on, or takes it apart if it is marked for that.
