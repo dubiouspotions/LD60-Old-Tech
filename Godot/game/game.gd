@@ -9,6 +9,8 @@ extends Node
 ## Banner title when the level has no display name.
 @export var arrival_title: String = "Level %d"
 @export var arrival_text: String = "Camp for the night · +%d soldiers · supplies"
+## Shown when a tester toggles the instant build cheat (F2); %s = on / off.
+@export var instant_build_text: String = "Instant build %s"
 @export_group("March")
 ## Status while the column camps (%d = seconds until the king orders the march).
 @export var patience_text: String = "Night camp · %d s"
@@ -82,6 +84,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_march()
 	elif event.is_action_pressed(&"recruit"):
 		_recruit()
+	elif event.is_action_pressed(&"cheat_instant_build"):
+		var rules := _world.crew.rules
+		rules.instant_build = not rules.instant_build
+		var lead := _world.army.lead()
+		if lead:
+			Effects.say(Grid.to_px(lead.pos - Vector2(0, 2.0)), instant_build_text % ("on" if rules.instant_build else "off"), Color("e9a93b"))
 
 
 func _process(_delta: float) -> void:

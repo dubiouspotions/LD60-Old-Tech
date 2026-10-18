@@ -762,3 +762,17 @@ func test_crew_climbs_any_height_to_marks_it_can_not_reach_otherwise() -> void:
 	world.terrain.mark(Vector2i(10, 1))
 	_run(25.0, func() -> bool: return world.terrain.type_at(Vector2i(10, 1)) == null)
 	assert_null(world.terrain.type_at(Vector2i(10, 1)), "dug across the 5 m pit")
+
+
+func test_instant_build_cheat_finishes_ordered_plans_at_once() -> void:
+	var rules := world.crew.rules
+	rules.instant_build = true
+	var first := _plan(Vector2(6, 6), Vector2(8, 4))
+	var second := _plan(Vector2(8, 4), Vector2(10, 6))
+	var waiting := _plan(Vector2(2, 6), Vector2(3, 5))
+	world.bridge.order_plan([first, second])
+	_run(1.0 / 60.0)
+	rules.instant_build = false
+	assert_false(first.blueprint, "built")
+	assert_false(second.blueprint, "built")
+	assert_true(waiting.blueprint, "a plan not ordered stays a plan")

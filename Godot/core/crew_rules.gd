@@ -42,3 +42,7 @@ extends Resource
 @export var work_sound: SoundEffect
 @export_range(0.05, 3.0, 0.05, "suffix:s") var work_sound_interval: float = 0.45
 @export var strike_sound: SoundEffect
+
+@export_group("Cheats")
+## For testing: ordered plans are finished the moment they are ordered. F2 toggles it while playing.
+@export var instant_build: bool = false

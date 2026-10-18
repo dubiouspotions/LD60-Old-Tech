@@ -55,3 +55,22 @@ func test_lamps_freed_while_fading_cause_no_errors() -> void:
 	crew.spawn(5.0)
 	await wait_seconds(0.4)
 	assert_engine_error_count(0, "no lamp touched after it was freed")
+
+
+func test_f2_toggles_the_instant_build_cheat() -> void:
+	var rules: CrewRules = game.get_node("%World").crew.rules
+	var was := rules.instant_build
+	var press := InputEventAction.new()
+	press.action = &"cheat_instant_build"
+	press.pressed = true
+	game._unhandled_input(press)
+	assert_eq(rules.instant_build, not was, "toggled")
+	game._unhandled_input(press)
+	assert_eq(rules.instant_build, was, "and back")
+	assert_true(InputMap.action_has_event(&"cheat_instant_build", _key(KEY_F2)), "on F2")
+
+
+func _key(code: Key) -> InputEventKey:
+	var k := InputEventKey.new()
+	k.physical_keycode = code
+	return k

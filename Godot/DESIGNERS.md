@@ -110,6 +110,7 @@ godot --headless res://dev/convert_levels_v2.tscn           # optional: retile e
 | March and camp banner texts, march sound, camp status | **Game** node in `game/main.tscn` |
 | How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |
 | Engineer crew: size, walk and climb speed, dig speed, dig reach, step-up, ground climb and drop limits, fall gravity, stranded time (then an engineer climbs any height back to the column), strike delay, sounds | `data/crew_rules.tres` (how fast each piece type is built: **Build Speed** on `data/bridge/*.tres`) |
+| Testing cheat: **Instant Build** finishes every ordered plan at once (F2 toggles it while playing) | `data/crew_rules.tres`, group **Cheats** |
 | Engineer look | `objects/engineer/engineer.tscn` (its own placeholder until engineer art exists; keep the Body, Wounded and AnimationPlayer nodes the soldier script uses) |
 | Bridge / support / rope / stone strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`, `stone.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list). Each button shows its cost as supply swatches (build tools use their material's cost) and dims when it can't be afforded; the dim look is on `ui/tool_button.tscn` |
