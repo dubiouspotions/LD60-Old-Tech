@@ -462,13 +462,13 @@ func arrow_block(a: Vector2, b: Vector2) -> Variant:
 
 
 ## Highest walkable deck at x that is at or below y_from. {y, member, t} or {} if none.
-func walk_surface(x: float, y_from: float) -> Dictionary:
+func walk_surface(x: float, y_from: float, walkable_only: bool = true) -> Dictionary:
 	var best := {}
 	for m in members:
 		# Finished pieces are walkable even while still on scaffolding; of a piece being built, the part
 		# already built is.
 		var built := 1.0 if not m.blueprint else (m.progress if m.ordered and m.from_joint else 0.0)
-		if built <= 0.0 or not m.material.walkable:
+		if built <= 0.0 or (walkable_only and not m.material.walkable):
 			continue
 		var a := m.a.pos
 		var b := m.b.pos

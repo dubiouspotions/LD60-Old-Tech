@@ -215,7 +215,11 @@ func _physics_process(dt: float) -> void:
 		return
 	_advance_phase(dt)
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
-	_step_bridge(dt)
+	var bodies := _bodies()
+	var blocks := objects.get_children().filter(func(o: Node) -> bool: return o is FallingBlock)
+	_step_bridge(dt, bodies, blocks)
+	for b: FallingBlock in blocks:
+		b.step(dt, self, bodies)
 	army.step(dt)
 	crew.step(dt)
 	_check_exit()
@@ -480,25 +484,39 @@ func _on_dig_finished(cell: Vector2i) -> void:
 		Effects.say(at, here.dig_text, here.debris_color)
 
 
-## Steps the bridge with every soldier and archer as a body it collides with, and kills those it crushes.
-func _step_bridge(dt: float) -> void:
-	var who: Array[Node2D] = []
-	var bodies: Array[Bridge.Body] = []
+## Every living soldier and archer as a body bridge pieces and falling blocks collide with: [[who, Bridge.Body], ...].
+func _bodies() -> Array:
+	var out := []
 	for s: Soldier in army.soldiers + army.deserters:
 		if not s.dead:
-			who.append(s)
-			bodies.append(Bridge.Body.new(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, Vector2(0, s.vy) if s.airborne else Vector2.ZERO, s.on_member))
+			out.append([s, Bridge.Body.new(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, Vector2(0, s.vy) if s.airborne else Vector2.ZERO, s.on_member)])
 	for a: Archer in army.foes:
-		who.append(a)
-		bodies.append(Bridge.Body.new(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS))
-	bridge.step(dt, army.bridge_loads(), bodies)
-	for i in bodies.size():
-		if not bodies[i].crushed:
-			continue
-		if who[i] is Soldier:
-			army.crush(who[i])
-		else:
-			(who[i] as Archer).hit((who[i] as Archer).hp)
+		out.append([a, Bridge.Body.new(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS)])
+	return out
+
+
+## Steps the bridge under the column and the blocks resting on it, colliding with bodies; crushes those it hits
+## too fast.
+func _step_bridge(dt: float, bodies: Array, blocks: Array) -> void:
+	var loads := army.bridge_loads()
+	for b: FallingBlock in blocks:
+		if b.on_member and not b.on_member.dead:
+			loads.append([b.on_member, b.on_t, b.mass])
+	var just: Array[Bridge.Body] = []
+	for pair: Array in bodies:
+		just.append(pair[1])
+	bridge.step(dt, loads, just)
+	for pair: Array in bodies:
+		if (pair[1] as Bridge.Body).crushed:
+			crush(pair[0])
+
+
+## Kills a soldier or archer crushed by something heavy.
+func crush(who: Node2D) -> void:
+	if who is Soldier and not who.dead:
+		army.crush(who)
+	elif who is Archer and who.alive():
+		who.hit(who.hp)
 
 
 ## A bridge piece hit the ground fast: a tower cell is battered, ground that can be dug breaks (nothing gained).
