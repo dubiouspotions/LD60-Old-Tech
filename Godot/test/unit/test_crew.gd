@@ -48,6 +48,7 @@ func _run(seconds: float, done: Callable = func() -> bool: return false, speed: 
 	for i in int(seconds * 60 / speed):
 		world.bridge.step(speed / 60.0)
 		world.crew.step(speed / 60.0)
+		world.wood.advance(speed / 60.0)
 		if done.call():
 			return
 
@@ -157,7 +158,8 @@ func test_crew_fells_marked_tree() -> void:
 	world.terrain.mark(Vector2i(2, 5))
 	_run(15.0, func() -> bool: return world.terrain.type_at(Vector2i(2, 5)) == null)
 	assert_null(world.terrain.type_at(Vector2i(2, 4)), "whole tree felled")
-	assert_gt(GameState.supplies.logs, logs)
+	_run(20.0, func() -> bool: return world.wood.count() == 0)
+	assert_gt(GameState.supplies.logs, logs, "its logs, once the wood is picked up")
 
 
 ## Each swing of the axe while felling: on the beat of the work sound, at the cell being felled.

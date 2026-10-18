@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://game/world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://world/terrain.tscn" id="2"]
@@ -15,6 +15,8 @@
 [ext_resource type="PackedScene" path="res://objects/bird/bird.tscn" id="13"]
 [ext_resource type="Script" path="res://world/leaf_poof.gd" id="14"]
 [ext_resource type="Resource" path="res://data/terrain/leaves.tres" id="15"]
+[ext_resource type="Script" path="res://world/wood.gd" id="16"]
+[ext_resource type="Texture2D" path="res://world/wood_sprite.png" id="17"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1")
@@ -65,3 +67,9 @@ unique_name_in_owner = true
 z_index = 5
 script = ExtResource("14")
 leaf_types = [ExtResource("15")]
+
+[node name="Wood" type="Node2D" parent="."]
+unique_name_in_owner = true
+z_index = 1
+script = ExtResource("16")
+texture = ExtResource("17")

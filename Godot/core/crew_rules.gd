@@ -34,6 +34,13 @@ extends Resource
 @export_range(0.0, 10.0, 0.1, "suffix:m") var follow_gap: float = 1.2
 ## ...and this far apart.
 @export_range(0.1, 3.0, 0.05, "suffix:m") var spacing: float = 0.6
+## A felled tree drops its logs as pieces of wood. The engineer that felled it picks them all up before it takes
+## other work; idle engineers within help_radius of a piece help. Each takes pickup_time once within pickup_reach.
+@export_range(0.05, 2.0, 0.05, "suffix:m") var pickup_reach: float = 0.35
+@export_range(0.0, 5.0, 0.05, "suffix:s") var pickup_time: float = 0.7
+@export_range(0.0, 50.0, 0.5, "suffix:m") var help_radius: float = 6.0
+## An engineer that has not picked up the piece it went for in this long (it can not get there) fetches it anyway.
+@export_range(0.5, 60.0, 0.5, "suffix:s") var gather_give_up: float = 6.0
 ## Pause after the last engineer is back on the ground before the scaffolding comes down.
 @export_range(0.0, 5.0, 0.1, "suffix:s") var strike_delay: float = 0.6
 

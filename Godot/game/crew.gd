@@ -13,6 +13,8 @@ signal scaffolding_struck
 signal dig_finished(cell: Vector2i)
 ## A swing of the axe at a tree being felled (cell), on the beat of the work sound.
 signal chopped(cell: Vector2i)
+## An engineer picked up a piece of wood. The level takes it and its log.
+signal picked_up(piece: Wood.Piece, by: Engineer)
 ## An engineer died; count is how many are left.
 signal count_changed(count: int)
 
@@ -56,6 +58,12 @@ class Engineer:
 	var any_height: bool = false
 	## Walks the ground beneath decks, climbing down past them (to dig a cell only reached from below one).
 	var under_decks: bool = false
+	## Pieces of wood from the tree it felled, still to pick up. It takes no other work until they are in.
+	var gather: Array[Wood.Piece] = []
+	## The piece it is on its way to pick up, or null; how long it has been going for it, and stooping over it.
+	var fetch: Wood.Piece
+	var fetch_time: float = 0.0
+	var stoop: float = 0.0
 
 
 @export var rules: CrewRules
@@ -66,6 +74,7 @@ class Engineer:
 var terrain: Terrain
 var bridge: Bridge
 var army: Army
+var wood: Wood
 var engineers: Array[Engineer] = []
 
 ## Where idle engineers wait for a plan to be ordered: a start joint's x, and the side they come from. NAN if none.
@@ -74,6 +83,8 @@ var _ready_side: float = 1.0
 var _ready_think: float = 0.0
 var _strike_wait: Dictionary = {} # Member -> seconds its structure has been ready to strike
 var _work_sound_left: float = 0.0
+## The engineer that last finished digging, while dig_finished is handled.
+var _finisher: Engineer
 
 
 ## Places the crew on the ground behind x.
@@ -100,6 +111,7 @@ func step(dt: float) -> void:
 		for m in bridge.members.duplicate():
 			if m.blueprint and m.ordered:
 				bridge.finish(m)
+		_finisher = null
 		for cell in terrain.marked_cells():
 			dig_finished.emit(cell)
 	_update_ready_spot(dt)
@@ -120,8 +132,12 @@ func step(dt: float) -> void:
 		e.under_decks = e.under_decks and e.digging
 		if (e.job and e.goal and not _in_zone(e.goal.pos.x)) or (e.digging and not _in_zone(e.dig.x + 0.5)):
 			_drop(e)
+		_prune_gather(e)
+		if e.job == null and not e.digging and e.route.is_empty() and e.at == null and (_gathering(e) or _offer_help(e)):
+			_gather_step(e, dt)
+			continue
 		e.think -= dt
-		if e.job == null and not e.digging and e.route.is_empty() and e.think <= 0.0:
+		if e.job == null and not e.digging and e.route.is_empty() and e.think <= 0.0 and not _gathering(e):
 			e.think = THINK_INTERVAL
 			_take_job(e)
 			if e.job == null and not e.digging and e.at == null:
@@ -364,7 +380,95 @@ func _dig_step(e: Engineer, dt: float) -> void:
 	_show(e, false, signi(roundi((target.x - e.pos.x) * 100)))
 	if done >= 1.0:
 		e.digging = false
+		_finisher = e
 		dig_finished.emit(e.dig)
+		_finisher = null
+
+
+## The engineer that has just finished digging cell (while dig_finished is handled), or null.
+func finisher_of(cell: Vector2i) -> Engineer:
+	return _finisher if _finisher and _finisher.dig == cell and _finisher in engineers else null
+
+
+## Gives e the pieces of wood from the tree it felled to pick up.
+func gather(e: Engineer, pieces: Array[Wood.Piece]) -> void:
+	for p in pieces:
+		p.owner = e
+	e.gather.append_array(pieces)
+
+
+## Has wood of its own to pick up, or is fetching a piece.
+func _gathering(e: Engineer) -> bool:
+	return not e.gather.is_empty() or e.fetch != null
+
+
+func _prune_gather(e: Engineer) -> void:
+	e.gather = e.gather.filter(func(p: Wood.Piece) -> bool: return not p.gone)
+	if e.fetch and e.fetch.gone:
+		e.fetch = null
+
+
+## An idle engineer goes for a nearby piece nobody is fetching. True if it found one.
+func _offer_help(e: Engineer) -> bool:
+	if wood == null:
+		return false
+	var best: Wood.Piece = null
+	var best_d := rules.help_radius
+	for p in wood.pieces:
+		var d := absf(p.pos.x - e.pos.x)
+		if p.taker == null and d <= best_d:
+			best = p
+			best_d = d
+	if best:
+		_set_fetch(e, best)
+	return best != null
+
+
+func _set_fetch(e: Engineer, p: Wood.Piece) -> void:
+	e.fetch = p
+	e.fetch_time = 0.0
+	e.stoop = 0.0
+	p.taker = e
+
+
+## Goes for the next of its own pieces (or the one it is fetching), and picks it up when there.
+func _gather_step(e: Engineer, dt: float) -> void:
+	if e.fetch == null:
+		var best: Wood.Piece = null
+		for p in e.gather:
+			if p.taker == null and (best == null or absf(p.pos.x - e.pos.x) < absf(best.pos.x - e.pos.x)):
+				best = p
+		if best == null:
+			# The rest are being fetched by helpers: wait for them.
+			_show(e, false, 0)
+			return
+		_set_fetch(e, best)
+	var p := e.fetch
+	e.fetch_time += dt
+	if e.fetch_time >= rules.gather_give_up:
+		_pick(e, p)
+		return
+	if absf(p.pos.x - e.pos.x) > rules.pickup_reach:
+		_walk_to(e, p.pos.x, dt)
+		return
+	if not p.resting or absf(p.pos.y - e.pos.y) > 1.2:
+		_show(e, false, 0)
+		return
+	e.working = true
+	e.stoop += dt
+	_show(e, false, signi(roundi((p.pos.x - e.pos.x) * 100)))
+	if e.stoop >= rules.pickup_time:
+		_pick(e, p)
+
+
+func _pick(e: Engineer, p: Wood.Piece) -> void:
+	e.fetch = null
+	e.stoop = 0.0
+	p.taker = null
+	e.gather.erase(p)
+	if p.owner:
+		(p.owner as Engineer).gather.erase(p)
+	picked_up.emit(p, e)
 
 
 ## An engineer already building m, or null.
