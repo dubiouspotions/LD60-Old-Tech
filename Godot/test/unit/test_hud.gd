@@ -158,3 +158,12 @@ func test_the_lost_card_fades_the_screen_then_slides_in_from_below() -> void:
 	await get_tree().create_timer(hud.card_fade_time + hud.card_slide_time + 0.2, true, false, true).timeout
 	assert_almost_eq(lost.color.a, dim, 0.01, "faded to the overlay")
 	assert_almost_eq(center.position.y, 0.0, 0.5, "slid into place")
+
+
+## The Build/Cancel and Recruit buttons live under WorldButtons. Hiding it in the editor (it happened more than once)
+## must not take them off the screen.
+func test_world_buttons_show_even_if_hidden_in_the_scene() -> void:
+	var other: Hud = load("res://ui/hud.tscn").instantiate()
+	other.get_node("%WorldButtons").visible = false
+	add_child_autofree(other)
+	assert_true(other.get_node("%WorldButtons").visible)

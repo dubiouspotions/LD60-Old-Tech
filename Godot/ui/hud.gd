@@ -58,6 +58,9 @@ var _lost_color: Color
 
 func _ready() -> void:
 	_lost_color = (%Lost as ColorRect).color
+	# Holds the Build/Cancel and Recruit buttons, which show and hide themselves: never hidden as a whole, even if
+	# it was hidden while editing the scene.
+	%WorldButtons.visible = true
 	%PauseButton.pressed.connect(_emit.bind(pause_pressed))
 	%SpeedButton.pressed.connect(_emit.bind(speed_pressed))
 	%FollowButton.toggled.connect(func(on: bool) -> void:
