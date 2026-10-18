@@ -651,6 +651,10 @@ func break_up(cells: Array[Vector2i]) -> void:
         counts[t] = counts.get(t, 0) + 1
         set_type(cell, null)
         Effects.debris(cell_center_px(cell), t.debris_color, 3, 110.0)
+    # Its battlements and the like come down with it, in its colour.
+    for cell in decorations_on(cells):
+        erase_cell(cell)
+        Effects.debris(cell_center_px(cell), first.debris_color, 2, 110.0)
     Audio.play(collapse_sound, cell_center_px(cells[0]))
     Effects.shake(0.25)
     collapsed.emit(TerrainType.bulk_total(counts), cells)
@@ -660,16 +664,10 @@ func break_up(cells: Array[Vector2i]) -> void:
 ## them (battlements): cell -> {type (null for a decoration), source, coords, alt, mark, siege}. put() sets them back.
 func lift(cells: Array[Vector2i]) -> Dictionary:
     var tiles := {}
-    var todo: Array[Vector2i] = cells.duplicate()
-    while not todo.is_empty():
-        var c: Vector2i = todo.pop_back()
-        if tiles.has(c):
-            continue
-        tiles[c] = {type = type_at(c), source = get_cell_source_id(c), coords = get_cell_atlas_coords(c),
-            alt = get_cell_alternative_tile(c), mark = _marks.get(c), siege = _siege.get(c)}
-        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
-            if _is_decoration(c + d):
-                todo.append(c + d)
+    for c in cells + decorations_on(cells):
+        if not tiles.has(c):
+            tiles[c] = {type = type_at(c), source = get_cell_source_id(c), coords = get_cell_atlas_coords(c),
+                alt = get_cell_alternative_tile(c), mark = _marks.get(c), siege = _siege.get(c)}
     for c: Vector2i in tiles:
         if tiles[c].type == null:
             erase_cell(c)
@@ -696,6 +694,22 @@ func put(tiles: Dictionary, rows: int) -> Array[Vector2i]:
         if tile.siege != null:
             _siege[at] = tile.siege
         out.append(at)
+    return out
+
+
+## The decorations (old tiles with no material, such as battlements) painted beside cells, and beside those.
+func decorations_on(cells: Array[Vector2i]) -> Array[Vector2i]:
+    var out: Array[Vector2i] = []
+    var seen := {}
+    var todo: Array[Vector2i] = cells.duplicate()
+    while not todo.is_empty():
+        var c: Vector2i = todo.pop_back()
+        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
+            var n: Vector2i = c + d
+            if not seen.has(n) and _is_decoration(n):
+                seen[n] = true
+                out.append(n)
+                todo.append(n)
     return out
 
 
