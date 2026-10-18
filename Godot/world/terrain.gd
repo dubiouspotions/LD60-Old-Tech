@@ -5,6 +5,8 @@ extends TileMapLayer
 ## in its "terrain" custom data. Cells are metres: cell (x, y) covers x..x+1, y..y+1. Empty cells are air.
 ## Outside the painted area: above is air, left/right/below is out_of_bounds (bedrock).
 ## Levels are stitched on with stamp() and dropped behind with unload_before(); min_x is the left edge.
+## With the v2 look on, dirt, rock, water and spikes are drawn with v2 tiles (each tagged with its material) and
+## the tile of every cell around a change is re-picked if it no longer fits its neighbours (see TerrainLook).
 
 ## A fill-type tile fell loose; the level spawns a falling block for it.
 signal tile_detached(cell: Vector2i, type: TerrainType)
@@ -12,9 +14,17 @@ signal tile_detached(cell: Vector2i, type: TerrainType)
 signal collapsed(found: Supplies, cells: Array[Vector2i])
 
 const CUSTOM_DATA: String = "terrain"
+## Stands for "no material" (air tiles such as fillets) in lookups: an empty custom data value and a typed null
+## are different dictionary keys.
+const AIR_KEY: StringName = &"air"
 
 @export var out_of_bounds: TerrainType
 @export var collapse_sound: SoundEffect
+## How the ground is drawn: v2 tiles or the old ones.
+@export var look: TerrainLook
+## Re-picks the tile of every cell that does not fit its neighbours, keeping those that do. Paint roughly with any
+## tile of the right material, press this, then save the scene.
+@export_tool_button("Retile", "Reload") var retile: Callable = retile_all
 ## How far around a change structures are re-checked for support.
 @export_range(4, 100) var structure_search: int = 30
 
@@ -31,6 +41,8 @@ var _siege: Dictionary = {} # Vector2i -> seconds of attack taken
 ## Cells changed since the last take_changes(), for anything drawing the terrain its own way (TerrainSkin).
 var _changed: Dictionary = {} # Vector2i -> true
 var _changed_all: bool = true
+var _rules: TileRules
+var _alts: Dictionary = {} # v2 atlas coords -> {TerrainType, or AIR_KEY for air: alternative id}
 
 
 func _ready() -> void:
@@ -50,6 +62,8 @@ func rebuild() -> void:
     _siege.clear()
     _changed.clear()
     _changed_all = true
+    _alts.clear()
+    _rules = null
     size = Vector2i.ZERO
     min_x = 0
     _index_tileset()
@@ -86,7 +100,7 @@ func surface_row(x: int) -> int:
     return size.y
 
 
-## Changes one cell. null makes it air. Marks the area for settle().
+## Changes one cell. null makes it air. Re-picks the tiles around it and marks the area for settle().
 func set_type(cell: Vector2i, type: TerrainType) -> void:
     _changed[cell] = true
     if type != _types.get(cell):
@@ -94,19 +108,123 @@ func set_type(cell: Vector2i, type: TerrainType) -> void:
         _siege.erase(cell)
     if type == null:
         _types.erase(cell)
-        erase_cell(cell)
     else:
-        if _tile_for.is_empty():
-            _index_tileset()
         _types[cell] = type
-        var tile: Array = _tile_for.get(type, [])
-        if tile.is_empty():
-            push_error("Terrain: no tile in the TileSet uses %s" % type.resource_path)
-        else:
-            set_cell(cell, tile[0], tile[1])
-    if cell.x >= size.x or cell.y >= size.y:
-        _update_size()
+        size = Vector2i(maxi(size.x, cell.x + 1), maxi(size.y, cell.y + 1))
     _dirty_cols[cell.x] = true
+    _retile_around([cell])
+
+
+## The material of the tile painted at cell, read from the tile itself (also right after painting in the editor).
+func painted_type(cell: Vector2i) -> TerrainType:
+    return _read_cell(cell)
+
+
+## The tiling rules on this terrain's materials. painted: read them from the painted tiles (the editor) rather
+## than the live types.
+func rules(painted: bool = false) -> TileRules:
+    if look == null:
+        return null
+    if painted:
+        return TileRules.new(look, _painted_rule_type)
+    if _rules == null:
+        _rules = TileRules.new(look, _rule_type)
+    return _rules
+
+
+## Re-picks the tile of every cell that does not fit its neighbours, keeping those that do. In the editor the
+## painted tiles are read first.
+func retile_all() -> void:
+    if Engine.is_editor_hint():
+        rebuild()
+    _retile_columns(min_x, size.x)
+    if Engine.is_editor_hint():
+        var editor := Engine.get_singleton(&"EditorInterface")
+        if editor:
+            editor.call(&"mark_scene_as_unsaved")
+
+
+func _v2() -> bool:
+    return look != null and look.enabled and tile_set != null and tile_set.has_source(look.source_id)
+
+
+func _retile_around(cells: Array) -> void:
+    var todo := {}
+    for c: Vector2i in cells:
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                todo[c + Vector2i(dx, dy)] = true
+    for c: Vector2i in todo:
+        _retile(c)
+
+
+func _retile_columns(xa: int, xb: int) -> void:
+    for x in range(maxi(xa, min_x), mini(xb, size.x)):
+        for y in size.y:
+            _retile(Vector2i(x, y))
+
+
+## Gives cell the tile its material and neighbours call for, unless its tile already fits.
+func _retile(cell: Vector2i) -> void:
+    if cell.y < 0 or cell.x < min_x or cell.x >= size.x or cell.y >= size.y:
+        return
+    var t: TerrainType = _types.get(cell)
+    var src := get_cell_source_id(cell)
+    var role := rules().role(cell) if _v2() else &""
+    if role != &"":
+        if src == look.source_id and look.role_of(get_cell_atlas_coords(cell)) == role and _read_cell(cell) == t:
+            return
+        var coords := TerrainLook.pick(look.tiles(role), cell)
+        var alt := _alt_for(coords, t)
+        if alt >= 0:
+            set_cell(cell, look.source_id, coords, alt)
+            return
+    # Air, or a material drawn with its old tile.
+    if t == null:
+        if src != -1:
+            erase_cell(cell)
+        return
+    var classic: Array[Vector2i] = []
+    if look:
+        classic = look.classic_tiles(t, not is_solid(cell + Vector2i.UP), type_at(cell + Vector2i.UP) in look.water_types)
+    if not classic.is_empty():
+        if src != look.classic_source or not get_cell_atlas_coords(cell) in classic or _read_cell(cell) != t:
+            set_cell(cell, look.classic_source, TerrainLook.pick(classic, cell))
+    elif src == -1 or (look and src == look.source_id) or _read_cell(cell) != t:
+        var old := atlas_tile(t)
+        if not old.is_empty():
+            set_cell(cell, old[0], old[1])
+
+
+## Alternative id of the v2 tile at coords painted as material t, or -1 if there is none.
+func _alt_for(coords: Vector2i, t: TerrainType) -> int:
+    if _alts.is_empty():
+        var src := tile_set.get_source(look.source_id) as TileSetAtlasSource
+        for i in src.get_tiles_count():
+            var c := src.get_tile_id(i)
+            var by_type := {}
+            for k in src.get_alternative_tiles_count(c):
+                var alt := src.get_alternative_tile_id(c, k)
+                var m: Variant = src.get_tile_data(c, alt).get_custom_data(CUSTOM_DATA)
+                by_type[m if m != null else AIR_KEY] = alt
+            _alts[c] = by_type
+    return _alts.get(coords, {}).get(t if t else AIR_KEY, -1)
+
+
+## The rules see past the left and right edge as more of the edge column, so a level's edges are not drawn as
+## cliffs. (In the world they are re-checked when the next level is stamped on.)
+func _rule_type(cell: Vector2i) -> TerrainType:
+    if size.x > min_x:
+        cell.x = clampi(cell.x, min_x, size.x - 1)
+    return type_at(cell)
+
+
+func _painted_rule_type(cell: Vector2i) -> TerrainType:
+    var used := get_used_rect()
+    if cell.y < 0 or used.size.x == 0:
+        return null
+    cell.x = clampi(cell.x, used.position.x, used.end.x - 1)
+    return out_of_bounds if cell.y >= used.end.y else _read_cell(cell)
 
 
 func can_dig(cell: Vector2i) -> bool:
@@ -277,18 +395,21 @@ func stamp(src: TileMapLayer, offset: Vector2i, seam: int) -> void:
         if t:
             _types[to] = t
         size = Vector2i(maxi(size.x, to.x + 1), maxi(size.y, to.y + 1))
+    _retile_columns(seam - 1, size.x)
 
 
 ## Removes every cell from column x on. The world then ends at x.
 func clear_from(x: int) -> void:
     _erase_columns(func(cx: int) -> bool: return cx >= x)
     size.x = maxi(min_x, x)
+    _retile_columns(x - 1, x)
 
 
 ## Removes every cell left of column x and moves the left edge there.
 func unload_before(x: int) -> void:
     _erase_columns(func(cx: int) -> bool: return cx < x)
     min_x = x
+    _retile_columns(x, x + 1)
 
 
 func _erase_columns(hit: Callable) -> void:
@@ -349,9 +470,7 @@ func _detach_loose(xs: Array) -> void:
                 var cell := Vector2i(xx, y)
                 var t := type_at(cell)
                 if t and t.falls and not is_solid(cell + Vector2i.DOWN) and _inside(cell):
-                    _types.erase(cell)
-                    erase_cell(cell)
-                    _changed[cell] = true
+                    set_type(cell, null)
                     tile_detached.emit(cell, t)
 
 
@@ -403,9 +522,7 @@ func _collapse_unsupported(xa: int, xb: int, ca: int, cb: int) -> void:
             continue
         counts[t] = counts.get(t, 0) + 1
         fallen.append(cell)
-        _types.erase(cell)
-        erase_cell(cell)
-        _changed[cell] = true
+        set_type(cell, null)
         Effects.debris(cell_center_px(cell), t.debris_color, 3, 110.0)
     if fallen.is_empty():
         return
@@ -437,7 +554,7 @@ func _index_tileset() -> void:
     for i in tile_set.get_source_count():
         var sid := tile_set.get_source_id(i)
         var src := tile_set.get_source(sid) as TileSetAtlasSource
-        if src == null:
+        if src == null or (look and sid == look.source_id):
             continue
         for t in src.get_tiles_count():
             var coords := src.get_tile_id(t)

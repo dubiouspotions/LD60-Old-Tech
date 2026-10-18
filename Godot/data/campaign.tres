@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://3vsk1pcbb0to" path="res://core/campaign.gd" id="10_1pfus"]
 [ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="11_0ut44"]
 [ext_resource type="Script" uid="uid://ckdj86qctx6e0" path="res://core/tool_definition.gd" id="12_aqc2n"]
-[ext_resource type="Resource" path="res://data/tools/1_dig.tres" id="13_rhlp7"]
+[ext_resource type="Resource" uid="uid://bsx0j5qqqp22j" path="res://data/tools/1_dig.tres" id="13_rhlp7"]
 [ext_resource type="Resource" uid="uid://bgx0eovxrigvq" path="res://data/tools/2_fill.tres" id="14_y2rpw"]
 [ext_resource type="Resource" path="res://data/tools/3_log.tres" id="15_v2pp1"]
 [ext_resource type="Resource" path="res://data/tools/5_rope.tres" id="16_jeutq"]
@@ -15,19 +15,19 @@
 [ext_resource type="AudioStream" uid="uid://c3vyy2heixwyf" path="res://audio/music/night_loop.wav" id="30_night"]
 [ext_resource type="Resource" path="res://data/sounds/dawn_bugle.tres" id="31_dawn"]
 
-[sub_resource type="Resource" id="Resource_kpggy"]
-script = ExtResource("11_0ut44")
-earth = 8
-logs = 12
-rope = 6
-gold = 10
-
 [sub_resource type="Resource" id="checkpoint_supplies"]
 script = ExtResource("11_0ut44")
 earth = 4
 logs = 8
 rope = 4
 gold = 5
+
+[sub_resource type="Resource" id="Resource_kpggy"]
+script = ExtResource("11_0ut44")
+earth = 8
+logs = 12
+rope = 6
+gold = 10
 
 [resource]
 script = ExtResource("10_1pfus")

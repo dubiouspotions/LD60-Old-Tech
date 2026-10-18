@@ -4,6 +4,9 @@
 [ext_resource type="Resource" path="res://data/sounds/tree_fell.tres" id="2_m3hq1"]
 [ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="3_20hyr"]
 
+[sub_resource type="Resource" id="Resource_tv4fw"]
+script = ExtResource("1_tv4fw")
+
 [sub_resource type="Resource" id="Resource_uh8wy"]
 script = ExtResource("1_tv4fw")
 rope = 1
@@ -19,4 +22,5 @@ dig_time = 0.4
 dig_sound = ExtResource("2_m3hq1")
 bulk_yield = SubResource("Resource_uh8wy")
 bulk_tiles_per_yield = 2
+bulk_bonus = SubResource("Resource_tv4fw")
 debris_color = Color(0.24705882, 0.43137255, 0.20392157, 1)
