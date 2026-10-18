@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://kib74rq6nvro" path="res://world/background/background.tscn" id="2"]
 [ext_resource type="Script" uid="uid://csheef411813p" path="res://game/tool_controller.gd" id="3"]
 [ext_resource type="Script" uid="uid://ccqxavwqhp3xu" path="res://game/camera_rig.gd" id="4"]
-[ext_resource type="PackedScene" uid="uid://b8e1oas37jrri" path="res://ui/hud.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://7168gwqqdsny" path="res://ui/hud.tscn" id="5"]
 [ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6"]
 [ext_resource type="PackedScene" path="res://game/world.tscn" id="7"]
 [ext_resource type="CompressedTexture3D" uid="uid://bgadupm8eb0qp" path="res://post/lut/low_17.png" id="7_wjctj"]

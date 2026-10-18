@@ -4,6 +4,11 @@ extends Resource
 ## How the engineer crew builds ordered blueprints. Units: metres and seconds.
 
 @export_range(1, 12) var crew_size: int = 3
+## Hiring another engineer in the Camp Shoppe: its price, the most engineers there can be, and what it says.
+@export var hire_cost: Supplies
+@export_range(1, 30) var max_crew: int = 8
+@export var hire_text: String = "+1 engineer"
+@export var hire_sound: SoundEffect
 ## Walking speed on the ground. Engineers carry no armour, so they should outpace the column (ArmyRules march speed).
 @export_range(0.1, 10.0, 0.05, "suffix:m/s") var walk_speed: float = 6.8
 ## Speed climbing along scaffolding and finished members, and up or down terrain.

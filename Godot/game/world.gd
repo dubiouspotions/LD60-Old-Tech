@@ -233,6 +233,19 @@ func recruit() -> bool:
 	return true
 
 
+## Hires one engineer with gold while the column camps; it joins the crew at the camp. Returns false when not
+## camping, short of gold, or at the crew limit.
+func hire_engineer() -> bool:
+	var rules := crew.rules
+	if not camping() or crew.engineers.size() >= rules.max_crew or not GameState.spend(rules.hire_cost):
+		return false
+	var at := Grid.to_m(_camp.position) if _camp else army.rear().pos
+	crew.hire(at.x)
+	Audio.play(rules.hire_sound, Grid.to_px(at))
+	Effects.say(Grid.to_px(at - Vector2(0, 1.4)), rules.hire_text, Color("ece4d2"))
+	return true
+
+
 ## Orders the column to march now, before the king does.
 func march() -> void:
 	_order_march(true)

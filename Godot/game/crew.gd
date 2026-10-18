@@ -114,13 +114,24 @@ func spawn(x: float) -> void:
 	engineers.clear()
 	throws.clear()
 	for i in rules.crew_size:
-		var e := Engineer.new()
-		var ex := maxf(0.5, x - rules.follow_gap - i * rules.spacing)
-		e.pos = Vector2(ex, terrain.surface_row(floori(ex)))
-		e.node = engineer_scene.instantiate()
-		add_child(e.node)
-		engineers.append(e)
-		_show(e, false, 1)
+		_add(maxf(0.5, x - rules.follow_gap - i * rules.spacing))
+
+
+## One more engineer joins the crew, on the ground at x (hired at camp).
+func hire(x: float) -> Engineer:
+	var e := _add(x)
+	count_changed.emit(engineers.size())
+	return e
+
+
+func _add(x: float) -> Engineer:
+	var e := Engineer.new()
+	e.pos = Vector2(x, terrain.surface_row(floori(x)))
+	e.node = engineer_scene.instantiate()
+	add_child(e.node)
+	engineers.append(e)
+	_show(e, false, 1)
+	return e
 
 
 func step(dt: float) -> void:

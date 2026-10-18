@@ -1,8 +1,10 @@
 [gd_resource type="Theme" format=3 uid="uid://c7hi6c0spmofy"]
 
+[ext_resource type="FontFile" uid="uid://3joqyfv4t5xc" path="res://ui/fonts/MedodicaRegular.otf" id="2_7any1"]
+[ext_resource type="FontFile" uid="uid://cn4jxsp21eo13" path="res://ui/fonts/alagard.ttf" id="f_alagard"]
 [ext_resource type="FontVariation" path="res://ui/fonts/body.tres" id="f_body"]
-[ext_resource type="FontVariation" path="res://ui/fonts/display.tres" id="f_display"]
-[ext_resource type="FontVariation" path="res://ui/fonts/display_semibold.tres" id="f_semi"]
+[ext_resource type="StyleBox" uid="uid://cf6t4700mjjw" path="res://ui/styles/ninepatch_highlight.tres" id="s_highlight"]
+[ext_resource type="StyleBox" uid="uid://brhy0ydqhmuaq" path="res://ui/styles/ninepatch_panel.tres" id="s_ninepatch"]
 
 [sub_resource type="StyleBoxEmpty" id="focus"]
 
@@ -54,6 +56,12 @@ corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
+[sub_resource type="StyleBoxEmpty" id="words_only"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+
 [sub_resource type="StyleBoxFlat" id="panel"]
 content_margin_left = 24.0
 content_margin_top = 22.0
@@ -93,7 +101,7 @@ Button/colors/font_color = Color(0.9255, 0.8941, 0.8235, 1)
 Button/colors/font_hover_color = Color(0.9255, 0.8941, 0.8235, 1)
 Button/colors/font_pressed_color = Color(0.9255, 0.8941, 0.8235, 1)
 Button/font_sizes/font_size = 18
-Button/fonts/font = ExtResource("f_semi")
+Button/fonts/font = ExtResource("f_alagard")
 Button/styles/focus = SubResource("focus")
 Button/styles/hover = SubResource("btn_hover")
 Button/styles/hover_pressed = SubResource("btn_pressed")
@@ -102,16 +110,39 @@ Button/styles/pressed = SubResource("btn_pressed")
 Caption/base_type = &"Label"
 Caption/colors/font_color = Color(0.6039, 0.651, 0.7059, 1)
 Caption/font_sizes/font_size = 11
+Caption/fonts/font = ExtResource("2_7any1")
 Display/base_type = &"Label"
 Display/font_sizes/font_size = 18
-Display/fonts/font = ExtResource("f_semi")
+Display/fonts/font = ExtResource("f_alagard")
 Heading/base_type = &"Label"
 Heading/colors/font_color = Color(0.9137, 0.6627, 0.2314, 1)
 Heading/font_sizes/font_size = 40
-Heading/fonts/font = ExtResource("f_display")
+Heading/fonts/font = ExtResource("f_alagard")
 Label/colors/font_color = Color(0.9255, 0.8941, 0.8235, 1)
+Label/fonts/font = ExtResource("2_7any1")
+NinePatchPanel/base_type = &"PanelContainer"
+NinePatchPanel/styles/panel = ExtResource("s_ninepatch")
+PanelButton/base_type = &"Button"
+PanelButton/colors/font_hover_color = Color(1, 0.827451, 0.4156863, 1)
+PanelButton/colors/font_hover_pressed_color = Color(1, 0.827451, 0.4156863, 1)
+PanelButton/colors/font_pressed_color = Color(1, 0.827451, 0.4156863, 1)
+PanelButton/font_sizes/font_size = 16
+PanelButton/fonts/font = ExtResource("f_alagard")
+PanelButton/styles/disabled = SubResource("words_only")
+PanelButton/styles/focus = SubResource("focus")
+PanelButton/styles/hover = ExtResource("s_highlight")
+PanelButton/styles/hover_pressed = ExtResource("s_highlight")
+PanelButton/styles/normal = SubResource("words_only")
+PanelButton/styles/pressed = ExtResource("s_highlight")
 PanelContainer/styles/panel = SubResource("panel")
+PanelText/base_type = &"Label"
+PanelText/font_sizes/font_size = 16
+PanelText/fonts/font = ExtResource("f_alagard")
+RichTextLabel/font_sizes/normal_font_size = 32
+RichTextLabel/fonts/bold_font = ExtResource("f_alagard")
+RichTextLabel/fonts/normal_font = ExtResource("2_7any1")
 StatusPanel/base_type = &"PanelContainer"
 StatusPanel/styles/panel = SubResource("status")
 Value/base_type = &"Label"
 Value/font_sizes/font_size = 16
+Value/fonts/font = ExtResource("2_7any1")

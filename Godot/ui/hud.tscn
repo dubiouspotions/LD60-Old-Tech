@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://b8e1oas37jrri"]
+[gd_scene format=3 uid="uid://7168gwqqdsny"]
 
 [ext_resource type="Script" uid="uid://g6qnws88n6l1" path="res://ui/hud.gd" id="1"]
 [ext_resource type="PackedScene" path="res://ui/tool_button.tscn" id="2"]
@@ -21,38 +21,44 @@ plan_buttons_scene = ExtResource("7")
 metadata/_edit_horizontal_guides_ = [624.0, 647.0, 582.0]
 metadata/_edit_vertical_guides_ = [16.0]
 
-[node name="MarchButton" type="Button" parent="." unique_id=709407877]
+[node name="MarchPanel" type="PanelContainer" parent="." unique_id=837441330]
 unique_name_in_owner = true
-offset_left = 16.0
-offset_top = 508.0
-offset_right = 111.0
-offset_bottom = 542.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 58.0
+grow_horizontal = 2
+theme = ExtResource("3")
+theme_type_variation = &"NinePatchPanel"
+
+[node name="MarchButton" type="Button" parent="MarchPanel" unique_id=709407877]
+unique_name_in_owner = true
+layout_mode = 2
 tooltip_text = "Order the column to march now (M)"
 focus_mode = 0
+theme_type_variation = &"PanelButton"
 text = "March now"
 
 [node name="StatusPanel" type="PanelContainer" parent="." unique_id=264606519]
 unique_name_in_owner = true
 z_index = 1
-anchors_preset = -1
-anchor_left = -0.01484375
-anchor_right = 0.06875
-offset_left = 35.0
-offset_top = 553.0
-offset_right = 188.0
-offset_bottom = 582.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 10.0
+offset_bottom = 39.0
+grow_horizontal = 2
 mouse_filter = 2
 theme_type_variation = &"StatusPanel"
-metadata/_edit_use_anchors_ = true
 
 [node name="Status" type="Label" parent="StatusPanel" unique_id=1803148860]
 unique_name_in_owner = true
 layout_mode = 2
-offset_transform_enabled = true
-offset_transform_position = Vector2(10, 0)
+theme = ExtResource("3")
 theme_type_variation = &"Display"
 theme_override_font_sizes/font_size = 20
 text = "Awaiting orders"
+horizontal_alignment = 1
 
 [node name="Root" type="Control" parent="." unique_id=579945222]
 layout_mode = 3
@@ -216,7 +222,11 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="Tools" type="HBoxContainer" parent="Root/Margin/Column/Rack" unique_id=896096801]
+[node name="ToolsPanel" type="PanelContainer" parent="Root/Margin/Column/Rack" unique_id=1137029122]
+layout_mode = 2
+theme_type_variation = &"NinePatchPanel"
+
+[node name="Tools" type="HBoxContainer" parent="Root/Margin/Column/Rack/ToolsPanel" unique_id=896096801]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -339,12 +349,108 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="RecruitButton" parent="Root/WorldButtons" unique_id=1356768548 instance=ExtResource("6")]
+[node name="ShopPanel" type="PanelContainer" parent="Root/WorldButtons" unique_id=1075731356]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-tooltip_text = "Buy a soldier with gold; they join the camp (R)"
-text = "Recruit"
+theme_type_variation = &"NinePatchPanel"
+
+[node name="Column" type="VBoxContainer" parent="Root/WorldButtons/ShopPanel" unique_id=794194486]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ShopButton" parent="Root/WorldButtons/ShopPanel/Column" unique_id=1356768548 instance=ExtResource("6")]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Buy soldiers and engineers with gold; they join the camp"
+theme_type_variation = &"PanelButton"
+text = "Camp Shoppe"
+
+[node name="ShopMenu" type="VBoxContainer" parent="Root/WorldButtons/ShopPanel/Column" unique_id=1281935798]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ShopSoldier" type="Button" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu" unique_id=95034996]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "A soldier joins the camp (R)"
+focus_mode = 0
+theme_type_variation = &"PanelButton"
+
+[node name="Row" type="HBoxContainer" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu/ShopSoldier" unique_id=238116560]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_right = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu/ShopSoldier/Row" unique_id=102219812]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Soldier"
+vertical_alignment = 1
+
+[node name="Price" type="Label" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu/ShopSoldier/Row" unique_id=672991907]
+layout_mode = 2
+text = "2"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu/ShopSoldier/Row" unique_id=1286889908]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("10_65xic")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShopEngineer" type="Button" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu" unique_id=294340582]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "An engineer joins the crew"
+focus_mode = 0
+theme_type_variation = &"PanelButton"
+
+[node name="Row" type="HBoxContainer" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu/ShopEngineer" unique_id=1012595698]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_right = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu/ShopEngineer/Row" unique_id=1102381995]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Engineer"
+vertical_alignment = 1
+
+[node name="Price" type="Label" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu/ShopEngineer/Row" unique_id=787965495]
+layout_mode = 2
+text = "5"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Root/WorldButtons/ShopPanel/Column/ShopMenu/ShopEngineer/Row" unique_id=985826045]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("10_65xic")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PausedTag" type="Label" parent="Root" unique_id=222275730]
 unique_name_in_owner = true
@@ -354,9 +460,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -80.0
-offset_top = 64.0
+offset_top = 116.0
 offset_right = 80.0
-offset_bottom = 96.0
+offset_bottom = 148.0
 grow_horizontal = 2
 theme_type_variation = &"Heading"
 theme_override_font_sizes/font_size = 24
@@ -436,7 +542,7 @@ theme_override_constants/separation = 12
 [node name="Title" type="Label" parent="Root/Intro/Center/Card/Rows" unique_id=117449985]
 layout_mode = 2
 theme_type_variation = &"Heading"
-text = "Sappers' March"
+text = "Siege Engineers"
 
 [node name="IntroText" type="Label" parent="Root/Intro/Center/Card/Rows" unique_id=521095045]
 unique_name_in_owner = true
@@ -448,14 +554,15 @@ autowrap_mode = 3
 [node name="Rules" type="RichTextLabel" parent="Root/Intro/Center/Card/Rows" unique_id=871633306]
 custom_minimum_size = Vector2(490, 0)
 layout_mode = 2
+theme = ExtResource("3")
 theme_override_colors/default_color = Color(0.6039, 0.651, 0.7059, 1)
-theme_override_font_sizes/normal_font_size = 13
-theme_override_font_sizes/bold_font_size = 13
+theme_override_font_sizes/normal_font_size = 16
+theme_override_font_sizes/bold_font_size = 14
 bbcode_enabled = true
 text = "[ul][b]Dig[/b] marks soft earth (+1 earth), trees (trunk → logs, leaves → rope) and gold ore (+1 gold); the engineers walk over and dig them. Dig a bridge member or a planned one to take it back.
 [b]Box[/b] drops a box that falls until it lands.
 [b]Bridge[/b], [b]Support[/b] and [b]Rope[/b]: drag from point to point to plan a member, then press [b]Build[/b] (Enter): the engineers build it piece by piece from the ground outward on scaffolding, and strike the scaffolding when done. Ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down. Joints are hinges, so build triangles or hang the deck from ropes. Logs take push and pull up to 5 m long and can be walked on; supports are logs nobody walks on; ropes only pull, up to 12 m. Members glow red as they near breaking, and each soldier adds 80 kg. Every member costs one of its material per started metre.
-At the start of each level the column camps for the night: the soldiers sleep, the archers rest and your engineers keep working until the king loses patience; press [b]March[/b] (M) to break camp earlier. At camp you can buy more soldiers with gold: [b]Recruit[/b] (R). Plan while paused (Space), build, then resume to load the bridge. Pan with right-drag, the wheel, A/D. F toggles speed, C follows the column.[/ul]"
+At the start of each level the column camps for the night: the soldiers sleep, the archers rest and your engineers keep working until the king loses patience; press [b]March[/b] (M) to break camp earlier. At camp the [b]Camp Shoppe[/b] sells soldiers (R) and engineers for gold. Plan while paused (Space), build, then resume to load the bridge. Pan with right-drag, the wheel, A/D. F toggles speed, C follows the column.[/ul]"
 fit_content = true
 
 [node name="Buttons" type="HBoxContainer" parent="Root/Intro/Center/Card/Rows" unique_id=1481685949]

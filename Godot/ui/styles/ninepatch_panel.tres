@@ -1,0 +1,20 @@
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://brhy0ydqhmuaq"]
+
+[ext_resource type="Texture2D" uid="uid://bvwgbalkhhrqm" path="res://ui/elements/panel_ninepatch.png" id="1"]
+
+[resource]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+texture = ExtResource("1")
+texture_margin_left = 24.0
+texture_margin_top = 24.0
+texture_margin_right = 24.0
+texture_margin_bottom = 24.0
+expand_margin_left = 8.0
+expand_margin_top = 8.0
+expand_margin_right = 8.0
+expand_margin_bottom = 8.0
+axis_stretch_vertical = 1
+modulate_color = Color(0.86036915, 0.8603692, 0.8603692, 1)
