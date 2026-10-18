@@ -48,6 +48,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Tents, fire, firelight, crackle | `objects/camp/camp.tscn` (its origin is the camp flag; the column sleeps to its left) |
 | Sleeping soldier pose and the "z" | **Asleep** node and the "sleep" animation in `objects/soldier/soldier.tscn` |
 | Night colours, fade time, cursor lantern strength | **DayNight** node in `game/main.tscn` (lantern light: **Lantern** node) |
+| Stars: how many, colour, how far down the sky, share of bigger cross stars, twinkle depth and speed, shooting-star interval, length, speed and trail | **Stars** node in `world/background/background.tscn`. They fade in with the night and keep their own colour under the night tint. **Star Seed** picks a different sky. |
 | Camp music, dawn bugle | `data/campaign.tres` → Camp group |
 | Recruit button text and where it floats | **Recruit Text** on the **HUD** node in `ui/hud.tscn`; the button floats at the **ButtonSpot** marker in `objects/camp/camp.tscn` |
 | Price of a recruit, its sound and text | **Recruit Cost** / **Recruit Sound** / **Recruit Text** in `data/army_rules.tres` (the army limit is **Max Soldiers** there) |
@@ -139,7 +140,7 @@ A sheet whose sky is a solid colour instead: set it as **Source Texture**, the c
 | Arrows | `objects/arrow/arrow.tscn` |
 | Falling fill | `objects/falling_block/falling_block.tscn` |
 | Debris, floating text | `objects/effects/` |
-| Sky, sun, mountain ridges | `world/background/background.tscn` |
+| Sky, sun, stars, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |
 | Bridge physics feel, build messages, blueprint / ordered / scaffold colours | **Bridge** node in `game/world.tscn` |
 | Build buttons above plans: text, look, height | **Build Text** on the **HUD** node in `ui/hud.tscn`; the Build + cancel pair is `ui/plan_buttons.tscn`; **Plan Button Rise** on the **Game** node in `game/main.tscn` |
