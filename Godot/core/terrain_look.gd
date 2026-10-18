@@ -12,9 +12,10 @@ extends Resource
 
 ## Off: the old tile look.
 @export var enabled: bool = true
-## The v2 sheet as used in the TileSet: sky already transparent (made from source_texture by the dev script).
+## The v2 sheet as used in the TileSet, sky transparent.
 @export var texture: Texture2D
-## The artist's sheet, with the sky colour baked in.
+## The artist's sheet. If its sky is a colour (sky_key) rather than transparent, dev/build_tiles_v2.tscn -- art
+## writes texture from it with that colour cut out. Same file as texture when the sheet is already transparent.
 @export var source_texture: Texture2D
 ## Colour baked into source_texture where the sky shows through.
 @export var sky_key: Color = Color("64988e")
@@ -47,10 +48,19 @@ extends Resource
 ## Ground above and beside, but air diagonally up-left / up-right (the foot of a fillet).
 @export var inner_tl: Array[Vector2i] = []
 @export var inner_tr: Array[Vector2i] = []
+## Ground below and beside, but air diagonally down-left / down-right (where a ceiling meets a wall).
+@export var inner_bl: Array[Vector2i] = []
+@export var inner_br: Array[Vector2i] = []
 ## Dirt with ground all round.
 @export var dirt: Array[Vector2i] = []
 ## Rock with ground all round.
 @export var rock: Array[Vector2i] = []
+
+@export_group("Ceilings (cells with air below)")
+@export var ceiling: Array[Vector2i] = []
+## Air below and to the left / to the right.
+@export var ceiling_l: Array[Vector2i] = []
+@export var ceiling_r: Array[Vector2i] = []
 
 @export_group("Fillets (air cells at the foot of a step)")
 ## Ground below and to the right. The low one is used when the ground below is a top-left corner.
@@ -82,12 +92,12 @@ extends Resource
 
 ## Roles with grass/dirt art, painted for any dirt or rock material.
 const GROUND_ROLES: Array[StringName] = [&"flat_tops", &"corner_tl", &"corner_tr", &"wall_l", &"wall_r",
-	&"inner_tl", &"inner_tr", &"dirt"]
+	&"inner_tl", &"inner_tr", &"inner_bl", &"inner_br", &"ceiling", &"ceiling_l", &"ceiling_r", &"dirt"]
 const FILLET_ROLES: Array[StringName] = [&"fillet_r", &"fillet_r_low", &"fillet_l", &"fillet_l_low"]
 ## Every cell role: the TileSet source gets one tile per listed coordinate.
 const CELL_ROLES: Array[StringName] = [&"flat_tops", &"corner_tl", &"corner_tr", &"corner_tl_alt", &"corner_tr_alt",
-	&"wall_l", &"wall_r", &"inner_tl", &"inner_tr", &"dirt", &"rock", &"fillet_r", &"fillet_r_low", &"fillet_l",
-	&"fillet_l_low", &"water_top", &"water", &"spikes"]
+	&"wall_l", &"wall_r", &"inner_tl", &"inner_tr", &"inner_bl", &"inner_br", &"ceiling", &"ceiling_l", &"ceiling_r",
+	&"dirt", &"rock", &"fillet_r", &"fillet_r_low", &"fillet_l", &"fillet_l_low", &"water_top", &"water", &"spikes"]
 
 var _role_of: Dictionary = {}
 
@@ -100,12 +110,15 @@ static func pick(tiles: Array[Vector2i], cell: Vector2i) -> Vector2i:
 	return tiles[h % tiles.size()]
 
 
-## Dual-grid tile for a rock mask (see body), or (-1, -1) for none.
-func body_tile(mask: int) -> Vector2i:
+## Dual-grid tile for a rock mask (see body) at corner, or (-1, -1) for none. All rock (15) varies over the rock
+## tiles, so solid rock is not one repeated tile.
+func body_tile(mask: int, corner: Vector2i = Vector2i.ZERO) -> Vector2i:
 	if mask == 0:
 		return Vector2i(-1, -1)
+	if mask == 15 and not rock.is_empty():
+		return pick(rock, corner)
 	var t: Vector2i = body[mask] if mask < body.size() else Vector2i(-1, -1)
-	return t if t.x >= 0 else body[15]
+	return t if t.x >= 0 else body_tile(15, corner)
 
 
 ## Tiles a cell of role may be given when it needs a new one.

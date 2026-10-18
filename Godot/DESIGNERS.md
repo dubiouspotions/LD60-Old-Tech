@@ -63,39 +63,48 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 
 ### The v2 terrain tiles
 
-The ground is painted with the v2 tiles (`world/tiles_v2.png`): source 1 of `world/tileset.tres`, next to the old tiles
-(source 0). Paint them like any tiles in the TileMap editor.
+The ground is painted with the v2 tiles (`world/tilemap-terrain.png`): source 2 of `world/tileset.tres`, next to the
+old tiles (source 0). Paint them like any tiles in the TileMap editor. Source 1 (`tiles_v2_keyed.png`) is the earlier
+v2 sheet; nothing uses it any more.
 
-- **Every v2 tile carries its material.** Grass, wall and dirt tiles come in one alternative per material: soil, rock
-  and bedrock. The alternative you paint sets what the ground *is*, for example a grassy tile that is really bedrock.
-  Pick the alternative in the TileSet panel's alternative tiles (the number badge on the tile). Fillets (the grass
-  curves in the air at the foot of a step) are air. Water and spikes are their own tiles.
+- **Every v2 tile carries its material.** Grass, wall, ceiling and dirt tiles come in one alternative per material:
+  soil, rock and bedrock. The alternative you paint sets what the ground *is*, for example a grassy tile that is really
+  bedrock. Pick the alternative in the TileSet panel's alternative tiles (the number badge on the tile). Fillets (the
+  grass curves in the air at the foot of a step) are air.
+- **Tunnels get ceilings.** Ground with air below gets the ceiling tiles (grass hanging down), and the cells where a
+  tunnel roof meets its wall get the bottom inner corners. Digging a tunnel in play picks them for you.
 - **Rock in the dirt is drawn for you.** Paint rock cells with the full rock tile. The rounded dirt-to-rock edges are
   an overlay on the half-cell grid, and it shows in the editor as you paint.
 - **Retile** (select the level's **Terrain** node, then the button at the top of the Inspector) fixes every cell whose
   tile does not fit its neighbours and keeps every tile that does. Paint roughly with any tile of the right material,
   press Retile, then save. Variants you picked by hand stay as long as they still fit.
+- **Decorations are kept.** An old tile with no material painted in the air (source 0) is never touched by Retile or
+  by digging next to it.
 - **While playing,** the same rules re-pick the tiles around anything that changes the ground (digging, collapses,
   fill), so edges stay matched.
-- **Other materials** (brick, trees, fill, gold ore) have no v2 art and use their old tiles.
-- **The roles** are in `data/terrain_look.tres`: which atlas tiles are flat tops, corners, walls, inner corners, dirt,
-  rock, fillets, water and spikes. A role with several tiles gives variety: a cell that needs a new tile picks one by
-  its position. The `*_alt` roles (the square grass corners) are valid when painted but never picked. **Body** is the
-  rock overlay: 16 tiles indexed by which of the four cells around a corner are rock (top-left 1, top-right 2,
-  bottom-left 4, bottom-right 8). The two diagonal cases (6 and 9) have no art yet and fall back to full rock.
+- **Water, spikes and other materials** (brick, trees, fill, gold ore) have no art on the sheet and use their old
+  tiles. Water picks the *Classic look* surface and deep tiles; water or spikes you paint by hand are kept.
+- **The roles** are in `data/terrain_look.tres`: which atlas tiles are flat tops, corners, walls, inner corners
+  (top and bottom), ceilings, dirt, rock and fillets. A role with several tiles gives variety: a cell that needs a new
+  tile picks one by its position, and solid rock varies over the **Rock** tiles. The `*_alt` roles (the square grass
+  corners) are valid when painted but never picked. **Body** is the rock overlay: 16 tiles indexed by which of the four
+  cells around a corner are rock (top-left 1, top-right 2, bottom-left 4, bottom-right 8). The two diagonal cases (6
+  and 9) have no art yet and fall back to full rock. The grass tufts tile (0, 0) is not used yet.
 - **Switching off** (**Enabled** on the look, or **art › Terrain V2** on ValueTweaks) draws everything with the old
   tiles: the *Classic look* roles, with grass where soil meets the air. Levels need no repainting either way.
 - Rock touching the air gets the grass edge like dirt, because the sheet has no bare-rock edge pieces.
 
-**Changing the sheet.** Edit `world/tiles_v2.png` (the sky colour **Sky Key** is cut out for you), update the roles in
+**Changing the sheet.** Edit `world/tilemap-terrain.png` (keep the sky transparent), update the roles in
 `data/terrain_look.tres` if tiles moved or were added, then from `Godot/`:
 
 ```sh
-godot --headless res://dev/build_tiles_v2.tscn -- art       # tiles_v2_keyed.png: the sheet with the sky transparent
 godot --headless --import
-godot --headless res://dev/build_tiles_v2.tscn -- tileset   # rebuilds source 1 of the TileSet
+godot --headless res://dev/build_tiles_v2.tscn -- tileset   # rebuilds source 2 of the TileSet
 godot --headless res://dev/convert_levels_v2.tscn           # optional: retile every campaign level
 ```
+
+A sheet whose sky is a solid colour instead: set it as **Source Texture**, the colour as **Sky Key** and a new file as
+**Texture**, and run `build_tiles_v2.tscn -- art` first to cut the sky out.
 
 ## Objects and tuning
 
