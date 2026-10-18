@@ -584,12 +584,18 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 	if is_nan(ahead):
 		_show(e, false, facing)
 		return
-	# Climb a higher ledge up its face first, then step onto it, so the body never enters the rock.
-	if ahead < e.pos.y - 0.02:
+	# Climb a higher ledge up its face first, then step onto it, so the body never enters the rock. Ground rising
+	# no steeper than 45 degrees (a slope up a step) is walked instead, from the ground (not part way up a face).
+	var slope := absf(look - e.pos.x) if not on_face else 0.0
+	if ahead < e.pos.y - 0.02 - slope:
 		e.pos.y = move_toward(e.pos.y, ahead, rules.climb_speed * dt)
 		_show(e, true, facing)
 		return
+	var step := absf(nx - e.pos.x)
 	e.pos.x = nx
+	var along := _ground_of(e, nx)
+	if not is_nan(along) and absf(along - e.pos.y) <= step + 0.02:
+		e.pos.y = along
 	_show(e, true, facing)
 
 

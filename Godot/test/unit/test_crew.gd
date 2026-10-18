@@ -442,6 +442,48 @@ func test_crew_climbs_a_step_without_entering_the_rock() -> void:
 		assert_almost_eq(e.pos.y, 4.0, 0.05, "up on the step")
 
 
+## Ground at row 6 with a one-high step up from x = 8 to 13: both ends are slopes.
+const BUMP: Array = [
+	"......................",
+	"......................",
+	"......................",
+	"......................",
+	"......................",
+	"........######........",
+	"######################",
+	"BBBBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_engineers_walk_over_slopes_at_walking_speed_without_shaking() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in BUMP.size():
+		for x in BUMP[y].length():
+			var key: String = WorldFixture.LEGEND[BUMP[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 21.5)
+	world.crew.spawn(4.0)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	var path: Array[Vector2] = [e.pos]
+	_run(4.0, func() -> bool:
+		path.append(e.pos)
+		return e.pos.x > 16.0)
+	assert_gt(e.pos.x, 16.0, "over the bump")
+	var dt := 1.0 / 60.0
+	var started := -1
+	for i in range(1, path.size()):
+		var d := path[i] - path[i - 1]
+		assert_lt(absf(d.y), world.crew.rules.walk_speed * dt + 0.01, "no jump at %s" % path[i])
+		if started < 0 and path[i].x > 6.0:
+			started = i
+		if i > 1 and path[i].x > 6.0 and path[i].x < 16.0:
+			assert_gt(d.x, 0.0, "keeps walking at %s" % path[i])
+			assert_true(signf(d.y) == 0.0 or signf(path[i - 1].y - path[i - 2].y) != -signf(d.y), "no shaking at %s" % path[i])
+	assert_lt((path.size() - started) * dt, 10.0 / world.crew.rules.walk_speed * 1.2, "about walking speed from x 6 to 16")
+
+
 func test_column_follows_the_engineer_out_onto_a_piece_being_built() -> void:
 	world.army.spawn(3, 3.5)
 	var m := _plan(Vector2(6, 6), Vector2(10, 6))
