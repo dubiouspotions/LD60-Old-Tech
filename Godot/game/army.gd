@@ -152,13 +152,14 @@ func step(dt: float) -> void:
 	_step_deserters(dt)
 
 
-## Walks soldier rank i toward its camp spot, forward or back. Spots squeeze together when the world ends
-## close behind the camp. Unlike the march it never steps off a ledge
-## or into a hazard; a soldier who can not get there lies down where it is.
+## Walks soldier rank i toward its camp spot, forward or back: the front to camp_x, everyone else a gap
+## behind wherever the soldier ahead of it is, so a soldier stuck short of its spot keeps the rest close.
+## Spots squeeze together when the world ends close behind the camp. Unlike the march it never steps off a
+## ledge or into a hazard; a soldier who can not get there lies down where it is.
 func _walk_to_camp(s: Soldier, i: int, dt: float) -> void:
 	var room := camp_x - terrain.min_x - 0.5
 	var gap := minf(rules.camp_spacing, room / maxi(soldiers.size() - 1, 1))
-	var to := camp_x - i * gap - s.pos.x
+	var to := (camp_x if i == 0 else soldiers[i - 1].pos.x - gap) - s.pos.x
 	if absf(to) < 0.05:
 		s.facing = 1
 		return

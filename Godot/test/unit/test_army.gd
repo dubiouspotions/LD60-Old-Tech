@@ -382,3 +382,31 @@ func test_fighting_does_not_count_toward_mutiny() -> void:
 	_run(a, a.rules.mutiny_time + 2.0)
 	assert_eq(a.soldiers.size(), 1, "still fighting")
 	assert_eq(a.deserters.size(), 0)
+
+
+## Ground at row 4 with a 2 m dip at x 17-18, just behind a camp at x 20.5.
+const CAMP_DIP: Array = [
+	"..........................",
+	"..........................",
+	"..........................",
+	"..........................",
+	"#################..#######",
+	"#################..#######",
+	"##########################",
+	"BBBBBBBBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_soldiers_stuck_in_a_dip_do_not_split_the_camp() -> void:
+	var a := _world(CAMP_DIP)
+	a.spawn(10, 20.5)
+	for i in range(1, 8):
+		a.soldiers[i].pos = Vector2(18.8 - (i - 1) * 0.25, 6.0)
+	a.soldiers[8].pos = Vector2(16.4, 4.0)
+	a.soldiers[9].pos = Vector2(15.8, 4.0)
+	a.camp_x = 20.5
+	a.resting = true
+	_run(a, 10.0)
+	var xs := a.soldiers.map(func(s: Soldier) -> float: return s.pos.x)
+	for i in range(1, xs.size()):
+		assert_lte(xs[i - 1] - xs[i], a.rules.camp_spacing + 0.1, "soldier %d camps close behind %d" % [i, i - 1])
