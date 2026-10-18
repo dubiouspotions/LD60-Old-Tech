@@ -13,6 +13,8 @@ const REFERENCE_LENGTH: float = 5.0
 const MAX_SAG: float = 0.08
 
 signal member_built(member: Member)
+## Blueprints were handed to the crew (order_plan, order_blueprints).
+signal ordered(planned: Array[Member])
 signal member_broken(member: Member, text: String)
 ## Pieces hit the ground in cell at harm_speed or more this tick, doing this much damage in all (J: each hit's
 ## energy times its material's Ram).
@@ -335,9 +337,13 @@ func plans() -> Array[Array]:
 
 ## Hands one plan (from plans()) to the crew.
 func order_plan(plan: Array) -> void:
+	var now: Array[Member] = []
 	for m: Member in plan:
-		if m.blueprint and not m.dead:
+		if m.blueprint and not m.dead and not m.ordered:
 			m.ordered = true
+			now.append(m)
+	if not now.is_empty():
+		ordered.emit(now)
 
 
 ## Removes one plan (from plans()). Returns what it cost, to give back.
@@ -352,12 +358,14 @@ func cancel_plan(plan: Array) -> Supplies:
 
 ## Hands every unordered blueprint to the crew. Returns how many.
 func order_blueprints() -> int:
-	var n := 0
+	var now: Array[Member] = []
 	for m in members:
 		if m.blueprint and not m.ordered:
 			m.ordered = true
-			n += 1
-	return n
+			now.append(m)
+	if not now.is_empty():
+		ordered.emit(now)
+	return now.size()
 
 
 ## Ends of an ordered blueprint the crew can work from: bolted down or on a built member.

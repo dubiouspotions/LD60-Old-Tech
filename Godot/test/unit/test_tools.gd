@@ -271,3 +271,44 @@ func test_a_plan_from_inside_the_ground_is_measured_from_where_it_leaves_it() ->
 	assert_eq(world.bridge.members.size(), 1, "built: the part above the ground is short enough")
 	var m: Bridge.Member = world.bridge.members[0]
 	assert_lt(m.length, 5.0, "measured from the face of the ground")
+
+
+## Starts a chain at from and places one plank to to; the chain then waits at to.
+func _chain(from: Vector2, to: Vector2) -> void:
+	_click(from)
+	_click(to)
+
+
+func test_ordering_a_plan_ends_the_chain_building_onto_it() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_chain(Vector2(6, 6), Vector2(9, 6))
+	world.bridge.order_plan(world.bridge.plans()[0])
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 1, "the click starts a new chain instead of adding to the ordered plan")
+
+
+func test_ordering_every_plan_ends_the_chain() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_chain(Vector2(6, 6), Vector2(9, 6))
+	tools.commit()
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 1)
+
+
+func test_ordering_another_plan_keeps_the_chain() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_chain(Vector2(1, 6), Vector2(3, 6))
+	tools.cancel()
+	_chain(Vector2(8, 6), Vector2(10, 6))
+	var first: Array = world.bridge.plans().filter(func(p: Array) -> bool: return (p[0] as Bridge.Member).a.pos.x < 5.0)[0]
+	world.bridge.order_plan(first)
+	_click(Vector2(12, 5))
+	assert_eq(world.bridge.members.size(), 3, "the other chain carried on")
+
+
+func test_cancelling_the_plan_ends_the_chain_building_onto_it() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_chain(Vector2(6, 6), Vector2(9, 6))
+	GameState.gain(world.bridge.cancel_plan(world.bridge.plans()[0]))
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 0, "the click starts a new chain, not a plank from a joint that is gone")
