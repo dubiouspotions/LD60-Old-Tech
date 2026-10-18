@@ -263,7 +263,8 @@ func show_intro(on: bool) -> void:
 	%Intro.visible = on
 
 
-func show_lost(text: String) -> void:
+func show_lost(title: String, text: String) -> void:
+	%LostTitle.text = title
 	%LostText.text = text
 	%Lost.visible = true
 

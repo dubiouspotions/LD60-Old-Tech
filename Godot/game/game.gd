@@ -4,7 +4,11 @@ extends Node
 ## Levels, tools and starting supplies come from data/campaign.tres.
 
 @export var fast_speed: float = 2.0
+@export var lost_title: String = "The army has fallen"
 @export var lost_text: String = "Lost on level %d. Retrying restores the army and supplies you had at the checkpoint."
+## When the last engineer dies instead.
+@export var crew_lost_title: String = "The engineers are gone"
+@export var crew_lost_text: String = "Lost on level %d: no engineers are left to build. Retrying restores the army, the engineers and the supplies you had at the checkpoint."
 @export var victory_text: String = "All %d levels crossed with %d soldiers standing."
 ## Banner title when the level has no display name.
 @export var arrival_title: String = "Level %d"
@@ -71,7 +75,8 @@ func _ready() -> void:
 	_world.march_ordered.connect(_on_march_ordered)
 	_world.night_changed.connect(_on_night_changed)
 	_world.victory.connect(_on_victory, CONNECT_DEFERRED)
-	_world.army_lost.connect(_on_army_lost, CONNECT_DEFERRED)
+	_world.army_lost.connect(_lose.bind(lost_title, lost_text), CONNECT_DEFERRED)
+	_world.crew_lost.connect(_lose.bind(crew_lost_title, crew_lost_text), CONNECT_DEFERRED)
 	_tools.select(0)
 	GameState.new_campaign()
 	_start_at_level(0)
@@ -239,10 +244,11 @@ func _on_victory() -> void:
 	Audio.play(GameState.campaign.victory_sound)
 
 
-func _on_army_lost() -> void:
+## The level is lost: title and text (with %d for the level) say why.
+func _lose(title: String, text: String) -> void:
 	_over = true
 	_tools.enabled = false
-	_hud.show_lost(lost_text % GameState.level_number())
+	_hud.show_lost(title, text % GameState.level_number())
 	_set_paused(true)
 	Audio.play(GameState.campaign.lost_sound)
 

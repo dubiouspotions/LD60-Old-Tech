@@ -146,3 +146,24 @@ func test_the_cheat_top_up_says_what_it_gave() -> void:
 	for i in get_signal_emit_count(Effects, "said"):
 		texts.append(get_signal_parameters(Effects, "said", i)[0])
 	assert_true(texts.any(func(t: String) -> bool: return t.contains("+99 earth")), "the top-up shown")
+
+
+func test_losing_the_last_engineer_says_so_not_the_army() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	for e: Crew.Engineer in world.crew.engineers.duplicate():
+		world.crew._kill(e, "Spiked")
+	await get_tree().process_frame
+	var hud: Node = game.get_node("%HUD")
+	assert_true(hud.get_node("%Lost").visible, "the level is lost")
+	assert_eq(hud.get_node("%LostTitle").text, game.crew_lost_title)
+	assert_string_contains(hud.get_node("%LostText").text, "engineer")
+
+
+func test_losing_the_army_still_says_the_army() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	for s: Soldier in world.army.soldiers.duplicate():
+		world.army.crush(s)
+	await get_tree().process_frame
+	assert_eq(game.get_node("%HUD").get_node("%LostTitle").text, game.lost_title)

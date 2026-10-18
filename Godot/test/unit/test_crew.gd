@@ -820,7 +820,7 @@ func test_the_level_is_lost_when_the_last_engineer_dies() -> void:
 	for i in 180:
 		world._physics_process(1.0 / 60.0)
 	assert_eq(world.crew.engineers.size(), 0)
-	assert_signal_emitted(world, "army_lost", "no crew left: game over")
+	assert_signal_emitted(world, "crew_lost", "no crew left: game over")
 
 
 func test_an_engineer_left_idle_on_a_cliff_face_joint_climbs_back_up() -> void:

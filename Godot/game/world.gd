@@ -9,6 +9,8 @@ extends Node2D
 ## breaks camp, then marches.
 
 signal army_lost
+## The last engineer died: the level is lost.
+signal crew_lost
 ## The column starts marching: ordered by the player, or by the king when his patience runs out.
 signal march_ordered(by_player: bool)
 ## The column reached level index and made camp. joined soldiers arrived with the supplies.
@@ -477,7 +479,7 @@ func _on_army_count(count: int) -> void:
 func _on_crew_count(count: int) -> void:
 	if count == 0 and not _done:
 		_done = true
-		army_lost.emit()
+		crew_lost.emit()
 
 
 func _on_tile_detached(cell: Vector2i, type: TerrainType) -> void:
