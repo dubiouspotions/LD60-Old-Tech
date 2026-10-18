@@ -2,6 +2,25 @@
 
 Everything below is done in the Godot editor (4.7). No code needed.
 
+## Balancing: the ValueTweaks node
+
+Open `game/main.tscn` and select **ValueTweaks**. Its Inspector lists the main balance values in one place:
+
+| Section | Values |
+| --- | --- |
+| army | starting soldiers, soldier hit points, mutiny time (seconds blocked before a soldier deserts), recruit price |
+| crew | number of engineers |
+| enemies | archer hit points |
+| supplies | starting supplies, checkpoint supplies |
+| prices | what each tool costs (build tools: their material) |
+| yields | what digging each tile gives, and what felling a tree gives |
+
+The node stores nothing itself. Each value is the real one in the file that owns it (`data/campaign.tres`,
+`data/army_rules.tres`, `data/crew_rules.tres`, `data/archer_rules.tres`, `data/tools/*.tres`, `data/bridge/*.tres`,
+`data/terrain/*.tres`). Changing it here changes and saves that file, and changing the file shows up here. There is no
+undo for edits made here. Tools and terrain types with a cost or yield appear on their own; to list another terrain
+type, add it to the node's **Terrain Types**.
+
 ## Levels
 
 | Task | How |
@@ -10,8 +29,8 @@ Everything below is done in the Godot editor (4.7). No code needed.
 | Paint ground | Select **Terrain**, open the TileMap panel, paint. Every tile's behaviour comes from its TerrainType (below). Left, right and below the painted area count as bedrock. Above is open sky. |
 | Start / end | Move **StartFlag** (the column camps here) and **ExitFlag** (the level ends when the front soldier passes it). Put each flag's origin on the ground. |
 | How levels join | The game is one continuous march. Each level is attached so its **StartFlag** lands on the previous level's **ExitFlag**, moved up or down to match. Ground left of the StartFlag column is only used on the first level, so keep the area right of the ExitFlag a flat run at the same height as the next level's start. The next level loads in the background while the column is still on this one, and levels far behind are removed. |
-| Enemies | Drag `objects/archer/archer.tscn` under **Objects** (the game only finds archers there, and the level checks flag one placed anywhere else). Its origin is its feet, so put it on top of a solid tile. It dies when that tile is dug or collapses, or when soldiers reach it and cut it down. Tune range, reload and **Hit Points** in the Inspector. |
-| Music, reinforcements, supply drop | Select the root node and use the Inspector. The supply drop and reinforcements are given on arrival, but not on the first level. |
+| Enemies | Drag `objects/archer/archer.tscn` under **Objects** (the game only finds archers there, and the level checks flag one placed anywhere else). Its origin is its feet, so put it on top of a solid tile. It dies when that tile is dug or collapses, or when soldiers reach it and cut it down. Tune range and reload in the Inspector. Hit points are shared by all archers: **Hit Points** in `data/archer_rules.tres` (or ValueTweaks). |
+| Music, reinforcements, supply drop | Select the root node and use the Inspector. The supply drop and reinforcements are given on arrival, but not on the first level. Leave **Supply Drop** empty to use the campaign's **Checkpoint Supplies**; set it only for a level that should drop something different. |
 | Order of levels | `data/campaign.tres` → **Levels** (a list of level files). Starting soldiers, starting supplies, tools, jingles, the camp music and the dawn bugle are set there too. |
 
 Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with buried or floating flags, archers standing on nothing, seams the column can't walk over, and similar mistakes.

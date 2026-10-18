@@ -10,6 +10,7 @@ func _ready() -> void:
 	_bridge()
 	_army()
 	_crew()
+	_archer()
 	_tools()
 	_campaign()
 	get_tree().quit()
@@ -128,6 +129,10 @@ func _army() -> void:
 	_save(r, "res://data/army_rules.tres")
 
 
+func _archer() -> void:
+	_save(ArcherRules.new(), "res://data/archer_rules.tres")
+
+
 func _crew() -> void:
 	var r := CrewRules.new()
 	r.work_sound = _snd("dig")
@@ -165,6 +170,7 @@ func _campaign() -> void:
 	c.levels = levels
 	c.start_soldiers = 10
 	c.start_supplies = Supplies.make(8, 12, 6, 10)
+	c.checkpoint_supplies = Supplies.make(4, 8, 4, 5)
 	c.army_rules = load("res://data/army_rules.tres")
 	var tools: Array[ToolDefinition] = []
 	for f in ["1_dig", "2_fill", "3_log", "4_support", "5_rope"]:

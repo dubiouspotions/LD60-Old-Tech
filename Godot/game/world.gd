@@ -244,7 +244,8 @@ func _arrive(index: int) -> void:
 	var c := chunk(index)
 	current = index
 	c.start_flag.reached = true
-	var joined := GameState.arrive(index, c.level.reinforcements, c.level.supply_drop)
+	var drop := c.level.supply_drop if c.level.supply_drop else GameState.campaign.checkpoint_supplies
+	var joined := GameState.arrive(index, c.level.reinforcements, drop)
 	army.reinforce(joined)
 	army.stop_x = c.exit_flag.metres().x
 	_make_camp(c.start_flag.metres().x, c.level.march_delay)

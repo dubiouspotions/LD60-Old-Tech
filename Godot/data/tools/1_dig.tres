@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="ToolDefinition" format=3]
+[gd_resource type="Resource" script_class="ToolDefinition" format=3 uid="uid://bsx0j5qqqp22j"]
 
-[ext_resource type="Script" path="res://core/tool_definition.gd" id="1_cv8fe"]
+[ext_resource type="Script" uid="uid://ckdj86qctx6e0" path="res://core/tool_definition.gd" id="1_cv8fe"]
 
 [resource]
 script = ExtResource("1_cv8fe")
+display_name = "Dig/Chop"
 hint = "earth · trees · undo"
 action = &"tool_dig"
 key_label = "1"

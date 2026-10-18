@@ -35,7 +35,7 @@ func test_halts_at_two_metre_wall() -> void:
 	a.spawn(1, 2.5)
 	_run(a, 3.0)
 	assert_lt(a.lead().pos.x, 6.0)
-	assert_eq(a.halt_reason, "2 m wall ahead")
+	assert_string_starts_with(a.halt_reason, "2 m wall ahead")
 
 
 ## 5 m down: survivable, so the column walks off the edge and marches on.
@@ -160,7 +160,7 @@ func test_marches_under_unfinished_ramp_to_the_wall() -> void:
 	a.spawn(1, 2.5)
 	_run(a, 6.0)
 	assert_gt(a.lead().pos.x, 9.0, "did not wait for the engineers")
-	assert_eq(a.halt_reason, "3 m wall ahead", "only a wall stops it")
+	assert_string_starts_with(a.halt_reason, "3 m wall ahead", "only a wall stops it")
 
 
 func test_climbs_finished_ramp() -> void:
@@ -192,7 +192,7 @@ func test_attacks_archer_it_reaches_then_marches_on() -> void:
 	assert_eq(a.halt_reason, a.rules.fight_text, "reached him and fights")
 	assert_lt(a.lead().pos.x, 6.5, "stopped at him")
 	_run(a, 0.2)
-	assert_lt(archer.hp, archer.hit_points, "hit him")
+	assert_lt(archer.hp, archer.rules.hit_points, "hit him")
 	_run(a, 3.0)
 	assert_false(archer.alive(), "slain")
 	_run(a, 2.0)
@@ -260,7 +260,7 @@ func test_needs_two_metres_of_headroom() -> void:
 	a.spawn(1, 2.5)
 	_run(a, 4.0)
 	assert_lt(a.lead().pos.x, 6.0, "a 1 m gap is too low")
-	assert_eq(a.halt_reason, a.rules.low_text)
+	assert_string_starts_with(a.halt_reason, a.rules.low_text)
 
 
 func test_walks_through_a_two_metre_tunnel() -> void:
@@ -294,3 +294,66 @@ func test_besieges_and_razes_a_tower_in_the_way() -> void:
 	assert_null(a.terrain.type_at(Vector2i(10, 2)), "tower razed")
 	_run(a, 3.0)
 	assert_gt(a.lead().pos.x, 12.5, "marched on")
+
+
+## Ground at row 5 with a 4 m wall from x = 10, and a 4 m cliff behind the column at x = 5.
+const BOXED_IN: Array = [
+	"....................",
+	"#####.....##########",
+	"#####.....##########",
+	"#####.....##########",
+	"#####.....##########",
+	"####################",
+	"BBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_blocked_soldier_counts_down_then_deserts() -> void:
+	var a := _world(BOXED_IN)
+	a.spawn(2, 8.5)
+	watch_signals(a)
+	_run(a, 2.0)
+	assert_string_contains(a.halt_reason, "desert", "countdown shown")
+	_run(a, a.rules.mutiny_time)
+	assert_eq(a.soldiers.size(), 1, "the front soldier deserted")
+	assert_eq(a.deserters.size(), 1)
+	assert_signal_emitted(a, "count_changed")
+	assert_eq(a.deserters[0].facing, -1, "walks back the way it came")
+
+
+func test_deserter_climbs_a_cliff_on_the_way_out() -> void:
+	var a := _world(BOXED_IN)
+	a.spawn(1, 8.5)
+	_run(a, a.rules.mutiny_time + 2.0)
+	var d: Soldier = a.deserters[0]
+	_run(a, 4.0)
+	assert_lt(d.pos.x, 4.5, "went back over the cliff")
+	assert_almost_eq(d.pos.y, 1.0, 0.1, "on top of it")
+
+
+func test_besieging_does_not_count_toward_mutiny() -> void:
+	var a := _world([
+		"....................",
+		"..........KKK.......",
+		"..........KKK.......",
+		"..........KKK.......",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	a.spawn(1, 8.5)
+	_run(a, a.rules.mutiny_time + 2.0)
+	assert_eq(a.soldiers.size(), 1, "still besieging")
+	assert_eq(a.deserters.size(), 0)
+
+
+func test_fighting_does_not_count_toward_mutiny() -> void:
+	var a := _world(["....................", "####################", "BBBBBBBBBBBBBBBBBBBB"])
+	var archer := _archer_at(Vector2(6.5, 1))
+	a.spawn(1, 5.0)
+	a.foes = [archer]
+	_run(a, 0.1)
+	archer.hp = 1000
+	_run(a, a.rules.mutiny_time + 2.0)
+	assert_eq(a.soldiers.size(), 1, "still fighting")
+	assert_eq(a.deserters.size(), 0)
+

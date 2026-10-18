@@ -9,7 +9,8 @@ extends Node2D
 @export var music: AudioStream
 ## Soldiers that join when the column arrives here (not on the first level).
 @export_range(0, 50) var reinforcements: int = 3
-## Supplies dropped when the column arrives here (not on the first level).
+## Supplies dropped when the column arrives here (not on the first level). Empty uses the campaign's
+## Checkpoint Supplies, so set it only for a level that should drop something different.
 @export var supply_drop: Supplies
 ## Seconds the column camps at the start before the king orders the march. 0 marches at once.
 ## The army sleeps through the night while the engineers keep working. The player can order the march earlier.

@@ -16,8 +16,8 @@ extends Node2D
 @export var shoot_sound: SoundEffect
 @export var down_sound: SoundEffect
 @export var down_text: String = "Tower down"
-## Melee hits it takes from soldiers before it falls.
-@export_range(1, 50) var hit_points: int = 3
+## Shared tuning, such as how many melee hits an archer takes before it falls.
+@export var rules: ArcherRules
 @export var slain_text: String = "Archer slain"
 @export var hurt_flash_color: Color = Color.WHITE
 ## Height of the bow above the feet.
@@ -38,7 +38,7 @@ var _down: bool = false
 
 func _ready() -> void:
 	_cooldown = first_shot_delay
-	hp = hit_points
+	hp = rules.hit_points
 
 
 func alive() -> bool:
