@@ -8,7 +8,7 @@ extends TileMapLayer
 ## With the v2 look on, dirt, rock, water and spikes are drawn with v2 tiles (each tagged with its material) and
 ## the tile of every cell around a change is re-picked if it no longer fits its neighbours (see TerrainLook).
 
-## A fill-type tile fell loose; the level spawns a falling block for it.
+## A tile that falls (a box) lost what held it; the level spawns a falling block for it.
 signal tile_detached(cell: Vector2i, type: TerrainType)
 ## A structure or tree broke up (razed, fell too far, landed on spikes): what it gave and its cells.
 signal collapsed(found: Supplies, cells: Array[Vector2i])
@@ -47,6 +47,11 @@ const AIR_KEY: StringName = &"air"
 @export var hit_flash: Color = Color(2.2, 2.2, 2.2)
 ## Share of hit_time the blink lasts.
 @export_range(0.05, 1.0, 0.05) var hit_flash_share: float = 0.35
+## A hit on a tower also sends a ripple through the rest of it (with its battlements), to show the whole tower
+## comes down, not one tile: how far each tile bobs up as it passes, how fast it runs, how long each bob lasts.
+@export_range(0, 16) var ripple_lift: int = 2
+@export_range(1.0, 100.0, 1.0, "suffix:tiles/s") var ripple_speed: float = 14.0
+@export_range(0.05, 2.0, 0.05, "suffix:s") var ripple_time: float = 0.25
 
 @export_group("Collapse effect")
 ## A structure breaking up (a tower razed or collapsing) throws this many chunks per cell, in its Debris Colour...
@@ -75,6 +80,8 @@ var _changed_all: bool = true
 var _rules: TileRules
 var _alts: Dictionary = {} # v2 atlas coords -> {TerrainType, or AIR_KEY for air: alternative id}
 var _hits: Dictionary = {} # Vector2i -> seconds since it was hit
+var _ripple: Dictionary = {} # Vector2i -> seconds after the latest tower hit that the ripple reaches it
+var _ripple_age: float = 0.0 # seconds since the latest tower hit
 
 
 func _ready() -> void:
@@ -87,22 +94,54 @@ func _process(delta: float) -> void:
         advance_hits(delta)
 
 
-## The tile at cell was hit: it shakes and blinks once (see Hit effect).
+## The tile at cell was hit: it shakes and blinks once, and if it is part of a tower a ripple runs from it through
+## the rest of the tower (see Hit effect).
 func hit(cell: Vector2i) -> void:
     if get_cell_source_id(cell) == -1:
         return
     _hits[cell] = 0.0
+    var t := type_at(cell)
+    if t and t.structure:
+        _start_ripple(cell, t)
     notify_runtime_tile_data_update()
+
+
+## Seconds after the latest hit on a tower that the ripple reaches cell (0 for the tile hit), or -1 if it does not.
+func ripple_delay(cell: Vector2i) -> float:
+    return _ripple.get(cell, -1.0)
+
+
+## Every tile of the tower cell belongs to (structure tiles joined to it and the decorations on them), by how long the
+## ripple takes to get there from cell.
+func _start_ripple(cell: Vector2i, t: TerrainType) -> void:
+    var steps := {cell: 0}
+    var queue: Array[Vector2i] = [cell]
+    while not queue.is_empty():
+        var c: Vector2i = queue.pop_front()
+        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
+            var n: Vector2i = c + d
+            var nt := type_at(n)
+            if steps.has(n) or not (_is_decoration(n) or (nt != null and (nt.structure or nt == t) and _inside(n))):
+                continue
+            steps[n] = steps[c] + 1
+            queue.append(n)
+    _ripple.clear()
+    for c: Vector2i in steps:
+        _ripple[c] = steps[c] / ripple_speed
+    _ripple_age = 0.0
 
 
 ## Moves the hit tiles' shake and blink on by delta seconds.
 func advance_hits(delta: float) -> void:
-    if _hits.is_empty():
+    if _hits.is_empty() and _ripple.is_empty():
         return
     for c: Vector2i in _hits.keys():
         _hits[c] += delta
         if _hits[c] >= hit_time:
             _hits.erase(c)
+    _ripple_age += delta
+    if not _ripple.is_empty() and _ripple_age > _ripple.values().max() + ripple_time:
+        _ripple.clear()
     notify_runtime_tile_data_update()
 
 
@@ -115,17 +154,27 @@ func hit_offset_at(cell: Vector2i) -> Vector2i:
     return Vector2i(randi_range(-r, r), randi_range(-r, r))
 
 
+## How far the ripple lifts the tile at cell now, in pixels (the tile hit shakes instead).
+func ripple_offset_at(cell: Vector2i) -> Vector2i:
+    if not _ripple.has(cell) or _hits.has(cell):
+        return Vector2i.ZERO
+    var age: float = _ripple_age - _ripple[cell]
+    if age < 0.0 or age > ripple_time:
+        return Vector2i.ZERO
+    return Vector2i(0, -roundi(ripple_lift * sin(PI * age / ripple_time)))
+
+
 ## The tile at cell's colour now: hit_flash while it blinks, else white.
 func hit_flash_at(cell: Vector2i) -> Color:
     return hit_flash if _hits.has(cell) and _hits[cell] < hit_time * hit_flash_share else Color.WHITE
 
 
 func _use_tile_data_runtime_update(coords: Vector2i) -> bool:
-    return _hits.has(coords)
+    return _hits.has(coords) or _ripple.has(coords)
 
 
 func _tile_data_runtime_update(coords: Vector2i, tile_data: TileData) -> void:
-    tile_data.texture_origin -= hit_offset_at(coords)
+    tile_data.texture_origin -= hit_offset_at(coords) + ripple_offset_at(coords)
     tile_data.modulate = hit_flash_at(coords)
 
 
@@ -560,7 +609,7 @@ func atlas_tile(type: TerrainType) -> Array:
     return _tile_for.get(type, [])
 
 
-## Picture of the first tile in the TileSet with this terrain type, for showing it off the map (falling fill).
+## Picture of the first tile in the TileSet with this terrain type, for showing it off the map (a falling box).
 func tile_texture(type: TerrainType) -> Texture2D:
     if _tile_for.is_empty():
         _index_tileset()
@@ -615,13 +664,10 @@ func _collapse_unsupported(xa: int, xb: int, ca: int, cb: int) -> void:
     var supported := {}
     var queue: Array[Vector2i] = []
     for cell: Vector2i in _types:
-        if cell.x < xa or cell.x > xb or not _types[cell].structure:
-            continue
-        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
-            if is_anchor(cell + d):
-                supported[cell] = true
-                queue.append(cell)
-                break
+        # Only ground under a structure holds it up; ground beside or above it does not.
+        if cell.x >= xa and cell.x <= xb and _types[cell].structure and is_anchor(cell + Vector2i.DOWN):
+            supported[cell] = true
+            queue.append(cell)
     while not queue.is_empty():
         var cell: Vector2i = queue.pop_back()
         for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
@@ -663,6 +709,10 @@ func _loosen(cells: Array[Vector2i]) -> void:
 ## Breaks a tower or tree apart: a tree is felled, a structure collapses into debris. Either gives its bulk yield
 ## (collapsed).
 func break_up(cells: Array[Vector2i]) -> void:
+    # Its battlements and the like come down with it.
+    var decorations := decorations_on(cells)
+    for c in decorations:
+        erase_cell(c)
     var first := type_at(cells[0])
     if first.dig_action == TerrainType.DigAction.FELL:
         Audio.play(first.dig_sound, cell_center_px(work_cell(cells[0])))
@@ -675,9 +725,7 @@ func break_up(cells: Array[Vector2i]) -> void:
         set_type(cell, null)
         Effects.rubble(cell_center_px(cell), t.debris_color, collapse_rubble, collapse_rubble_speed)
         Effects.dust(cell_center_px(cell), t.debris_color.lerp(Color(0.85, 0.8, 0.72), collapse_dust_pale), collapse_dust)
-    # Its battlements and the like come down with it, in its colour.
-    for cell in decorations_on(cells):
-        erase_cell(cell)
+    for cell in decorations:
         Effects.debris(cell_center_px(cell), first.debris_color, 2, 110.0)
     Audio.play(collapse_sound, cell_center_px(cells[0]))
     Effects.shake(0.25)
@@ -689,15 +737,30 @@ func break_up(cells: Array[Vector2i]) -> void:
 func lift(cells: Array[Vector2i]) -> Dictionary:
     var tiles := {}
     for c in cells + decorations_on(cells):
-        if not tiles.has(c):
-            tiles[c] = {type = type_at(c), source = get_cell_source_id(c), coords = get_cell_atlas_coords(c),
-                alt = get_cell_alternative_tile(c), mark = _marks.get(c), siege = _siege.get(c)}
+        tiles[c] = {type = type_at(c), source = get_cell_source_id(c), coords = get_cell_atlas_coords(c),
+            alt = get_cell_alternative_tile(c), mark = _marks.get(c), siege = _siege.get(c)}
     for c: Vector2i in tiles:
         if tiles[c].type == null:
             erase_cell(c)
         else:
             set_type(c, null)
     return tiles
+
+
+## The decorations (battlements and other tiles painted in the air) joined to cells, directly or through each other.
+func decorations_on(cells: Array[Vector2i]) -> Array[Vector2i]:
+    var out: Array[Vector2i] = []
+    var seen := {}
+    var todo: Array[Vector2i] = cells.duplicate()
+    while not todo.is_empty():
+        var c: Vector2i = todo.pop_back()
+        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
+            var n: Vector2i = c + d
+            if not seen.has(n) and _is_decoration(n):
+                seen[n] = true
+                out.append(n)
+                todo.append(n)
+    return out
 
 
 ## Sets lifted tiles back down rows lower, each with the very tile it had. Returns the ground cells they now fill
@@ -718,22 +781,6 @@ func put(tiles: Dictionary, rows: int) -> Array[Vector2i]:
         if tile.siege != null:
             _siege[at] = tile.siege
         out.append(at)
-    return out
-
-
-## The decorations (old tiles with no material, such as battlements) painted beside cells, and beside those.
-func decorations_on(cells: Array[Vector2i]) -> Array[Vector2i]:
-    var out: Array[Vector2i] = []
-    var seen := {}
-    var todo: Array[Vector2i] = cells.duplicate()
-    while not todo.is_empty():
-        var c: Vector2i = todo.pop_back()
-        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
-            var n: Vector2i = c + d
-            if not seen.has(n) and _is_decoration(n):
-                seen[n] = true
-                out.append(n)
-                todo.append(n)
     return out
 
 

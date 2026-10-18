@@ -6,6 +6,10 @@ extends Node
 @export var fast_speed: float = 2.0
 @export var lost_title: String = "The army has fallen"
 @export var lost_text: String = "Lost on level %d. Retrying restores the army and supplies you had at the checkpoint."
+## Status bar text once the level is lost, by the army or by the engineers, and once the campaign is won.
+@export var lost_status: String = "Column lost"
+@export var crew_lost_status: String = "Engineers lost"
+@export var victory_status: String = "Campaign won"
 ## When the last engineer dies instead.
 @export var crew_lost_title: String = "The engineers are gone"
 @export var crew_lost_text: String = "Lost on level %d: no engineers are left to build. Retrying restores the army, the engineers and the supplies you had at the checkpoint."
@@ -40,6 +44,8 @@ extends Node
 @onready var _day_night: DayNight = %DayNight
 
 var _over: bool = false
+## Status bar text once the game is over (lost or won).
+var _over_status: String = ""
 ## Counts losses, so a lost card still waiting is dropped when the level is retried meanwhile.
 var _losses: int = 0
 ## Plans shown with Build buttons this frame (see _show_plans).
@@ -79,8 +85,8 @@ func _ready() -> void:
 	_world.march_ordered.connect(_on_march_ordered)
 	_world.night_changed.connect(_on_night_changed)
 	_world.victory.connect(_on_victory, CONNECT_DEFERRED)
-	_world.army_lost.connect(_lose.bind(lost_title, lost_text), CONNECT_DEFERRED)
-	_world.crew_lost.connect(_lose.bind(crew_lost_title, crew_lost_text), CONNECT_DEFERRED)
+	_world.army_lost.connect(_lose.bind(lost_title, lost_text, lost_status), CONNECT_DEFERRED)
+	_world.crew_lost.connect(_lose.bind(crew_lost_title, crew_lost_text, crew_lost_status), CONNECT_DEFERRED)
 	_tools.select(0)
 	GameState.new_campaign()
 	_start_at_level(0)
@@ -241,6 +247,7 @@ func _on_camp_made(index: int, joined: int) -> void:
 
 func _on_victory() -> void:
 	_over = true
+	_over_status = victory_status
 	_tools.enabled = false
 	_set_paused(true)
 	_hud.show_victory(victory_text % [GameState.campaign.levels.size(), GameState.soldiers])
@@ -248,9 +255,11 @@ func _on_victory() -> void:
 	Audio.play(GameState.campaign.victory_sound)
 
 
-## The level is lost: title and text (with %d for the level) say why. The card comes after lost_delay.
-func _lose(title: String, text: String) -> void:
+## The level is lost: title and text (with %d for the level) say why on the card, which comes after lost_delay;
+## status says so in the status bar meanwhile.
+func _lose(title: String, text: String, status: String) -> void:
 	_over = true
+	_over_status = status
 	_tools.enabled = false
 	_losses += 1
 	var loss := _losses
@@ -288,7 +297,7 @@ func _update_status() -> void:
 			under_fire = true
 			break
 	if _over:
-		_hud.set_status("Column lost", Hud.Mood.FIRE)
+		_hud.set_status(_over_status, Hud.Mood.FIRE)
 	elif get_tree().paused:
 		_hud.set_status("Paused" if not _hud.any_card_open() else "Awaiting orders", Hud.Mood.HALT)
 	elif _world.camping():

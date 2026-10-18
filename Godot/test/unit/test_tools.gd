@@ -99,25 +99,30 @@ func test_dig_marks_tree() -> void:
 	assert_eq(world.terrain.type_at(Vector2i(3, 5)), WorldFixture.type("trunk"))
 
 
-func test_box_spends_five_logs_and_drops_a_box() -> void:
+func test_box_spends_its_cost_and_drops_a_box() -> void:
 	_select(ToolDefinition.Kind.FILL)
 	assert_eq(tools.tool().display_name, "Box")
-	GameState.supplies.logs = 7
+	var cost := tools.tool().cost.logs
+	assert_gt(cost, 0, "a box costs logs")
+	GameState.supplies.logs = cost + 2
 	var earth := GameState.supplies.earth
 	_click(Vector2(10.5, 1.5))
-	assert_eq(GameState.supplies.logs, 2, "five logs")
+	assert_eq(GameState.supplies.logs, 2, "its cost in logs")
 	assert_eq(GameState.supplies.earth, earth, "no earth")
 	await wait_physics_frames(60)
-	assert_eq(world.terrain.type_at(Vector2i(10, 5)), WorldFixture.type("fill"), "landed on the ground")
+	assert_eq(world.terrain.type_at(Vector2i(10, 5)), WorldFixture.type("box"), "landed on the ground")
 	assert_eq(world.terrain.type_at(Vector2i(10, 5)).display_name, "Box")
 
 
-func test_box_without_five_logs_does_nothing() -> void:
+func test_box_without_enough_logs_does_nothing() -> void:
 	_select(ToolDefinition.Kind.FILL)
-	GameState.supplies.logs = 4
+	GameState.supplies.logs = tools.tool().cost.logs - 1
+	watch_signals(Effects)
 	_click(Vector2(10.5, 1.5))
 	await wait_physics_frames(60)
 	assert_null(world.terrain.type_at(Vector2i(10, 5)))
+	var said: String = get_signal_parameters(Effects, "said")[0]
+	assert_string_starts_with(said, "1 log missing", "says how many are missing")
 
 
 func test_two_clicks_place_one_plank_and_stop() -> void:
@@ -449,3 +454,52 @@ func test_splitting_a_plan_does_not_make_logs() -> void:
 	for p: Bridge.Member in world.bridge.members:
 		back.add(p.paid)
 	assert_eq(back.logs, paid, "the two halves are worth what was paid")
+
+
+## A built log 3 m long, from (6, 6) to (9, 6).
+func _built_log() -> Bridge.Member:
+	var bridge := world.bridge
+	return bridge.build(bridge.snap_point(Vector2(6, 6)), bridge.snap_point(Vector2(9, 6)), load("res://data/bridge/log.tres"))
+
+
+func test_dig_on_a_built_piece_marks_it_for_the_crew_to_take_apart() -> void:
+	var m := _built_log()
+	var logs := GameState.supplies.logs
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(7.5, 6.05))
+	assert_true(m in world.bridge.members, "still there")
+	assert_true(m.dismantle, "marked for the crew")
+	assert_eq(GameState.supplies.logs, logs, "nothing back yet")
+	_click(Vector2(7.5, 6.05))
+	assert_false(m.dismantle, "a second click unmarks it")
+
+
+func test_dig_on_a_built_rope_takes_it_back_at_once_less_one() -> void:
+	var bridge := world.bridge
+	var m := bridge.build(bridge.snap_point(Vector2(6, 6)), bridge.snap_point(Vector2(9, 6)), load("res://data/bridge/rope.tres"))
+	var rope := GameState.supplies.rope
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(7.5, 6.05))
+	assert_false(m in bridge.members, "gone at once")
+	assert_eq(GameState.supplies.rope, rope + m.paid.rope - 1, "one less than it cost")
+
+
+func test_digging_up_a_box_gives_back_what_it_cost_less_one() -> void:
+	var box_tool: ToolDefinition = tools.tools.filter(func(t: ToolDefinition) -> bool: return t.kind == ToolDefinition.Kind.FILL)[0]
+	var cell := Vector2i(8, 5)
+	world.terrain.set_type(cell, WorldFixture.type("box"))
+	var had := GameState.supplies.logs
+	world._on_dig_finished(cell)
+	assert_null(world.terrain.type_at(cell), "dug up")
+	assert_eq(GameState.supplies.logs, had + box_tool.cost.logs - 1)
+
+
+func test_dragging_dig_marks_every_cell_the_cursor_passes() -> void:
+	_select(ToolDefinition.Kind.DIG)
+	tools._mouse_m = Vector2(1.5, 6.5)
+	tools._press()
+	tools._mouse_m = Vector2(9.5, 6.5)
+	tools._hold(1.0 / 60.0)
+	tools._release()
+	for x in range(1, 10):
+		assert_true(world.terrain.is_marked(Vector2i(x, 6)), "cell %d marked" % x)

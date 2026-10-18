@@ -17,6 +17,7 @@ script = ExtResource("3_hax71")
 display_name = "Tree trunk"
 solid = false
 anchor = false
+survives_fall = 1.0
 dig_action = 2
 dig_time = 1.25
 dig_sound = ExtResource("2_a56ly")

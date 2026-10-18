@@ -129,6 +129,7 @@ func _ready() -> void:
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
 	crew.dig_finished.connect(_on_dig_finished)
+	crew.dismantled.connect(func(m: Bridge.Member) -> void: gain(bridge.take_apart(m), (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6)))
 	army.count_changed.connect(_on_army_count)
 	crew.count_changed.connect(_on_crew_count)
 
@@ -626,6 +627,9 @@ func _on_dig_finished(cell: Vector2i) -> void:
 	var got := terrain.dig(cell)
 	if got == null:
 		return
+	var back := GameState.campaign.reclaim_for(here)
+	if back:
+		got = back
 	if feller:
 		crew.gather(feller, _dropped)
 	gain(got, Vector2(cell) + Vector2(0.5, 0), GAIN_COLOR if here.dig_action == TerrainType.DigAction.FELL else here.debris_color)
@@ -716,6 +720,7 @@ func _on_bridge_struck(cell: Vector2i, damage: float) -> void:
 	if t == null:
 		return
 	if t.raze_time > 0.0:
+		terrain.hit(cell)
 		terrain.besiege(cell, bridge.siege_per_kj * damage / 1000.0)
 	elif t.breaks_under(damage):
 		terrain.dig(cell)

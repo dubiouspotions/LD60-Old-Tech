@@ -36,6 +36,8 @@ var _mouse_m: Vector2
 var _hover: bool = false
 var _holding: bool = false
 var _hold_left: float = 0.0
+## Where the cursor was (metres) when a held Dig last marked cells.
+var _held_at: Vector2
 var _build_from: Bridge.Snap
 ## Building with clicks (not a drag): the first click starts a plank, the second places its end. While chain is
 ## held, the next plank follows the mouse from the end just placed (see chain); letting go of it ends the chain.
@@ -179,11 +181,28 @@ func _process(delta: float) -> void:
 	if lantern:
 		lantern.global_position = get_global_mouse_position()
 	if _holding and enabled and world:
-		_hold_left -= delta
-		if _hold_left <= 0.0:
-			_use(Grid.cell_of(_mouse_m), false)
-			_hold_left = tool().repeat_interval
+		_hold(delta)
 	queue_redraw()
+
+
+## While the button is held: Dig marks every cell the cursor passed since the last frame, however fast it moves;
+## other tools repeat at their repeat_interval where the cursor is.
+func _hold(delta: float) -> void:
+	if tool().kind == ToolDefinition.Kind.DIG:
+		var from := _held_at
+		var steps := ceili(from.distance_to(_mouse_m) / 0.25)
+		var last := Grid.cell_of(from)
+		for i in range(1, steps + 1):
+			var cell := Grid.cell_of(from.lerp(_mouse_m, float(i) / steps))
+			if cell != last:
+				_use(cell, false)
+				last = cell
+		_held_at = _mouse_m
+		return
+	_hold_left -= delta
+	if _hold_left <= 0.0:
+		_use(Grid.cell_of(_mouse_m), false)
+		_hold_left = tool().repeat_interval
 
 
 func _update_mouse() -> void:
@@ -211,6 +230,7 @@ func _press() -> void:
 		return
 	_holding = t.repeat_interval > 0.0
 	_hold_left = t.repeat_interval
+	_held_at = _mouse_m
 	_use(Grid.cell_of(_mouse_m), true)
 
 
@@ -255,11 +275,16 @@ func _use(cell: Vector2i, first: bool) -> void:
 		ToolDefinition.Kind.DIG:
 			var m := world.bridge.member_at(_mouse_m, member_pick_radius)
 			if m:
-				world.gain(m.paid, (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6))
+				var mid := (m.a.pos + m.b.pos) / 2.0
 				if m.blueprint:
+					# A plan was never built: all of it back.
+					world.gain(m.paid, mid - Vector2(0, 0.6))
 					world.bridge.remove_member(m)
-				else:
-					world.bridge.break_member(m, true)
+				elif m.material.dismantle_instantly:
+					world.gain(world.bridge.take_apart(m), mid - Vector2(0, 0.6))
+				elif first:
+					m.dismantle = not m.dismantle
+					Audio.play(t.use_sound, Grid.to_px(mid))
 				return
 			if first:
 				_dig_marking = not terrain.is_marked(cell)
@@ -275,7 +300,7 @@ func _use(cell: Vector2i, first: bool) -> void:
 				return
 			if not GameState.spend(t.cost):
 				if first:
-					_say(center - Vector2(0, 0.5), t.no_supply_text, ok_color)
+					_say(center - Vector2(0, 0.5), GameState.supplies.missing_text(t.cost, t.no_supply_text), ok_color)
 				return
 			if here:
 				terrain.set_type(cell, null)
@@ -334,6 +359,10 @@ func _draw_marks() -> void:
 		var done := world.terrain.dig_progress(cell)
 		if done > 0.0:
 			draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x * done, 4)), mark_color)
+	for m in world.bridge.members:
+		if m.dismantle and not m.blueprint:
+			draw_line(m.a.pos * px, m.b.pos * px, Color(mark_color, 0.35), 0.36 * px)
+			draw_line(m.a.pos * px, m.a.pos.lerp(m.b.pos, 1.0 - m.progress) * px, mark_color, 3.0)
 	for cell in world.terrain.besieged_cells():
 		var done := world.terrain.siege_progress(cell)
 		if done > 0.0:

@@ -264,16 +264,6 @@ focus_mode = 0
 toggle_mode = true
 text = "Sound"
 
-[node name="MaterialPicker" type="PanelContainer" parent="Root" unique_id=794381188]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-
-[node name="Materials" type="HBoxContainer" parent="Root/MaterialPicker" unique_id=218306886]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 6
-
 [node name="SoundPanel" type="PanelContainer" parent="Root" unique_id=477728629]
 unique_name_in_owner = true
 visible = false
@@ -452,7 +442,7 @@ text = "Sappers' March"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(490, 0)
 layout_mode = 2
-text = "The column marches east on its own, and orders are orders: once it sets off it walks off ravines, into water and spikes, and onto unfinished bridges. Only a wall over 1 m stops it, or an archer it reaches and cuts down. You are the engineers above the field. Dig, fill and bridge a way through before the towers thin the ranks."
+text = "The column marches east on its own, and orders are orders: once it sets off it walks off ravines, into water and spikes, and onto unfinished bridges. Only a wall over 1 m stops it, or an archer it reaches and cuts down. You are the engineers above the field. Dig, drop boxes and bridge a way through before the towers thin the ranks."
 autowrap_mode = 3
 
 [node name="Rules" type="RichTextLabel" parent="Root/Intro/Center/Card/Rows" unique_id=871633306]
@@ -463,7 +453,7 @@ theme_override_font_sizes/normal_font_size = 13
 theme_override_font_sizes/bold_font_size = 13
 bbcode_enabled = true
 text = "[ul][b]Dig[/b] marks soft earth (+1 earth), trees (trunk → logs, leaves → rope) and gold ore (+1 gold); the engineers walk over and dig them. Dig a bridge member or a planned one to take it back.
-[b]Fill[/b] drops a block of earth that falls until it lands.
+[b]Box[/b] drops a box that falls until it lands.
 [b]Bridge[/b], [b]Support[/b] and [b]Rope[/b]: drag from point to point to plan a member, then press [b]Build[/b] (Enter): the engineers build it piece by piece from the ground outward on scaffolding, and strike the scaffolding when done. Ends snap to a 0.5 m grid and to existing joints. An end touching ground is bolted down. Joints are hinges, so build triangles or hang the deck from ropes. Logs take push and pull up to 5 m long and can be walked on; supports are logs nobody walks on; ropes only pull, up to 12 m. Members glow red as they near breaking, and each soldier adds 80 kg. Every member costs one of its material per started metre.
 At the start of each level the column camps for the night: the soldiers sleep, the archers rest and your engineers keep working until the king loses patience; press [b]March[/b] (M) to break camp earlier. At camp you can buy more soldiers with gold: [b]Recruit[/b] (R). Plan while paused (Space), build, then resume to load the bridge. Pan with right-drag, the wheel, A/D. F toggles speed, C follows the column.[/ul]"
 fit_content = true

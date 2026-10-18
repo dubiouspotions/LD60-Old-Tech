@@ -4,15 +4,19 @@ extends Resource
 ## A bridge member type (log, rope, ...). Physics units are SI: m, kg, N.
 
 @export var display_name: String = "Log"
+## Shown on its tool's button, to pick it, when the tool builds more than one material.
+@export var icon: Texture2D
 ## Small hint on the tool button while this material is chosen.
 @export var hint: String = ""
 ## What each started metre costs: a 3.2 m piece costs four times this.
 @export var cost: Supplies
-## Shown when the player can not afford it.
-@export var no_supply_text: String = "No logs. Fell a tree"
+## Shown when the player can not afford it; %s is what is missing ("3 logs").
+@export var no_supply_text: String = "%s missing. Fell a tree"
 
-## Metres of it one engineer builds per second.
+## Metres of it one engineer builds per second. Taking a built piece apart goes at the same speed.
 @export_range(0.05, 10.0, 0.05, "suffix:m/s") var build_speed: float = 1.6
+## The Dig tool takes a built piece of it back at once instead of marking it for the crew to take apart (ropes).
+@export var dismantle_instantly: bool = false
 
 @export_group("Physics")
 @export_range(0.5, 30.0, 0.5, "suffix:m") var max_length: float = 5.0

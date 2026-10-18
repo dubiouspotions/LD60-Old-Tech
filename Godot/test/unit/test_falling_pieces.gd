@@ -106,19 +106,43 @@ func test_tower_falls_onto_the_ground_below_and_stands_there() -> void:
 func test_decoration_tiles_on_the_tower_fall_with_it() -> void:
 	_build(MAP)
 	var t := world.terrain
-	var src := t.tile_set.get_source(t.look.classic_source) as TileSetAtlasSource
-	var deco := Vector2i(-1, -1)
-	for i in src.get_tiles_count():
-		var c := src.get_tile_id(i)
-		if src.get_tile_data(c, 0).get_custom_data(Terrain.CUSTOM_DATA) == null:
-			deco = c
-			break
+	var deco := WorldFixture.decorate(t, Vector2i(6, 1))
 	assert_ne(deco, Vector2i(-1, -1), "the TileSet has a decoration tile")
-	t.set_cell(Vector2i(6, 1), t.look.classic_source, deco)
 	_clear([Vector2i(6, 5), Vector2i(7, 5)])
 	_run(2.0)
 	assert_eq(t.get_cell_source_id(Vector2i(6, 1)), -1, "not left in the air")
 	assert_eq(t.get_cell_atlas_coords(Vector2i(6, 2)), deco, "on the tower where it landed")
+
+
+## A 2 x 2 tower on a 1 m post, 3 m above deep soil once the post is gone.
+const DROP: Array = [
+	"....................",
+	"......KK............",
+	"......KK............",
+	"......##............",
+	"....................",
+	"....................",
+	"####################",
+	"####################",
+	"####################",
+	"####################",
+	"####################",
+	"####################",
+	"####################",
+	"BBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_a_tower_landing_breaks_the_ground_under_it_and_sinks_until_a_short_drop() -> void:
+	_build(DROP)
+	_clear([Vector2i(6, 3), Vector2i(7, 3)])
+	_run(6.0)
+	# 3 m onto row 6: breaks rows 6 and 7, sinks 2 m: breaks row 8, sinks 1 m: stops on row 9.
+	assert_eq(_bricks().size(), 4, "stands, whole")
+	for c in [Vector2i(6, 7), Vector2i(7, 7), Vector2i(6, 8), Vector2i(7, 8)]:
+		assert_true(c in _bricks(), "sunk to %s" % c)
+	assert_eq(world.terrain.type_at(Vector2i(6, 9)), WorldFixture.type("soil"), "the last 1 m drop broke nothing")
+	assert_eq(world.terrain.type_at(Vector2i(5, 7)), WorldFixture.type("soil"), "only the ground under it")
 
 
 func test_archer_is_not_lost_while_its_tower_falls() -> void:
@@ -177,15 +201,20 @@ func test_falling_tower_crushes_an_engineer_under_it() -> void:
 
 func test_tree_falls_onto_the_ground_below_and_stands_there() -> void:
 	_build(TREE)
-	_clear([Vector2i(6, 5), Vector2i(6, 6)])
-	world.terrain.set_type(Vector2i(5, 5), null)
-	world.terrain.set_type(Vector2i(7, 5), null)
-	world.terrain.set_type(Vector2i(5, 6), null)
-	world.terrain.set_type(Vector2i(7, 6), null)
+	_clear([Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5)])
 	_run(2.0)
-	assert_eq(world.terrain.type_at(Vector2i(6, 6)), WorldFixture.type("trunk"), "fell 2 m")
-	assert_eq(world.terrain.type_at(Vector2i(6, 3)), WorldFixture.type("leaves"), "in one piece")
-	assert_null(world.terrain.type_at(Vector2i(6, 2)))
+	assert_eq(world.terrain.type_at(Vector2i(6, 5)), WorldFixture.type("trunk"), "fell 1 m")
+	assert_eq(world.terrain.type_at(Vector2i(6, 2)), WorldFixture.type("leaves"), "in one piece")
+	assert_null(world.terrain.type_at(Vector2i(6, 1)))
+
+
+func test_a_two_metre_fall_fells_a_tree() -> void:
+	_build(TREE)
+	_clear([Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5), Vector2i(5, 6), Vector2i(6, 6), Vector2i(7, 6)])
+	var expected := _tree_logs()
+	_run(2.0)
+	assert_eq(world.wood.count(), expected, "felled: its logs lie about as wood")
+	assert_null(world.terrain.type_at(Vector2i(6, 6)), "no trunk left standing")
 
 
 func test_tree_falling_further_than_it_survives_is_felled() -> void:

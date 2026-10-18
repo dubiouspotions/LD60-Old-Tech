@@ -4,29 +4,29 @@
 [ext_resource type="PackedScene" uid="uid://kib74rq6nvro" path="res://world/background/background.tscn" id="2"]
 [ext_resource type="Script" uid="uid://csheef411813p" path="res://game/tool_controller.gd" id="3"]
 [ext_resource type="Script" uid="uid://ccqxavwqhp3xu" path="res://game/camera_rig.gd" id="4"]
-[ext_resource type="PackedScene" path="res://ui/hud.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://b8e1oas37jrri" path="res://ui/hud.tscn" id="5"]
 [ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6"]
 [ext_resource type="PackedScene" path="res://game/world.tscn" id="7"]
 [ext_resource type="CompressedTexture3D" uid="uid://bgadupm8eb0qp" path="res://post/lut/low_17.png" id="7_wjctj"]
 [ext_resource type="Script" uid="uid://crrmlhkv6vxe2" path="res://game/day_night.gd" id="8"]
-[ext_resource type="Script" path="res://game/value_tweaks.gd" id="vt_script"]
 [ext_resource type="PackedScene" path="res://post/night_grade.tscn" id="night_grade"]
-[ext_resource type="Script" path="res://game/night_light.gd" id="night_light"]
-[ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="vt_tt"]
-[ext_resource type="Resource" path="res://data/campaign.tres" id="vt_campaign"]
-[ext_resource type="Resource" path="res://data/crew_rules.tres" id="vt_crew"]
+[ext_resource type="Script" uid="uid://c8r3dftjopu1t" path="res://game/night_light.gd" id="night_light"]
 [ext_resource type="Resource" path="res://data/archer_rules.tres" id="vt_archer"]
-[ext_resource type="Resource" path="res://data/terrain_look.tres" id="vt_look"]
-[ext_resource type="Resource" path="res://data/terrain/bedrock.tres" id="vt_t_bedrock"]
-[ext_resource type="Resource" path="res://data/terrain/brick.tres" id="vt_t_brick"]
-[ext_resource type="Resource" path="res://data/terrain/crystal.tres" id="vt_t_crystal"]
-[ext_resource type="Resource" path="res://data/terrain/fill.tres" id="vt_t_fill"]
-[ext_resource type="Resource" path="res://data/terrain/leaves.tres" id="vt_t_leaves"]
-[ext_resource type="Resource" path="res://data/terrain/rock.tres" id="vt_t_rock"]
-[ext_resource type="Resource" path="res://data/terrain/soil.tres" id="vt_t_soil"]
-[ext_resource type="Resource" path="res://data/terrain/spikes.tres" id="vt_t_spikes"]
-[ext_resource type="Resource" path="res://data/terrain/trunk.tres" id="vt_t_trunk"]
-[ext_resource type="Resource" path="res://data/terrain/water.tres" id="vt_t_water"]
+[ext_resource type="Resource" uid="uid://7iiy8o6uksl5" path="res://data/campaign.tres" id="vt_campaign"]
+[ext_resource type="Resource" uid="uid://d0fo6cl8eba1f" path="res://data/crew_rules.tres" id="vt_crew"]
+[ext_resource type="Resource" uid="uid://fhten3f8x6ri" path="res://data/terrain_look.tres" id="vt_look"]
+[ext_resource type="Script" uid="uid://dqnjqfj6i5aul" path="res://game/value_tweaks.gd" id="vt_script"]
+[ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="vt_tt"]
+[ext_resource type="Resource" uid="uid://hv3txf15xhcx" path="res://data/terrain/bedrock.tres" id="vt_t_bedrock"]
+[ext_resource type="Resource" uid="uid://bqub5yq1d5lfc" path="res://data/terrain/brick.tres" id="vt_t_brick"]
+[ext_resource type="Resource" uid="uid://cjvmcjvjjnnq5" path="res://data/terrain/crystal.tres" id="vt_t_crystal"]
+[ext_resource type="Resource" uid="uid://c04be2d7tcrnh" path="res://data/terrain/box.tres" id="vt_t_box"]
+[ext_resource type="Resource" uid="uid://cug4s7vjhqh05" path="res://data/terrain/leaves.tres" id="vt_t_leaves"]
+[ext_resource type="Resource" uid="uid://dk5h26prf4ud3" path="res://data/terrain/rock.tres" id="vt_t_rock"]
+[ext_resource type="Resource" uid="uid://ci5mjffwjo0g8" path="res://data/terrain/soil.tres" id="vt_t_soil"]
+[ext_resource type="Resource" uid="uid://btwnje20efufv" path="res://data/terrain/spikes.tres" id="vt_t_spikes"]
+[ext_resource type="Resource" uid="uid://c5wv5tvojccyx" path="res://data/terrain/trunk.tres" id="vt_t_trunk"]
+[ext_resource type="Resource" uid="uid://6vsc07cm4yld" path="res://data/terrain/water.tres" id="vt_t_water"]
 
 [sub_resource type="Gradient" id="lantern_g"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
@@ -89,7 +89,7 @@ unique_name_in_owner = true
 anchor_mode = 0
 script = ExtResource("4")
 
-[node name="NightGrade" parent="." instance=ExtResource("night_grade")]
+[node name="NightGrade" parent="." unique_id=1083251141 instance=ExtResource("night_grade")]
 
 [node name="HUD" parent="." unique_id=425979277 instance=ExtResource("5")]
 unique_name_in_owner = true
@@ -98,10 +98,10 @@ layer = 5
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1380559701]
 environment = SubResource("Environment_sfb0x")
 
-[node name="ValueTweaks" type="Node" parent="."]
+[node name="ValueTweaks" type="Node" parent="." unique_id=1370938309]
 script = ExtResource("vt_script")
 campaign = ExtResource("vt_campaign")
 crew_rules = ExtResource("vt_crew")
 archer_rules = ExtResource("vt_archer")
 terrain_look = ExtResource("vt_look")
-terrain_types = Array[ExtResource("vt_tt")]([ExtResource("vt_t_bedrock"), ExtResource("vt_t_brick"), ExtResource("vt_t_crystal"), ExtResource("vt_t_fill"), ExtResource("vt_t_leaves"), ExtResource("vt_t_rock"), ExtResource("vt_t_soil"), ExtResource("vt_t_spikes"), ExtResource("vt_t_trunk"), ExtResource("vt_t_water")])
+terrain_types = Array[ExtResource("vt_tt")]([ExtResource("vt_t_bedrock"), ExtResource("vt_t_brick"), ExtResource("vt_t_crystal"), ExtResource("vt_t_box"), ExtResource("vt_t_leaves"), ExtResource("vt_t_rock"), ExtResource("vt_t_soil"), ExtResource("vt_t_spikes"), ExtResource("vt_t_trunk"), ExtResource("vt_t_water")])

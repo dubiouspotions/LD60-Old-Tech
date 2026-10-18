@@ -115,12 +115,14 @@ func test_the_game_starts_with_following_off_and_the_view_on_the_column() -> voi
 	assert_true(view.has_point(lead.pos), "the column is in view")
 
 
-func test_picking_stone_in_the_picker_switches_bridge_to_stone() -> void:
+func test_clicking_the_stone_icon_on_the_bridge_button_builds_stone() -> void:
 	game._begin()
 	var tools: ToolController = game.get_node("%ToolController")
-	tools.select(1)
-	var row: Node = game.get_node("%HUD").get_node("%Materials")
+	tools.select(0)
+	var bridge_button: ToolButton = game.get_node("%HUD").get_node("%Tools").get_child(1)
+	var row: Node = bridge_button.get_node("%Materials")
 	(row.get_child(1) as Button).pressed.emit()
+	assert_eq(tools.tool().display_name, "Bridge", "picks the Bridge tool too")
 	assert_eq(tools.build_material().display_name, "Stone")
 	assert_true((row.get_child(1) as Button).button_pressed, "the pick shows")
 	assert_engine_error_count(0, "no button freed while it was being pressed")
@@ -163,6 +165,17 @@ func test_losing_the_last_engineer_says_so_not_the_army() -> void:
 	assert_true(hud.get_node("%Lost").visible, "the level is lost")
 	assert_eq(hud.get_node("%LostTitle").text, game.crew_lost_title)
 	assert_string_contains(hud.get_node("%LostText").text, "engineer")
+
+
+func test_the_status_says_the_engineers_are_lost_not_the_column() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	for e: Crew.Engineer in world.crew.engineers.duplicate():
+		world.crew._kill(e, "Spiked")
+	await get_tree().process_frame
+	game._update_status()
+	assert_eq(game.get_node("%HUD").get_node("%Status").text, game.crew_lost_status)
+	assert_ne(game.crew_lost_status, game.lost_status)
 
 
 func test_losing_the_army_still_says_the_army() -> void:

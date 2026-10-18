@@ -53,6 +53,28 @@ func _run(seconds: float, done: Callable = func() -> bool: return false, speed: 
 			return
 
 
+func test_an_engineer_takes_a_marked_piece_apart_and_gets_back_one_less() -> void:
+	var bridge := world.bridge
+	var m := bridge.build(bridge.snap_point(Vector2(5, 6)), bridge.snap_point(Vector2(7, 6)), LOG)
+	var logs := GameState.supplies.logs
+	m.dismantle = true
+	_run(0.5)
+	assert_true(m in bridge.members, "takes a while, like building")
+	_run(15.0, func() -> bool: return not m in bridge.members)
+	assert_false(m in bridge.members, "taken apart")
+	assert_eq(GameState.supplies.logs, logs + m.paid.logs - 1)
+
+
+func test_instant_work_takes_marked_pieces_apart_at_once() -> void:
+	var bridge := world.bridge
+	var m := bridge.build(bridge.snap_point(Vector2(5, 6)), bridge.snap_point(Vector2(7, 6)), LOG)
+	m.dismantle = true
+	world.crew.rules.instant_work = true
+	_run(1.0 / 60.0)
+	world.crew.rules.instant_work = false
+	assert_false(m in bridge.members)
+
+
 func test_engineers_outpace_the_column() -> void:
 	assert_gt(world.crew.rules.walk_speed, world.army.rules.march_speed * 3.5)
 

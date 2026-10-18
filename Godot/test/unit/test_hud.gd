@@ -127,24 +127,28 @@ func test_supply_bar_shows_stone() -> void:
 	assert_eq((hud.get_node("%Stone").get_node("%Value") as Label).text, "3")
 
 
-func test_bridge_shows_a_material_picker() -> void:
+func test_the_bridge_button_shows_its_materials_as_icons_on_itself() -> void:
 	GameState.new_campaign()
 	var tools := GameState.campaign.tools
 	var i := tools.map(func(t: ToolDefinition) -> String: return t.display_name).find("Bridge")
 	var b: ToolButton = hud.get_node("%Tools").get_child(i)
-	var stone: BridgeMaterial = tools[i].materials()[1]
-	var picker: Control = hud.get_node("%MaterialPicker")
-	hud.set_tool(i, tools[i].materials()[0])
-	assert_true(picker.visible, "shown for Bridge")
-	var names := picker.get_node("%Materials").get_children().map(func(c: Button) -> String: return c.text.get_slice(" ", 0))
-	assert_eq(names, ["Log", "Stone"])
+	var mats := tools[i].materials()
+	var icons: Array = b.get_node("%Materials").get_children()
+	assert_eq(icons.size(), 2, "one per material")
+	assert_eq(icons.map(func(c: Button) -> Texture2D: return c.icon), mats.map(func(m: BridgeMaterial) -> Texture2D: return m.icon))
+	assert_true(icons.all(func(c: Button) -> bool: return c.icon != null), "each material has an icon")
+	assert_true((icons[0] as Button).button_pressed, "the first is the pick at first")
 	watch_signals(hud)
-	(picker.get_node("%Materials").get_child(1) as Button).pressed.emit()
-	assert_signal_emitted_with_parameters(hud, "material_picked", [stone])
-	hud.set_tool(i, stone)
+	(icons[1] as Button).pressed.emit()
+	assert_signal_emitted_with_parameters(hud, "tool_pressed", [i])
+	assert_signal_emitted_with_parameters(hud, "material_picked", [mats[1]])
+	hud.set_tool(i, mats[1])
+	assert_true((icons[1] as Button).button_pressed, "the pick shows")
+	assert_true(is_instance_valid(icons[1]), "the icons stay (one may be emitting this very pick)")
 	assert_string_contains(b.tooltip_text, "1 stone", "the button shows what the pick costs")
-	hud.set_tool(0)
-	assert_false(picker.visible, "hidden for tools with one material")
+	assert_false(hud.has_node("%MaterialPicker"), "no picker floating above the rack any more")
+	var dig: ToolButton = hud.get_node("%Tools").get_child(0)
+	assert_false(dig.get_node("%Materials").visible, "no icons on a tool with one material")
 
 
 func test_the_lost_card_fades_the_screen_then_slides_in_from_below() -> void:
@@ -158,3 +162,12 @@ func test_the_lost_card_fades_the_screen_then_slides_in_from_below() -> void:
 	await get_tree().create_timer(hud.card_fade_time + hud.card_slide_time + 0.2, true, false, true).timeout
 	assert_almost_eq(lost.color.a, dim, 0.01, "faded to the overlay")
 	assert_almost_eq(center.position.y, 0.0, 0.5, "slid into place")
+
+
+## The Build/Cancel and Recruit buttons live under WorldButtons. Hiding it in the editor (it happened more than once)
+## must not take them off the screen.
+func test_world_buttons_show_even_if_hidden_in_the_scene() -> void:
+	var other: Hud = load("res://ui/hud.tscn").instantiate()
+	other.get_node("%WorldButtons").visible = false
+	add_child_autofree(other)
+	assert_true(other.get_node("%WorldButtons").visible)

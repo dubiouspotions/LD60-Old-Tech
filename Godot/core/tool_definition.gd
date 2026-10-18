@@ -16,6 +16,7 @@ enum Kind { DIG, FILL, BUILD }
 ## Seconds between uses while the button is held. 0 = once per click.
 @export_range(0.0, 1.0, 0.01, "suffix:s") var repeat_interval: float = 0.0
 @export var cost: Supplies
+## Shown when the player can not afford cost; %s is what is missing ("3 logs").
 @export var no_supply_text: String = ""
 @export var use_sound: SoundEffect
 
@@ -50,5 +51,5 @@ func materials() -> Array[BridgeMaterial]:
 @export var other_materials: Array[BridgeMaterial] = []
 
 @export_group("Spawn")
-## Scene dropped by Fill (falling block).
+## Scene a Fill tool drops (a falling block, such as a box).
 @export var spawn_scene: PackedScene

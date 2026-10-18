@@ -105,6 +105,19 @@ func test_falling_log_batters_a_tower() -> void:
 	assert_true(hit, "tower damaged")
 
 
+func test_a_piece_hitting_a_tower_shakes_the_whole_tower() -> void:
+	_map([
+		"....................",
+		"....KKK.............",
+		"....KKK.............",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	world._on_bridge_struck(Vector2i(4, 2), 100.0)
+	assert_true(world.terrain._hits.has(Vector2i(4, 2)), "the tile hit shakes")
+	assert_gt(world.terrain.ripple_delay(Vector2i(6, 1)), 0.0, "the rest of the tower ripples after it")
+
+
 func test_log_laid_gently_on_the_ground_breaks_nothing() -> void:
 	_drop_log(4, 6, 6)
 	_run(2.0)
@@ -151,19 +164,19 @@ func test_slow_log_comes_to_rest_on_an_archer() -> void:
 	assert_lt((m.a.pos.y + m.b.pos.y) / 2.0, 6.0 - 1.3, "resting on the archer")
 
 
-## A block of fill let go with its top-left at cell.
-func _drop_fill(cell: Vector2i) -> FallingBlock:
+## A box let go with its top-left at cell.
+func _drop_box(cell: Vector2i) -> FallingBlock:
 	var block: FallingBlock = load("res://objects/falling_block/falling_block.tscn").instantiate()
-	block.type = WorldFixture.type("fill")
+	block.type = WorldFixture.type("box")
 	block.position = Grid.to_px(Vector2(cell))
 	world.objects.add_child(block)
 	return block
 
 
-func test_falling_fill_crushes_the_soldier_it_lands_on() -> void:
+func test_falling_box_crushes_the_soldier_it_lands_on() -> void:
 	world.army.spawn(1, 5.5)
 	world.army.hold = true
-	_drop_fill(Vector2i(5, 0))
+	_drop_box(Vector2i(5, 0))
 	_run(2.0)
 	assert_eq(world.army.soldiers.size(), 0, "crushed")
 
@@ -171,7 +184,7 @@ func test_falling_fill_crushes_the_soldier_it_lands_on() -> void:
 func test_a_box_let_go_just_above_a_soldier_crushes_him_by_its_weight() -> void:
 	world.army.spawn(1, 5.5)
 	world.army.hold = true
-	_drop_fill(Vector2i(5, 3))
+	_drop_box(Vector2i(5, 3))
 	_run(2.0)
 	assert_eq(world.army.soldiers.size(), 0, "600 kg is too much to carry")
 
@@ -182,7 +195,7 @@ func _stack_on_archer(n: int, kg: float) -> Archer:
 	archer.position = Grid.to_px(Vector2(5.5, 6))
 	world.objects.add_child(archer)
 	for k in n:
-		var block := _drop_fill(Vector2i(5, 3 - k))
+		var block := _drop_box(Vector2i(5, 3 - k))
 		block.mass = kg
 	return archer
 
@@ -205,12 +218,12 @@ func test_a_box_on_a_log_lying_on_a_soldier_crushes_him() -> void:
 	_drop_log(4.5, 6.5, 6.0 - 1.8 - 0.3)
 	_run(2.0)
 	assert_eq(world.army.soldiers.size(), 1, "the log alone is carried")
-	_drop_fill(Vector2i(5, 0))
+	_drop_box(Vector2i(5, 0))
 	_run(3.0)
 	assert_eq(world.army.soldiers.size(), 0, "the box's weight comes through the log")
 
 
-func test_fill_lands_on_a_bridge_instead_of_falling_through() -> void:
+func test_box_lands_on_a_bridge_instead_of_falling_through() -> void:
 	_map([
 		"..............",
 		"..............",
@@ -221,7 +234,7 @@ func test_fill_lands_on_a_bridge_instead_of_falling_through() -> void:
 		"BBBBBBBBBBBBBB",
 	])
 	_drop_log(6, 10, 4)
-	var block := _drop_fill(Vector2i(7, 0))
+	var block := _drop_box(Vector2i(7, 0))
 	_run(3.0)
 	assert_true(is_instance_valid(block), "still on the deck")
 	assert_null(world.terrain.type_at(Vector2i(7, 5)), "did not fall into the pit")
@@ -314,7 +327,7 @@ func test_crossing_pieces_of_one_structure_leave_each_other_alone() -> void:
 func test_a_loose_piece_lands_on_a_block_resting_on_a_deck() -> void:
 	_map(PIT)
 	_drop_log(6, 10, 5)
-	var block := _drop_fill(Vector2i(7, 3))
+	var block := _drop_box(Vector2i(7, 3))
 	_run(1.0)
 	_drop_log(6.5, 8.5, 2.0)
 	_run(3.0)
@@ -434,7 +447,7 @@ func test_spikes_destroy_a_box_that_falls_on_them() -> void:
 		"######^^^^####",
 		"BBBBBBBBBBBBBB",
 	])
-	var block := _drop_fill(Vector2i(7, 0))
+	var block := _drop_box(Vector2i(7, 0))
 	_run(2.0)
 	assert_false(is_instance_valid(block) and not block.is_queued_for_deletion(), "the box is gone")
 	assert_eq(world.terrain.type_at(Vector2i(7, 6)), WorldFixture.type("spikes"), "the spikes are still there")
@@ -442,14 +455,14 @@ func test_spikes_destroy_a_box_that_falls_on_them() -> void:
 
 
 func test_a_box_that_landed_stops_falling_before_it_is_freed() -> void:
-	_drop_fill(Vector2i(7, 0))
+	_drop_box(Vector2i(7, 0))
 	_run(2.0)
 	var boxes := 0
 	for y in range(0, 8):
-		if world.terrain.type_at(Vector2i(7, y)) == WorldFixture.type("fill"):
+		if world.terrain.type_at(Vector2i(7, y)) == WorldFixture.type("box"):
 			boxes += 1
 	assert_eq(boxes, 1, "one box, landed once")
-	assert_eq(world.terrain.type_at(Vector2i(7, 5)), WorldFixture.type("fill"), "on the ground")
+	assert_eq(world.terrain.type_at(Vector2i(7, 5)), WorldFixture.type("box"), "on the ground")
 
 
 func test_spikes_destroy_a_bridge_piece_that_falls_on_them() -> void:
