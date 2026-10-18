@@ -548,8 +548,18 @@ func _update_work_sound(dt: float) -> void:
 			return
 
 
+## Sideways shift that draws an engineer at p clear of a wall face beside it (on a joint bolted to the face,
+## or climbing it): its position stays on the face.
+func _clear_of_rock(p: Vector2) -> Vector2:
+	var out := 0
+	for side: int in [-1, 1]:
+		if terrain.is_solid(Grid.cell_of(p + Vector2(side * ENGINEER_HALF_WIDTH, -0.3))):
+			out -= side
+	return Vector2(out * (ENGINEER_HALF_WIDTH + 0.05), 0.0)
+
+
 func _show(e: Engineer, moving: bool, facing: int) -> void:
-	e.node.pos = e.pos
+	e.node.pos = e.pos + _clear_of_rock(e.pos)
 	e.node.moving = moving
 	e.node.speed = rules.walk_speed if e.at == null else rules.climb_speed
 	if facing != 0:

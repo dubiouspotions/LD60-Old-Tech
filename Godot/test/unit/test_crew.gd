@@ -723,3 +723,17 @@ func _assert_climbs_back(e: Crew.Engineer, x: float) -> void:
 	assert_lt(jump[0], 0.3, "moved, not teleported")
 	assert_almost_eq(e.pos.y, 6.0, 0.05, "on the column's ground")
 	assert_gt(e.pos.x, x, "back with the column")
+
+
+func test_crew_builds_from_a_joint_on_a_cliff_face_without_entering_the_rock() -> void:
+	var m := _plan(Vector2(6, 6.5), Vector2(10, 6.5))
+	world.bridge.order_blueprints()
+	var inside := [false]
+	_run(20.0, func() -> bool:
+		for e in world.crew.engineers:
+			for h in [0.3, 1.0, 1.5]:
+				for side in [-0.15, 0.15]:
+					inside[0] = inside[0] or world.terrain.is_solid(Grid.cell_of(e.node.pos + Vector2(side, -h)))
+		return not m.blueprint)
+	assert_false(m.blueprint, "built")
+	assert_false(inside[0], "nobody drawn inside the cliff")
