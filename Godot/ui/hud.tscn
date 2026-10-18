@@ -131,6 +131,7 @@ theme_override_constants/separation = 16
 [node name="Earth" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=1139826973 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
+alignment = 2
 caption = ""
 swatch = Color(0.627451, 0.4392157, 0.24705882, 0.003921569)
 
@@ -142,6 +143,7 @@ texture = ExtResource("7_m0eg6")
 [node name="Logs" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=2003694488 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
+alignment = 2
 caption = ""
 swatch = Color(0.6901961, 0.47843137, 0.25882354, 0.003921569)
 
@@ -153,17 +155,21 @@ texture = ExtResource("8_b00kl")
 [node name="Rope" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=1228161966 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
+alignment = 2
 caption = ""
 swatch = Color(0.8509804, 0.7647059, 0.56078434, 0.003921569)
 
-[node name="Rope2" type="Sprite2D" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=456850504]
-position = Vector2(108, 13)
+[node name="Rope2" type="Sprite2D" parent="Root/Margin/Column/SupplyBar/Supplies/Rope" unique_id=456850504]
+position = Vector2(10, 13)
 scale = Vector2(0.17187501, 0.17187501)
 texture = ExtResource("9_so1yu")
 
 [node name="Gold" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=1920718775 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
+offset_transform_enabled = true
+offset_transform_position = Vector2(3.09, 0)
+alignment = 2
 caption = ""
 swatch = Color(0.9372549, 0.7607843, 0.24313726, 0.003921569)
 
@@ -457,7 +463,7 @@ theme_override_constants/separation = 12
 layout_mode = 2
 theme_type_variation = &"Heading"
 theme_override_colors/font_color = Color(0.851, 0.314, 0.247, 1)
-text = "The column has fallen"
+text = "The army has fallen"
 
 [node name="LostText" type="Label" parent="Root/Lost/Center/Card/Rows" unique_id=735799380]
 unique_name_in_owner = true
