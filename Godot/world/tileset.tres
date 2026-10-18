@@ -8,7 +8,7 @@
 [ext_resource type="Resource" uid="uid://cjvmcjvjjnnq5" path="res://data/terrain/crystal.tres" id="6_pt1jg"]
 [ext_resource type="Resource" uid="uid://cug4s7vjhqh05" path="res://data/terrain/leaves.tres" id="7_d1lit"]
 [ext_resource type="Resource" uid="uid://dk5h26prf4ud3" path="res://data/terrain/rock.tres" id="8_uyccs"]
-[ext_resource type="Resource" path="res://data/terrain/spikes.tres" id="9_0hhlm"]
+[ext_resource type="Resource" uid="uid://btwnje20efufv" path="res://data/terrain/spikes.tres" id="9_0hhlm"]
 [ext_resource type="Resource" uid="uid://hv3txf15xhcx" path="res://data/terrain/bedrock.tres" id="10_ua0c1"]
 [ext_resource type="Texture2D" uid="uid://ciawyo8yq7gfg" path="res://world/tiles.png" id="11_ojk4e"]
 [ext_resource type="Texture2D" uid="uid://bxeohwo8i0qbp" path="res://world/tiles_v2_keyed.png" id="12_2gid8"]
