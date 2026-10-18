@@ -13,7 +13,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 | Bridge | 3 | Drag from point to point to plan a bridge deck (a log soldiers walk on). Takes push and pull, up to 5 m. Costs 1 log. |
 | Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
 | Rope | 5 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
-| Stone | 6 | Plans a stone beam: walked on, three times a log's weight and much stronger, up to 3 m. Costs 1 stone. |
+| Stone | 6 | Plans a stone beam: walked on, half again a log's weight and much stronger, up to 3 m. Costs 1 stone. |
 
 - Bridge, Support, Rope and Stone place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
 - While you plan, idle engineers (orange) walk over and wait beside it. **Build** above a plan hands that plan to them, **×** beside it cancels the plan and refunds it; **Enter** hands over every plan. They build it member by member, starting from the ground or finished parts and climbing along what is already up. With only one thing to build or dig, they all work on it together. Finished parts are held on scaffolding, and the column can already walk on them, and on the part of a piece that is built so far. Each separate structure comes down off its scaffolding once it's finished and no engineer is on it, and your design holds or it doesn't. The column doesn't wait for it: a soldier walking onto an unfinished bridge falls.
