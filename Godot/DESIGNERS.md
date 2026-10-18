@@ -114,6 +114,16 @@ paint it in the air cells right on top of the ground. Scatter it in small patche
   **Frame Time** (seconds per frame) and **Delay Frames** (how far each column lags: 0 sways all in step, negative
   rolls right to left). To add a frame, just widen the sheet by 8 px. Keep **Use Texture Padding** off on the
   grass TileSet's atlas, because the frames are read straight from the sheet.
+- **Birds** hide in the grass. When a soldier or engineer comes within **Flush Distance** of a patch (joined grass
+  cells), the patch's birds burst out once, flying up and away from whoever came. Tune it on the **Birds** node in
+  `game/world.tscn`: **Chance** a patch hides birds (0.3: most patches are empty), how many (**Per Patch**), and the
+  **Colors** they come in. The same node sends **Tree Birds** off the top of every tree that comes down (chopped, or
+  its ground gone), both ways, and now and then by day one bird across the view (**Cross Interval** seconds apart,
+  in the top **Cross Height** of the view; none during the night camp). The flight (speed, climb, lift, flap speed,
+  life) is on `objects/bird/bird.tscn`; each bird starts its flap on a random frame.
+- **Bird art** is `world/bird.png`: nine 32 px frames facing right, white on black. White is the bird and black is
+  see-through; `objects/bird/bird_mask.gdshader` paints the white in the bird's colour, so one sheet makes every
+  colour. Keep it black and white (greys give a see-through edge).
 - How far in front it draws is the **Z Index** of `world/tall_grass.tscn` (4: above soldiers 2 and arrows 3).
 
 **Changing the sheet.** Edit `world/tilemap-terrain.png` (keep the sky transparent), update the roles in
