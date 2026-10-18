@@ -560,9 +560,10 @@ theme_override_colors/default_color = Color(0.6039, 0.651, 0.7059, 1)
 theme_override_font_sizes/normal_font_size = 16
 theme_override_font_sizes/bold_font_size = 14
 bbcode_enabled = true
-text = "Choose order with mouse or by pressing 1-5 and click the world to give your engineer a task!
+text = "Choose order in the toolbar or by pressing 1-5 and click the world to give your engineer a task!
+You can only give orders that you have sufficient resources to build!
 
-You can only give orders that you have sufficient resources to build!"
+Pan along the map with moousewheel, arrow keys or by right-click dragging."
 fit_content = true
 
 [node name="Buttons" type="HBoxContainer" parent="Root/Intro/Center/Card/Rows" unique_id=1481685949]
