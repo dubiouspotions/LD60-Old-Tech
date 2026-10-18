@@ -81,11 +81,9 @@ class Snap:
 @export_range(0.0, 1.0) var ground_friction: float = 0.3
 
 @export_group("Impact")
-## A built piece moving at least this fast (m/s) hurts soldiers and archers it passes through, breaks ground it
+## A built piece moving at least this fast (m/s) crushes soldiers and archers it passes through, breaks ground it
 ## hits that can be dug, and batters towers.
 @export var harm_speed: float = 6.0
-## Seconds before the same soldier or archer can be hurt by a bridge again.
-@export var harm_cooldown: float = 0.5
 ## Seconds of siege a tower cell takes from one hit.
 @export var strike_siege: float = 4.0
 

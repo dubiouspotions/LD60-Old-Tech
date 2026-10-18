@@ -220,6 +220,12 @@ func gathered() -> bool:
 	return true
 
 
+## Kills a soldier crushed by something heavy (a falling bridge piece or block).
+func crush(s: Soldier) -> void:
+	kill(s, rules.crushed_text)
+	_remove_dead()
+
+
 ## Damages one soldier. Returns true if it died.
 func hit(s: Soldier, kill_text: String) -> bool:
 	if s.dead:

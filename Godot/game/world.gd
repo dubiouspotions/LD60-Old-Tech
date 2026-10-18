@@ -77,7 +77,6 @@ var _march_left: float = 0.0
 var _phase_left: float = 0.0
 var _done: bool = false
 var _camp: Node2D
-var _harm_wait: Dictionary = {} # instance id of a soldier or archer -> seconds before a bridge can hurt it again
 
 
 static func of(node: Node) -> World:
@@ -218,7 +217,7 @@ func _physics_process(dt: float) -> void:
 	bridge.step(dt, army.bridge_loads())
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
 	army.step(dt)
-	_harm_from_bridge(dt)
+	_crush_under_bridge()
 	crew.step(dt)
 	_check_exit()
 
@@ -482,23 +481,15 @@ func _on_dig_finished(cell: Vector2i) -> void:
 		Effects.say(at, here.dig_text, here.debris_color)
 
 
-## Hurts every soldier and archer a fast-moving bridge piece passes through (see Bridge.harm_speed).
-func _harm_from_bridge(dt: float) -> void:
-	for id: int in _harm_wait.keys():
-		_harm_wait[id] -= dt
-		if _harm_wait[id] <= 0.0:
-			_harm_wait.erase(id)
+## Crushes every soldier and archer a fast-moving bridge piece passes through (see Bridge.harm_speed).
+func _crush_under_bridge() -> void:
 	for s: Soldier in army.soldiers + army.deserters:
-		if s.dead or _harm_wait.has(s.get_instance_id()):
-			continue
 		var vel := Vector2(0, s.vy) if s.airborne else Vector2.ZERO
-		if bridge.harm_at(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, vel, s.on_member) > 0.0:
-			_harm_wait[s.get_instance_id()] = bridge.harm_cooldown
-			army.hit(s, army.rules.crushed_text)
+		if not s.dead and bridge.harm_at(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, vel, s.on_member) > 0.0:
+			army.crush(s)
 	for a: Archer in army.foes:
-		if a.alive() and not _harm_wait.has(a.get_instance_id()) and bridge.harm_at(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS, Vector2.ZERO) > 0.0:
-			_harm_wait[a.get_instance_id()] = bridge.harm_cooldown
-			a.hit(1)
+		if a.alive() and bridge.harm_at(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS, Vector2.ZERO) > 0.0:
+			a.hit(a.hp)
 
 
 ## A bridge piece hit the ground fast: a tower cell is battered, ground that can be dug breaks (nothing gained).

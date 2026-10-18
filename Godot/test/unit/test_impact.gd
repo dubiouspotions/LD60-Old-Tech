@@ -45,13 +45,12 @@ func _run(seconds: float) -> void:
 		world._physics_process(1.0 / 60.0)
 
 
-func test_falling_log_hurts_the_soldier_it_lands_on() -> void:
-	world.army.spawn(1, 5.5)
+func test_falling_log_crushes_the_soldiers_it_lands_on() -> void:
+	world.army.spawn(3, 5.5)
 	world.army.hold = true
-	var s: Soldier = world.army.lead()
-	_drop_log(4.5, 6.5, 0.5)
+	_drop_log(4.0, 6.5, 0.5)
 	_run(2.0)
-	assert_true(s.dead or s.hp < s.max_hp, "hit")
+	assert_eq(world.army.soldiers.size(), 0, "all crushed")
 
 
 func test_soldiers_cross_a_standing_bridge_unhurt() -> void:
@@ -77,9 +76,8 @@ func test_falling_log_hurts_an_archer() -> void:
 	archer.position = Grid.to_px(Vector2(5.5, 6))
 	world.objects.add_child(archer)
 	_drop_log(4.5, 6.5, 0.5)
-	var hp := archer.hp
 	_run(2.0)
-	assert_lt(archer.hp, hp, "hit")
+	assert_false(archer.alive(), "crushed")
 
 
 func test_falling_log_breaks_the_ground_it_hits() -> void:
@@ -114,17 +112,16 @@ func test_log_laid_gently_on_the_ground_breaks_nothing() -> void:
 	assert_not_null(world.terrain.type_at(Vector2i(5, 6)))
 
 
-func test_a_soldier_freed_after_a_hit_is_forgotten_cleanly() -> void:
-	world.army.spawn(2, 5.5)
-	world.army.hold = true
-	var s: Soldier = world.army.lead()
+func test_an_archer_freed_after_a_hit_is_forgotten_cleanly() -> void:
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(5.5, 6))
+	world.objects.add_child(archer)
 	_drop_log(4.5, 6.5, 0.5)
 	for i in 120:
 		world._physics_process(1.0 / 60.0)
-		if s.hp < s.max_hp:
+		if not archer.alive():
 			break
-	assert_lt(s.hp, s.max_hp, "hit")
-	world.army.soldiers.erase(s)
-	s.free()
+	assert_false(archer.alive(), "crushed")
+	archer.free()
 	_run(0.2)
-	assert_engine_error_count(0, "no freed soldier touched")
+	assert_engine_error_count(0, "no freed archer touched")
