@@ -641,13 +641,10 @@ func _collapse_unsupported(xa: int, xb: int, ca: int, cb: int) -> void:
     var supported := {}
     var queue: Array[Vector2i] = []
     for cell: Vector2i in _types:
-        if cell.x < xa or cell.x > xb or not _types[cell].structure:
-            continue
-        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
-            if is_anchor(cell + d):
-                supported[cell] = true
-                queue.append(cell)
-                break
+        # Only ground under a structure holds it up; ground beside or above it does not.
+        if cell.x >= xa and cell.x <= xb and _types[cell].structure and is_anchor(cell + Vector2i.DOWN):
+            supported[cell] = true
+            queue.append(cell)
     while not queue.is_empty():
         var cell: Vector2i = queue.pop_back()
         for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:

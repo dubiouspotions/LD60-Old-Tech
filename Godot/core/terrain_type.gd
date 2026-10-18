@@ -12,9 +12,10 @@ enum DigAction { NONE, REMOVE, FELL }
 @export_group("Physical")
 ## Blocks soldiers, supports fill, and stops logs passing through.
 @export var solid: bool = true
-## Natural ground: holds structures (bricks, towers) up. Bridge joints bolt to any solid tile, this or not.
+## Natural ground: holds up structures (bricks, towers) standing on it. Bridge joints bolt to any solid tile, this or not.
 @export var anchor: bool = true
-## Falls when no chain of structure tiles connects it to anchor ground (bricks, towers).
+## Falls when no chain of structure tiles connects it to anchor ground under one of them (bricks, towers): ground
+## only beside it does not hold it.
 @export var structure: bool = false
 ## A tower or tree whose ground is taken away falls as one piece, carrying what stands on it, and stands where it
 ## lands. Falling further than this breaks it up (a tower collapses, a tree is felled). The lowest in a piece counts.

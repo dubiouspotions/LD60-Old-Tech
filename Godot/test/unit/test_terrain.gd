@@ -253,6 +253,32 @@ func test_a_tower_breaking_up_where_it_stands_takes_its_battlements_with_it() ->
 	assert_eq(t.get_cell_source_id(Vector2i(5, 0)), -1)
 
 
+func test_a_tower_with_ground_only_at_its_side_does_not_stand() -> void:
+	var t := WorldFixture.terrain(self, [
+		"..........",
+		"###KK.....",
+		"###KK.....",
+		"###KK.....",
+		"###.......",
+		"##########",
+		"BBBBBBBBBB",
+	])
+	t.settle()
+	assert_null(t.type_at(Vector2i(3, 1)), "ground beside it does not hold it up")
+
+
+func test_a_tower_standing_on_ground_stands_even_beside_a_wall() -> void:
+	var t := WorldFixture.terrain(self, [
+		"..........",
+		"###KK.....",
+		"###KK.....",
+		"##########",
+		"BBBBBBBBBB",
+	])
+	t.settle()
+	assert_eq(t.type_at(Vector2i(3, 1)), WorldFixture.type("brick"))
+
+
 func test_rock_can_not_be_besieged() -> void:
 	var t := WorldFixture.terrain(self, MAP)
 	assert_false(t.besiege(Vector2i(8, 6), 1000.0))
