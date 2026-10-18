@@ -413,3 +413,15 @@ func test_the_built_part_of_a_piece_in_progress_is_walkable() -> void:
 	m.from_joint = m.b
 	assert_true(b.walk_surface(4.0, 0.0).is_empty(), "building from the other end")
 	assert_eq(b.walk_surface(6.0, 0.0).get("member"), m)
+
+
+func test_plan_end_inside_the_ground_moves_to_where_the_plan_leaves_it() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var to := b.snap_point(Vector2(5, 1))
+	var from := b.fit_to_ground(b.snap_point(Vector2(2, 3)), to)
+	assert_almost_eq(from.pos, Vector2(3, 3.0 - 2.0 / 3.0), Vector2(0.01, 0.01), "on the ground's face")
+	assert_true(from.anchor, "bolted there")
+	assert_true(b.check_build(from, to, LOG, Supplies.make(9, 9, 9, 9)).ok)
+	var air := b.snap_point(Vector2(6, 1))
+	assert_eq(b.fit_to_ground(air, to), air, "an end in the air stays")

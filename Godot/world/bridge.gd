@@ -159,6 +159,35 @@ func snap_point(p: Vector2, exclude: Joint = null) -> Snap:
 	return Snap.new(g, null, anchorable(g))
 
 
+## A loose plan end buried in the ground (a) moved along the plan toward its other end (b) to where the plan
+## leaves the ground, and bolted there. Any other end comes back as it is.
+func fit_to_ground(a: Snap, b: Snap) -> Snap:
+	if a.node or a.on_member or not _buried(a.pos):
+		return a
+	var steps := 48
+	var lo := 0.0
+	var hi := -1.0
+	for i in range(1, steps + 1):
+		if not _buried(a.pos.lerp(b.pos, float(i) / steps)):
+			hi = float(i) / steps
+			break
+		lo = float(i) / steps
+	if hi < 0.0:
+		return a
+	for i in 24:
+		var mid := (lo + hi) / 2.0
+		if _buried(a.pos.lerp(b.pos, mid)):
+			lo = mid
+		else:
+			hi = mid
+	var p := a.pos.lerp(b.pos, hi)
+	# Onto the cell edge it crossed, so the joint sits exactly on the ground's face.
+	for k in 2:
+		if absf(p[k] - roundf(p[k])) < 0.001:
+			p[k] = roundf(p[k])
+	return Snap.new(p, null, anchorable(p))
+
+
 ## {ok: bool, msg: String, length: float}
 func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> Dictionary:
 	var length := a.pos.distance_to(b.pos)
@@ -639,6 +668,14 @@ func _joined(a: Joint, b: Joint) -> bool:
 		if (m.a == a and m.b == b) or (m.a == b and m.b == a):
 			return true
 	return false
+
+
+## Inside the ground: solid all around, not on its surface.
+func _buried(p: Vector2) -> bool:
+	for d: Vector2 in [Vector2(-0.01, -0.01), Vector2(0.01, -0.01), Vector2(-0.01, 0.01), Vector2(0.01, 0.01)]:
+		if not terrain.is_solid(Grid.cell_of(p + d)):
+			return false
+	return true
 
 
 func _through_ground(a: Vector2, b: Vector2) -> bool:

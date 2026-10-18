@@ -126,7 +126,9 @@ func _release() -> void:
     var from := _build_from
     _build_from = null
     var mat := tool().bridge_material
-    var to := world.bridge.snap_point(_mouse_m, from.node)
+    var ends := _plan_ends(from)
+    from = ends[0]
+    var to: Bridge.Snap = ends[1]
     var check := world.bridge.check_build(from, to, mat, GameState.supplies)
     if check.ok and GameState.spend(mat.cost):
         world.bridge.build(from, to, mat, true)
@@ -238,17 +240,19 @@ func _draw_build(mat: BridgeMaterial) -> void:
         var p := bridge.snap_point(_mouse_m)
         _marker(p)
         return
-    var to := bridge.snap_point(_mouse_m, _build_from.node)
-    var check := bridge.check_build(_build_from, to, mat, GameState.supplies)
+    var ends := _plan_ends(_build_from)
+    var from: Bridge.Snap = ends[0]
+    var to: Bridge.Snap = ends[1]
+    var check := bridge.check_build(from, to, mat, GameState.supplies)
     var color: Color = mat.color if check.ok else bad_color
     color.a = 0.75
-    var a := _build_from.pos * px
+    var a := from.pos * px
     var b := to.pos * px
     if mat.draw_as_rope:
         draw_dashed_line(a, b, color, maxf(2.0, mat.thickness * px), 6.0)
     else:
         draw_line(a, b, color, mat.thickness * 1.1 * px)
-    _marker(_build_from)
+    _marker(from)
     _marker(to)
     if not check.msg.is_empty():
         var font := ThemeDB.fallback_font
@@ -256,6 +260,14 @@ func _draw_build(mat: BridgeMaterial) -> void:
         var w := font.get_string_size(check.msg, HORIZONTAL_ALIGNMENT_LEFT, -1, preview_font_size).x
         draw_string(font, at - Vector2(w / 2 - 1, -1), check.msg, HORIZONTAL_ALIGNMENT_LEFT, -1, preview_font_size, text_shadow)
         draw_string(font, at - Vector2(w / 2, 0), check.msg, HORIZONTAL_ALIGNMENT_LEFT, -1, preview_font_size, joint_color if check.ok else bad_color)
+
+
+## Both ends of the plan being dragged from from to the mouse, each moved out of the ground if buried in it.
+func _plan_ends(from: Bridge.Snap) -> Array[Bridge.Snap]:
+    var bridge := world.bridge
+    var to := bridge.snap_point(_mouse_m, from.node)
+    var a := bridge.fit_to_ground(from, to)
+    return [a, bridge.fit_to_ground(to, a)]
 
 
 func _marker(p: Bridge.Snap) -> void:
