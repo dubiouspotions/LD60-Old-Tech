@@ -247,8 +247,6 @@ func at_camp() -> bool:
 
 
 func _physics_process(dt: float) -> void:
-	if _done:
-		return
 	_advance_phase(dt)
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
 	# A block that landed or broke is freed only at the end of the frame; it must not fall on meanwhile.
