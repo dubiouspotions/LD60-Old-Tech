@@ -179,6 +179,8 @@ class Snap:
 
 ## Slowest a piece can meet the ground (m/s) for it to count as a hit (damage by its energy), not settling.
 const HIT_SPEED: float = 1.0
+## A point this close to a solid cell's edge touches it.
+const EDGE_TOUCH: float = 0.005
 ## Spacing (m) of the points along a member that are kept out of the ground.
 const MEMBER_PROBE: float = 0.25
 
@@ -835,7 +837,7 @@ func _collide(n: Joint, h: float) -> void:
 	# The joint's mass and load come from its members: each takes its share of the hit.
 	for m in members:
 		if not m.blueprint and (m.a == n or m.b == n):
-			_strike(Grid.cell_of(n.pos), m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
+			_strike(out[2], m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
 	n.pos = out[0]
 	n.prev = n.pos - (v + _contact_dv(v, out[1]))
 
@@ -862,22 +864,29 @@ func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground
 		var va := m.a.pos - m.a.prev
 		var vb := m.b.pos - m.b.prev
 		if ground and not hit:
-			# One hit per piece: its first point in the ground carries the piece's mass and load.
-			hit = true
-			_strike(Grid.cell_of(p), m, m.mass + m.a.load * (1.0 - t) + m.b.load * t, va.lerp(vb, t), out[1], h)
+			# One hit per piece: its first point that hits the ground carries the piece's mass and load.
+			hit = _strike(out[2], m, m.mass + m.a.load * (1.0 - t) + m.b.load * t, va.lerp(vb, t), out[1], h)
 		var push: Vector2 = (out[0] - p) / w
 		m.a.pos += push * wa
 		m.b.pos += push * wb
 		_contact_at(m, t, va, vb, wa, wb, w, out[1])
 
 
-## Where p, if inside solid ground, is pushed out to, and that face's outward normal: [Vector2, Vector2]. [] if p is
-## not in the ground. It leaves through the open face it came in through, going by where it was before (from);
+## Where p, if inside solid ground (or on its edge), is pushed out to, that face's outward normal, and the cell:
+## [Vector2, Vector2, Vector2i]. [] if p is not in the ground. It leaves through the open face it came in through, going by where it was before (from);
 ## if that tells nothing, through the nearest open face.
 func _push_out(p: Vector2, from: Vector2) -> Array:
 	var c := Grid.cell_of(p)
 	if not terrain.is_solid(c):
-		return []
+		# On a cell's edge, the cell beside it counts too: an end landing exactly on a ledge's edge is stopped there.
+		var beside := false
+		for d: Vector2 in [Vector2(-EDGE_TOUCH, 0), Vector2(EDGE_TOUCH, 0), Vector2(0, -EDGE_TOUCH), Vector2(0, EDGE_TOUCH)]:
+			if terrain.is_solid(Grid.cell_of(p + d)):
+				c = Grid.cell_of(p + d)
+				beside = true
+				break
+		if not beside:
+			return []
 	# Just clear of the cell edge. Further would leave the joint falling back every few substeps.
 	var e := 0.001
 	var lo := Vector2(c)
@@ -897,16 +906,16 @@ func _push_out(p: Vector2, from: Vector2) -> Array:
 		if best.is_empty() or f[2] > best[2] or (f[2] == best[2] and f[3] < best[3]):
 			best = f
 	if best.is_empty():
-		return [Vector2(p.x, lo.y - e), Vector2.UP]
-	return [best[1], best[0]]
+		return [Vector2(p.x, lo.y - e), Vector2.UP, c]
+	return [best[1], best[0], c]
 
 
 ## When, as a share of the move from a to b along one axis, the plane at edge was crossed going up the axis;
-## -1 if the move started past it.
+## -1 if the move did not cross it (it started past it, stayed short of it, or barely moved along the axis).
 static func _crossed(a: float, b: float, edge: float) -> float:
-	if a > edge:
+	if a > edge or b <= edge or b - a < 1e-9:
 		return -1.0
-	return (edge - a) / maxf(b - a, 1e-9)
+	return clampf((edge - a) / (b - a), 0.0, 1.0)
 
 
 ## Where p, if inside box body b, is pushed out to (just clear of its nearest side), and that side's normal.
@@ -1035,10 +1044,12 @@ static func _t_along(m: Member, p: Vector2) -> float:
 
 ## Records a hit on cell by member m with mass moving v (per substep h) against a face with this normal. Slower
 ## than HIT_SPEED is a piece settling, not a hit.
-func _strike(cell: Vector2i, m: Member, mass: float, v: Vector2, normal: Vector2, h: float) -> void:
+func _strike(cell: Vector2i, m: Member, mass: float, v: Vector2, normal: Vector2, h: float) -> bool:
 	var into := -v.dot(normal) / h
-	if into >= HIT_SPEED:
-		_hits.append([cell, m, 0.5 * mass * into * into])
+	if into < HIT_SPEED:
+		return false
+	_hits.append([cell, m, 0.5 * mass * into * into])
+	return true
 
 
 ## Settles this tick's hits: each cell takes the damage of all its hits (struck); a piece whose hit carried more

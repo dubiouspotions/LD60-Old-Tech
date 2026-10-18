@@ -517,3 +517,57 @@ func test_a_stone_beam_dropped_end_first_a_metre_breaks_the_soil_under_it() -> v
 	var m := b.build(b.snap_point(Vector2(6.0, 2.0)), b.snap_point(Vector2(6.5, 5.0)), preload("res://data/bridge/stone.tres"))
 	_run(0.6)
 	assert_null(world.terrain.type_at(Vector2i(6, 6)), "a 90 kg stone hitting at 4.4 m/s breaks soil")
+
+
+func test_a_piece_landing_with_its_end_on_a_ledge_edge_does_not_catapult() -> void:
+	# A stone beam dropped from 7 m with its right end exactly over the right edge of a raised bump.
+	_map([
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		".###......",
+		"#.########",
+		"##########",
+		"BBBBBBBBBB",
+	])
+	var b := world.bridge
+	var m := b.build(b.snap_point(Vector2(1.0, 1.0)), b.snap_point(Vector2(4.0, 1.0)), preload("res://data/bridge/stone.tres"))
+	var last := (m.a.pos + m.b.pos) / 2.0
+	var fastest_up := 0.0
+	for i in 60 * 4:
+		world._physics_process(1.0 / 60.0)
+		var c := (m.a.pos + m.b.pos) / 2.0
+		fastest_up = maxf(fastest_up, (last.y - c.y) * 60.0)
+		last = c
+	assert_lt(fastest_up, 1.0, "no bounce: the middle never flies up")
+
+
+func test_a_stone_beam_dropped_onto_a_pillar_breaks_its_top() -> void:
+	for x0: float in [3.5, 3.0, 2.5, 4.0]:
+		before_each()
+		# A soil pillar one tile wide (x 5 to 6) standing 5 m above the ground; the 3 m beam let go 6 m above it.
+		_map([
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			".....#....",
+			".....#....",
+			".....#....",
+			".....#....",
+			".....#....",
+			"##########",
+			"BBBBBBBBBB",
+		])
+		var b := world.bridge
+		b.build(b.snap_point(Vector2(x0 + 0.5, 1.0)), b.snap_point(Vector2(x0 + 3.5, 1.0)), preload("res://data/bridge/stone.tres"))
+		_run(1.4)
+		assert_null(world.terrain.type_at(Vector2i(5, 7)), "the pillar's top broke, beam from x %.1f" % (x0 + 0.5))
