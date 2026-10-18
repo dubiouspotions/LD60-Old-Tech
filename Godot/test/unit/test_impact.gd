@@ -245,3 +245,47 @@ func test_piece_wider_than_a_tower_lands_on_it_not_through_it() -> void:
 	var mid := (m.a.pos + m.b.pos) / 2.0
 	assert_lt(mid.y, 3.2, "resting on top of the tower")
 	assert_not_null(world.terrain.type_at(Vector2i(5, 3)), "tower standing")
+
+
+const PIT: Array = [
+	"..............",
+	"..............",
+	"..............",
+	"..............",
+	"..............",
+	"######....####",
+	"######....####",
+	"BBBBBBBBBBBBBB",
+]
+
+
+func test_a_loose_piece_lands_on_another_structure() -> void:
+	_map(PIT)
+	_drop_log(6, 10, 5)
+	_drop_log(7, 9, 3.5)
+	_run(3.0)
+	var loose: Bridge.Member = world.bridge.members[1]
+	assert_lt((loose.a.pos.y + loose.b.pos.y) / 2.0, 5.0, "resting on the deck")
+
+
+func test_crossing_pieces_of_one_structure_leave_each_other_alone() -> void:
+	_map(PIT)
+	var b := world.bridge
+	b.build(b.snap_point(Vector2(6, 5)), b.snap_point(Vector2(10, 3)), LOG)
+	b.build(b.snap_point(Vector2(10, 5)), b.snap_point(Vector2(6, 3)), LOG)
+	b.build(b.snap_point(Vector2(6, 3)), b.snap_point(Vector2(10, 3)), LOG)
+	_run(3.0)
+	for n in b.nodes:
+		assert_almost_eq(n.pos.y, roundf(n.pos.y), 0.15, "the X brace holds its shape")
+
+
+func test_a_loose_piece_lands_on_a_block_resting_on_a_deck() -> void:
+	_map(PIT)
+	_drop_log(6, 10, 5)
+	var block := _drop_fill(Vector2i(7, 3))
+	_run(1.0)
+	_drop_log(6.5, 8.5, 2.0)
+	_run(3.0)
+	var loose: Bridge.Member = world.bridge.members[1]
+	assert_true(is_instance_valid(block), "block still on the deck")
+	assert_lt((loose.a.pos.y + loose.b.pos.y) / 2.0, block.position.y / Grid.PX + 0.1, "resting on the block")

@@ -24,7 +24,8 @@ func _ready() -> void:
 		$Sprite.texture = world.terrain.tile_texture(type)
 
 
-## Falls for dt. bodies: [[soldier or archer, Bridge.Body], ...] it can land on or crush.
+## Falls for dt. bodies: [[soldier, archer or block, Bridge.Body], ...] it can land on; soldiers and archers it
+## reaches at Harm Speed are crushed instead.
 func step(dt: float, world: World, bodies: Array) -> void:
 	var t := world.terrain
 	var x := cell_x()
@@ -41,10 +42,10 @@ func step(dt: float, world: World, bodies: Array) -> void:
 			on_t = deck.t
 	for pair: Array in bodies:
 		var b: Bridge.Body = pair[1]
-		var head := b.center.y - b.radius
-		if absf(b.center.x - (x + 0.5)) >= 0.5 + b.radius * 0.5 or head < bottom - 0.05 or head > next:
+		var head := b.top()
+		if pair[0] == self or absf(b.center.x - (x + 0.5)) >= 0.5 + b.half_width() or head < bottom - 0.05 or head > next:
 			continue
-		if _vy >= world.bridge.harm_speed:
+		if _vy >= world.bridge.harm_speed and not b.is_box():
 			world.crush(pair[0])
 		elif head < rest:
 			rest = head

@@ -215,8 +215,8 @@ func _physics_process(dt: float) -> void:
 		return
 	_advance_phase(dt)
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
-	var bodies := _bodies()
 	var blocks := objects.get_children().filter(func(o: Node) -> bool: return o is FallingBlock)
+	var bodies := _bodies(blocks)
 	_step_bridge(dt, bodies, blocks)
 	for b: FallingBlock in blocks:
 		b.step(dt, self, bodies)
@@ -484,14 +484,17 @@ func _on_dig_finished(cell: Vector2i) -> void:
 		Effects.say(at, here.dig_text, here.debris_color)
 
 
-## Every living soldier and archer as a body bridge pieces and falling blocks collide with: [[who, Bridge.Body], ...].
-func _bodies() -> Array:
+## Every living soldier and archer, and every falling block, as a body bridge pieces and falling blocks collide
+## with: [[who, Bridge.Body], ...].
+func _bodies(blocks: Array) -> Array:
 	var out := []
 	for s: Soldier in army.soldiers + army.deserters:
 		if not s.dead:
 			out.append([s, Bridge.Body.new(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, Vector2(0, s.vy) if s.airborne else Vector2.ZERO, s.on_member)])
 	for a: Archer in army.foes:
 		out.append([a, Bridge.Body.new(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS)])
+	for b: FallingBlock in blocks:
+		out.append([b, Bridge.Body.box(Grid.to_m(b.position) + Vector2(0.5, 0.5), Vector2(0.5, 0.5), b.on_member)])
 	return out
 
 

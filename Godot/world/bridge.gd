@@ -55,10 +55,12 @@ class Member:
 
 ## A candidate end point for a new member.
 ## A soldier or archer the bridge collides with: a solid circle. A built piece reaching it at harm_speed or more
-## crushes it (crushed) and passes on; a slower one is stopped by it.
+## crushes it (crushed) and passes on; a slower one is stopped by it. A box (half > 0, a falling block) only
+## stops pieces.
 class Body:
 	var center: Vector2
 	var radius: float
+	var half: Vector2 = Vector2.ZERO
 	## The body's own velocity (m/s), so pieces falling along with it do not crush it.
 	var vel: Vector2
 	## The member it stands on, which never touches it.
@@ -70,6 +72,22 @@ class Body:
 		radius = p_radius
 		vel = p_vel
 		skip = p_skip
+
+	static func box(p_center: Vector2, p_half: Vector2, p_skip: Member = null) -> Body:
+		var b := Body.new(p_center, 0.0, Vector2.ZERO, p_skip)
+		b.half = p_half
+		return b
+
+	func is_box() -> bool:
+		return half != Vector2.ZERO
+
+	## Top of the body (y, metres).
+	func top() -> float:
+		return center.y - (half.y if is_box() else radius)
+
+	## How far either side of center a thing above it rests on it.
+	func half_width() -> float:
+		return half.x if is_box() else radius * 0.5
 
 
 class Snap:
@@ -539,11 +557,13 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 		for n in nodes:
 			if not n.fixed():
 				_collide(n, h)
-	# Whole pieces against the ground and bodies: once per tick, which is plenty against cells and bodies a metre
-	# wide (the joints, which move fastest, collide every substep above).
+	var structures := _structures()
+	# Whole pieces against the ground, each other and bodies: once per tick, which is plenty against cells and
+	# bodies a metre wide (the joints, which move fastest, collide every substep above).
 	for m in members:
 		if not m.blueprint:
 			_collide_member(m, h)
+	_collide_structures(structures, h)
 	for b in bodies:
 		_collide_body(b, h)
 	var broken: Array[Member] = []
@@ -742,15 +762,17 @@ func _collide(n: Joint, h: float) -> void:
 	_stop_against(n, v, out[1])
 
 
-## Keeps the length of built member m (between its joints) out of the ground, like joints are.
-func _collide_member(m: Member, h: float) -> void:
+## Keeps built member m out of what push_out (point -> [pushed point, normal] or []) reports: by default the
+## ground, along its length between the joints (the joints collide on their own), with impact damage.
+## For anything else (ground false) its ends count too, and nothing is damaged.
+func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground: bool = true) -> void:
 	if m.a.inv_mass == 0.0 and m.b.inv_mass == 0.0:
 		return
 	var steps := ceili(m.length / MEMBER_PROBE)
-	for k in range(1, steps):
+	for k in range(1 if ground else 0, steps if ground else steps + 1):
 		var t := float(k) / steps
 		var p := m.a.pos.lerp(m.b.pos, t)
-		var out := _push_out(p)
+		var out: Array = push_out.call(p)
 		if out.is_empty():
 			continue
 		var wa := m.a.inv_mass * (1.0 - t)
@@ -760,8 +782,9 @@ func _collide_member(m: Member, h: float) -> void:
 			continue
 		var va := m.a.pos - m.a.prev
 		var vb := m.b.pos - m.b.prev
-		var mass := (m.a.mass + m.a.load) * (1.0 - t) + (m.b.mass + m.b.load) * t
-		_strike(Grid.cell_of(p), mass, va.lerp(vb, t), out[1], h)
+		if ground:
+			var mass := (m.a.mass + m.a.load) * (1.0 - t) + (m.b.mass + m.b.load) * t
+			_strike(Grid.cell_of(p), mass, va.lerp(vb, t), out[1], h)
 		var push: Vector2 = (out[0] - p) / w
 		m.a.pos += push * wa
 		m.b.pos += push * wb
@@ -798,6 +821,113 @@ func _push_out(p: Vector2) -> Array:
 	return [best, normal]
 
 
+## Where p, if inside box body b, is pushed out to (just clear of its nearest side), and that side's normal.
+func _push_out_of_box(p: Vector2, b: Body) -> Array:
+	var d := p - b.center
+	var pen := b.half - d.abs()
+	if pen.x <= 0.0 or pen.y <= 0.0:
+		return []
+	var e := 0.001
+	if pen.x < pen.y:
+		var nx := 1.0 if d.x >= 0.0 else -1.0
+		return [Vector2(b.center.x + nx * (b.half.x + e), p.y), Vector2(nx, 0.0)]
+	var ny := 1.0 if d.y >= 0.0 else -1.0
+	return [Vector2(p.x, b.center.y + ny * (b.half.y + e)), Vector2(0.0, ny)]
+
+
+## Built members by connected structure: Member -> id. Members joined through joints share an id.
+func _structures() -> Dictionary:
+	var at := {} # Joint -> Array of built members on it
+	for m in members:
+		if not m.blueprint:
+			for j: Joint in [m.a, m.b]:
+				if not at.has(j):
+					at[j] = []
+				at[j].append(m)
+	var of := {}
+	var id := 0
+	for start in members:
+		if start.blueprint or of.has(start):
+			continue
+		var queue: Array[Member] = [start]
+		of[start] = id
+		while not queue.is_empty():
+			var m: Member = queue.pop_back()
+			for j: Joint in [m.a, m.b]:
+				for o: Member in at[j]:
+					if not of.has(o):
+						of[o] = id
+						queue.append(o)
+		id += 1
+	return of
+
+
+## Keeps pieces of different structures (of: from _structures) from passing through each other, by their
+## thickness. Pieces of one structure may cross (an X brace).
+func _collide_structures(of: Dictionary, h: float) -> void:
+	# Only pieces sharing a 2 m bucket can touch.
+	var buckets := {}
+	for m: Member in of:
+		var box := Rect2(m.a.pos, Vector2.ZERO).expand(m.b.pos).grow(m.material.thickness)
+		for x in range(floori(box.position.x / 2.0), floori(box.end.x / 2.0) + 1):
+			for y in range(floori(box.position.y / 2.0), floori(box.end.y / 2.0) + 1):
+				var key := Vector2i(x, y)
+				if not buckets.has(key):
+					buckets[key] = []
+				buckets[key].append(m)
+	var done := {}
+	for list: Array in buckets.values():
+		for i in list.size():
+			var p: Member = list[i]
+			for k in range(i + 1, list.size()):
+				var q: Member = list[k]
+				if of[p] == of[q]:
+					continue
+				var pair := [p, q] if p.get_instance_id() < q.get_instance_id() else [q, p]
+				if done.has(pair):
+					continue
+				done[pair] = true
+				_collide_pair(p, q, h)
+
+
+func _collide_pair(p: Member, q: Member, h: float) -> void:
+	var gap := (p.material.thickness + q.material.thickness) / 2.0
+	var box_p := Rect2(p.a.pos, Vector2.ZERO).expand(p.b.pos).grow(gap)
+	if not box_p.intersects(Rect2(q.a.pos, Vector2.ZERO).expand(q.b.pos)):
+		return
+	var cp := Geometry2D.get_closest_points_between_segments(p.a.pos, p.b.pos, q.a.pos, q.b.pos)
+	var off: Vector2 = cp[1] - cp[0]
+	var dist := off.length()
+	if dist >= gap:
+		return
+	var n := off / dist if dist > 1e-6 else (p.b.pos - p.a.pos).orthogonal().normalized()
+	var tp := _t_along(p, cp[0])
+	var tq := _t_along(q, cp[1])
+	# Each joint's share of the correction: p is pushed back along n, q forward.
+	var js: Array[Joint] = [p.a, p.b, q.a, q.b]
+	var ws: Array[float] = [-p.a.inv_mass * (1.0 - tp), -p.b.inv_mass * tp, q.a.inv_mass * (1.0 - tq), q.b.inv_mass * tq]
+	var arms: Array[float] = [1.0 - tp, tp, 1.0 - tq, tq]
+	var w := 0.0
+	for k in 4:
+		w += absf(ws[k]) * arms[k]
+	if w <= 0.0:
+		return
+	var vs: Array[Vector2] = []
+	for j in js:
+		vs.append(j.pos - j.prev)
+	var closing := (vs[2].lerp(vs[3], tq) - vs[0].lerp(vs[1], tp)).dot(n)
+	var push := (gap - dist) / w
+	var stop := -minf(closing, 0.0) / w
+	for k in 4:
+		js[k].pos += n * push * ws[k]
+		js[k].prev = js[k].pos - (vs[k] + n * stop * ws[k])
+
+
+static func _t_along(m: Member, p: Vector2) -> float:
+	var d := m.b.pos - m.a.pos
+	return clampf((p - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
+
+
 ## Records a hit on cell by mass moving v (per substep h) against a face with this normal, if at harm_speed.
 func _strike(cell: Vector2i, mass: float, v: Vector2, normal: Vector2, h: float) -> void:
 	var into := -v.dot(normal) / h
@@ -814,6 +944,11 @@ func _stop_against(j: Joint, v: Vector2, normal: Vector2) -> void:
 ## Keeps built members out of body b, or marks it crushed by one reaching it at harm_speed or more.
 func _collide_body(b: Body, h: float) -> void:
 	if b.crushed:
+		return
+	if b.is_box():
+		for m in members:
+			if not m.blueprint and m != b.skip:
+				_collide_member(m, h, _push_out_of_box.bind(b), false)
 		return
 	for m in members:
 		if m.blueprint or m == b.skip:
