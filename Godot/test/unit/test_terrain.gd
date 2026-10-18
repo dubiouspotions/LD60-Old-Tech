@@ -176,3 +176,34 @@ func test_tile_texture_comes_from_the_tileset() -> void:
 	assert_not_null(tex)
 	assert_eq(tex.atlas, src.texture)
 	assert_eq(tex.region, Rect2(src.get_tile_texture_region(t.get_cell_atlas_coords(Vector2i(0, 0)))))
+
+
+## A 3 x 3 brick tower on soil: walls the column can only get past by razing it.
+const TOWER: Array = [
+	"..........",
+	"....KKK...",
+	"....KKK...",
+	"....KKK...",
+	"##########",
+	"BBBBBBBBBB",
+]
+
+
+func test_besieged_tower_is_razed_whole_after_its_raze_time() -> void:
+	var t := WorldFixture.terrain(self, TOWER)
+	var brick := WorldFixture.type("brick")
+	assert_gt(brick.raze_time, 0.0, "brick can be razed")
+	watch_signals(t)
+	assert_false(t.besiege(Vector2i(4, 3), brick.raze_time * 0.5), "still standing")
+	assert_almost_eq(t.siege_progress(Vector2i(4, 3)), 0.5, 0.01)
+	assert_true(t.besiege(Vector2i(4, 3), brick.raze_time * 0.6), "razed")
+	for x in range(4, 7):
+		for y in range(1, 4):
+			assert_null(t.type_at(Vector2i(x, y)), "whole tower down")
+	assert_signal_emitted(t, "collapsed")
+
+
+func test_rock_can_not_be_besieged() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	assert_false(t.besiege(Vector2i(8, 6), 1000.0))
+	assert_eq(t.type_at(Vector2i(8, 6)), WorldFixture.type("rock"))

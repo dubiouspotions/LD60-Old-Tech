@@ -2,7 +2,7 @@
 
 A Ludum Dare 60 game ("Old Tech") made in Godot 4.7.
 
-The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m or a gap lower than 2 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. You are the engineers above the field. Dig, fill and bridge a way through before the archers' towers thin the ranks.
+The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m or a gap lower than 2 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. A brick tower in the way is besieged: the front soldier hacks at it until, after a good while, the whole tower comes down, archer and all. You are the engineers above the field. Dig, fill and bridge a way through before the archers' towers thin the ranks.
 
 ## How to play
 
@@ -23,7 +23,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
 - **F** toggles 2× speed. **C** makes the camera follow the column again. **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.
 - Move the view with **WASD**/arrow keys, right or middle drag, or the mouse wheel.
-- Reaching a level's exit flag means camp, reinforcements and supplies. If the column falls, you retry from that camp with the army and supplies you had when you got there; work done since is undone.
+- Soldiers who reach a level's exit flag wait there for the rest of the column. Once every living soldier has arrived, it means camp, reinforcements and supplies. If the column falls, you retry from that camp with the army and supplies you had when you got there; work done since is undone.
 
 ## Running
 

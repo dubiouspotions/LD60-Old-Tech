@@ -27,6 +27,7 @@ var _types: Dictionary = {} # Vector2i -> TerrainType
 var _tile_for: Dictionary = {} # TerrainType -> [source_id, atlas_coords]
 var _dirty_cols: Dictionary = {} # int -> true
 var _marks: Dictionary = {} # Vector2i -> dig progress 0..1
+var _siege: Dictionary = {} # Vector2i -> seconds of attack taken
 
 
 func _ready() -> void:
@@ -43,6 +44,7 @@ func rebuild() -> void:
     _types.clear()
     _tile_for.clear()
     _marks.clear()
+    _siege.clear()
     size = Vector2i.ZERO
     min_x = 0
     _index_tileset()
@@ -83,6 +85,7 @@ func surface_row(x: int) -> int:
 func set_type(cell: Vector2i, type: TerrainType) -> void:
     if type != _types.get(cell):
         _marks.erase(cell)
+        _siege.erase(cell)
     if type == null:
         _types.erase(cell)
         erase_cell(cell)
@@ -175,8 +178,47 @@ func work_cell(cell: Vector2i) -> Vector2i:
     return base
 
 
+## Soldiers attack cell for seconds. Returns true when that razes it: once the cell has taken its type's
+## raze_time, the whole connected structure (the tower) falls. Types with raze_time 0 can not be attacked.
+func besiege(cell: Vector2i, seconds: float) -> bool:
+    var t := type_at(cell)
+    if t == null or t.raze_time <= 0.0 or not _inside(cell):
+        return false
+    _siege[cell] = _siege.get(cell, 0.0) + seconds
+    if _siege[cell] < t.raze_time:
+        return false
+    var counts := {}
+    var razed := _group(cell, func(c: TerrainType) -> bool: return c.structure or c == t)
+    for c in razed:
+        var ct := type_at(c)
+        counts[ct] = counts.get(ct, 0) + 1
+        set_type(c, null)
+        Effects.debris(cell_center_px(c), ct.debris_color, 3, 110.0)
+    Audio.play(collapse_sound, cell_center_px(cell))
+    Effects.shake(0.25)
+    collapsed.emit(TerrainType.bulk_total(counts), razed)
+    return true
+
+
+## Share of a besieged cell's raze_time taken so far, 0..1.
+func siege_progress(cell: Vector2i) -> float:
+    var t := type_at(cell)
+    return clampf(_siege.get(cell, 0.0) / t.raze_time, 0.0, 1.0) if t and t.raze_time > 0.0 else 0.0
+
+
+func besieged_cells() -> Array[Vector2i]:
+    var out: Array[Vector2i] = []
+    out.assign(_siege.keys())
+    return out
+
+
 ## Every tile connected to cell that fells with it.
 func _fell_group(cell: Vector2i) -> Array[Vector2i]:
+    return _group(cell, func(t: TerrainType) -> bool: return t.dig_action == TerrainType.DigAction.FELL)
+
+
+## Every tile connected to cell (itself included) whose type passes test.
+func _group(cell: Vector2i, test: Callable) -> Array[Vector2i]:
     var out: Array[Vector2i] = []
     var stack: Array[Vector2i] = [cell]
     var seen := {}
@@ -186,7 +228,7 @@ func _fell_group(cell: Vector2i) -> Array[Vector2i]:
             continue
         seen[c] = true
         var t := type_at(c)
-        if t == null or t.dig_action != TerrainType.DigAction.FELL:
+        if t == null or not _inside(c) or not test.call(t):
             continue
         out.append(c)
         stack.append_array([c + Vector2i.RIGHT, c + Vector2i.LEFT, c + Vector2i.DOWN, c + Vector2i.UP])

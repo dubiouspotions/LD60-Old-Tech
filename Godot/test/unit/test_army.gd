@@ -274,3 +274,23 @@ func test_walks_through_a_two_metre_tunnel() -> void:
 	a.spawn(1, 2.5)
 	_run(a, 4.0)
 	assert_gt(a.lead().pos.x, 8.0)
+
+
+func test_besieges_and_razes_a_tower_in_the_way() -> void:
+	var a := _world([
+		"....................",
+		"..........KKK.......",
+		"..........KKK.......",
+		"..........KKK.......",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	a.spawn(1, 2.5)
+	_run(a, 6.0)
+	assert_eq(a.halt_reason, a.rules.siege_text, "attacking, not just halted")
+	assert_gt(a.terrain.siege_progress(Vector2i(10, 3)), 0.0)
+	var brick := WorldFixture.type("brick")
+	_run(a, brick.raze_time + 1.0)
+	assert_null(a.terrain.type_at(Vector2i(10, 2)), "tower razed")
+	_run(a, 3.0)
+	assert_gt(a.lead().pos.x, 12.5, "marched on")

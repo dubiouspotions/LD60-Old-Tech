@@ -42,6 +42,10 @@ enum DigAction { NONE, REMOVE, FELL }
 @export var too_hard_text: String = ""
 @export var dig_sound: SoundEffect
 
+@export_group("Siege")
+## Seconds one soldier must attack this tile to raze the structure it belongs to (a tower). 0: can not be attacked.
+@export_range(0.0, 300.0, 0.5, "suffix:s") var raze_time: float = 0.0
+
 @export_group("Bulk yield")
 ## Given by collapses and felled trees: bulk_yield for every bulk_tiles_per_yield tiles.
 @export var bulk_yield: Supplies
