@@ -791,3 +791,14 @@ func test_instant_work_cheat_digs_marks_and_fells_trees_at_once() -> void:
 	assert_null(world.terrain.type_at(Vector2i(3, 6)), "dug")
 	assert_null(world.terrain.type_at(Vector2i(2, 5)), "tree felled")
 	assert_gt(GameState.supplies.logs, logs, "and its logs gained")
+
+
+func test_crew_builds_from_a_loose_end_by_the_cliff_when_the_bolted_end_is_across_the_gap() -> void:
+	# A plan from just off the left cliff's face (not touching it) to the right cliff's face. Its only bolted end is
+	# across the pit, out of the crew's reach; the loose end is within reach of the left cliff's top.
+	var m := _plan(Vector2(6.5, 6.5), Vector2(10, 6.5))
+	assert_false(m.a.pinned, "loose end")
+	assert_true(m.b.pinned, "bolted across the pit")
+	world.bridge.order_blueprints()
+	_run(20.0, func() -> bool: return not m.blueprint)
+	assert_false(m.blueprint, "built out from the loose end")

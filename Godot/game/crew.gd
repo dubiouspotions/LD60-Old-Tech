@@ -199,11 +199,15 @@ func _find_job(e: Engineer, any_height: bool) -> void:
 				e.goal = j
 				e.route = route
 	if e.at == null:
-		# Plans with nothing to build from are built from the ground below an end.
+		# A plan's loose end (not bolted, not on anything built) is built from the ground below it, also when the
+		# plan's other end can be built from but is out of reach (across a pit).
 		for m in bridge.members:
-			if not (m.blueprint and m.ordered) or not bridge.work_ends(m).is_empty() or _builder_of(m):
+			if not (m.blueprint and m.ordered) or _builder_of(m):
 				continue
+			var ends := bridge.work_ends(m)
 			for j: Bridge.Joint in [m.a, m.b]:
+				if j in ends:
+					continue
 				var x := _spot_within_reach(e.pos, j.pos, rules.build_reach, true, any_height)
 				var cost := absf(x - e.pos.x)
 				if not is_nan(x) and cost < best_cost and _in_zone(x) and _in_zone(j.pos.x):
