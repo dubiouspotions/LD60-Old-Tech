@@ -47,6 +47,8 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 
 **Units.** Simulation is in metres (1 tile = 1 m, y points down). Node positions are pixels. Convert with `Grid.to_px` / `Grid.to_m` / `Grid.cell_of` (`Grid.PX = 32`).
 
+**Night grade.** `post/night_grade.tscn` (CanvasLayer 1, between the world and the HUD on layer 5) reads the screen and blends it into a night LUT by `DayNight`, except near every visible `PointLight2D` (tracked through `node_added`, passed to the shader as up to 32 spots). The WorldEnvironment LUT (`low_17`) is the identity.
+
 **Pausing.** `LevelHolder` (holding the World) is pausable. The Game, ToolController, Camera, Terrain (`settle`), Bridge drawing, Audio and Effects keep running while paused, so the player can build during a pause. Speed is `Engine.time_scale`.
 
 ## Gotchas found the hard way
