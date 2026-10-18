@@ -272,8 +272,8 @@ func test_a_restart_brings_back_the_crew_it_had_at_the_checkpoint() -> void:
 
 
 ## A restart puts everything back as it was when the checkpoint was first reached: whatever was dug, marked,
-## built, bought or spent during the night is undone.
-func test_a_restart_undoes_the_whole_night() -> void:
+## built, bought, spent, gained or lost during the night and the day after is undone.
+func test_a_restart_undoes_the_whole_night_and_day() -> void:
 	world.begin(0, 3)
 	world.place_now(1)
 	GameState.supplies = Supplies.make(10, 10, 10, 20, 10)
@@ -300,6 +300,18 @@ func test_a_restart_undoes_the_whole_night() -> void:
 	assert_eq(world.crew.engineers.size(), crew + 1, "an engineer bought")
 	assert_true(world.terrain.is_marked(below), "a cell marked")
 	assert_ne(GameState.supplies.describe_cost(), had.describe_cost(), "supplies spent")
+	# The day's work, after the march: a soldier lost, supplies found, more dug and built, the next level in.
+	world.march()
+	assert_false(world.camping(), "on the march")
+	world.army.kill(world.army.soldiers[0], "")
+	world.army.step(1.0 / 60.0)
+	assert_eq(world.army.soldiers.size(), soldiers, "the one bought, then one lost")
+	GameState.gain(Supplies.make(0, 0, 0, 5))
+	var day_cell := top + Vector2i(6, 0)
+	var day_ground: TerrainType = world.terrain.type_at(day_cell)
+	world.terrain.set_type(day_cell, null)
+	bridge.build(bridge.snap_point(flag + Vector2(6, -1)), bridge.snap_point(flag + Vector2(8, -1)), load("res://data/bridge/log.tres"))
+	world.place_now(2)
 	# Restart from the checkpoint.
 	GameState.retry()
 	world.begin(1, GameState.soldiers, GameState.engineers)
@@ -307,6 +319,8 @@ func test_a_restart_undoes_the_whole_night() -> void:
 	assert_eq(world.army.soldiers.size(), soldiers, "soldiers as on arrival")
 	assert_eq(world.crew.engineers.size(), crew, "engineers as on arrival")
 	assert_eq(world.terrain.type_at(top), ground, "dug ground back")
+	assert_eq(world.terrain.type_at(day_cell), day_ground, "and what was dug by day")
+	assert_true(world.camping(), "camped at the checkpoint again")
 	assert_false(world.terrain.is_marked(below), "marks gone")
 	assert_eq(bridge.members.filter(func(m: Bridge.Member) -> bool: return maxf(m.a.pos.x, m.b.pos.x) > flag.x).size(), 0, "nothing built past the flag")
 	assert_eq(world.crew.throws.size(), 0, "no throws waiting")
