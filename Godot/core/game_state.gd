@@ -17,6 +17,8 @@ var soldiers: int = 0
 var level_index: int = 0
 ## 1-based, as shown to the player.
 var best_level: int = 1
+## A level scene to start the game at, set by a level run on its own (Run Current Scene). The Game takes it once.
+var start_level: String = ""
 
 var _checkpoint_supplies: Supplies = Supplies.new()
 var _checkpoint_soldiers: int = 0

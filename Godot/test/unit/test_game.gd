@@ -11,6 +11,33 @@ func before_each() -> void:
 
 func after_each() -> void:
 	get_tree().paused = false
+	GameState.start_level = ""
+	GameState.campaign = load("res://data/campaign.tres")
+
+
+## Run Current Scene on a level: the level hands itself to the game, which starts there.
+func test_a_level_run_on_its_own_starts_the_game_at_that_level() -> void:
+	var path: String = GameState.campaign.levels[2]
+	GameState.start_level = path
+	var other: Game = load("res://game/main.tscn").instantiate()
+	add_child_autofree(other)
+	var world: World = other.get_node("%World")
+	assert_eq(world.current, 2, "at that level")
+	assert_eq(GameState.level_index, 2)
+	assert_false(other.get_node("%HUD").get_node("%Intro").visible, "straight into it, no intro card")
+	assert_eq(GameState.start_level, "", "only once")
+
+
+func test_a_level_not_in_the_campaign_is_played_on_its_own() -> void:
+	var path := "res://levels/level_base.tscn"
+	assert_false(path in GameState.campaign.levels)
+	GameState.start_level = path
+	var other: Game = load("res://game/main.tscn").instantiate()
+	add_child_autofree(other)
+	var world: World = other.get_node("%World")
+	assert_eq(GameState.campaign.levels, [path] as Array[String], "a campaign of just that level")
+	assert_eq(world.current, 0)
+	assert_true(world.current_chunk() != null)
 
 
 ## Waits seconds of real time, also while the game pauses itself (GUT's wait_seconds stops then).
