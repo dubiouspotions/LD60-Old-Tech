@@ -1,9 +1,9 @@
-[gd_scene format=3 uid="uid://kib74rq6nvro"]
+[gd_scene format=3 uid="uid://cn1magoe01s5s"]
 
 [ext_resource type="Script" uid="uid://bjf28quaqwc2i" path="res://world/background/ridge.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://cmoqks8grl6vv" path="res://world/background/bakgr_pixel.png" id="1_7yj74"]
 [ext_resource type="Script" uid="uid://boj0lbhqjxmqv" path="res://world/background/stars.gd" id="2_stars"]
-[ext_resource type="Texture2D" uid="uid://drcqx2g8e548f" path="res://world/background/sun_pixel.png" id="3_7yj74"]
+[ext_resource type="Texture2D" uid="uid://8j2k36u467od" path="res://world/sun_pixel.png" id="3_7yj74"]
 
 [sub_resource type="Gradient" id="sky"]
 offsets = PackedFloat32Array(0, 0.55, 1)
@@ -53,9 +53,9 @@ expand_mode = 1
 script = ExtResource("2_stars")
 tint = NodePath("../SkyTint")
 
-[node name="SunPixel" type="Sprite2D" parent="." unique_id=395443624]
-position = Vector2(1040, 349.00003)
-scale = Vector2(0.3033643, 0.30336428)
+[node name="SunPixel2" type="Sprite2D" parent="." unique_id=263115126]
+position = Vector2(1143, 266)
+scale = Vector2(0.4129388, 0.41293874)
 texture = ExtResource("3_7yj74")
 
 [node name="Sun" type="TextureRect" parent="." unique_id=346631465]
