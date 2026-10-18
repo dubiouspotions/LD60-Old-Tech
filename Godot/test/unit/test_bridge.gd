@@ -425,3 +425,22 @@ func test_plan_end_inside_the_ground_moves_to_where_the_plan_leaves_it() -> void
 	assert_true(b.check_build(from, to, LOG, Supplies.make(9, 9, 9, 9)).ok)
 	var air := b.snap_point(Vector2(6, 1))
 	assert_eq(b.fit_to_ground(air, to), air, "an end in the air stays")
+
+
+func test_only_natural_ground_bolts_a_joint() -> void:
+	var t := WorldFixture.terrain(self, [
+		"..........",
+		"..........",
+		"..........",
+		".KK.......",
+		".KK.......",
+		".KK.......",
+		"##########",
+		"BBBBBBBBBB",
+	])
+	var b := WorldFixture.bridge(self, t)
+	assert_false(b.anchorable(Vector2(3, 3)), "a tower's corner does not bolt")
+	assert_true(b.anchorable(Vector2(5, 6)), "the ground does")
+	var m := b.build(b.snap_point(Vector2(3, 3)), b.snap_point(Vector2(7, 3)), LOG)
+	_run(b, 3.0)
+	assert_gt(m.b.pos.y, 5.0, "a log held out from a tower's corner tips off it")
