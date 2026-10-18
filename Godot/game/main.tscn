@@ -72,11 +72,12 @@ texture_scale = 2.2
 script = ExtResource("night_light")
 night_energy = 0.9
 
-[node name="DayNight" type="Node" parent="." unique_id=1668103146 node_paths=PackedStringArray("world_tint", "sky_tint")]
+[node name="DayNight" type="Node" parent="." unique_id=1668103146 node_paths=PackedStringArray("world_tint", "sky_tint", "stars")]
 unique_name_in_owner = true
 script = ExtResource("8")
 world_tint = NodePath("../NightTint")
 sky_tint = NodePath("../Background/SkyTint")
+stars = NodePath("../Background/Stars")
 
 [node name="Camera" type="Camera2D" parent="." unique_id=1549734198]
 unique_name_in_owner = true

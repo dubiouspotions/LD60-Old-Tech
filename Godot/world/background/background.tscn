@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://kib74rq6nvro"]
 
 [ext_resource type="Script" uid="uid://bjf28quaqwc2i" path="res://world/background/ridge.gd" id="1"]
+[ext_resource type="Script" path="res://world/background/stars.gd" id="2_stars"]
 
 [sub_resource type="Gradient" id="sky"]
 offsets = PackedFloat32Array(0, 0.55, 1)
@@ -39,6 +40,10 @@ grow_vertical = 2
 mouse_filter = 2
 texture = SubResource("sky_tex")
 expand_mode = 1
+
+[node name="Stars" type="Node2D" parent="." node_paths=PackedStringArray("tint")]
+script = ExtResource("2_stars")
+tint = NodePath("../SkyTint")
 
 [node name="Sun" type="TextureRect" parent="." unique_id=346631465]
 anchors_preset = -1

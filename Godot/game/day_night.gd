@@ -1,10 +1,12 @@
 class_name DayNight
 extends Node
-## Night falls while the column camps: tints the world and the sky and lights every NightLight (the cursor
-## lantern, the engineers' lamps).
+## Night falls while the column camps: tints the world and the sky, brings out the stars and lights every NightLight
+## (the cursor lantern, the engineers' lamps).
 
 @export var world_tint: CanvasModulate
 @export var sky_tint: CanvasModulate
+## Faded in at night (optional).
+@export var stars: Stars
 @export var day_color: Color = Color.WHITE
 @export var night_world_color: Color = Color(0.3, 0.34, 0.52)
 @export var night_sky_color: Color = Color(0.2, 0.23, 0.4)
@@ -33,5 +35,9 @@ func set_night(on: bool, instant: bool = false, seconds: float = -1.0) -> void:
 		_tween.tween_property(world_tint, ^"color", night_world_color if on else day_color, maxf(t, 0.01))
 	if sky_tint:
 		_tween.tween_property(sky_tint, ^"color", night_sky_color if on else day_color, maxf(t, 0.01))
+	if stars:
+		_tween.tween_property(stars, ^"amount", 1.0 if on else 0.0, maxf(t, 0.01))
+	if t == 0.0:
+		_tween.custom_step(1.0)
 	for l: NightLight in get_tree().get_nodes_in_group(NightLight.GROUP):
 		l.fade(on, t)
