@@ -94,6 +94,8 @@ var _march_left: float = 0.0
 var _phase_left: float = 0.0
 var _done: bool = false
 var _camp: Node2D
+## The pieces of wood the last tree to come down dropped.
+var _dropped: Array[Wood.Piece] = []
 
 
 static func of(node: Node) -> World:
@@ -118,9 +120,7 @@ func _ready() -> void:
 		birds.chop(cell))
 	terrain.drops_loose = falling_piece_scene != null
 	terrain.came_loose.connect(_on_came_loose)
-	terrain.felled.connect(func(cells: Array[Vector2i]) -> void:
-		leaves.burst(cells)
-		birds.from_tree(cells))
+	terrain.felled.connect(_on_felled)
 	terrain.collapsed.connect(func(found: Supplies, cells: Array[Vector2i]) -> void: gain(found, _top_of(cells)))
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
@@ -578,18 +578,26 @@ static func _top_of(cells: Array[Vector2i]) -> Vector2:
 	return Vector2((lo + hi) / 2.0, top)
 
 
-## An engineer finished digging a marked cell: take the tile and its supplies.
+## A tree is coming down, chopped or not: leaves and birds fly, and its logs drop as pieces of wood for the crew
+## to pick up (they count once picked up).
+func _on_felled(cells: Array[Vector2i], found: Supplies) -> void:
+	leaves.burst(cells)
+	birds.from_tree(cells)
+	_dropped = wood.drop(cells, found.logs) if found.logs > 0 else ([] as Array[Wood.Piece])
+	found.logs = 0
+
+
+## An engineer finished digging a marked cell: take the tile and its supplies. The engineer that felled a tree
+## picks up its wood.
 func _on_dig_finished(cell: Vector2i) -> void:
 	var here := terrain.type_at(cell)
 	var feller := crew.finisher_of(cell)
-	var tree := terrain.tree_cells(cell)
+	_dropped = []
 	var got := terrain.dig(cell)
 	if got == null:
 		return
-	# The logs of a felled tree drop as pieces of wood for the engineer that felled it to pick up.
-	if feller and not tree.is_empty() and got.logs > 0:
-		crew.gather(feller, wood.drop(tree, got.logs))
-		got.logs = 0
+	if feller:
+		crew.gather(feller, _dropped)
 	gain(got, Vector2(cell) + Vector2(0.5, 0), GAIN_COLOR if here.dig_action == TerrainType.DigAction.FELL else here.debris_color)
 
 

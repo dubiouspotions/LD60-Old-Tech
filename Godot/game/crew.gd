@@ -114,6 +114,9 @@ func step(dt: float) -> void:
 		_finisher = null
 		for cell in terrain.marked_cells():
 			dig_finished.emit(cell)
+		if wood:
+			for p in wood.pieces.duplicate():
+				picked_up.emit(p, null)
 	_update_ready_spot(dt)
 	for i in engineers.size():
 		var e := engineers[i]

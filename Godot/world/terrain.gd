@@ -10,10 +10,11 @@ extends TileMapLayer
 
 ## A fill-type tile fell loose; the level spawns a falling block for it.
 signal tile_detached(cell: Vector2i, type: TerrainType)
-## Structures with no ground under them fell apart, or a tree lost the ground it stood on.
+## A structure or tree broke up (razed, fell too far, landed on spikes): what it gave and its cells.
 signal collapsed(found: Supplies, cells: Array[Vector2i])
-## A tree is coming down (chopped, or its ground gone): every cell of it, just before they are cleared.
-signal felled(cells: Array[Vector2i])
+## A tree is coming down, whatever brought it down: every cell of it, just before they are cleared, and its yield,
+## which fell() then returns. A listener may take some of the yield out (the World drops the logs as wood).
+signal felled(cells: Array[Vector2i], found: Supplies)
 ## A cell's material changed while playing (dug, filled, fell, collapsed).
 signal cell_changed(cell: Vector2i)
 ## A tower or tree lost the ground under it and came out as one piece (see lift()), when drops_loose is on.
@@ -321,13 +322,15 @@ func dig(cell: Vector2i) -> Supplies:
 func fell(cell: Vector2i) -> Supplies:
     var counts := {}
     var group := _fell_group(cell)
-    felled.emit(group)
     for c in group:
         var t := type_at(c)
         counts[t] = counts.get(t, 0) + 1
+    var found := TerrainType.bulk_total(counts)
+    felled.emit(group, found)
+    for c in group:
+        Effects.debris(cell_center_px(c), type_at(c).debris_color, 1, 70.0)
         set_type(c, null)
-        Effects.debris(cell_center_px(c), t.debris_color, 1, 70.0)
-    return TerrainType.bulk_total(counts)
+    return found
 
 
 ## The cell engineers work on to dig this one: the base of the tree for trees, else the cell itself.

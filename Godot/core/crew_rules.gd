@@ -56,6 +56,6 @@ extends Resource
 @export var death_sound: SoundEffect
 
 @export_group("Cheats")
-## For testing: ordered plans are built and marked cells dug (trees felled) the moment they are ordered or
-## marked. F2 toggles it (with a supply top-up) while playing.
+## For testing: ordered plans are built and marked cells dug (trees felled, their wood picked up) the moment
+## they are ordered or marked. F2 toggles it (with a supply top-up) while playing.
 @export var instant_work: bool = false

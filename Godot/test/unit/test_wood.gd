@@ -149,6 +149,26 @@ func test_a_piece_out_of_reach_does_not_hold_the_feller_forever() -> void:
 	assert_eq(world.wood.count(), 0, "fetched in the end")
 
 
+func test_a_tree_knocked_down_by_a_bridge_piece_drops_its_wood() -> void:
+	_tree()
+	var logs := _yield_logs()
+	var had := GameState.supplies.logs
+	world._on_bridge_struck(Vector2i(2, 5), 1e9)
+	assert_null(world.terrain.type_at(Vector2i(2, 5)), "knocked down")
+	assert_eq(world.wood.count(), logs, "one piece per log")
+	assert_eq(GameState.supplies.logs, had, "none counted yet")
+
+
+func test_idle_engineers_pick_up_wood_nobody_felled() -> void:
+	_tree()
+	var logs := _yield_logs()
+	var had := GameState.supplies.logs
+	world._on_bridge_struck(Vector2i(2, 5), 1e9)
+	_run(20.0, func() -> bool: return world.wood.count() == 0)
+	assert_eq(world.wood.count(), 0, "all picked up")
+	assert_eq(GameState.supplies.logs, had + logs, "and counted")
+
+
 func test_the_instant_work_cheat_skips_the_gathering() -> void:
 	_tree()
 	var logs := _yield_logs()

@@ -191,6 +191,7 @@ func test_tree_falls_onto_the_ground_below_and_stands_there() -> void:
 func test_tree_falling_further_than_it_survives_is_felled() -> void:
 	_build(TREE)
 	var logs := GameState.supplies.logs
+	var expected := _tree_logs()
 	for y in range(5, 9):
 		_clear([Vector2i(4, y), Vector2i(5, y), Vector2i(6, y), Vector2i(7, y)])
 	_run(3.0)
@@ -198,4 +199,14 @@ func test_tree_falling_further_than_it_survives_is_felled() -> void:
 		for x in 20:
 			var t := world.terrain.type_at(Vector2i(x, y))
 			assert_false(t != null and t.dig_action == TerrainType.DigAction.FELL, "no tree left at %s" % Vector2i(x, y))
-	assert_gt(GameState.supplies.logs, logs, "felled for its logs")
+	assert_eq(world.wood.count(), expected, "its logs dropped as wood for the crew to pick up")
+	assert_eq(GameState.supplies.logs, logs, "none counted before they are picked up")
+
+
+## Logs the tree in TREE gives when felled.
+func _tree_logs() -> int:
+	var counts := {}
+	for c in world.terrain.tree_cells(Vector2i(6, 4)):
+		var t := world.terrain.type_at(c)
+		counts[t] = counts.get(t, 0) + 1
+	return TerrainType.bulk_total(counts).logs
