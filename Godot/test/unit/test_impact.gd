@@ -421,3 +421,14 @@ func test_a_rope_dropped_across_a_tower_does_not_lie_on_it_like_a_rod() -> void:
 	_run(3.0)
 	assert_gt(rope.a.pos.y, 4.0, "its ends fell past the tower top")
 	assert_gt(rope.b.pos.y, 4.0)
+
+
+func test_a_box_that_landed_stops_falling_before_it_is_freed() -> void:
+	_drop_fill(Vector2i(7, 0))
+	_run(2.0)
+	var boxes := 0
+	for y in range(0, 8):
+		if world.terrain.type_at(Vector2i(7, y)) == WorldFixture.type("fill"):
+			boxes += 1
+	assert_eq(boxes, 1, "one box, landed once")
+	assert_eq(world.terrain.type_at(Vector2i(7, 5)), WorldFixture.type("fill"), "on the ground")

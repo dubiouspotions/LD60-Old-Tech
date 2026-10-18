@@ -219,7 +219,8 @@ func _physics_process(dt: float) -> void:
 		return
 	_advance_phase(dt)
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
-	var blocks := objects.get_children().filter(func(o: Node) -> bool: return o is FallingBlock)
+	# A block that landed or broke is freed only at the end of the frame; it must not fall on meanwhile.
+	var blocks := objects.get_children().filter(func(o: Node) -> bool: return o is FallingBlock and not o.is_queued_for_deletion())
 	var bodies := _bodies(blocks)
 	_step_bridge(dt, bodies, blocks)
 	for b: FallingBlock in blocks:
