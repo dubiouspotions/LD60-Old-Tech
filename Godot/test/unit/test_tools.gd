@@ -259,3 +259,15 @@ func test_bridge_builds_the_material_picked() -> void:
 	_select(ToolDefinition.Kind.BUILD, "Rope")
 	tools.select(bridge)
 	assert_eq(tools.build_material().display_name, "Stone", "coming back from another tool keeps the pick")
+
+
+func test_a_plan_from_inside_the_ground_is_measured_from_where_it_leaves_it() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	# From deep in the ground (x 2, row 8) up out of it: 6.4 m in all, 3.8 m of it above the ground.
+	tools._mouse_m = Vector2(2, 8)
+	tools._press()
+	tools._mouse_m = Vector2(6, 3)
+	tools._release()
+	assert_eq(world.bridge.members.size(), 1, "built: the part above the ground is short enough")
+	var m: Bridge.Member = world.bridge.members[0]
+	assert_lt(m.length, 5.0, "measured from the face of the ground")
