@@ -740,8 +740,13 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 	# Climb a higher ledge up its face first, then step onto it, so the body never enters the rock. Ground rising
 	# no steeper than 45 degrees (a slope up a step) is walked instead, from the ground (not part way up a face).
 	var slope := absf(look - e.pos.x) if not on_face else 0.0
-	if ahead < e.pos.y - 0.02 - slope:
-		e.pos.y = move_toward(e.pos.y, ahead, rules.climb_speed * dt)
+	# Up a face only to the foot of a slope on top of it (the ledge's edge), then up the slope on foot, so the engineer
+	# never hangs higher over the ground behind it than it can hold on at.
+	var top := ahead
+	if on_face and terrain.ramp_at(Vector2i(floori(look), ceili(ahead) - 1)) != 0:
+		top = ceilf(ahead)
+	if top < e.pos.y - 0.02 - slope:
+		e.pos.y = move_toward(e.pos.y, top, rules.climb_speed * dt)
 		_show(e, true, facing)
 		return
 	var step := absf(nx - e.pos.x)
