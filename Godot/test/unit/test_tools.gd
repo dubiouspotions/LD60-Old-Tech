@@ -120,19 +120,92 @@ func test_box_without_five_logs_does_nothing() -> void:
 	assert_null(world.terrain.type_at(Vector2i(10, 5)))
 
 
-func test_clicks_place_a_chain_of_planks() -> void:
+func test_two_clicks_place_one_plank_and_stop() -> void:
 	_select(ToolDefinition.Kind.BUILD, "Log")
 	_click(Vector2(6, 6))
 	assert_eq(world.bridge.members.size(), 0, "a click only starts the plank")
 	_click(Vector2(9, 6))
 	assert_eq(world.bridge.members.size(), 1, "the second click places the end")
 	assert_eq(world.bridge.members[0].b.pos, Vector2(9, 6))
+	assert_null(tools.preview_from(), "and that is it")
 	_click(Vector2(11, 5))
-	assert_eq(world.bridge.members.size(), 2, "each further click adds the next plank")
+	assert_eq(world.bridge.members.size(), 1, "the next click starts a new plank")
+
+
+func test_shift_on_a_click_carries_on_from_its_end() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	tools.chain = true
+	_click(Vector2(9, 6))
+	assert_eq(world.bridge.members.size(), 1)
+	assert_eq(tools.preview_from().pos, Vector2(9, 6), "the next plank starts at the end")
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 2, "each Shift-click adds the next plank")
 	assert_eq(world.bridge.members[1].a, world.bridge.members[0].b, "joined at the last point")
-	_click(Vector2(11, 5))
+	tools.chain = false
+	assert_null(tools.preview_from(), "letting go of Shift ends the chain: nothing follows the mouse")
 	_click(Vector2(13, 5))
-	assert_eq(world.bridge.members.size(), 2, "clicking the last point again finishes the chain")
+	assert_eq(world.bridge.members.size(), 2, "the next click starts a new plank")
+
+
+func test_clicking_the_last_point_again_ends_a_chain() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	tools.chain = true
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	_click(Vector2(9, 6))
+	tools.chain = false
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 1, "the click after it starts a new plank")
+
+
+func test_holding_shift_picks_up_where_you_left_off() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	assert_null(tools.preview_from())
+	tools.chain = true
+	assert_eq(tools.preview_from().pos, Vector2(9, 6), "a new plank from the last end follows the mouse")
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 2)
+	assert_eq(world.bridge.members[1].a, world.bridge.members[0].b, "carried on from it")
+
+
+func test_letting_go_of_shift_drops_the_picked_up_plank() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	tools.chain = true
+	tools.chain = false
+	assert_null(tools.preview_from(), "nothing follows the mouse")
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 1, "the click starts a new plank instead")
+
+
+func test_no_picking_up_from_a_plan_already_ordered() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	tools.commit()
+	tools.chain = true
+	assert_null(tools.preview_from(), "the crew has it now")
+
+
+func test_right_click_cancels_even_with_shift_held() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	tools.chain = true
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	tools.cancel()
+	assert_null(tools.preview_from(), "no plank, and none picked up again while Shift stays down")
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 1, "the click starts a new one")
+
+
+func test_shift_is_the_chain_key() -> void:
+	var shift := InputEventKey.new()
+	shift.physical_keycode = KEY_SHIFT
+	assert_true(InputMap.action_has_event(&"chain_build", shift))
 
 
 func test_right_click_or_cancel_finishes_a_chain() -> void:
@@ -278,8 +351,9 @@ func test_a_plan_from_inside_the_ground_is_measured_from_where_it_leaves_it() ->
 	assert_lt(m.length, 5.0, "measured from the face of the ground")
 
 
-## Starts a chain at from and places one plank to to; the chain then waits at to.
+## Starts a chain at from and places one plank to to with Shift held; the chain then waits at to.
 func _chain(from: Vector2, to: Vector2) -> void:
+	tools.chain = true
 	_click(from)
 	_click(to)
 
