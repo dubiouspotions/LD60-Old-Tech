@@ -136,3 +136,16 @@ func test_bridge_shows_a_material_picker() -> void:
 	assert_string_contains(b.tooltip_text, "1 stone", "the button shows what the pick costs")
 	hud.set_tool(0)
 	assert_false(picker.visible, "hidden for tools with one material")
+
+
+func test_the_lost_card_fades_the_screen_then_slides_in_from_below() -> void:
+	var lost: ColorRect = hud.get_node("%Lost")
+	var center: Control = lost.get_node("Center")
+	var dim := lost.color.a
+	hud.show_lost("Lost", "text")
+	assert_true(lost.visible)
+	assert_almost_eq(lost.color.a, 0.0, 0.01, "starts clear")
+	assert_gt(center.position.y, 0.0, "the card starts below")
+	await get_tree().create_timer(hud.card_fade_time + hud.card_slide_time + 0.2, true, false, true).timeout
+	assert_almost_eq(lost.color.a, dim, 0.01, "faded to the overlay")
+	assert_almost_eq(center.position.y, 0.0, 0.5, "slid into place")

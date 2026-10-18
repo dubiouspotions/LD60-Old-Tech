@@ -18,7 +18,41 @@ script = ExtResource("1")
 tool_button_scene = ExtResource("2")
 click_sound = ExtResource("5")
 plan_buttons_scene = ExtResource("7")
-metadata/_edit_horizontal_guides_ = [624.0, 647.0]
+metadata/_edit_horizontal_guides_ = [624.0, 647.0, 582.0]
+metadata/_edit_vertical_guides_ = [16.0]
+
+[node name="MarchButton" type="Button" parent="." unique_id=709407877]
+unique_name_in_owner = true
+offset_left = 16.0
+offset_top = 508.0
+offset_right = 111.0
+offset_bottom = 542.0
+tooltip_text = "Order the column to march now (M)"
+focus_mode = 0
+text = "March now"
+
+[node name="StatusPanel" type="PanelContainer" parent="." unique_id=264606519]
+unique_name_in_owner = true
+z_index = 1
+anchors_preset = -1
+anchor_left = -0.01484375
+anchor_right = 0.06875
+offset_left = 35.0
+offset_top = 553.0
+offset_right = 188.0
+offset_bottom = 582.0
+mouse_filter = 2
+theme_type_variation = &"StatusPanel"
+metadata/_edit_use_anchors_ = true
+
+[node name="Status" type="Label" parent="StatusPanel" unique_id=1803148860]
+unique_name_in_owner = true
+layout_mode = 2
+offset_transform_enabled = true
+offset_transform_position = Vector2(10, 0)
+theme_type_variation = &"Display"
+theme_override_font_sizes/font_size = 20
+text = "Awaiting orders"
 
 [node name="Root" type="Control" parent="." unique_id=579945222]
 layout_mode = 3
@@ -29,6 +63,35 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme = ExtResource("3")
+
+[node name="Stats" type="HBoxContainer" parent="Root" unique_id=763296046]
+layout_mode = 0
+offset_left = 1004.0
+offset_top = 637.0
+offset_right = 1266.0
+offset_bottom = 666.0
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Level" parent="Root/Stats" unique_id=1132306690 instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Level"
+
+[node name="Army" parent="Root/Stats" unique_id=954870113 instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Army"
+
+[node name="Marched" parent="Root/Stats" unique_id=837735285 instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Marched"
+
+[node name="Best" parent="Root/Stats" unique_id=1693077341 instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Best"
 
 [node name="Margin" type="MarginContainer" parent="Root" unique_id=338993714]
 layout_mode = 1
@@ -56,61 +119,15 @@ theme_override_constants/separation = 22
 
 [node name="Title" type="Label" parent="Root/Margin/Column/TopBar" unique_id=1919115480]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_type_variation = &"Heading"
 theme_override_font_sizes/font_size = 26
-text = "Sappers' March"
-
-[node name="Stats" type="HBoxContainer" parent="Root/Margin/Column/TopBar" unique_id=763296046]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 16
-
-[node name="Level" parent="Root/Margin/Column/TopBar/Stats" unique_id=1132306690 instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Level"
-
-[node name="Army" parent="Root/Margin/Column/TopBar/Stats" unique_id=954870113 instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Army"
-
-[node name="Marched" parent="Root/Margin/Column/TopBar/Stats" unique_id=837735285 instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Marched"
-
-[node name="Best" parent="Root/Margin/Column/TopBar/Stats" unique_id=1693077341 instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Best"
 
 [node name="Spacer" type="Control" parent="Root/Margin/Column/TopBar" unique_id=710442937]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-
-[node name="StatusPanel" type="PanelContainer" parent="Root/Margin/Column/TopBar" unique_id=264606519]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"StatusPanel"
-
-[node name="Status" type="Label" parent="Root/Margin/Column/TopBar/StatusPanel" unique_id=1803148860]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Display"
-theme_override_font_sizes/font_size = 20
-text = "Awaiting orders"
-
-[node name="MarchButton" type="Button" parent="Root/Margin/Column/TopBar" unique_id=709407877]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-tooltip_text = "Order the column to march now (M)"
-focus_mode = 0
-text = "March now"
 
 [node name="Field" type="Control" parent="Root/Margin/Column" unique_id=741710364]
 layout_mode = 2

@@ -35,6 +35,16 @@ const AIR_KEY: StringName = &"air"
 ## How far around a change structures are re-checked for support.
 @export_range(4, 100) var structure_search: int = 30
 
+@export_group("Hit effect")
+## A tile hit (a soldier's blow on a tower) shakes for this long and blinks once at the start.
+@export_range(0.05, 2.0, 0.05, "suffix:s") var hit_time: float = 0.25
+## How far it shakes, in pixels, easing off over hit_time.
+@export_range(0, 16) var hit_shake: int = 3
+## Its colour while it blinks (above white is brighter).
+@export var hit_flash: Color = Color(2.2, 2.2, 2.2)
+## Share of hit_time the blink lasts.
+@export_range(0.05, 1.0, 0.05) var hit_flash_share: float = 0.35
+
 ## Right and bottom edge in cells (from the origin).
 var size: Vector2i = Vector2i.ZERO
 ## Left edge: columns before it are out of bounds.
@@ -53,15 +63,59 @@ var _changed: Dictionary = {} # Vector2i -> true
 var _changed_all: bool = true
 var _rules: TileRules
 var _alts: Dictionary = {} # v2 atlas coords -> {TerrainType, or AIR_KEY for air: alternative id}
+var _hits: Dictionary = {} # Vector2i -> seconds since it was hit
 
 
 func _ready() -> void:
     rebuild()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
     if not Engine.is_editor_hint():
         settle()
+        advance_hits(delta)
+
+
+## The tile at cell was hit: it shakes and blinks once (see Hit effect).
+func hit(cell: Vector2i) -> void:
+    if get_cell_source_id(cell) == -1:
+        return
+    _hits[cell] = 0.0
+    notify_runtime_tile_data_update()
+
+
+## Moves the hit tiles' shake and blink on by delta seconds.
+func advance_hits(delta: float) -> void:
+    if _hits.is_empty():
+        return
+    for c: Vector2i in _hits.keys():
+        _hits[c] += delta
+        if _hits[c] >= hit_time:
+            _hits.erase(c)
+    notify_runtime_tile_data_update()
+
+
+## How far the tile at cell is shaken off its place now, in pixels.
+func hit_offset_at(cell: Vector2i) -> Vector2i:
+    if not _hits.has(cell):
+        return Vector2i.ZERO
+    var left: float = 1.0 - _hits[cell] / hit_time
+    var r := roundi(hit_shake * left)
+    return Vector2i(randi_range(-r, r), randi_range(-r, r))
+
+
+## The tile at cell's colour now: hit_flash while it blinks, else white.
+func hit_flash_at(cell: Vector2i) -> Color:
+    return hit_flash if _hits.has(cell) and _hits[cell] < hit_time * hit_flash_share else Color.WHITE
+
+
+func _use_tile_data_runtime_update(coords: Vector2i) -> bool:
+    return _hits.has(coords)
+
+
+func _tile_data_runtime_update(coords: Vector2i, tile_data: TileData) -> void:
+    tile_data.texture_origin -= hit_offset_at(coords)
+    tile_data.modulate = hit_flash_at(coords)
 
 
 ## Re-reads every painted cell. Call after painting from code.
