@@ -191,6 +191,46 @@ func test_wood_under_a_bridge_is_fetched_from_beneath_it() -> void:
 	assert_lt(took[0], world.crew.rules.gather_give_up * 0.5, "fetched from beneath the deck, not given up on")
 
 
+## The engineer up on a sloping bridge fetches wood lying under its low end: down the deck to the ground, then
+## beneath the deck to the piece.
+func test_wood_under_the_low_end_of_a_sloping_bridge_is_fetched() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var rows := [
+		"..................",
+		"..................",
+		"...........#######",
+		"...........#######",
+		"...........#######",
+		"...........#######",
+		"######.....#######",
+		"##################",
+		"BBBBBBBBBBBBBBBBBB",
+	]
+	for y in rows.size():
+		for x in rows[y].length():
+			var key: String = WorldFixture.LEGEND[rows[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	var bridge := world.bridge
+	bridge.build(bridge.snap_point(Vector2(6, 6)), bridge.snap_point(Vector2(11, 2)), load("res://data/bridge/log.tres"))
+	world.army.spawn(1, 2.5)
+	world.crew.spawn(2.5)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(9.0, bridge.walk_surface(9.0, 0.0).y)
+	var pieces := world.wood.drop([Vector2i(7, 6)], 2)
+	for p in pieces:
+		p.pos = Vector2(7.5, 7.0)
+		p.resting = true
+	world.crew.gather(e, pieces)
+	var took := [0.0]
+	_run(world.crew.rules.gather_give_up + 5.0, func() -> bool:
+		took[0] += 1.0 / 60.0
+		return world.wood.count() == 0)
+	assert_eq(world.wood.count(), 0, "picked up")
+	assert_lt(took[0], world.crew.rules.gather_give_up * 0.5, "fetched, not given up on")
+
+
 func test_a_tree_knocked_down_by_a_bridge_piece_drops_its_wood() -> void:
 	_tree()
 	var logs := _yield_logs()
