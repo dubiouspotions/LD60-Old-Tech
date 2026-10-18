@@ -163,7 +163,7 @@ A sheet whose sky is a solid colour instead: set it as **Source Texture**, the c
 | Arrows | `objects/arrow/arrow.tscn` |
 | Falling box (the Box tool, `data/tools/2_fill.tres`; the landed tile is `data/terrain/fill.tres`) | `objects/falling_block/falling_block.tscn` |
 | Debris, floating text | `objects/effects/` |
-| How a tile shakes and blinks when a soldier strikes it (**Hit Time**, **Hit Shake** in pixels, **Hit Flash** colour, **Hit Flash Share**) | **Hit effect** group on the **Terrain** node (`world/terrain.tscn`). Sparks look: `objects/effects/sparks.tscn`. |
+| How a tile shakes and blinks when a soldier strikes it or a bridge piece hits it (**Hit Time**, **Hit Shake** in pixels, **Hit Flash** colour, **Hit Flash Share**), and the ripple that runs from it through the rest of the tower and its battlements to show the whole tower will fall (**Ripple Lift** in pixels, **Ripple Speed**, **Ripple Time**) | **Hit effect** group on the **Terrain** node (`world/terrain.tscn`). Sparks look: `objects/effects/sparks.tscn`. |
 | Sky, sun, stars, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |
 | Bridge physics feel, build messages, blueprint / ordered colours | **Bridge** node in `game/world.tscn` |

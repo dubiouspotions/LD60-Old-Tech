@@ -685,6 +685,7 @@ func _on_bridge_struck(cell: Vector2i, damage: float) -> void:
 	if t == null:
 		return
 	if t.raze_time > 0.0:
+		terrain.hit(cell)
 		terrain.besiege(cell, bridge.siege_per_kj * damage / 1000.0)
 	elif t.breaks_under(damage):
 		terrain.dig(cell)

@@ -105,6 +105,19 @@ func test_falling_log_batters_a_tower() -> void:
 	assert_true(hit, "tower damaged")
 
 
+func test_a_piece_hitting_a_tower_shakes_the_whole_tower() -> void:
+	_map([
+		"....................",
+		"....KKK.............",
+		"....KKK.............",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	world._on_bridge_struck(Vector2i(4, 2), 100.0)
+	assert_true(world.terrain._hits.has(Vector2i(4, 2)), "the tile hit shakes")
+	assert_gt(world.terrain.ripple_delay(Vector2i(6, 1)), 0.0, "the rest of the tower ripples after it")
+
+
 func test_log_laid_gently_on_the_ground_breaks_nothing() -> void:
 	_drop_log(4, 6, 6)
 	_run(2.0)

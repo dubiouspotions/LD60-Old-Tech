@@ -50,12 +50,21 @@ func test_each_blow_on_a_tower_is_a_hit_on_one_cell() -> void:
 	assert_between(blows.size() - before, 4, 6, "one per attack interval")
 
 
+func test_a_blow_ripples_through_the_whole_tower() -> void:
+	var blows: Array[Vector2i] = []
+	world.army.struck.connect(func(cell: Vector2i, _by: Soldier) -> void: blows.append(cell))
+	_march(4.0)
+	assert_false(blows.is_empty(), "besieging")
+	assert_gt(world.terrain.ripple_delay(Vector2i(12, 1)), 0.0, "the far top of the tower ripples too")
+
+
 func test_a_hit_cell_shakes_and_blinks_once_then_settles() -> void:
 	var t := world.terrain
 	var cell := Vector2i(10, 3)
 	t.hit(cell)
 	assert_true(t._use_tile_data_runtime_update(cell), "drawn with its hit look")
-	assert_false(t._use_tile_data_runtime_update(Vector2i(11, 3)), "only the cell hit")
+	assert_false(t._hits.has(Vector2i(11, 3)), "only the cell hit shakes and blinks (the rest of the tower ripples)")
+	assert_eq(t.hit_flash_at(Vector2i(11, 3)), Color.WHITE)
 	assert_gt(t.hit_flash_at(cell).r, 1.0, "blinks bright at first")
 	var moved := false
 	var lit_again := false
@@ -71,8 +80,9 @@ func test_a_hit_cell_shakes_and_blinks_once_then_settles() -> void:
 		age += step
 	assert_true(moved, "shakes")
 	assert_false(lit_again, "blinks once per hit")
-	assert_false(t._use_tile_data_runtime_update(cell), "back to normal")
-	assert_eq(t.hit_offset_at(cell), Vector2i.ZERO)
+	assert_eq(t.hit_offset_at(cell), Vector2i.ZERO, "back to normal")
+	t.advance_hits(10.0)
+	assert_false(t._use_tile_data_runtime_update(cell), "nothing drawn specially once the ripple has passed")
 
 
 func test_a_blow_throws_stone_chips_and_sparks_at_the_face_hit() -> void:

@@ -210,6 +210,29 @@ func test_besieged_tower_is_razed_whole_after_its_raze_time() -> void:
 	assert_signal_emitted(t, "collapsed")
 
 
+func test_a_hit_on_a_tower_ripples_through_the_rest_of_it() -> void:
+	var t := WorldFixture.terrain(self, TOWER)
+	t.hit(Vector2i(4, 3))
+	assert_eq(t.ripple_delay(Vector2i(4, 3)), 0.0, "from the tile hit")
+	var near := t.ripple_delay(Vector2i(5, 3))
+	var far := t.ripple_delay(Vector2i(6, 1))
+	assert_gt(near, 0.0, "the next tile a moment later")
+	assert_gt(far, near, "the far side of the tower later still")
+	assert_eq(t.ripple_delay(Vector2i(4, 4)), -1.0, "not the ground under it")
+	t.advance_hits(near + t.ripple_time / 2.0)
+	assert_ne(t.ripple_offset_at(Vector2i(5, 3)), Vector2i.ZERO, "lifted as it passes")
+	assert_true(t._use_tile_data_runtime_update(Vector2i(6, 1)))
+	t.advance_hits(10.0)
+	assert_eq(t.ripple_delay(Vector2i(6, 1)), -1.0, "and settles")
+	assert_false(t._use_tile_data_runtime_update(Vector2i(6, 1)))
+
+
+func test_a_hit_on_plain_ground_does_not_ripple() -> void:
+	var t := WorldFixture.terrain(self, TOWER)
+	t.hit(Vector2i(0, 4))
+	assert_eq(t.ripple_delay(Vector2i(1, 4)), -1.0)
+
+
 func test_rock_can_not_be_besieged() -> void:
 	var t := WorldFixture.terrain(self, MAP)
 	assert_false(t.besiege(Vector2i(8, 6), 1000.0))
