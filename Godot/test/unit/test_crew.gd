@@ -737,3 +737,28 @@ func test_crew_builds_from_a_joint_on_a_cliff_face_without_entering_the_rock() -
 		return not m.blueprint)
 	assert_false(m.blueprint, "built")
 	assert_false(inside[0], "nobody drawn inside the cliff")
+
+
+func test_crew_climbs_any_height_to_marks_it_can_not_reach_otherwise() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var rows := [
+		"....................",
+		"####....############",
+		"####....############",
+		"####....############",
+		"####....############",
+		"####....############",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	]
+	for y in rows.size():
+		for x in rows[y].length():
+			var key: String = WorldFixture.LEGEND[rows[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 2.5)
+	world.crew.spawn(2.5)
+	world.terrain.mark(Vector2i(10, 1))
+	_run(25.0, func() -> bool: return world.terrain.type_at(Vector2i(10, 1)) == null)
+	assert_null(world.terrain.type_at(Vector2i(10, 1)), "dug across the 5 m pit")
