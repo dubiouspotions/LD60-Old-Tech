@@ -5,4 +5,4 @@ extends HBoxContainer
 
 ## Puts the pair above screen_px (screen pixels), centred.
 func pin(screen_px: Vector2) -> void:
-	WorldButton.pin_control(self, screen_px)
+    WorldButton.pin_control(self, screen_px)
