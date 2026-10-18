@@ -58,6 +58,15 @@ func test_recruit_button_shows_at_camp_and_reports_clicks() -> void:
 	assert_false(b.visible)
 
 
+## Greyed out, the Recruit button lets clicks through to the world behind it (to mark a tree there, say).
+func test_a_greyed_out_recruit_button_lets_clicks_through() -> void:
+	var b: Button = hud.get_node("%RecruitButton")
+	hud.set_recruit(true, 5, false, Vector2.ZERO)
+	assert_eq(b.mouse_filter, Control.MOUSE_FILTER_IGNORE, "clicks pass through")
+	hud.set_recruit(true, 5, true, Vector2.ZERO)
+	assert_eq(b.mouse_filter, Control.MOUSE_FILTER_STOP, "clickable again once there is gold")
+
+
 func test_build_and_cancel_buttons_float_above_plans() -> void:
 	watch_signals(hud)
 	hud.set_build_spots([Vector2(100, 200), Vector2(300, 220)], [2, 1])

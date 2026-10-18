@@ -173,8 +173,12 @@ class Snap:
 ## Blueprints handed to the crew.
 @export var ordered_color: Color = Color(1.0, 0.85, 0.45, 0.9)
 @export var blueprint_dash: float = 6.0
-@export var scaffold_color: Color = Color(0.62, 0.55, 0.42, 0.85)
-## Scaffold poles reach down at most this far.
+## Scaffolding tiles: a 2x2 sheet, each tile one cell, laid in the same arrangement over the world's cells, so
+## scaffolding side by side joins up. Any tile size; drawn to fill a cell.
+@export var scaffold_texture: Texture2D
+## Tint over the scaffolding tiles.
+@export var scaffold_color: Color = Color.WHITE
+## Scaffolding reaches down at most this many cells.
 @export var scaffold_max_depth: float = 24.0
 
 ## Slowest a piece can meet the ground (m/s) for it to count as a hit (damage by its energy), not settling.
@@ -663,9 +667,7 @@ func remove_outside(lo: float, hi: float) -> void:
 
 func _draw() -> void:
 	var px := Grid.PX
-	for n in nodes:
-		if n.scaffolded and not n.pinned:
-			_draw_scaffold(n.pos)
+	_draw_scaffolding()
 	var layered := members.duplicate()
 	layered.sort_custom(func(x: Member, y: Member) -> bool: return x.material.draw_layer < y.material.draw_layer)
 	for m: Member in layered:
@@ -749,19 +751,38 @@ func _recompute_mass() -> void:
 	nodes = nodes.filter(func(n: Joint) -> bool: return n.degree > 0)
 
 
-## A pole from p down to the ground with a ledger every metre.
-func _draw_scaffold(p: Vector2) -> void:
-	var px := Grid.PX
-	var x := floori(p.x)
-	var y := p.y
-	var top := ceili(p.y)
-	var bottom := top
-	while bottom < top + scaffold_max_depth and not terrain.is_solid(Vector2i(x, bottom)):
-		bottom += 1
-	draw_line(p * px, Vector2(p.x, bottom) * px, scaffold_color, maxf(1.5, 0.07 * px))
-	while y < bottom - 0.5:
-		y += 1.0
-		draw_line(Vector2(p.x - 0.3, y) * px, Vector2(p.x + 0.3, y) * px, scaffold_color, maxf(1.0, 0.05 * px))
+## The scaffolding's cells: under every scaffolded joint (not bolted to the ground), the column of cells from the
+## joint's down to the ground. cell -> the tile of the 2x2 sheet it is drawn with.
+func scaffold_cells() -> Dictionary:
+	var out := {}
+	for n in nodes:
+		if not n.scaffolded or n.pinned:
+			continue
+		var x := floori(n.pos.x)
+		var top := floori(n.pos.y + 0.001)
+		var y := top
+		while y < top + scaffold_max_depth and not terrain.is_solid(Vector2i(x, y)):
+			out[Vector2i(x, y)] = Vector2i(posmod(x, 2), posmod(y, 2))
+			y += 1
+	return out
+
+
+## Each scaffolding cell with its tile of the sheet; a cell with no scaffolding to its right gets a closing post
+## (the sheet's left posts, along its right edge).
+func _draw_scaffolding() -> void:
+	if scaffold_texture == null:
+		return
+	var cells := scaffold_cells()
+	var tile := scaffold_texture.get_size() / 2.0
+	var px := float(Grid.PX)
+	var post := maxf(1.0, tile.x / 8.0)
+	for c: Vector2i in cells:
+		var t: Vector2i = cells[c]
+		var at := Vector2(c) * px
+		draw_texture_rect_region(scaffold_texture, Rect2(at, Vector2.ONE * px), Rect2(Vector2(t) * tile, tile), scaffold_color)
+		if not cells.has(c + Vector2i.RIGHT):
+			var src := Rect2(Vector2(0, t.y * tile.y), Vector2(post, tile.y))
+			draw_texture_rect_region(scaffold_texture, Rect2(at + Vector2(px - px * post / tile.x, 0), Vector2(px * post / tile.x, px)), src, scaffold_color)
 
 
 ## The joint a new member uses at s: the existing one, a split of the member it lands on, or a new one.
