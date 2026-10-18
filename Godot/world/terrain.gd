@@ -19,6 +19,9 @@ signal felled(cells: Array[Vector2i], found: Supplies)
 signal cell_changed(cell: Vector2i)
 ## A tower or tree lost the ground under it and came out as one piece (see lift()), when drops_loose is on.
 signal came_loose(tiles: Dictionary)
+## A tower was razed: the row struck and anything below it broke, and the rest (tiles, lifted out as by lift())
+## comes down row by row. The World drops it as a crumbling FallingPiece.
+signal razed(tiles: Dictionary)
 
 const CUSTOM_DATA: String = "terrain"
 ## Stands for "no material" (air tiles such as fillets) in lookups: an empty custom data value and a typed null
@@ -49,6 +52,14 @@ const AIR_KEY: StringName = &"air"
 @export_range(0, 16) var ripple_lift: int = 2
 @export_range(1.0, 100.0, 1.0, "suffix:tiles/s") var ripple_speed: float = 14.0
 @export_range(0.05, 2.0, 0.05, "suffix:s") var ripple_time: float = 0.25
+
+@export_group("Collapse effect")
+## A structure breaking up (a tower razed or collapsing) throws this many chunks per cell, in its Debris Colour...
+@export_range(0, 30) var collapse_rubble: int = 4
+@export_range(0.0, 1000.0, 10.0, "suffix:px/s") var collapse_rubble_speed: float = 200.0
+## ...and this many puffs of dust per cell, in that colour paled by collapse_dust_pale.
+@export_range(0, 30) var collapse_dust: int = 3
+@export_range(0.0, 1.0, 0.05) var collapse_dust_pale: float = 0.35
 
 ## Right and bottom edge in cells (from the origin).
 var size: Vector2i = Vector2i.ZERO
@@ -457,8 +468,20 @@ func besiege(cell: Vector2i, seconds: float) -> bool:
     _siege[cell] = _siege.get(cell, 0.0) + seconds
     if _siege[cell] < t.raze_time:
         return false
-    break_up(_group(cell, func(c: TerrainType) -> bool: return c.structure or c == t))
+    _raze(cell, _group(cell, func(c: TerrainType) -> bool: return c.structure or c == t))
     return true
+
+
+## The tower made of cells is razed at cell: its row there, and anything below, is crushed under the weight above,
+## and the rest comes down (razed). Without drops_loose, or with nothing above, it all breaks up at once.
+func _raze(cell: Vector2i, cells: Array[Vector2i]) -> void:
+    var above: Array[Vector2i] = cells.filter(func(c: Vector2i) -> bool: return c.y < cell.y)
+    if above.is_empty() or not drops_loose:
+        break_up(cells)
+        return
+    var tiles := lift(above)
+    break_up(cells.filter(func(c: Vector2i) -> bool: return c.y >= cell.y))
+    razed.emit(tiles)
 
 
 ## Share of a besieged cell's raze_time taken so far, 0..1.
@@ -686,7 +709,9 @@ func _loosen(cells: Array[Vector2i]) -> void:
 ## Breaks a tower or tree apart: a tree is felled, a structure collapses into debris. Either gives its bulk yield
 ## (collapsed).
 func break_up(cells: Array[Vector2i]) -> void:
-    for c in decorations_on(cells):
+    # Its battlements and the like come down with it.
+    var decorations := decorations_on(cells)
+    for c in decorations:
         erase_cell(c)
     var first := type_at(cells[0])
     if first.dig_action == TerrainType.DigAction.FELL:
@@ -698,7 +723,10 @@ func break_up(cells: Array[Vector2i]) -> void:
         var t := type_at(cell)
         counts[t] = counts.get(t, 0) + 1
         set_type(cell, null)
-        Effects.debris(cell_center_px(cell), t.debris_color, 3, 110.0)
+        Effects.rubble(cell_center_px(cell), t.debris_color, collapse_rubble, collapse_rubble_speed)
+        Effects.dust(cell_center_px(cell), t.debris_color.lerp(Color(0.85, 0.8, 0.72), collapse_dust_pale), collapse_dust)
+    for cell in decorations:
+        Effects.debris(cell_center_px(cell), first.debris_color, 2, 110.0)
     Audio.play(collapse_sound, cell_center_px(cells[0]))
     Effects.shake(0.25)
     collapsed.emit(TerrainType.bulk_total(counts), cells)

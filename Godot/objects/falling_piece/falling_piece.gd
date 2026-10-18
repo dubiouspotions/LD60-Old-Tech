@@ -22,6 +22,11 @@ extends Node2D
 var tiles: Dictionary = {}
 ## Nodes carried down with it.
 var riders: Array[Node2D] = []
+## A razed tower coming down: each time it hits the ground its bottom row breaks, and the rest falls on, until none
+## is left (instead of landing in one piece).
+var crumble: bool = false
+## Seconds before it starts to fall (the columns of a razed tower go one after another).
+var delay: float = 0.0
 ## Metres fallen so far.
 var fallen: float = 0.0
 var _vy: float = 0.0
@@ -49,6 +54,9 @@ func covers(p: Vector2) -> bool:
 
 
 func step(dt: float, world: World) -> void:
+	if delay > 0.0:
+		delay -= dt
+		return
 	var t := world.terrain
 	_vy = minf(_vy + gravity * dt, max_speed)
 	var next := fallen + _vy * dt
@@ -80,6 +88,11 @@ func _blocked(t: Terrain, k: int) -> bool:
 func _land(world: World) -> void:
 	var t := world.terrain
 	var rows := roundi(fallen)
+	if crumble:
+		_break_bottom_row(t, rows)
+		if not tiles.is_empty():
+			_vy = 0.0
+			return
 	var survives := INF
 	var smashed := false
 	var ground := {}
@@ -107,6 +120,31 @@ func _land(world: World) -> void:
 		Effects.shake(land_shake)
 	riders.clear()
 	queue_free()
+
+
+## Breaks the bottom row of the piece, rows below where it started, where it hit the ground.
+func _break_bottom_row(t: Terrain, rows: int) -> void:
+	var bottom := -(1 << 30)
+	for c: Vector2i in tiles:
+		bottom = maxi(bottom, c.y)
+	var row := {}
+	var color := Color.GRAY
+	for c: Vector2i in tiles.keys():
+		if c.y != bottom:
+			continue
+		row[c] = tiles[c]
+		tiles.erase(c)
+		($Tiles as TileMapLayer).erase_cell(c - _origin)
+		if row[c].type != null:
+			color = (row[c].type as TerrainType).debris_color
+	if row.values().any(func(tile: Dictionary) -> bool: return tile.type != null):
+		# Set down where it hit, then broken; break_up takes the decorations beside it too.
+		t.break_up(t.put(row, rows))
+		return
+	for c: Vector2i in row:
+		var at := t.cell_center_px(c + Vector2i(0, rows))
+		Effects.rubble(at, color, t.collapse_rubble, t.collapse_rubble_speed)
+		Effects.dust(at, color, t.collapse_dust)
 
 
 ## Breaks layers of the ground under the landed cells (each column's lowest), stopping at ground that can not be

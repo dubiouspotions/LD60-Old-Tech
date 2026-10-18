@@ -1,12 +1,16 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://core/effects.gd" id="1"]
 [ext_resource type="PackedScene" path="res://objects/effects/debris.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://objects/effects/floating_text.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://objects/effects/sparks.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://objects/effects/rubble.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://objects/effects/dust.tscn" id="6"]
 
 [node name="Effects" type="Node2D"]
 script = ExtResource("1")
 debris_scene = ExtResource("2")
 sparks_scene = ExtResource("4")
+rubble_scene = ExtResource("5")
+dust_scene = ExtResource("6")
 text_scene = ExtResource("3")

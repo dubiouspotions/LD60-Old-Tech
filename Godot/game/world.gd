@@ -52,6 +52,8 @@ class Chunk:
 @export var falling_block_scene: PackedScene
 ## Drops a tower or tree whose ground was taken away.
 @export var falling_piece_scene: PackedScene
+## A razed tower comes down a column at a time, left to right, each this many seconds after the one before.
+@export_range(0.0, 1.0, 0.01, "suffix:s") var collapse_stagger: float = 0.06
 ## Pitched at the camp flag while the column sleeps. Needs a strike() method that removes it.
 @export var camp_scene: PackedScene
 ## Load the next level when the view's right edge comes this close to the end of the ground.
@@ -120,7 +122,8 @@ func _ready() -> void:
 		leaves.shake(cell)
 		birds.chop(cell))
 	terrain.drops_loose = falling_piece_scene != null
-	terrain.came_loose.connect(_on_came_loose)
+	terrain.came_loose.connect(func(tiles: Dictionary) -> void: _drop_piece(tiles, false))
+	terrain.razed.connect(_on_razed)
 	terrain.felled.connect(_on_felled)
 	terrain.collapsed.connect(func(found: Supplies, cells: Array[Vector2i]) -> void: gain(found, _top_of(cells)))
 	bridge.member_broken.connect(_on_member_broken)
@@ -259,6 +262,7 @@ func _physics_process(dt: float) -> void:
 	_crush_under_weight(bodies, blocks)
 	for p: FallingPiece in objects.get_children().filter(func(o: Node) -> bool: return o is FallingPiece and not o.is_queued_for_deletion()):
 		p.step(dt, self)
+	army.wait_reason = army.rules.collapse_text if collapsing() else ""
 	army.step(dt)
 	crew.step(dt)
 	_check_exit()
@@ -521,15 +525,42 @@ func _on_tile_detached(cell: Vector2i, type: TerrainType) -> void:
 	objects.add_child(block)
 
 
-func _on_came_loose(tiles: Dictionary) -> void:
+## A razed tower's tiles above the row struck come down a column at a time, left to right (collapse_stagger).
+func _on_razed(tiles: Dictionary) -> void:
+	var columns := {}
+	for c: Vector2i in tiles:
+		if not columns.has(c.x):
+			columns[c.x] = {}
+		columns[c.x][c] = tiles[c]
+	var xs := columns.keys()
+	xs.sort()
+	for i in xs.size():
+		_drop_piece(columns[xs[i]], true, i * collapse_stagger)
+
+
+## Drops lifted tiles (a tower or tree that lost its ground, or a razed tower's column: crumble) as a FallingPiece,
+## after delay seconds, with what stands on or in it riding down. The archers of a razed tower are not carried:
+## they topple off it.
+func _drop_piece(tiles: Dictionary, crumble: bool, delay: float = 0.0) -> void:
 	var piece: FallingPiece = falling_piece_scene.instantiate()
 	piece.setup(tiles, terrain)
+	piece.crumble = crumble
+	piece.delay = delay
 	for o: Node in objects.get_children() + flags.get_children():
 		if o is Node2D and not (o is FallingBlock or o is FallingPiece or o is Arrow or carries(o)):
 			var feet := Grid.to_m(o.position)
 			if tiles.has(Grid.cell_of(feet)) or tiles.has(Grid.cell_of(feet + Vector2(0, 0.5))):
-				piece.riders.append(o)
+				if crumble and o is Archer:
+					(o as Archer).topple()
+				else:
+					piece.riders.append(o)
 	objects.add_child(piece)
+
+
+## A razed tower is still coming down, or one of its archers is: the column stands back.
+func collapsing() -> bool:
+	return objects.get_children().any(func(o: Node) -> bool:
+		return (o is FallingPiece and o.crumble and not o.is_queued_for_deletion()) or (o is Archer and o.toppling()))
 
 
 ## Is node riding down on a falling tower or tree.

@@ -72,6 +72,8 @@ extends Resource
 @export var hold_text: String = "Awaiting the king's order"
 ## Status while the front waits at the level's exit for the rest of the column.
 @export var gather_text: String = "Waiting for the column"
+## Status while the column stands back from a razed tower coming down.
+@export var collapse_text: String = "Stand back, the tower is coming down"
 ## How far ahead the front soldier spots deep drops and hazards. Only a warning in the status bar.
 @export_range(0.5, 20.0, 0.5, "suffix:m") var warn_distance: float = 3.0
 @export var wall_text: String = "%d m wall ahead"

@@ -99,3 +99,42 @@ func test_a_blow_throws_stone_chips_and_sparks_at_the_face_hit() -> void:
 		assert_almost_eq(m.x, 10.0, 0.3, "on the face toward the soldier")
 		assert_between(m.y, 3.0, 4.0)
 	assert_true(world.terrain._use_tile_data_runtime_update(Vector2i(10, 3)), "and the cell shakes")
+
+
+## Battlements and anything else painted in the air on the tower (decorations, no material) come down with it.
+func test_razing_a_tower_takes_its_battlements_down_too() -> void:
+	var t := world.terrain
+	var src := t.tile_set.get_source(t.look.classic_source) as TileSetAtlasSource
+	var deco := Vector2i(-1, -1)
+	for i in src.get_tiles_count():
+		var c := src.get_tile_id(i)
+		if src.get_tile_data(c, 0).get_custom_data(Terrain.CUSTOM_DATA) == null:
+			deco = c
+			break
+	assert_ne(deco, Vector2i(-1, -1), "the TileSet has a decoration tile")
+	for x in range(10, 13):
+		t.set_cell(Vector2i(x, 0), t.look.classic_source, deco)
+	t.set_cell(Vector2i(3, 3), t.look.classic_source, deco)
+	t.besiege(Vector2i(10, 3), WorldFixture.type("brick").raze_time + 1.0)
+	assert_null(t.type_at(Vector2i(10, 2)), "razed")
+	for x in range(10, 13):
+		assert_eq(t.get_cell_source_id(Vector2i(x, 0)), -1, "battlement %d gone with the tower" % x)
+	assert_eq(t.get_cell_source_id(Vector2i(3, 3)), t.look.classic_source, "a decoration elsewhere stays")
+
+
+## The row struck bursts at once; the rows above burst as they come down (see test_tower_collapse).
+func test_the_row_struck_bursts_into_rubble_and_dust_at_once() -> void:
+	var t := world.terrain
+	var bursts := []
+	Effects.burst.connect(func(kind: StringName, at_px: Vector2, color: Color) -> void: bursts.append([kind, at_px, color]))
+	t.besiege(Vector2i(10, 3), WorldFixture.type("brick").raze_time + 1.0)
+	var brick := WorldFixture.type("brick")
+	var rubble := bursts.filter(func(b: Array) -> bool: return b[0] == &"rubble")
+	var dust := bursts.filter(func(b: Array) -> bool: return b[0] == &"dust")
+	assert_eq(rubble.size(), 3, "rubble from every cell of the row struck")
+	assert_eq(dust.size(), 3, "and a cloud of dust")
+	for b: Array in rubble:
+		assert_eq(b[2], brick.debris_color, "chunks of its stone")
+		var cell := Grid.cell_of(Grid.to_m(b[1]))
+		assert_between(cell.x, 10, 12, "where the tower stood")
+		assert_eq(cell.y, 3, "in the row struck")
