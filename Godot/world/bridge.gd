@@ -8,8 +8,9 @@ extends Node2D
 
 signal member_built(member: Member)
 signal member_broken(member: Member, text: String)
-## Joints hit the ground in cell at harm_speed or more this tick, with this much energy in all (J).
-signal struck(cell: Vector2i, energy: float)
+## Pieces hit the ground in cell at harm_speed or more this tick, doing this much damage in all (J: each hit's
+## energy times its material's Ram).
+signal struck(cell: Vector2i, damage: float)
 
 
 class Joint:
@@ -161,7 +162,7 @@ var nodes: Array[Joint] = []
 var members: Array[Member] = []
 ## Length of the last substep, for joint velocities.
 var _h: float = 1.0 / 600.0
-var _strikes: Dictionary = {} # Vector2i -> impact energy (J) this tick
+var _hits: Array = [] # [cell, member, energy (J)] of every fast hit on the ground this tick
 
 
 func _process(_delta: float) -> void:
@@ -579,10 +580,7 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 	for m in members.duplicate():
 		if not m.blueprint and m.a.pos.y > bottom or m.b.pos.y > bottom:
 			remove_member(m)
-	var strikes := _strikes
-	_strikes = {}
-	for c: Vector2i in strikes:
-		struck.emit(c, strikes[c])
+	_resolve_hits()
 
 
 func clear() -> void:
@@ -757,7 +755,10 @@ func _collide(n: Joint, h: float) -> void:
 	if out.is_empty():
 		return
 	var v := n.pos - n.prev
-	_strike(Grid.cell_of(n.pos), n.mass + n.load, v, out[1], h)
+	# The joint's mass and load come from its members: each takes its share of the hit.
+	for m in members:
+		if not m.blueprint and (m.a == n or m.b == n):
+			_strike(Grid.cell_of(n.pos), m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
 	n.pos = out[0]
 	_stop_against(n, v, out[1])
 
@@ -769,6 +770,7 @@ func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground
 	if m.a.inv_mass == 0.0 and m.b.inv_mass == 0.0:
 		return
 	var steps := ceili(m.length / MEMBER_PROBE)
+	var hit := false
 	for k in range(1 if ground else 0, steps if ground else steps + 1):
 		var t := float(k) / steps
 		var p := m.a.pos.lerp(m.b.pos, t)
@@ -782,9 +784,10 @@ func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground
 			continue
 		var va := m.a.pos - m.a.prev
 		var vb := m.b.pos - m.b.prev
-		if ground:
-			var mass := (m.a.mass + m.a.load) * (1.0 - t) + (m.b.mass + m.b.load) * t
-			_strike(Grid.cell_of(p), mass, va.lerp(vb, t), out[1], h)
+		if ground and not hit:
+			# One hit per piece: its first point in the ground carries the piece's mass and load.
+			hit = true
+			_strike(Grid.cell_of(p), m, m.mass + m.a.load * (1.0 - t) + m.b.load * t, va.lerp(vb, t), out[1], h)
 		var push: Vector2 = (out[0] - p) / w
 		m.a.pos += push * wa
 		m.b.pos += push * wb
@@ -937,11 +940,32 @@ static func _t_along(m: Member, p: Vector2) -> float:
 	return clampf((p - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
 
 
-## Records a hit on cell by mass moving v (per substep h) against a face with this normal, if at harm_speed.
-func _strike(cell: Vector2i, mass: float, v: Vector2, normal: Vector2, h: float) -> void:
+## Records a hit on cell by member m with mass moving v (per substep h) against a face with this normal, if at
+## harm_speed.
+func _strike(cell: Vector2i, m: Member, mass: float, v: Vector2, normal: Vector2, h: float) -> void:
 	var into := -v.dot(normal) / h
 	if into >= harm_speed:
-		_strikes[cell] = _strikes.get(cell, 0.0) + 0.5 * mass * into * into
+		_hits.append([cell, m, 0.5 * mass * into * into])
+
+
+## Settles this tick's hits: each cell takes the damage of all its hits (struck); a piece whose hit carried more
+## than its Impact Strength breaks if the cell held.
+func _resolve_hits() -> void:
+	var hits := _hits
+	_hits = []
+	var damage := {}
+	for hit: Array in hits:
+		var m: Member = hit[1]
+		damage[hit[0]] = damage.get(hit[0], 0.0) + hit[2] * m.material.ram
+	for hit: Array in hits:
+		var m: Member = hit[1]
+		var t := terrain.type_at(hit[0])
+		var strength := m.material.impact_strength
+		if not m.dead and t and not t.breaks_under(damage[hit[0]]) and strength > 0.0 and hit[2] > strength:
+			break_member(m)
+	for c: Vector2i in damage:
+		if damage[c] > 0.0:
+			struck.emit(c, damage[c])
 
 
 ## Contact with the ground: no velocity into it, sliding slowed by friction. Working the velocity out from the

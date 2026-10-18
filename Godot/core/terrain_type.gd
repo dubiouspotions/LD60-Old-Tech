@@ -46,6 +46,11 @@ enum DigAction { NONE, REMOVE, FELL }
 ## Seconds one soldier must attack this tile to raze the structure it belongs to (a tower). 0: can not be attacked.
 @export_range(0.0, 300.0, 0.5, "suffix:s") var raze_time: float = 0.0
 
+@export_group("Impact")
+## Energy (J, after the piece's Ram) one fast bridge piece hitting this tile needs to break it. 0: hits never
+## break it (towers take siege from hits instead). A tile that holds may break the piece instead.
+@export_range(0.0, 100000.0, 10.0, "suffix:J") var impact_strength: float = 0.0
+
 @export_group("Bulk yield")
 ## Given by collapses and felled trees: bulk_yield for every bulk_tiles_per_yield tiles.
 @export var bulk_yield: Supplies
@@ -60,6 +65,11 @@ enum DigAction { NONE, REMOVE, FELL }
 ## Short label, shown on the tiles in the TileSet editor's paint view.
 func _to_string() -> String:
 	return display_name if not display_name.is_empty() else resource_path.get_file().get_basename()
+
+
+## Is a tile of this type broken by one hit doing damage (J, after Ram)?
+func breaks_under(damage: float) -> bool:
+	return raze_time <= 0.0 and impact_strength > 0.0 and damage >= impact_strength
 
 
 func is_hazard() -> bool:

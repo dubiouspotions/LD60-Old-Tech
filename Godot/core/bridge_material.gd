@@ -26,6 +26,12 @@ extends Resource
 ## Soldiers can walk on top of it.
 @export var walkable: bool = true
 
+@export_group("Impact")
+## Share of a fast hit's energy that does damage (to towers and ground): how hard the material is.
+@export_range(0.0, 2.0, 0.05) var ram: float = 0.3
+## Energy (J) of one fast hit against something that holds (a tower, rock) that breaks the piece. 0: never.
+@export_range(0.0, 100000.0, 10.0, "suffix:J") var impact_strength: float = 1000.0
+
 @export_group("Messages")
 @export var snapped_text: String = "Log pulled apart"
 ## Shown when it fails pushing (only for members that take push).

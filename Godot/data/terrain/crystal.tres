@@ -20,5 +20,6 @@ dig_time = 0.8
 dig_yield = SubResource("Resource_i3pyd")
 dig_text = "+1 gold"
 dig_sound = ExtResource("2_bulby")
+impact_strength = 1000.0
 bulk_yield = SubResource("Resource_cqta2")
 debris_color = Color(0.56078434, 0.9411765, 0.8784314, 1)

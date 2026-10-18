@@ -522,15 +522,15 @@ func crush(who: Node2D) -> void:
 		who.hit(who.hp)
 
 
-## A bridge piece hit the ground fast: a tower cell is battered by the impact's energy, ground that can be dug
-## breaks (nothing gained).
-func _on_bridge_struck(cell: Vector2i, energy: float) -> void:
+## Bridge pieces hit the ground fast: a tower cell is battered by the damage, other ground breaks if the damage
+## reaches its Impact Strength (nothing gained).
+func _on_bridge_struck(cell: Vector2i, damage: float) -> void:
 	var t := terrain.type_at(cell)
 	if t == null:
 		return
 	if t.raze_time > 0.0:
-		terrain.besiege(cell, bridge.siege_per_kj * energy / 1000.0)
-	elif t.dig_action != TerrainType.DigAction.NONE:
+		terrain.besiege(cell, bridge.siege_per_kj * damage / 1000.0)
+	elif t.breaks_under(damage):
 		terrain.dig(cell)
 
 

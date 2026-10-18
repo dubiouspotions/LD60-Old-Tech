@@ -19,5 +19,6 @@ dig_action = 1
 dig_time = 0.4
 dig_yield = SubResource("Resource_bp276")
 dig_sound = ExtResource("2_a757o")
+impact_strength = 200.0
 bulk_yield = SubResource("Resource_4ir41")
 bulk_tiles_per_yield = 2

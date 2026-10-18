@@ -291,6 +291,46 @@ func test_a_loose_piece_lands_on_a_block_resting_on_a_deck() -> void:
 	assert_lt((loose.a.pos.y + loose.b.pos.y) / 2.0, block.position.y / Grid.PX + 0.1, "resting on the block")
 
 
+## A tower 3 wide and 3 high on the ground, and a piece of mat 3 m long let go height above it.
+func _tower_hit_by(mat: BridgeMaterial, height: float) -> Bridge.Member:
+	_map([
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....KKK.............",
+		"....KKK.............",
+		"....KKK.............",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	var b := world.bridge
+	return b.build(b.snap_point(Vector2(4, 7 - height)), b.snap_point(Vector2(7, 7 - height)), mat)
+
+
+func test_a_log_rammed_into_a_tower_breaks_and_barely_dents_it() -> void:
+	var m := _tower_hit_by(LOG, 6.0)
+	_run(2.0)
+	assert_true(m.dead, "the log broke on the brick")
+	assert_not_null(world.terrain.type_at(Vector2i(5, 7)), "tower standing")
+
+
+func test_a_stone_beam_dropped_on_a_tower_brings_it_down() -> void:
+	var m := _tower_hit_by(preload("res://data/bridge/stone.tres"), 6.0)
+	_run(2.0)
+	assert_null(world.terrain.type_at(Vector2i(5, 8)), "tower razed")
+	assert_false(m.dead, "stone survives it")
+
+
+func test_a_light_drop_does_not_raze_a_tower_even_of_stone() -> void:
+	_tower_hit_by(preload("res://data/bridge/stone.tres"), 1.5)
+	_run(2.0)
+	assert_not_null(world.terrain.type_at(Vector2i(5, 7)), "tower standing")
+
+
 func test_a_fast_piece_landing_with_its_end_on_a_tower_edge_batters_it() -> void:
 	_map([
 		"....................",
