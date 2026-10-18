@@ -37,6 +37,15 @@ func test_archers_stand_on_solid_ground() -> void:
 				assert_true(level.terrain().is_solid(Grid.cell_of(o.feet_m() + Vector2(0, 0.5))), "%s %s" % [level.name, o.name])
 
 
+func test_signs_stand_on_ground() -> void:
+	for level: Level in _levels():
+		for o in level.objects().get_children():
+			if o is Sign:
+				var foot := Grid.to_m((o as Sign).position)
+				assert_true(level.terrain().is_solid(Grid.cell_of(foot + Vector2(0, 0.5))), "%s %s on ground" % [level.name, o.name])
+				assert_false(level.terrain().is_solid(Grid.cell_of(foot - Vector2(0, 0.5))), "%s %s not buried" % [level.name, o.name])
+
+
 func test_levels_stitch_into_one_walkable_world() -> void:
 	GameState.new_campaign()
 	var world: World = load("res://game/world.tscn").instantiate()

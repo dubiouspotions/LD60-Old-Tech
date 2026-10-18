@@ -1,0 +1,63 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://objects/sign/sign.gd" id="1_sign"]
+[ext_resource type="Theme" path="res://ui/theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://game/night_light.gd" id="3_light"]
+[ext_resource type="FontFile" path="res://ui/fonts/alagard.ttf" id="4_font"]
+
+[sub_resource type="Gradient" id="lamp_g"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="lamp_tex"]
+gradient = SubResource("lamp_g")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="Sign" type="Node2D"]
+script = ExtResource("1_sign")
+text = "Text"
+font = ExtResource("4_font")
+
+[node name="Post" type="ColorRect" parent="."]
+unique_name_in_owner = true
+offset_left = -3.0
+offset_top = -40.0
+offset_right = 3.0
+mouse_filter = 2
+color = Color(0.36, 0.23, 0.13, 1)
+
+[node name="Board" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+offset_left = -112.0
+offset_top = -80.0
+offset_right = 112.0
+offset_bottom = -40.0
+mouse_filter = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"NinePatchPanel"
+
+[node name="Padding" type="MarginContainer" parent="Board"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Text" type="Label" parent="Board/Padding"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Text"
+horizontal_alignment = 1
+
+[node name="Lamp" type="PointLight2D" parent="."]
+unique_name_in_owner = true
+visible = false
+position = Vector2(0, -60)
+color = Color(1, 0.8, 0.5, 1)
+energy = 0.0
+blend_mode = 2
+texture = SubResource("lamp_tex")
+texture_scale = 2.6
+script = ExtResource("3_light")
+night_energy = 1.0
