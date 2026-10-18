@@ -427,23 +427,23 @@ func test_plan_end_inside_the_ground_moves_to_where_the_plan_leaves_it() -> void
 	assert_eq(b.fit_to_ground(air, to), air, "an end in the air stays")
 
 
-func test_only_natural_ground_bolts_a_joint() -> void:
+func test_joints_bolt_to_any_solid_tile() -> void:
 	var t := WorldFixture.terrain(self, [
 		"..........",
 		"..........",
 		"..........",
-		".KK.......",
-		".KK.......",
-		".KK.......",
+		".KK....RR.",
+		".KK....RR.",
+		".KK....RR.",
 		"##########",
 		"BBBBBBBBBB",
 	])
 	var b := WorldFixture.bridge(self, t)
-	assert_false(b.anchorable(Vector2(3, 3)), "a tower's corner does not bolt")
-	assert_true(b.anchorable(Vector2(5, 6)), "the ground does")
-	var m := b.build(b.snap_point(Vector2(3, 3)), b.snap_point(Vector2(7, 3)), LOG)
-	_run(b, 3.0)
-	assert_gt(m.b.pos.y, 5.0, "a log held out from a tower's corner tips off it")
+	assert_true(b.anchorable(Vector2(3, 3)), "a tower's corner")
+	assert_true(b.anchorable(Vector2(3, 4.5)), "a tower's wall")
+	assert_true(b.anchorable(Vector2(7, 4)), "rock")
+	assert_true(b.anchorable(Vector2(5, 6)), "the ground")
+	assert_false(b.anchorable(Vector2(5, 2)), "not mid-air")
 
 
 ## A loose 4 m log dropped onto the ledge (top at row 4, ground up to x = 4) with on_ledge metres of it over the ledge.

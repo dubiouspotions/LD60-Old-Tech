@@ -60,7 +60,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 
 ## Tiles and terrain types
 
-- `data/terrain/*.tres` holds one TerrainType per material. It sets: solid, natural ground (anchors bridges and holds bricks), structure (collapses when nothing holds it up), falls (fill), hazard (water or spikes, with the death and "ahead" texts), dig action and yields, and debris colour.
+- `data/terrain/*.tres` holds one TerrainType per material. It sets: solid, natural ground (holds bricks up; bridge joints bolt to any solid tile), structure (collapses when nothing holds it up), falls (fill), hazard (water or spikes, with the death and "ahead" texts), dig action and yields, and debris colour.
 - `world/tileset.tres` is the TileSet. Each tile's **terrain** custom data points to a TerrainType. To add a material: create a TerrainType, add tiles to the atlas, and set their **terrain** data.
 - `world/tiles.png` is placeholder art. Replace it with your own; keep the layout or reassign the tiles in the TileSet editor.
 
