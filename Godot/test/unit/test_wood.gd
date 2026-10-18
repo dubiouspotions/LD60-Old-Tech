@@ -124,6 +124,10 @@ func test_the_feller_takes_no_other_work_until_its_wood_is_in() -> void:
 
 
 func test_idle_engineers_nearby_help() -> void:
+	# Helpers to have, whatever the campaign's crew size.
+	world.crew.rules = world.crew.rules.duplicate()
+	world.crew.rules.crew_size = 3
+	world.crew.spawn(5.5)
 	_tree()
 	world.terrain.mark(Vector2i(2, 5))
 	_run(15.0, _felled)
