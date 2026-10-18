@@ -122,13 +122,14 @@ var _ground_changes: int = 0
 
 
 ## Places the crew on the ground behind x.
-func spawn(x: float) -> void:
+func spawn(x: float, count: int = 0) -> void:
 	for e in engineers:
 		e.node.queue_free()
 	engineers.clear()
 	throws.clear()
-	for i in rules.crew_size:
+	for i in count if count > 0 else rules.crew_size:
 		_add(maxf(0.5, x - rules.follow_gap - i * rules.spacing))
+	count_changed.emit(engineers.size())
 
 
 ## One more engineer joins the crew, on the ground at x (hired at camp).
@@ -195,6 +196,9 @@ func step(dt: float) -> void:
 			_take_job(e)
 			if not _busy(e) and e.at == null:
 				e.route = _route_toward(e, _idle_x(i))
+		elif e.think <= 0.0 and _en_route(e):
+			e.think = THINK_INTERVAL
+			_rethink(e)
 		if e.job and e.route.is_empty():
 			if is_nan(e.reach_x) or _reach_step(e, dt):
 				e.working = true
@@ -232,13 +236,9 @@ func _update_stranded(e: Engineer, x: float, was: Vector2, dt: float) -> void:
 	e.any_height = e.any_height or e.stranded >= rules.stranded_time
 
 
-## The hazard (spikes, water) the engineer's feet or body are in, else null.
+## The hazard (spikes, water) the engineer's body is in, else null (see Terrain.hazard_for_body).
 func _hazard_at(e: Engineer) -> TerrainType:
-	for p: Vector2 in [e.pos + Vector2(0, 0.01), e.pos - Vector2(0, 0.5)]:
-		var t := terrain.type_at(Grid.cell_of(p))
-		if t and t.is_hazard():
-			return t
-	return null
+	return terrain.hazard_for_body(e.pos)
 
 
 ## Kills an engineer crushed by something heavy (a falling tower or tree).
@@ -272,8 +272,12 @@ func _fall(e: Engineer, dt: float) -> bool:
 	if e.at:
 		e.vy = 0.0
 		return false
-	# Either foot on something holds it, like a soldier standing at a cliff edge.
-	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y)
+	# Either foot on something holds it, like a soldier standing at a cliff edge. A hazard holds neither: it falls in.
+	var below := INF
+	for dx: float in [-ENGINEER_HALF_WIDTH, ENGINEER_HALF_WIDTH]:
+		var s := army.surface_at(e.pos.x + dx, e.pos.y, not e.under_decks)
+		if s.hazard == null:
+			below = minf(below, s.y)
 	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and _can_hold_on(e)):
 		e.vy = 0.0
 		return false
@@ -286,10 +290,10 @@ func _fall(e: Engineer, dt: float) -> bool:
 	return true
 
 
-## Picks the closest job the engineer can reach. A member is reached along the structure from where the
-## engineer stands, or over safe ground to a joint it can climb to and then along the structure. A marked cell is
-## dug from a spot on safe ground within dig_reach. Only when nothing can be reached within max_climb and max_drop
-## does it look again climbing any height of ground, and then climbs (any_height) to get there.
+## Picks the most urgent job the engineer can reach (see _urgency). A member is reached along the structure from
+## where the engineer stands, or over safe ground to a joint it can climb to and then along the structure. A marked
+## cell is dug from a spot on safe ground within dig_reach. Only when nothing can be reached within max_climb and
+## max_drop does it look again climbing any height of ground, and then climbs (any_height) to get there.
 func _take_job(e: Engineer) -> void:
 	for any_height: bool in [false, true]:
 		_find_job(e, any_height)
@@ -299,12 +303,71 @@ func _take_job(e: Engineer) -> void:
 
 
 func _find_job(e: Engineer, any_height: bool) -> void:
-	e.reach_x = NAN
-	e.path.clear()
+	_drop(e)
+	var best := _most_urgent(_jobs_for(e, any_height))
+	if not best.is_empty():
+		best.take.call()
+	if e.job and e.at:
+		e.route.erase(e.at)
+
+
+## On its way to a job, the engineer takes a more urgent one instead if it is nearer to it than the one it is
+## going to.
+func _rethink(e: Engineer) -> void:
+	var mine: Variant = e.dig if e.digging else (e.throwing if e.throwing else e.job)
+	var jobs := _jobs_for(e, e.any_height)
+	var current := {}
+	for j in jobs:
+		if is_same(j.what, mine):
+			current = j
+	if current.is_empty():
+		return
+	var better := _most_urgent(jobs.filter(func(j: Dictionary) -> bool:
+		return _urgency(j.x) < _urgency(current.x) and j.cost < current.cost))
+	if not better.is_empty():
+		better.take.call()
+		if e.job and e.at:
+			e.route.erase(e.at)
+
+
+## Has a job and is still on the ground on its way to it.
+func _en_route(e: Engineer) -> bool:
+	if e.at != null or not _busy(e):
+		return false
+	if e.job and is_nan(e.reach_x):
+		return not e.route.is_empty()
+	var x := e.reach_x if e.job else e.spot_x
+	return not e.path.is_empty() or absf(x - e.pos.x) > 0.05
+
+
+## How urgent a job at x is, lower first: the nearer ahead of the column's leader, the sooner it is in the way.
+## Jobs behind the leader come after every job ahead, nearest first. In half-metre steps, so a shorter walk
+## decides between jobs about as urgent.
+func _urgency(x: float) -> int:
+	var lead := army.lead()
+	if lead == null:
+		return 0
+	var ahead := x - lead.pos.x
+	return roundi((ahead if ahead >= -1.0 else 1000.0 - ahead) * 2.0)
+
+
+## The most urgent of jobs (see _jobs_for), the shortest way between those as urgent, or {}.
+func _most_urgent(jobs: Array) -> Dictionary:
+	var best := {}
+	for j: Dictionary in jobs:
+		if best.is_empty() or _urgency(j.x) < _urgency(best.x) or (_urgency(j.x) == _urgency(best.x) and j.cost < best.cost):
+			best = j
+	return best
+
+
+## Every job engineer e can reach and nobody else has: {x: where the job is, cost: metres of the way there, what: the
+## member, cell or throw, take: gives it to e}.
+func _jobs_for(e: Engineer, any_height: bool) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
 	var starts := _starts_for(e, any_height)
-	var best_cost := INF
 	for m in bridge.members:
-		if _builder_of(m):
+		var builder := _builder_of(m)
+		if builder and builder != e:
 			continue
 		for j in bridge.work_ends(m):
 			if not _in_zone(j.pos.x):
@@ -312,59 +375,62 @@ func _find_job(e: Engineer, any_height: bool) -> void:
 			var route := bridge.route(j, starts)
 			if route.is_empty() or not _in_zone(route[0].pos.x):
 				continue
-			var cost := _route_cost(e, route)
-			if cost < best_cost:
-				best_cost = cost
+			out.append({x = j.pos.x, cost = _route_cost(e, route), what = m, take = func() -> void:
+				_drop(e)
 				e.job = m
 				e.goal = j
-				e.route = route
-	if e.at == null:
-		# A plan's loose end (not bolted, not on anything built) is built from the ground below it, also when the
-		# plan's other end can be built from but is out of reach (across a pit).
-		for m in bridge.members:
-			if not (m.blueprint and m.ordered) or _builder_of(m):
+				e.route = route})
+	if e.at != null:
+		return out
+	# A plan's loose end (not bolted, not on anything built) is built from the ground below it, also when the
+	# plan's other end can be built from but is out of reach (across a pit).
+	for m in bridge.members:
+		var builder := _builder_of(m)
+		if not (m.blueprint and m.ordered) or (builder and builder != e):
+			continue
+		var ends := bridge.work_ends(m)
+		for j: Bridge.Joint in [m.a, m.b]:
+			if j in ends:
 				continue
-			var ends := bridge.work_ends(m)
-			for j: Bridge.Joint in [m.a, m.b]:
-				if j in ends:
-					continue
-				var spot := _spot_within_reach(_nav(e, true, any_height), j.pos, rules.build_reach)
-				if not spot.is_empty() and spot.cost < best_cost and _in_zone(spot.x) and _in_zone(j.pos.x):
-					best_cost = spot.cost
-					e.job = m
-					e.goal = j
-					e.route.clear()
-					e.reach_x = spot.x
-					e.path = spot.path
-		for cell in terrain.marked_cells():
-			if _dig_taken(cell) or not _in_zone(cell.x + 0.5):
+			var spot := _spot_within_reach(_nav(e, true, any_height), j.pos, rules.build_reach)
+			if spot.is_empty() or not _in_zone(spot.x) or not _in_zone(j.pos.x):
 				continue
-			var under := false
-			var spot := _dig_spot(_nav(e, true, any_height), cell)
-			if spot.is_empty():
-				under = true
-				spot = _dig_spot(_nav(e, false, any_height), cell)
-			if not spot.is_empty() and spot.cost < best_cost and _in_zone(spot.x):
-				best_cost = spot.cost
+			out.append({x = j.pos.x, cost = spot.cost, what = m, take = func() -> void:
 				_drop(e)
-				e.digging = true
-				e.dig = cell
-				e.spot_x = spot.x
-				e.path = spot.path
-				e.under_decks = under
-		for t in throws:
-			if t.taker or not _in_zone(t.cell.x + 0.5):
-				continue
-			var spot := _throw_spot(_nav(e, true, any_height), t.cell)
-			if not spot.is_empty() and spot.cost < best_cost and _in_zone(spot.x):
-				best_cost = spot.cost
-				_drop(e)
-				e.throwing = t
-				t.taker = e
-				e.spot_x = spot.x
-				e.path = spot.path
-	if e.job and e.at:
-		e.route.erase(e.at)
+				e.job = m
+				e.goal = j
+				e.reach_x = spot.x
+				e.path = spot.path})
+	for cell in terrain.marked_cells():
+		if _dig_taken(cell, e) or not _in_zone(cell.x + 0.5):
+			continue
+		var under := false
+		var spot := _dig_spot(_nav(e, true, any_height), cell)
+		if spot.is_empty():
+			under = true
+			spot = _dig_spot(_nav(e, false, any_height), cell)
+		if spot.is_empty() or not _in_zone(spot.x):
+			continue
+		out.append({x = cell.x + 0.5, cost = spot.cost, what = cell, take = func() -> void:
+			_drop(e)
+			e.digging = true
+			e.dig = cell
+			e.spot_x = spot.x
+			e.path = spot.path
+			e.under_decks = under})
+	for t in throws:
+		if (t.taker and t.taker != e) or not _in_zone(t.cell.x + 0.5):
+			continue
+		var spot := _throw_spot(_nav(e, true, any_height), t.cell)
+		if spot.is_empty() or not _in_zone(spot.x):
+			continue
+		out.append({x = t.cell.x + 0.5, cost = spot.cost, what = t, take = func() -> void:
+			_drop(e)
+			e.throwing = t
+			t.taker = e
+			e.spot_x = spot.x
+			e.path = spot.path})
+	return out
 
 
 ## Joints the engineer can start a climb from: the one it stands on, or (off the structure) any it can walk
@@ -388,8 +454,9 @@ func _route_cost(e: Engineer, route: Array[Bridge.Joint]) -> float:
 	return cost
 
 
-func _dig_taken(cell: Vector2i) -> bool:
-	return engineers.any(func(e: Engineer) -> bool: return e.digging and e.dig == cell)
+## Somebody (other than except) is digging cell.
+func _dig_taken(cell: Vector2i, except: Engineer = null) -> bool:
+	return engineers.any(func(e: Engineer) -> bool: return e != except and e.digging and e.dig == cell)
 
 
 ## The nearest spot nav can walk to from where the cell (a tree's base for trees) is within dig_reach (see

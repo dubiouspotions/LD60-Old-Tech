@@ -913,6 +913,97 @@ func test_unreachable_marks_do_not_slow_the_crew_down() -> void:
 	assert_lt(worst, 8.0, "ms in the slowest step")
 
 
+## An engineer standing on a deck end at the water line lives, as a soldier there does: only a body in the water
+## drowns, not feet resting on its surface.
+func test_an_engineer_on_a_deck_end_at_the_water_line_lives() -> void:
+	for x in range(6, 10):
+		world.terrain.set_type(Vector2i(x, 6), WorldFixture.type("water"))
+		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("water"))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(7.5, 6.0)
+	e.at = null
+	var before := world.crew.engineers.size()
+	world.crew.step(1.0 / 60.0)
+	assert_eq(world.crew.engineers.size(), before, "feet on the water's surface: alive")
+	e.pos = Vector2(7.5, 6.6)
+	world.crew.step(1.0 / 60.0)
+	assert_eq(world.crew.engineers.size(), before - 1, "body in the water: drowned")
+
+
+## Marks on top of a ledge beside the engineer are dug without walking back and forth.
+func test_crew_digs_marks_on_a_ledge_without_pinballing() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var rows := [
+		"....................",
+		"....................",
+		"....................",
+		"..........##########",
+		"..........##########",
+		"....######EEE#######",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	]
+	var marks: Array[Vector2i] = []
+	for y in rows.size():
+		for x in rows[y].length():
+			var ch: String = rows[y][x]
+			if ch == "E":
+				marks.append(Vector2i(x, y))
+				ch = "#"
+			var key: String = WorldFixture.LEGEND[ch]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 2.5)
+	world.crew.spawn(2.5)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(6.5, 5.0)
+	for c in [Vector2i(10, 3), Vector2i(11, 3), Vector2i(12, 3), Vector2i(10, 4), Vector2i(11, 4)]:
+		world.terrain.mark(c)
+	var turns := [0]
+	var last := [e.pos.x]
+	var dir := [0]
+	_run(30.0, func() -> bool:
+		var d := signi(roundi((e.pos.x - last[0]) * 1000))
+		if d != 0 and dir[0] != 0 and d != dir[0]:
+			turns[0] += 1
+		if d != 0:
+			dir[0] = d
+		last[0] = e.pos.x
+		return world.terrain.marked_cells().is_empty())
+	assert_eq(world.terrain.marked_cells().size(), 0, "all dug")
+	assert_lt(turns[0], 12, "no back and forth: %d turns" % turns[0])
+
+
+## The job nearest ahead of the leader comes first, even when one behind the column is nearer to the engineer.
+func test_crew_takes_the_job_nearest_ahead_of_the_leader_first() -> void:
+	_flat_strip()
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(46.5, 6.0)
+	world.terrain.mark(Vector2i(47, 6))
+	world.terrain.mark(Vector2i(54, 6))
+	_run(20.0, func() -> bool: return world.terrain.marked_cells().size() < 2)
+	assert_null(world.terrain.type_at(Vector2i(54, 6)), "ahead of the leader: dug first")
+	assert_not_null(world.terrain.type_at(Vector2i(47, 6)), "behind the column: waits")
+
+
+## On its way to a job, an engineer takes a more urgent one that is nearer to it, but not one that is further.
+func test_crew_switches_to_a_more_urgent_job_on_its_way_only_if_nearer() -> void:
+	_flat_strip()
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(52.5, 6.0)
+	world.terrain.mark(Vector2i(62, 6))
+	_run(0.5)
+	assert_true(e.digging and e.dig == Vector2i(62, 6), "on its way to the only job")
+	world.terrain.mark(Vector2i(40, 6))
+	_run(0.5)
+	assert_eq(e.dig, Vector2i(62, 6), "a job behind the leader is less urgent: carries on")
+	var near := Vector2i(floori(e.pos.x) + 1, 6)
+	world.terrain.mark(near)
+	_run(0.5)
+	assert_eq(e.dig, near, "more urgent and nearer: switches")
+
+
 func test_instant_work_cheat_finishes_ordered_plans_at_once() -> void:
 	var rules := world.crew.rules
 	rules.instant_work = true

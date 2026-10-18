@@ -159,6 +159,7 @@ func _process(_delta: float) -> void:
             crew.hire_cost.gold, can_hire, _world.shop_spot() if camp else Vector2.ZERO, Grid.to_px(_camera.reach_m()))
     _update_status()
     _update_lead_marker(lead)
+    _update_crew_marker()
 
 
 func _begin() -> void:
@@ -257,7 +258,7 @@ func _on_tool_changed(index: int, material: BridgeMaterial) -> void:
 ## Puts the column at the start of level index with the soldiers and supplies GameState holds.
 func _start_at_level(index: int) -> void:
     _tools.cancel()
-    _world.begin(index, GameState.soldiers)
+    _world.begin(index, GameState.soldiers, GameState.engineers)
     # The view starts on the column; following is the player's choice (Follow / C).
     _camera.follow = false
     _camera.center_on_lead()
@@ -349,6 +350,27 @@ func _update_lead_marker(lead: Soldier) -> void:
         _hud.set_lead_marker(0, 0)
         return
     var screen := _world.get_viewport().get_canvas_transform() * lead.position
+    _hud.set_lead_marker(_off_screen_side(screen), screen.y - Grid.PX)
+
+
+## Points the red arrow at the nearest engineer off screen, if any is.
+func _update_crew_marker() -> void:
     var w := _world.get_viewport().get_visible_rect().size.x
-    var side := 1 if screen.x > w else (-1 if screen.x < 0 else 0)
-    _hud.set_lead_marker(side, screen.y - Grid.PX)
+    var best := Vector2.INF
+    var best_off := INF
+    for e in _world.crew.engineers:
+        var screen := _world.get_viewport().get_canvas_transform() * Grid.to_px(e.pos)
+        var off := maxf(-screen.x, screen.x - w)
+        if off > 0.0 and off < best_off:
+            best_off = off
+            best = screen
+    if best_off == INF:
+        _hud.set_crew_marker(0, 0)
+        return
+    _hud.set_crew_marker(_off_screen_side(best), best.y - Grid.PX)
+
+
+## Which side of the screen a screen position is off: -1 left, 1 right, 0 on screen.
+func _off_screen_side(screen: Vector2) -> int:
+    var w := _world.get_viewport().get_visible_rect().size.x
+    return 1 if screen.x > w else (-1 if screen.x < 0 else 0)

@@ -85,6 +85,23 @@ func test_camp_shoppe_panel_shows_under_the_camp() -> void:
 	assert_false(hud.get_node("%ShopMenu").visible, "and its list folded up")
 
 
+## A red arrow at the screen edge points at the nearest engineer off screen, like the blue one at the leader.
+func test_crew_marker_points_at_an_engineer_off_screen() -> void:
+	var m: Label = hud.get_node("%CrewMarker")
+	var lead: Label = hud.get_node("%LeadMarker")
+	hud.set_crew_marker(0, 0.0)
+	assert_false(m.visible, "nobody off screen")
+	hud.set_crew_marker(-1, 300.0)
+	assert_true(m.visible)
+	assert_eq(m.text, "◀")
+	assert_lt(m.position.x, 50.0, "on the left edge")
+	hud.set_crew_marker(1, 300.0)
+	assert_eq(m.text, "▶")
+	assert_gt(m.get_theme_color(&"font_color").r, 0.8, "red")
+	assert_lt(m.get_theme_color(&"font_color").b, 0.5)
+	assert_eq(m.get_theme_font_size(&"font_size"), lead.get_theme_font_size(&"font_size"), "the same arrow as the leader's")
+
+
 ## It fades in when it opens, and is gone at once when it closes.
 func test_camp_shoppe_fades_in() -> void:
 	var panel: PanelContainer = hud.get_node("%ShopPanel")

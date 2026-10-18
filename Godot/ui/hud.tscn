@@ -512,6 +512,16 @@ theme_override_colors/font_color = Color(0.302, 0.545, 0.941, 1)
 theme_override_font_sizes/font_size = 24
 text = "▶"
 
+[node name="CrewMarker" type="Label" parent="Root" unique_id=1462093817]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 30.0
+theme_override_colors/font_color = Color(0.92, 0.3, 0.25, 1)
+theme_override_font_sizes/font_size = 24
+text = "▶"
+
 [node name="Intro" type="ColorRect" parent="Root" unique_id=1007607496]
 unique_name_in_owner = true
 layout_mode = 1

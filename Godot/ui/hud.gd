@@ -296,7 +296,16 @@ func banner(title: String, sub: String) -> void:
 
 ## Arrow at the screen edge pointing at the column when it is off screen.
 func set_lead_marker(visible_on_side: int, screen_y: float) -> void:
-	var m: Label = %LeadMarker
+	_set_edge_marker(%LeadMarker, visible_on_side, screen_y)
+
+
+## Red arrow at the screen edge pointing at the nearest engineer off screen.
+func set_crew_marker(visible_on_side: int, screen_y: float) -> void:
+	_set_edge_marker(%CrewMarker, visible_on_side, screen_y)
+
+
+## Shows marker at the screen edge on visible_on_side (-1 left, 1 right; 0 hides it), at screen_y, pointing out.
+func _set_edge_marker(m: Label, visible_on_side: int, screen_y: float) -> void:
 	m.visible = visible_on_side != 0
 	if visible_on_side == 0:
 		return

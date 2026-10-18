@@ -72,6 +72,25 @@ func test_unload_drops_the_level_behind() -> void:
 	assert_true(is_instance_valid(c1.start_flag), "camp flag of the next level kept")
 
 
+## Restarting from a checkpoint whose level behind was already unloaded puts that level back, as on arrival: the
+## column camps on the ground behind its flag and the view can pan back over it.
+func test_restarting_at_a_checkpoint_puts_the_level_behind_back() -> void:
+	world.begin(0, 3)
+	var c1 := world.place_now(1)
+	world.unload(0)
+	world.begin(1, 8)
+	assert_not_null(world.chunk(0), "the level behind is back")
+	c1 = world.chunk(1)
+	var flag := c1.start_flag.metres().x
+	assert_lt(world.terrain.min_x, floori(flag) - 10, "ground behind the camp flag")
+	for s in world.army.soldiers:
+		assert_lt(s.pos.x, flag + 0.01, "behind the flag")
+		assert_false(world.terrain.type_at(Grid.cell_of(s.pos + Vector2(0, 0.5))) == world.terrain.out_of_bounds,
+				"%s stands on the level's ground, not the edge of the world" % s.pos)
+		assert_almost_eq(s.pos.y, float(world.terrain.surface_row(floori(s.pos.x))), 0.01, "on its surface")
+		assert_gt(s.pos.y, 1.0, "not up in the sky")
+
+
 func test_column_arrives_and_camps_at_the_next_level() -> void:
 	world.begin(0, 3)
 	world.march()
@@ -229,6 +248,68 @@ func test_hire_an_engineer_at_camp() -> void:
 	var e: Crew.Engineer = world.crew.engineers[-1]
 	assert_true(world.terrain.is_solid(Grid.cell_of(e.pos + Vector2(0, 0.5))), "on the ground")
 	assert_almost_eq(e.pos.x, world.camp().position.x / Grid.PX, 4.0, "at the camp")
+
+
+## Engineers hired are kept like soldiers: a restart from the checkpoint brings back the crew it had on arrival.
+func test_a_restart_brings_back_the_crew_it_had_at_the_checkpoint() -> void:
+	world.begin(0, 3)
+	var start := world.crew.engineers.size()
+	assert_eq(GameState.engineers, start, "the crew's size is kept")
+	GameState.supplies.gold = world.crew.rules.hire_cost.gold * 3
+	world.hire_engineer()
+	world.hire_engineer()
+	assert_eq(GameState.engineers, start + 2)
+	GameState.arrive(1, 0, Supplies.new())
+	world.hire_engineer()
+	assert_eq(GameState.engineers, start + 3)
+	GameState.retry()
+	assert_eq(GameState.engineers, start + 2, "as it was on arrival")
+	world.begin(1, GameState.soldiers, GameState.engineers)
+	assert_eq(world.crew.engineers.size(), start + 2, "the restart brings them back")
+	GameState.new_campaign()
+	world.begin(0, 3, GameState.engineers)
+	assert_eq(world.crew.engineers.size(), start, "a new campaign starts with the crew's own size")
+
+
+## A restart puts everything back as it was when the checkpoint was first reached: whatever was dug, marked,
+## built, bought or spent during the night is undone.
+func test_a_restart_undoes_the_whole_night() -> void:
+	world.begin(0, 3)
+	world.place_now(1)
+	GameState.supplies = Supplies.make(10, 10, 10, 20, 10)
+	GameState.arrive(1, 0, Supplies.new())
+	world.begin(1, GameState.soldiers, GameState.engineers)
+	var had := GameState.supplies.copy()
+	var soldiers := world.army.soldiers.size()
+	var crew := world.crew.engineers.size()
+	var flag := world.chunk(1).start_flag.metres()
+	var x := floori(flag.x) + 4
+	var top := Vector2i(x, world.terrain.surface_row(x))
+	var ground: TerrainType = world.terrain.type_at(top)
+	var below := top + Vector2i.DOWN
+	# The night's work.
+	world.recruit()
+	world.hire_engineer()
+	GameState.spend(Supplies.make(3, 3))
+	world.terrain.set_type(top, null)
+	world.terrain.mark(below)
+	var bridge := world.bridge
+	bridge.build(bridge.snap_point(flag + Vector2(1, -1)), bridge.snap_point(flag + Vector2(3, -1)), load("res://data/bridge/log.tres"))
+	world.crew.order_throw(top + Vector2i(2, -1), GameState.campaign.tools[0])
+	assert_eq(world.army.soldiers.size(), soldiers + 1, "a soldier bought")
+	assert_eq(world.crew.engineers.size(), crew + 1, "an engineer bought")
+	assert_true(world.terrain.is_marked(below), "a cell marked")
+	assert_ne(GameState.supplies.describe_cost(), had.describe_cost(), "supplies spent")
+	# Restart from the checkpoint.
+	GameState.retry()
+	world.begin(1, GameState.soldiers, GameState.engineers)
+	assert_eq(GameState.supplies.describe_cost(), had.describe_cost(), "supplies as on arrival")
+	assert_eq(world.army.soldiers.size(), soldiers, "soldiers as on arrival")
+	assert_eq(world.crew.engineers.size(), crew, "engineers as on arrival")
+	assert_eq(world.terrain.type_at(top), ground, "dug ground back")
+	assert_false(world.terrain.is_marked(below), "marks gone")
+	assert_eq(bridge.members.filter(func(m: Bridge.Member) -> bool: return maxf(m.a.pos.x, m.b.pos.x) > flag.x).size(), 0, "nothing built past the flag")
+	assert_eq(world.crew.throws.size(), 0, "no throws waiting")
 
 
 func test_no_hiring_by_day_without_gold_or_past_the_crew_limit() -> void:

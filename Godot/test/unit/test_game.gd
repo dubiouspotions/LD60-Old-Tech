@@ -131,6 +131,25 @@ func test_restart_button_restarts_the_level_from_its_checkpoint() -> void:
 	assert_true(InputMap.action_has_event(&"restart_level", _key(KEY_BACKSPACE)), "also on Backspace")
 
 
+## The red arrow points at the nearest engineer off screen, on its side, and is gone while all are on screen.
+func test_the_crew_marker_points_at_the_nearest_engineer_off_screen() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	var marker: Label = game.get_node("%HUD").get_node("%CrewMarker")
+	var view := world.get_viewport().get_canvas_transform().affine_inverse()
+	var w := world.get_viewport().get_visible_rect().size.x
+	var mid_m := Grid.to_m(view * Vector2(w / 2.0, 300.0))
+	for e in world.crew.engineers:
+		e.pos.x = mid_m.x
+	game._process(0.0)
+	assert_false(marker.visible, "all on screen")
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos.x = Grid.to_m(view * Vector2(w + 200.0, 0.0)).x
+	game._process(0.0)
+	assert_true(marker.visible, "one off screen")
+	assert_eq(marker.text, "▶", "on its side")
+
+
 ## Dragging or wheeling the view past its limit leaves it where it is at once, not only on the next frame, so
 ## nothing pinned to the world (the Camp Shoppe button) jumps about.
 func test_the_view_stays_put_against_its_limit_while_dragged() -> void:

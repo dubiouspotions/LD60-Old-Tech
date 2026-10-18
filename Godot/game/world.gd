@@ -166,24 +166,32 @@ func shop_spot() -> Vector2:
 
 
 ## Starts (or restarts) the column at level index with soldiers: everything from that level on is put back
-## as designed, and the column camps at its start flag.
-func begin(index: int, soldiers: int) -> void:
+## as designed, and the column camps at its start flag. If the level behind was unloaded, it is put back too (as
+## designed), so the camp has ground behind it and the view can pan back over it, as on arrival.
+func begin(index: int, soldiers: int, engineers: int = 0) -> void:
 	_done = false
 	if index == 0 or not _placements.has(index):
 		_wipe()
+	elif chunk(index - 1) == null and _placements.has(index - 1):
+		var keep := {index - 1: _placements[index - 1], index: _placements[index]}
+		_wipe()
+		_placements = keep
+		terrain.unload_before(keep[index - 1][1])
+		place_now(index - 1)
 	rewind(index)
 	current = index
 	GameState.level_index = index
 	var c := chunk(index)
 	c.start_flag.reached = true
-	start_at(c.start_flag.metres().x, soldiers, c.level.march_delay)
+	start_at(c.start_flag.metres().x, soldiers, c.level.march_delay, engineers)
 	army.stop_x = c.exit_flag.metres().x
 
 
-## Puts the column and the crew at x and camps for march_delay seconds (0 marches at once).
-func start_at(x: float, soldiers: int, march_delay: float) -> void:
+## Puts the column and the crew (engineers; 0: the crew's own starting size) at x and camps for march_delay
+## seconds (0 marches at once).
+func start_at(x: float, soldiers: int, march_delay: float, engineers: int = 0) -> void:
 	army.spawn(soldiers, x)
-	crew.spawn(x)
+	crew.spawn(x, engineers)
 	_make_camp(x, march_delay)
 
 
@@ -232,7 +240,8 @@ func unload(index: int) -> void:
 	birds.forget_before(edge)
 	bridge.remove_outside(edge, INF)
 	_free_objects(func(x: float) -> bool: return x < edge)
-	_drop(index, true)
+	# Where it was placed is kept: a restart at the next level puts it back there.
+	_drop(index, false)
 
 
 ## Buys one soldier with gold while the column camps; it joins the camp. Returns false when not camping,
@@ -547,6 +556,7 @@ func _on_army_count(count: int) -> void:
 
 ## The level is lost when the last engineer dies, as when the last soldier does.
 func _on_crew_count(count: int) -> void:
+	GameState.engineers = count
 	if count == 0 and not _done:
 		_done = true
 		crew_lost.emit()

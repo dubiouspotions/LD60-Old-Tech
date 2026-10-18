@@ -231,6 +231,13 @@ func is_solid(cell: Vector2i) -> bool:
 	return t != null and t.solid
 
 
+## The hazard (water, spikes) the body of someone standing with feet at feet (metres) is in, or null. Only the body,
+## half a metre up, counts: feet resting on a hazard's surface (a deck end at the water line) do not.
+func hazard_for_body(feet: Vector2) -> TerrainType:
+	var t := type_at(Grid.cell_of(feet - Vector2(0, 0.5)))
+	return t if t and t.is_hazard() else null
+
+
 func is_anchor(cell: Vector2i) -> bool:
 	var t := type_at(cell)
 	return t != null and t.anchor
