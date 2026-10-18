@@ -490,3 +490,14 @@ func test_digging_up_a_box_gives_back_what_it_cost_less_one() -> void:
 	world._on_dig_finished(cell)
 	assert_null(world.terrain.type_at(cell), "dug up")
 	assert_eq(GameState.supplies.logs, had + box_tool.cost.logs - 1)
+
+
+func test_dragging_dig_marks_every_cell_the_cursor_passes() -> void:
+	_select(ToolDefinition.Kind.DIG)
+	tools._mouse_m = Vector2(1.5, 6.5)
+	tools._press()
+	tools._mouse_m = Vector2(9.5, 6.5)
+	tools._hold(1.0 / 60.0)
+	tools._release()
+	for x in range(1, 10):
+		assert_true(world.terrain.is_marked(Vector2i(x, 6)), "cell %d marked" % x)
