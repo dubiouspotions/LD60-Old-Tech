@@ -620,3 +620,68 @@ func test_crew_on_a_plateau_builds_a_support_off_its_face() -> void:
 	world.bridge.order_blueprints()
 	_run(15.0, func() -> bool: return not prop.blueprint)
 	assert_false(prop.blueprint, "support built")
+
+
+## A 5 m pit from x = 4 to 8 with a 1 m ledge on its right, ground at row 2.
+const PIT: Array = [
+	"............",
+	"............",
+	"####....####",
+	"####....####",
+	"####....####",
+	"####....####",
+	"####...#####",
+	"############",
+	"BBBBBBBBBBBB",
+]
+
+
+## Bridges the pit at ground level with a support hanging from the middle of the deck down to bottom.
+func _bridged_pit(bottom: Vector2 = Vector2(6.4, 6.6)) -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in PIT.size():
+		for x in PIT[y].length():
+			var key: String = WorldFixture.LEGEND[PIT[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	var bridge := world.bridge
+	bridge.build(bridge.snap_point(Vector2(4, 2)), bridge.snap_point(Vector2(8, 2)), LOG)
+	bridge.build(bridge.snap_point(Vector2(6, 2)), bridge.snap_point(bottom), SUPPORT)
+	world.army.spawn(1, 2.5)
+
+
+func _climbs_out_from(p: Vector2, bottom: Vector2 = Vector2(6.4, 6.6)) -> void:
+	_bridged_pit(bottom)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.at = null
+	e.route.clear()
+	e.pos = p
+	_run(15.0)
+	assert_almost_eq(e.pos.y, 2.0, 0.05, "out of the pit from %s" % p)
+
+
+func test_engineer_on_the_pit_floor_climbs_out_up_the_support() -> void:
+	_climbs_out_from(Vector2(6.0, 7.0))
+
+
+func test_engineer_on_a_ledge_in_the_pit_climbs_out_up_the_support() -> void:
+	_climbs_out_from(Vector2(7.5, 6.0))
+
+
+func test_engineer_at_the_far_wall_of_the_pit_climbs_out_up_the_support() -> void:
+	_climbs_out_from(Vector2(4.4, 7.0))
+
+
+func test_engineer_climbs_up_to_a_support_hanging_above_his_head() -> void:
+	_climbs_out_from(Vector2(5.5, 7.0), Vector2(6.4, 5.5))
+
+
+func test_engineer_builds_from_a_support_hanging_above_his_head() -> void:
+	_bridged_pit(Vector2(6.4, 5.5))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(5.5, 7.0)
+	var m := _plan(Vector2(6.4, 5.5), Vector2(7.5, 5.5))
+	world.bridge.order_blueprints()
+	_run(15.0, func() -> bool: return not m.blueprint)
+	assert_false(m.blueprint, "built off the hanging end")

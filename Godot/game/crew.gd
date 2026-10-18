@@ -144,19 +144,11 @@ func _fall(e: Engineer, dt: float) -> bool:
 
 
 ## Picks the closest job the engineer can reach. A member is reached along the structure from where the
-## engineer stands, or over safe ground to a bolted joint and then along the structure. A marked cell is
+## engineer stands, or over safe ground to a joint it can climb to and then along the structure. A marked cell is
 ## dug from a spot on safe ground within dig_reach.
 func _take_job(e: Engineer) -> void:
 	e.reach_x = NAN
-	var reachable := {}
-	var starts := func(n: Bridge.Joint) -> bool:
-		if e.at:
-			return n == e.at
-		if not n.pinned:
-			return false
-		if not reachable.has(n):
-			reachable[n] = not is_nan(_walk_y(e.pos, n.pos.x))
-		return reachable[n]
+	var starts := _starts_for(e)
 	var best_cost := INF
 	for m in bridge.members:
 		if _builder_of(m):
@@ -205,6 +197,19 @@ func _take_job(e: Engineer) -> void:
 				e.under_decks = under
 	if e.job and e.at:
 		e.route.erase(e.at)
+
+
+## Joints the engineer can start a climb from: the one it stands on, or (off the structure) any it can walk
+## below and then climb up to (max_climb) or down to (max_drop).
+func _starts_for(e: Engineer) -> Callable:
+	var reachable := {}
+	return func(n: Bridge.Joint) -> bool:
+		if e.at:
+			return n == e.at
+		if not reachable.has(n):
+			var y := _walk_y(e.pos, n.pos.x)
+			reachable[n] = not is_nan(y) and y - n.pos.y <= rules.max_climb and n.pos.y - y <= rules.max_drop
+		return reachable[n]
 
 
 ## Walking distance to a route's first joint plus the climb along it.
@@ -339,14 +344,7 @@ func _route_toward(e: Engineer, x: float) -> Array[Bridge.Joint]:
 	var none: Array[Bridge.Joint] = []
 	if e.at == null and not is_nan(_walk_y(e.pos, x)):
 		return none
-	var reachable := {}
-	var starts := func(n: Bridge.Joint) -> bool:
-		if e.at:
-			return n == e.at
-		if not reachable.has(n):
-			var y := _walk_y(e.pos, n.pos.x)
-			reachable[n] = not is_nan(y) and absf(y - n.pos.y) <= rules.step_up
-		return reachable[n]
+	var starts := _starts_for(e)
 	var best := none
 	var best_cost := INF
 	for n in bridge.nodes:
