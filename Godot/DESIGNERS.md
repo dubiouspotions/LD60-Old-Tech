@@ -79,7 +79,7 @@ The ground is painted with the v2 tiles (`world/tiles_v2.png`): source 1 of `wor
   press Retile, then save. Variants you picked by hand stay as long as they still fit.
 - **While playing,** the same rules re-pick the tiles around anything that changes the ground (digging, collapses,
   fill), so edges stay matched.
-- **Other materials** (brick, trees, fill, gold ore) have no v2 art and use their old tiles.
+- **Other materials** (brick, trees, box, gold ore) have no v2 art and use their old tiles.
 - **The roles** are in `data/terrain_look.tres`: which atlas tiles are flat tops, corners, walls, inner corners, dirt,
   rock, fillets, water and spikes. A role with several tiles gives variety: a cell that needs a new tile picks one by
   its position. The `*_alt` roles (the square grass corners) are valid when painted but never picked. **Body** is the
@@ -115,7 +115,7 @@ godot --headless res://dev/convert_levels_v2.tscn           # optional: retile e
 | Bridge / support / rope / stone strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`, `stone.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list). Each button shows its cost as supply swatches (build tools use their material's cost) and dims when it can't be afforded; the dim look is on `ui/tool_button.tscn` |
 | Arrows | `objects/arrow/arrow.tscn` |
-| Falling fill | `objects/falling_block/falling_block.tscn` |
+| Falling box (the Box tool, `data/tools/2_fill.tres`; the landed tile is `data/terrain/fill.tres`) | `objects/falling_block/falling_block.tscn` |
 | Debris, floating text | `objects/effects/` |
 | Sky, sun, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |

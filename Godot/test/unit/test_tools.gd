@@ -86,18 +86,22 @@ func test_dig_marks_tree() -> void:
 	assert_eq(world.terrain.type_at(Vector2i(3, 5)), WorldFixture.type("trunk"))
 
 
-func test_fill_spends_earth_and_drops_block() -> void:
+func test_box_spends_five_logs_and_drops_a_box() -> void:
 	_select(ToolDefinition.Kind.FILL)
+	assert_eq(tools.tool().display_name, "Box")
+	GameState.supplies.logs = 7
 	var earth := GameState.supplies.earth
 	_click(Vector2(10.5, 1.5))
-	assert_eq(GameState.supplies.earth, earth - 1)
+	assert_eq(GameState.supplies.logs, 2, "five logs")
+	assert_eq(GameState.supplies.earth, earth, "no earth")
 	await wait_physics_frames(60)
 	assert_eq(world.terrain.type_at(Vector2i(10, 5)), WorldFixture.type("fill"), "landed on the ground")
+	assert_eq(world.terrain.type_at(Vector2i(10, 5)).display_name, "Box")
 
 
-func test_fill_without_earth_does_nothing() -> void:
+func test_box_without_five_logs_does_nothing() -> void:
 	_select(ToolDefinition.Kind.FILL)
-	GameState.supplies.earth = 0
+	GameState.supplies.logs = 4
 	_click(Vector2(10.5, 1.5))
 	await wait_physics_frames(60)
 	assert_null(world.terrain.type_at(Vector2i(10, 5)))

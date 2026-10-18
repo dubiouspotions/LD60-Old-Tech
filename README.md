@@ -2,14 +2,14 @@
 
 A Ludum Dare 60 game ("Old Tech") made in Godot 4.7.
 
-The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m or a gap lower than 2 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. A brick tower in the way is besieged: the front soldier hacks at it until, after a good while, the whole tower comes down, archer and all. You are the engineers above the field. Dig, fill and bridge a way through before the archers' towers thin the ranks.
+The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m or a gap lower than 2 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. A brick tower in the way is besieged: the front soldier hacks at it until, after a good while, the whole tower comes down, archer and all. You are the engineers above the field. Dig, drop boxes and bridge a way through before the archers' towers thin the ranks.
 
 ## How to play
 
 | Tool | Key | What it does |
 | --- | --- | --- |
 | Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope), rock (+1 stone, slow) and gold ore (+1 gold) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
-| Fill | 2 | Drops a block of earth that falls until it lands. Costs 1 earth. |
+| Box | 2 | Drops a wooden box that falls until it lands and stays there as a solid block. Costs 5 logs; digging it up gives 2 back. |
 | Bridge | 3 | Drag from point to point to plan a bridge deck (a log soldiers walk on). Takes push and pull, up to 5 m. Costs 1 log. |
 | Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
 | Rope | 5 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
