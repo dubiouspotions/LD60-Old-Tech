@@ -550,3 +550,56 @@ func test_idle_engineer_on_the_tower_climbs_down_the_support() -> void:
 	_run(10.0)
 	assert_almost_eq(e.pos.y, 10.0, 0.05, "down on the ground")
 	assert_lt(e.pos.x, 6.0, "back with the column")
+
+
+## A 4 m plateau from x = 4 to 9 above ground at row 6.
+const PLATEAU: Array = [
+	"..................",
+	"..................",
+	"....######........",
+	"....######........",
+	"....######........",
+	"....######........",
+	"##################",
+	"BBBBBBBBBBBBBBBBBB",
+]
+
+
+func _on_plateau() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in PLATEAU.size():
+		for x in PLATEAU[y].length():
+			var key: String = WorldFixture.LEGEND[PLATEAU[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 5.5)
+	world.army.hold = true
+	world.crew.spawn(5.5)
+	world.crew.engineers[0].pos = Vector2(9.7, 2.0)
+
+
+func test_crew_on_a_plateau_builds_a_support_down_off_its_edge() -> void:
+	_on_plateau()
+	var m := _plan(Vector2(10, 2), Vector2(12, 6), SUPPORT)
+	world.bridge.order_blueprints()
+	_run(15.0, func() -> bool: return not m.blueprint)
+	assert_false(m.blueprint, "built from the plateau")
+
+
+func test_crew_on_a_plateau_builds_a_deck_and_support_off_its_face() -> void:
+	_on_plateau()
+	var deck := _plan(Vector2(10, 2), Vector2(13, 2))
+	var prop := _plan(Vector2(10, 4), Vector2(13, 2), SUPPORT)
+	world.bridge.order_blueprints()
+	_run(30.0, func() -> bool: return not deck.blueprint and not prop.blueprint)
+	assert_false(deck.blueprint, "deck built")
+	assert_false(prop.blueprint, "support built")
+
+
+func test_crew_on_a_plateau_builds_a_support_off_its_face() -> void:
+	_on_plateau()
+	var prop := _plan(Vector2(10, 4), Vector2(12, 2), SUPPORT)
+	world.bridge.order_blueprints()
+	_run(15.0, func() -> bool: return not prop.blueprint)
+	assert_false(prop.blueprint, "support built")
