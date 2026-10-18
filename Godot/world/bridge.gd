@@ -539,11 +539,13 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 		for n in nodes:
 			if not n.fixed():
 				_collide(n, h)
-		for m in members:
-			if not m.blueprint:
-				_collide_member(m, h)
-		for b in bodies:
-			_collide_body(b, h)
+	# Whole pieces against the ground and bodies: once per tick, which is plenty against cells and bodies a metre
+	# wide (the joints, which move fastest, collide every substep above).
+	for m in members:
+		if not m.blueprint:
+			_collide_member(m, h)
+	for b in bodies:
+		_collide_body(b, h)
 	var broken: Array[Member] = []
 	for m in members:
 		if m.blueprint:
@@ -742,6 +744,8 @@ func _collide(n: Joint, h: float) -> void:
 
 ## Keeps the length of built member m (between its joints) out of the ground, like joints are.
 func _collide_member(m: Member, h: float) -> void:
+	if m.a.inv_mass == 0.0 and m.b.inv_mass == 0.0:
+		return
 	var steps := ceili(m.length / MEMBER_PROBE)
 	for k in range(1, steps):
 		var t := float(k) / steps
