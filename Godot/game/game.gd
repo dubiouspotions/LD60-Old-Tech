@@ -35,227 +35,227 @@ var _plans: Array[Array] = []
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	%LevelHolder.process_mode = Node.PROCESS_MODE_PAUSABLE
-	var campaign := GameState.campaign
-	_tools.tools = campaign.tools
-	_tools.world = _world
-	_camera.world = _world
-	_hud.build_tools(campaign.tools)
-	_tools.tool_changed.connect(_on_tool_changed)
-	_hud.tool_pressed.connect(_tools.select)
-	_hud.pause_pressed.connect(_toggle_pause)
-	_hud.speed_pressed.connect(_toggle_speed)
-	_hud.follow_pressed.connect(_camera.snap_to_lead)
-	_hud.build_pressed.connect(_on_build_pressed)
-	_hud.cancel_pressed.connect(_on_cancel_pressed)
-	_hud.march_pressed.connect(_march)
-	_hud.recruit_pressed.connect(_recruit)
-	_hud.begin_pressed.connect(_begin)
-	_hud.retry_pressed.connect(_retry)
-	_hud.restart_pressed.connect(_restart)
-	_camera.follow_changed.connect(_hud.set_follow)
-	_hud.set_volumes(Audio.volume(_hud.music_bus), Audio.volume(_hud.sound_bus))
-	_hud.volume_changed.connect(Audio.set_volume)
-	_world.camp_made.connect(_on_camp_made)
-	_world.march_ordered.connect(_on_march_ordered)
-	_world.night_changed.connect(_on_night_changed)
-	_world.victory.connect(_on_victory, CONNECT_DEFERRED)
-	_world.army_lost.connect(_on_army_lost, CONNECT_DEFERRED)
-	_tools.select(0)
-	GameState.new_campaign()
-	_start_at_level(0)
-	_set_paused(true)
-	_hud.show_intro(true)
+    process_mode = Node.PROCESS_MODE_ALWAYS
+    %LevelHolder.process_mode = Node.PROCESS_MODE_PAUSABLE
+    var campaign := GameState.campaign
+    _tools.tools = campaign.tools
+    _tools.world = _world
+    _camera.world = _world
+    _hud.build_tools(campaign.tools)
+    _tools.tool_changed.connect(_on_tool_changed)
+    _hud.tool_pressed.connect(_tools.select)
+    _hud.pause_pressed.connect(_toggle_pause)
+    _hud.speed_pressed.connect(_toggle_speed)
+    _hud.follow_pressed.connect(_camera.snap_to_lead)
+    _hud.build_pressed.connect(_on_build_pressed)
+    _hud.cancel_pressed.connect(_on_cancel_pressed)
+    _hud.march_pressed.connect(_march)
+    _hud.recruit_pressed.connect(_recruit)
+    _hud.begin_pressed.connect(_begin)
+    _hud.retry_pressed.connect(_retry)
+    _hud.restart_pressed.connect(_restart)
+    _camera.follow_changed.connect(_hud.set_follow)
+    _hud.set_volumes(Audio.volume(_hud.music_bus), Audio.volume(_hud.sound_bus))
+    _hud.volume_changed.connect(Audio.set_volume)
+    _world.camp_made.connect(_on_camp_made)
+    _world.march_ordered.connect(_on_march_ordered)
+    _world.night_changed.connect(_on_night_changed)
+    _world.victory.connect(_on_victory, CONNECT_DEFERRED)
+    _world.army_lost.connect(_on_army_lost, CONNECT_DEFERRED)
+    _tools.select(0)
+    GameState.new_campaign()
+    _start_at_level(0)
+    _set_paused(true)
+    _hud.show_intro(true)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"pause"):
-		_toggle_pause()
-	elif event.is_action_pressed(&"speed"):
-		_toggle_speed()
-	elif event.is_action_pressed(&"march"):
-		_march()
-	elif event.is_action_pressed(&"recruit"):
-		_recruit()
+    if event.is_action_pressed(&"pause"):
+        _toggle_pause()
+    elif event.is_action_pressed(&"speed"):
+        _toggle_speed()
+    elif event.is_action_pressed(&"march"):
+        _march()
+    elif event.is_action_pressed(&"recruit"):
+        _recruit()
 
 
 func _process(_delta: float) -> void:
-	var lead := _world.army.lead()
-	_hud.set_level(GameState.level_number(), floori(lead.pos.x) if lead else 0)
-	_show_plans()
-	_hud.set_march(_world.camping() and not _over)
-	var rules := _world.army.rules
-	var room := _world.army.soldiers.size() < rules.max_soldiers
-	var camp: Camp = _world.camp()
-	_hud.set_recruit(_world.camping() and camp != null and not _over, rules.recruit_cost.gold, room and GameState.supplies.can_afford(rules.recruit_cost), camp.button_spot() if camp else Vector2.ZERO)
-	_update_status()
-	_update_lead_marker(lead)
+    var lead := _world.army.lead()
+    _hud.set_level(GameState.level_number(), floori(lead.pos.x) if lead else 0)
+    _show_plans()
+    _hud.set_march(_world.camping() and not _over)
+    var rules := _world.army.rules
+    var room := _world.army.soldiers.size() < rules.max_soldiers
+    var camp: Camp = _world.camp()
+    _hud.set_recruit(_world.camping() and camp != null and not _over, rules.recruit_cost.gold, room and GameState.supplies.can_afford(rules.recruit_cost), camp.button_spot() if camp else Vector2.ZERO)
+    _update_status()
+    _update_lead_marker(lead)
 
 
 func _begin() -> void:
-	_hud.hide_cards()
-	_tools.enabled = true
-	_set_paused(false)
+    _hud.hide_cards()
+    _tools.enabled = true
+    _set_paused(false)
 
 
 func _march() -> void:
-	if not _over and not _hud.any_card_open():
-		_world.march()
+    if not _over and not _hud.any_card_open():
+        _world.march()
 
 
 ## A Build button above each plan, a little over its highest point.
 func _show_plans() -> void:
-	_plans.clear()
-	if not _over:
-		_plans = _world.bridge.plans()
-	var spots: Array = []
-	var counts: Array = []
-	for plan in _plans:
-		var lo := INF
-		var hi := -INF
-		var top := INF
-		for m: Bridge.Member in plan:
-			for j: Bridge.Joint in [m.a, m.b]:
-				lo = minf(lo, j.pos.x)
-				hi = maxf(hi, j.pos.x)
-				top = minf(top, j.pos.y)
-		spots.append(Grid.to_px(Vector2((lo + hi) / 2, top - plan_button_rise)))
-		counts.append(plan.size())
-	_hud.set_build_spots(spots, counts)
+    _plans.clear()
+    if not _over:
+        _plans = _world.bridge.plans()
+    var spots: Array = []
+    var counts: Array = []
+    for plan in _plans:
+        var lo := INF
+        var hi := -INF
+        var top := INF
+        for m: Bridge.Member in plan:
+            for j: Bridge.Joint in [m.a, m.b]:
+                lo = minf(lo, j.pos.x)
+                hi = maxf(hi, j.pos.x)
+                top = minf(top, j.pos.y)
+        spots.append(Grid.to_px(Vector2((lo + hi) / 2, top - plan_button_rise)))
+        counts.append(plan.size())
+    _hud.set_build_spots(spots, counts)
 
 
 func _on_build_pressed(index: int) -> void:
-	if index < _plans.size():
-		_world.bridge.order_plan(_plans[index])
+    if index < _plans.size():
+        _world.bridge.order_plan(_plans[index])
 
 
 func _on_cancel_pressed(index: int) -> void:
-	if index < _plans.size():
-		GameState.gain(_world.bridge.cancel_plan(_plans[index]))
+    if index < _plans.size():
+        GameState.gain(_world.bridge.cancel_plan(_plans[index]))
 
 
 func _recruit() -> void:
-	if not _over and not _hud.any_card_open():
-		_world.recruit()
+    if not _over and not _hud.any_card_open():
+        _world.recruit()
 
 
 func _on_march_ordered(by_player: bool) -> void:
-	_hud.banner(march_title, march_player_text if by_player else march_king_text)
-	Audio.play(march_sound)
-	Audio.play(GameState.campaign.dawn_sound)
-	var c := _world.current_chunk()
-	if c:
-		Audio.play_music(c.level.music)
+    _hud.banner(march_title, march_player_text if by_player else march_king_text)
+    Audio.play(march_sound)
+    Audio.play(GameState.campaign.dawn_sound)
+    var c := _world.current_chunk()
+    if c:
+        Audio.play_music(c.level.music)
 
 
 func _on_night_changed(night: bool, seconds: float) -> void:
-	_day_night.set_night(night, false, seconds)
-	if night and GameState.campaign.camp_music:
-		Audio.play_music(GameState.campaign.camp_music)
+    _day_night.set_night(night, false, seconds)
+    if night and GameState.campaign.camp_music:
+        Audio.play_music(GameState.campaign.camp_music)
 
 
 func _toggle_pause() -> void:
-	if _hud.any_card_open():
-		return
-	_set_paused(not get_tree().paused)
+    if _hud.any_card_open():
+        return
+    _set_paused(not get_tree().paused)
 
 
 func _toggle_speed() -> void:
-	Engine.time_scale = fast_speed if is_equal_approx(Engine.time_scale, 1.0) else 1.0
-	_hud.set_speed(Engine.time_scale)
+    Engine.time_scale = fast_speed if is_equal_approx(Engine.time_scale, 1.0) else 1.0
+    _hud.set_speed(Engine.time_scale)
 
 
 func _set_paused(paused: bool) -> void:
-	get_tree().paused = paused
-	_hud.set_paused(paused, not _hud.any_card_open())
+    get_tree().paused = paused
+    _hud.set_paused(paused, not _hud.any_card_open())
 
 
 func _on_tool_changed(index: int) -> void:
-	_hud.set_tool(index)
+    _hud.set_tool(index)
 
 
 ## Puts the column at the start of level index with the soldiers and supplies GameState holds.
 func _start_at_level(index: int) -> void:
-	_tools.cancel()
-	_world.begin(index, GameState.soldiers)
-	_camera.snap_to_lead()
-	_over = false
-	var c := _world.current_chunk()
-	if not _world.at_camp():
-		Audio.play_music(c.level.music)
+    _tools.cancel()
+    _world.begin(index, GameState.soldiers)
+    _camera.snap_to_lead()
+    _over = false
+    var c := _world.current_chunk()
+    if not _world.at_camp():
+        Audio.play_music(c.level.music)
 
 
 func _on_camp_made(index: int, joined: int) -> void:
-	var c := _world.chunk(index)
-	var title := c.level.display_name if not c.level.display_name.is_empty() else arrival_title % (index + 1)
-	_hud.banner(title, arrival_text % joined)
-	Audio.play(GameState.campaign.level_up_sound)
+    var c := _world.chunk(index)
+    var title := c.level.display_name if not c.level.display_name.is_empty() else arrival_title % (index + 1)
+    _hud.banner(title, arrival_text % joined)
+    Audio.play(GameState.campaign.level_up_sound)
 
 
 func _on_victory() -> void:
-	_over = true
-	_tools.enabled = false
-	_set_paused(true)
-	_hud.show_victory(victory_text % [GameState.campaign.levels.size(), GameState.soldiers])
-	_hud.set_paused(true, false)
-	Audio.play(GameState.campaign.victory_sound)
+    _over = true
+    _tools.enabled = false
+    _set_paused(true)
+    _hud.show_victory(victory_text % [GameState.campaign.levels.size(), GameState.soldiers])
+    _hud.set_paused(true, false)
+    Audio.play(GameState.campaign.victory_sound)
 
 
 func _on_army_lost() -> void:
-	_over = true
-	_tools.enabled = false
-	_hud.show_lost(lost_text % GameState.level_number())
-	_set_paused(true)
-	Audio.play(GameState.campaign.lost_sound)
+    _over = true
+    _tools.enabled = false
+    _hud.show_lost(lost_text % GameState.level_number())
+    _set_paused(true)
+    Audio.play(GameState.campaign.lost_sound)
 
 
 func _retry() -> void:
-	_hud.hide_cards()
-	GameState.retry()
-	_start_at_level(GameState.level_index)
-	_tools.enabled = true
-	_set_paused(false)
+    _hud.hide_cards()
+    GameState.retry()
+    _start_at_level(GameState.level_index)
+    _tools.enabled = true
+    _set_paused(false)
 
 
 func _restart() -> void:
-	_hud.hide_cards()
-	GameState.new_campaign()
-	_start_at_level(0)
-	_tools.enabled = true
-	_set_paused(false)
+    _hud.hide_cards()
+    GameState.new_campaign()
+    _start_at_level(0)
+    _tools.enabled = true
+    _set_paused(false)
 
 
 func _update_status() -> void:
-	var reason := _world.army.halt_reason
-	var under_fire := false
-	for o in _world.objects.get_children():
-		if o is Archer and o.engaging:
-			under_fire = true
-			break
-	if _over:
-		_hud.set_status("Column lost", Hud.Mood.FIRE)
-	elif get_tree().paused:
-		_hud.set_status("Paused" if not _hud.any_card_open() else "Awaiting orders", Hud.Mood.HALT)
-	elif _world.camping():
-		_hud.set_status(patience_text % ceili(_world.march_left()), Hud.Mood.HALT)
-	elif _world.at_camp():
-		_hud.set_status(morning_text, Hud.Mood.HALT)
-	elif under_fire:
-		_hud.set_status("Under fire · %s" % reason if reason else "Under fire", Hud.Mood.FIRE)
-	elif reason:
-		_hud.set_status("Halted · %s" % reason, Hud.Mood.HALT)
-	elif not _world.army.danger.is_empty():
-		_hud.set_status(danger_text % _world.army.danger, Hud.Mood.FIRE)
-	else:
-		_hud.set_status("Marching", Hud.Mood.NORMAL)
+    var reason := _world.army.halt_reason
+    var under_fire := false
+    for o in _world.objects.get_children():
+        if o is Archer and o.engaging:
+            under_fire = true
+            break
+    if _over:
+        _hud.set_status("Column lost", Hud.Mood.FIRE)
+    elif get_tree().paused:
+        _hud.set_status("Paused" if not _hud.any_card_open() else "Awaiting orders", Hud.Mood.HALT)
+    elif _world.camping():
+        _hud.set_status(patience_text % ceili(_world.march_left()), Hud.Mood.HALT)
+    elif _world.at_camp():
+        _hud.set_status(morning_text, Hud.Mood.HALT)
+    elif under_fire:
+        _hud.set_status("Under fire · %s" % reason if reason else "Under fire", Hud.Mood.FIRE)
+    elif reason:
+        _hud.set_status("Halted · %s" % reason, Hud.Mood.HALT)
+    elif not _world.army.danger.is_empty():
+        _hud.set_status(danger_text % _world.army.danger, Hud.Mood.FIRE)
+    else:
+        _hud.set_status("Marching", Hud.Mood.NORMAL)
 
 
 func _update_lead_marker(lead: Soldier) -> void:
-	if lead == null:
-		_hud.set_lead_marker(0, 0)
-		return
-	var screen := _world.get_viewport().get_canvas_transform() * lead.position
-	var w := _world.get_viewport().get_visible_rect().size.x
-	var side := 1 if screen.x > w else (-1 if screen.x < 0 else 0)
-	_hud.set_lead_marker(side, screen.y - Grid.PX)
+    if lead == null:
+        _hud.set_lead_marker(0, 0)
+        return
+    var screen := _world.get_viewport().get_canvas_transform() * lead.position
+    var w := _world.get_viewport().get_visible_rect().size.x
+    var side := 1 if screen.x > w else (-1 if screen.x < 0 else 0)
+    _hud.set_lead_marker(side, screen.y - Grid.PX)
