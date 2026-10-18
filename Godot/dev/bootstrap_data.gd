@@ -71,7 +71,7 @@ func _terrain() -> void:
 		bulk_yield = Supplies.make(0, 0, 0, 0, 1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})
 	_t("water", "Water", {solid = false, anchor = false, fill_replaces = true, buoyant = true,
 		hazard = TerrainType.Hazard.WATER, death_text = "Drowned", ahead_text = "Water ahead", debris_color = Color("3480b6")})
-	_t("spikes", "Spikes", {solid = false, anchor = false, hazard = TerrainType.Hazard.SPIKES, breaks_blocks = true,
+	_t("spikes", "Spikes", {solid = false, anchor = false, hazard = TerrainType.Hazard.SPIKES, breaks_falling = true,
 		death_text = "Spiked", ahead_text = "Spikes ahead", debris_color = Color("cfd4da")})
 	_t("trunk", "Tree trunk", {solid = false, anchor = false, dig_action = TerrainType.DigAction.FELL, dig_time = 1.25,
 		bulk_yield = Supplies.make(0, 1), bulk_bonus = Supplies.make(0, 2), dig_sound = _snd("tree_fell"), impact_strength = 1500.0,

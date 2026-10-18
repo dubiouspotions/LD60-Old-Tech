@@ -480,11 +480,12 @@ func remove_member(m: Member) -> void:
 
 
 ## Breaks a member with debris. quiet skips the message (player removal).
-func break_member(m: Member, quiet: bool = false) -> void:
+## Breaks m with debris. quiet: no sound or message. why: the message (else snapped or buckled, by its force).
+func break_member(m: Member, quiet: bool = false, why: String = "") -> void:
 	var mid := (m.a.pos + m.b.pos) / 2
 	var text := ""
 	if not quiet:
-		text = m.material.snapped_text if m.force > 0 or m.material.buckled_text.is_empty() else m.material.buckled_text
+		text = why if not why.is_empty() else (m.material.snapped_text if m.force > 0 or m.material.buckled_text.is_empty() else m.material.buckled_text)
 		Audio.play(m.material.break_sound, Grid.to_px(mid))
 	Effects.debris(Grid.to_px(mid), m.material.color, 4 if m.material.draw_as_rope else 9, 140.0)
 	remove_member(m)
@@ -583,6 +584,7 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 		for n in nodes:
 			if not n.fixed():
 				_collide(n, h)
+	_break_on_spikes()
 	var structures := _structures()
 	# Whole pieces against the ground, each other and bodies: once per tick, which is plenty against cells and
 	# bodies a metre wide (the joints, which move fastest, collide every substep above).
@@ -894,6 +896,23 @@ func _push_out_of_box(p: Vector2, _from: Vector2, b: Body) -> Array:
 		return [Vector2(b.center.x + nx * (b.half.x + e), p.y), Vector2(nx, 0.0)]
 	var ny := 1.0 if d.y >= 0.0 else -1.0
 	return [Vector2(p.x, b.center.y + ny * (b.half.y + e)), Vector2(0.0, ny)]
+
+
+## Breaks every built piece whose loose part (a free end, or its length when an end is free) reaches a tile that
+## breaks what falls on it (TerrainType.breaks_falling, spikes). Pieces with both ends fixed stay.
+func _break_on_spikes() -> void:
+	for m in members.duplicate():
+		if m.blueprint or m.dead or (m.a.fixed() and m.b.fixed()):
+			continue
+		var steps := ceili(m.length / MEMBER_PROBE)
+		for k in steps + 1:
+			var t := float(k) / steps
+			if (k == 0 and m.a.fixed()) or (k == steps and m.b.fixed()):
+				continue
+			var tile := terrain.type_at(Grid.cell_of(m.a.pos.lerp(m.b.pos, t)))
+			if tile and tile.breaks_falling:
+				break_member(m, false, tile.death_text)
+				break
 
 
 ## Built members by connected structure: Member -> id. Members joined through joints share an id.

@@ -450,3 +450,38 @@ func test_a_box_that_landed_stops_falling_before_it_is_freed() -> void:
 			boxes += 1
 	assert_eq(boxes, 1, "one box, landed once")
 	assert_eq(world.terrain.type_at(Vector2i(7, 5)), WorldFixture.type("fill"), "on the ground")
+
+
+func test_spikes_destroy_a_bridge_piece_that_falls_on_them() -> void:
+	_map([
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"######^^^^####",
+		"BBBBBBBBBBBBBB",
+	])
+	_drop_log(6.5, 8.5, 2.0)
+	_run(2.0)
+	assert_eq(world.bridge.members.size(), 0, "the log is gone")
+	assert_eq(world.terrain.type_at(Vector2i(7, 6)), WorldFixture.type("spikes"))
+
+
+func test_a_piece_bolted_down_in_a_spike_pit_stays() -> void:
+	_map([
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"######^^^^####",
+		"BBBBBBBBBBBBBB",
+	])
+	var b := world.bridge
+	# A support from the pit's floor (under the spikes, bolted to the bedrock) up to the left rim.
+	var m := b.build(b.snap_point(Vector2(7, 7)), b.snap_point(Vector2(6, 6)), preload("res://data/bridge/support.tres"))
+	_run(2.0)
+	assert_false(m.dead, "built into the spikes on purpose, not landed on them")

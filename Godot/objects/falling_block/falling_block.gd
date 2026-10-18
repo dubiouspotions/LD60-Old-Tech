@@ -1,7 +1,7 @@
 class_name FallingBlock
 extends Node2D
 ## A tile falling straight down until it lands on the ground, where it becomes that tile again (it breaks on spikes
-## and other tiles with Breaks Blocks). It comes to rest
+## and other tiles with Breaks Falling). It comes to rest
 ## on bridge pieces (loading them) and on soldiers and archers, unless it reaches them at the bridge's Harm Speed:
 ## then it crushes them and falls on. Stepped by the World. The node origin is the top-left of the cell. It shows
 ## the TileSet's picture of its terrain type.
@@ -64,7 +64,7 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		return
 	var r := floori(position.y / Grid.PX)
 	var inside := t.type_at(Vector2i(x, floori(next - 0.5)))
-	if inside and inside.breaks_blocks:
+	if inside and inside.breaks_falling:
 		_break()
 		return
 	if r + 1 >= t.size.y or t.is_solid(Vector2i(x, r + 1)):

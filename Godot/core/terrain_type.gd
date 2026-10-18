@@ -25,8 +25,9 @@ enum DigAction { NONE, REMOVE, FELL }
 
 @export_group("Hazard")
 @export var hazard: Hazard = Hazard.NONE
-## A falling block (a box) that reaches this tile breaks on it (spikes).
-@export var breaks_blocks: bool = false
+## Breaks what falls onto it (spikes): boxes, and bridge pieces whose loose part reaches it. Pieces bolted down
+## there on purpose stay.
+@export var breaks_falling: bool = false
 ## Shown when a soldier dies inside this tile.
 @export var death_text: String = ""
 ## Shown in the status bar when the column halts in front of it.
