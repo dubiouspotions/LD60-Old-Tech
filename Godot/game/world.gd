@@ -77,6 +77,8 @@ class Chunk:
 @onready var birds: Birds = %Birds
 ## Leaves bursting from felled trees.
 @onready var leaves: LeafPoof = %Leaves
+## Pieces of wood from felled trees, waiting to be picked up by the crew.
+@onready var wood: Wood = %Wood
 
 ## Campaign index of the level the column is in, -1 before begin().
 var current: int = -1
@@ -106,6 +108,8 @@ func _ready() -> void:
 	crew.terrain = terrain
 	crew.bridge = bridge
 	crew.army = army
+	crew.wood = wood
+	crew.picked_up.connect(_on_picked_up)
 	terrain.tile_detached.connect(_on_tile_detached)
 	crew.chopped.connect(func(cell: Vector2i) -> void:
 		leaves.shake(cell)
@@ -166,6 +170,7 @@ func rewind(index: int) -> void:
 		_drop(i, i > index)
 	terrain.clear_from(seam)
 	grass.clear_from(seam)
+	wood.clear_from(seam)
 	birds.forget_from(seam)
 	bridge.remove_outside(-INF, seam)
 	_free_objects(func(x: float) -> bool: return x >= seam)
@@ -196,6 +201,7 @@ func unload(index: int) -> void:
 	var edge := c.end()
 	terrain.unload_before(edge)
 	grass.unload_before(edge)
+	wood.clear_before(edge)
 	birds.forget_before(edge)
 	bridge.remove_outside(edge, INF)
 	_free_objects(func(x: float) -> bool: return x < edge)
@@ -459,6 +465,7 @@ func _wipe() -> void:
 	terrain.clear()
 	terrain.rebuild()
 	grass.clear()
+	wood.clear_all()
 	birds.clear()
 	bridge.clear()
 	_free_objects(func(_x: float) -> bool: return true)
@@ -537,10 +544,24 @@ static func _top_of(cells: Array[Vector2i]) -> Vector2:
 ## An engineer finished digging a marked cell: take the tile and its supplies.
 func _on_dig_finished(cell: Vector2i) -> void:
 	var here := terrain.type_at(cell)
+	var feller := crew.finisher_of(cell)
+	var tree := terrain.tree_cells(cell)
 	var got := terrain.dig(cell)
 	if got == null:
 		return
+	# The logs of a felled tree drop as pieces of wood for the engineer that felled it to pick up.
+	if feller and not tree.is_empty() and got.logs > 0:
+		crew.gather(feller, wood.drop(tree, got.logs))
+		got.logs = 0
 	gain(got, Vector2(cell) + Vector2(0.5, 0), GAIN_COLOR if here.dig_action == TerrainType.DigAction.FELL else here.debris_color)
+
+
+## A piece of wood picked up: its log goes into the supplies.
+func _on_picked_up(piece: Wood.Piece, _by: Crew.Engineer) -> void:
+	wood.remove(piece)
+	var log := Supplies.new()
+	log.logs = 1
+	gain(log, piece.pos - Vector2(0, 0.5))
 
 
 ## Every living soldier and archer, and every falling block, as a body bridge pieces and falling blocks collide
