@@ -51,5 +51,8 @@ func materials() -> Array[BridgeMaterial]:
 @export var other_materials: Array[BridgeMaterial] = []
 
 @export_group("Spawn")
-## Scene a Fill tool drops (a falling block, such as a box).
+## Scene a Fill tool drops (a falling block, such as a sandbag).
 @export var spawn_scene: PackedScene
+## An engineer throws it there (from as close as it can stand) instead of it dropping where the player clicks: the
+## click orders the throw (clicking it again takes the order back).
+@export var thrown: bool = false

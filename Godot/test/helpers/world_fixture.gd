@@ -3,7 +3,7 @@ class_name WorldFixture
 
 const LEGEND: Dictionary = {
 	".": "", "#": "soil", "R": "rock", "B": "bedrock", "~": "water", "^": "spikes",
-	"K": "brick", "C": "crystal", "T": "trunk", "L": "leaves", "X": "box",
+	"K": "brick", "C": "crystal", "T": "trunk", "L": "leaves", "X": "box", "S": "sandbag",
 }
 
 

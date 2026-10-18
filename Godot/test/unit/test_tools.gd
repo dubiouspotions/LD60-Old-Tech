@@ -99,30 +99,43 @@ func test_dig_marks_tree() -> void:
 	assert_eq(world.terrain.type_at(Vector2i(3, 5)), WorldFixture.type("trunk"))
 
 
-func test_box_spends_its_cost_and_drops_a_box() -> void:
+func test_the_sandbag_takes_the_box_s_place_in_the_rack_and_costs_10_earth() -> void:
+	var names := tools.tools.map(func(t: ToolDefinition) -> String: return t.display_name)
+	assert_true("Sandbag" in names)
+	assert_false("Box" in names, "no Box button any more")
 	_select(ToolDefinition.Kind.FILL)
-	assert_eq(tools.tool().display_name, "Box")
-	var cost := tools.tool().cost.logs
-	assert_gt(cost, 0, "a box costs logs")
-	GameState.supplies.logs = cost + 2
-	var earth := GameState.supplies.earth
+	assert_eq(tools.tool().display_name, "Sandbag")
+	assert_eq(tools.tool().cost.earth, 10)
+	assert_true(tools.tool().thrown, "an engineer throws it")
+
+
+func test_placing_a_sandbag_spends_its_cost_and_orders_a_throw() -> void:
+	_select(ToolDefinition.Kind.FILL)
+	GameState.supplies.earth = 12
 	_click(Vector2(10.5, 1.5))
-	assert_eq(GameState.supplies.logs, 2, "its cost in logs")
-	assert_eq(GameState.supplies.earth, earth, "no earth")
-	await wait_physics_frames(60)
-	assert_eq(world.terrain.type_at(Vector2i(10, 5)), WorldFixture.type("box"), "landed on the ground")
-	assert_eq(world.terrain.type_at(Vector2i(10, 5)).display_name, "Box")
+	assert_eq(GameState.supplies.earth, 2, "10 earth")
+	assert_eq(world.crew.throws.size(), 1, "an engineer is to throw it")
+	assert_eq(world.crew.throws[0].cell, Vector2i(10, 1))
+	assert_false(world.objects.get_children().any(func(o: Node) -> bool: return o is FallingBlock), "nothing drops at the cursor")
 
 
-func test_box_without_enough_logs_does_nothing() -> void:
+func test_clicking_an_ordered_sandbag_again_takes_it_back() -> void:
 	_select(ToolDefinition.Kind.FILL)
-	GameState.supplies.logs = tools.tool().cost.logs - 1
+	GameState.supplies.earth = 12
+	_click(Vector2(10.5, 1.5))
+	_click(Vector2(10.5, 1.5))
+	assert_eq(world.crew.throws.size(), 0, "order taken back")
+	assert_eq(GameState.supplies.earth, 12, "all of its cost back")
+
+
+func test_a_sandbag_without_enough_earth_is_not_ordered() -> void:
+	_select(ToolDefinition.Kind.FILL)
+	GameState.supplies.earth = 9
 	watch_signals(Effects)
 	_click(Vector2(10.5, 1.5))
-	await wait_physics_frames(60)
-	assert_null(world.terrain.type_at(Vector2i(10, 5)))
+	assert_eq(world.crew.throws.size(), 0)
 	var said: String = get_signal_parameters(Effects, "said")[0]
-	assert_string_starts_with(said, "1 log missing", "says how many are missing")
+	assert_string_starts_with(said, "1 earth missing", "says how much is missing")
 
 
 func test_two_clicks_place_one_plank_and_stop() -> void:
@@ -322,7 +335,7 @@ func test_stone_build_spends_stone_and_builds_a_heavy_member() -> void:
 
 func test_tools_in_order_on_keys_one_to_five() -> void:
 	var names := tools.tools.map(func(t: ToolDefinition) -> String: return t.display_name)
-	assert_eq(names, ["Dig/Chop", "Bridge", "Support", "Rope", "Box"])
+	assert_eq(names, ["Dig/Chop", "Bridge", "Support", "Rope", "Sandbag"])
 	for i in tools.tools.size():
 		var t: ToolDefinition = tools.tools[i]
 		assert_eq(t.key_label, str(i + 1))
@@ -484,14 +497,14 @@ func test_dig_on_a_built_rope_takes_it_back_at_once_less_one() -> void:
 	assert_eq(GameState.supplies.rope, rope + m.paid.rope - 1, "one less than it cost")
 
 
-func test_digging_up_a_box_gives_back_what_it_cost_less_one() -> void:
-	var box_tool: ToolDefinition = tools.tools.filter(func(t: ToolDefinition) -> bool: return t.kind == ToolDefinition.Kind.FILL)[0]
+func test_digging_up_a_sandbag_gives_back_what_it_cost_less_one() -> void:
+	var sandbag_tool: ToolDefinition = tools.tools.filter(func(t: ToolDefinition) -> bool: return t.kind == ToolDefinition.Kind.FILL)[0]
 	var cell := Vector2i(8, 5)
-	world.terrain.set_type(cell, WorldFixture.type("box"))
-	var had := GameState.supplies.logs
+	world.terrain.set_type(cell, WorldFixture.type("sandbag"))
+	var had := GameState.supplies.earth
 	world._on_dig_finished(cell)
 	assert_null(world.terrain.type_at(cell), "dug up")
-	assert_eq(GameState.supplies.logs, had + box_tool.cost.logs - 1)
+	assert_eq(GameState.supplies.earth, had + sandbag_tool.cost.earth - 1)
 
 
 func test_dragging_dig_marks_every_cell_the_cursor_passes() -> void:

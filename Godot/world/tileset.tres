@@ -13,6 +13,8 @@
 [ext_resource type="Texture2D" uid="uid://ciawyo8yq7gfg" path="res://world/tiles.png" id="11_ojk4e"]
 [ext_resource type="Texture2D" uid="uid://bxeohwo8i0qbp" path="res://world/tiles_v2_keyed.png" id="12_2gid8"]
 [ext_resource type="Texture2D" uid="uid://wr6tmfrehdar" path="res://world/tilemap-terrain.png" id="13_gyr0v"]
+[ext_resource type="Texture2D" uid="uid://doafh5chfalbk" path="res://world/sandbag.png" id="20_sandbag"]
+[ext_resource type="Resource" path="res://data/terrain/sandbag.tres" id="21_sandbag"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0csw6"]
 texture = ExtResource("11_ojk4e")
@@ -437,6 +439,12 @@ texture_region_size = Vector2i(32, 32)
 4:0/0 = 0
 0:2/0 = 0
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_sandbag"]
+texture = ExtResource("20_sandbag")
+texture_region_size = Vector2i(32, 32)
+0:0/0 = 0
+0:0/0/custom_data_0 = ExtResource("21_sandbag")
+
 [resource]
 tile_size = Vector2i(32, 32)
 custom_data_layer_0/name = "terrain"
@@ -444,3 +452,4 @@ custom_data_layer_0/type = 24
 sources/0 = SubResource("TileSetAtlasSource_0csw6")
 sources/1 = SubResource("TileSetAtlasSource_01qsn")
 sources/2 = SubResource("TileSetAtlasSource_xoi5k")
+sources/3 = SubResource("TileSetAtlasSource_sandbag")

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TerrainType" format=3]
+
+[ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="1_sandbag"]
+[ext_resource type="Resource" path="res://data/sounds/dig.tres" id="2_sandbag"]
+
+[resource]
+script = ExtResource("1_sandbag")
+display_name = "Sandbag"
+falls = true
+dig_action = 1
+dig_time = 0.3
+dig_sound = ExtResource("2_sandbag")
+impact_strength = 300.0
+debris_color = Color(0.72, 0.6, 0.37, 1)

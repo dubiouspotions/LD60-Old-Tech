@@ -39,7 +39,7 @@ func test_lists_the_initial_tweakables() -> void:
 	for n in ["army/start_soldiers", "army/soldier_hit_points", "army/mutiny_time", "army/recruit_cost/gold",
 			"crew/engineers", "enemies/archer_hit_points",
 			"supplies/start/logs", "supplies/checkpoint/logs",
-			"prices/log/logs", "prices/box/logs",
+			"prices/log/logs", "prices/sandbag/earth",
 			"yields/soil/dig/earth", "yields/tree_trunk/fell/logs"]:
 		assert_has(names, n)
 

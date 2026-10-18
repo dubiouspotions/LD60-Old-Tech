@@ -4,7 +4,9 @@ extends Node2D
 ## structure. Finished members stay on scaffolding until their structure is done: nothing of it left to build
 ## and no engineer on it. Then its scaffolding is struck and the physics decides. Separate structures (not
 ## joined by built or ordered members) are struck separately. Cells marked for digging are dug from a spot within reach;
-## plans connected to nothing are built from a spot on the ground within reach of an end.
+## plans connected to nothing are built from a spot on the ground within reach of an end. Ordered throws (sandbags)
+## are thrown from a standing spot at most throw_reach aside of their cell, at any height, as near throw_distance
+## aside as it can be, and with a clear arc (see ThrownBag).
 ## Each engineer takes the closest free job of either kind; a job has one engineer at a time. While
 ## plans wait to be ordered, idle engineers stand ready beside them. Engineer nodes only show state. Tuning lives in CrewRules.
 
@@ -17,6 +19,8 @@ signal dismantled(m: Bridge.Member)
 signal chopped(cell: Vector2i)
 ## An engineer picked up a piece of wood. The level takes it and its log.
 signal picked_up(piece: Wood.Piece, by: Engineer)
+## An engineer threw an ordered throw from its hands at from (metres); the level sends it flying to its cell.
+signal threw(order: Throw, from: Vector2)
 ## An engineer died; count is how many are left.
 signal count_changed(count: int)
 
@@ -66,6 +70,18 @@ class Engineer:
 	var fetch: Wood.Piece
 	var fetch_time: float = 0.0
 	var stoop: float = 0.0
+	## The throw it has taken, thrown standing at spot_x; null if none.
+	var throwing: Throw
+
+
+## Something (a sandbag) ordered onto cell by a thrown Fill tool, waiting for an engineer to throw it there.
+class Throw:
+	var cell: Vector2i
+	var tool: ToolDefinition
+	## The engineer on its way to throw it, or null.
+	var taker: Engineer
+	## Seconds it has wound up to throw.
+	var windup: float = 0.0
 
 
 @export var rules: CrewRules
@@ -78,6 +94,8 @@ var bridge: Bridge
 var army: Army
 var wood: Wood
 var engineers: Array[Engineer] = []
+## Throws ordered and not thrown yet.
+var throws: Array[Throw] = []
 
 ## Where idle engineers wait for a plan to be ordered: a start joint's x, and the side they come from. NAN if none.
 var _ready_x: float = NAN
@@ -94,6 +112,7 @@ func spawn(x: float) -> void:
 	for e in engineers:
 		e.node.queue_free()
 	engineers.clear()
+	throws.clear()
 	for i in rules.crew_size:
 		var e := Engineer.new()
 		var ex := maxf(0.5, x - rules.follow_gap - i * rules.spacing)
@@ -121,6 +140,8 @@ func step(dt: float) -> void:
 		if wood:
 			for p in wood.pieces.duplicate():
 				picked_up.emit(p, null)
+		for t in throws.duplicate():
+			_throw(t, Vector2(t.cell) + Vector2(0.5, 0.5))
 	_update_ready_spot(dt)
 	for i in engineers.size():
 		var e := engineers[i]
@@ -140,14 +161,14 @@ func step(dt: float) -> void:
 		if (e.job and e.goal and not _in_zone(e.goal.pos.x)) or (e.digging and not _in_zone(e.dig.x + 0.5)):
 			_drop(e)
 		_prune_gather(e)
-		if e.job == null and not e.digging and e.route.is_empty() and e.at == null and (_gathering(e) or _offer_help(e)):
+		if not _busy(e) and e.route.is_empty() and e.at == null and (_gathering(e) or _offer_help(e)):
 			_gather_step(e, dt)
 			continue
 		e.think -= dt
-		if e.job == null and not e.digging and e.route.is_empty() and e.think <= 0.0 and not _gathering(e):
+		if not _busy(e) and e.route.is_empty() and e.think <= 0.0 and not _gathering(e):
 			e.think = THINK_INTERVAL
 			_take_job(e)
-			if e.job == null and not e.digging and e.at == null:
+			if not _busy(e) and e.at == null:
 				e.route = _route_toward(e, _idle_x(i))
 		if e.job and e.route.is_empty():
 			if is_nan(e.reach_x) or _reach_step(e, dt):
@@ -164,6 +185,8 @@ func step(dt: float) -> void:
 				_let_go(e)
 		elif e.digging:
 			_dig_step(e, dt)
+		elif e.throwing:
+			_throw_step(e, dt)
 		else:
 			var x := _idle_x(i)
 			var was := e.pos
@@ -243,7 +266,7 @@ func _fall(e: Engineer, dt: float) -> bool:
 func _take_job(e: Engineer) -> void:
 	for any_height: bool in [false, true]:
 		_find_job(e, any_height)
-		if e.job or e.digging:
+		if _busy(e):
 			e.any_height = any_height
 			return
 
@@ -301,6 +324,17 @@ func _find_job(e: Engineer, any_height: bool) -> void:
 				e.dig = cell
 				e.spot_x = x
 				e.under_decks = under
+		for t in throws:
+			if t.taker or not _in_zone(t.cell.x + 0.5):
+				continue
+			var x := _throw_spot(e.pos, t.cell, any_height)
+			var cost := absf(x - e.pos.x)
+			if not is_nan(x) and cost < best_cost and _in_zone(x):
+				best_cost = cost
+				_drop(e)
+				e.throwing = t
+				t.taker = e
+				e.spot_x = x
 	if e.job and e.at:
 		e.route.erase(e.at)
 
@@ -395,6 +429,89 @@ func _dig_step(e: Engineer, dt: float) -> void:
 		_finisher = e
 		dig_finished.emit(e.dig)
 		_finisher = null
+
+
+## Has a job of any kind: building, digging or throwing.
+func _busy(e: Engineer) -> bool:
+	return e.job != null or e.digging or e.throwing != null
+
+
+## Orders tool's thing thrown onto cell. Returns the order.
+func order_throw(cell: Vector2i, tool: ToolDefinition) -> Throw:
+	var t := Throw.new()
+	t.cell = cell
+	t.tool = tool
+	throws.append(t)
+	return t
+
+
+## The throw ordered onto cell, or null.
+func throw_at(cell: Vector2i) -> Throw:
+	for t in throws:
+		if t.cell == cell:
+			return t
+	return null
+
+
+## Takes a throw order back (it was not thrown).
+func cancel_throw(t: Throw) -> void:
+	if t.taker:
+		_drop(t.taker)
+	throws.erase(t)
+
+
+## The x on safe ground, reachable from p, from where an engineer throws at cell: at most throw_reach aside of it
+## (any height) and not under it (what it throws falls from there), as near throw_distance aside as it can be
+## without a long way round (a quarter of the walk counts against a spot), and with a clear arc. NAN if none.
+func _throw_spot(p: Vector2, cell: Vector2i, any_height: bool = false) -> float:
+	var target := Vector2(cell) + Vector2(0.5, 0.5)
+	var best := NAN
+	var best_score := INF
+	for k in range(-floori(rules.throw_reach * 2.0), floori(rules.throw_reach * 2.0) + 1):
+		var x := target.x + k * 0.5
+		var aside := absf(x - target.x)
+		if aside < 0.75:
+			continue
+		var score := absf(aside - rules.throw_distance) + 0.25 * absf(x - p.x)
+		if score >= best_score:
+			continue
+		var y := _walk_y(p, x, true, any_height)
+		if is_nan(y) or not ThrownBag.clear(terrain, bridge, rules, _hands(Vector2(x, y)), target):
+			continue
+		best = x
+		best_score = score
+	return best
+
+
+## Where an engineer standing at pos (metres) holds what it throws.
+func _hands(pos: Vector2) -> Vector2:
+	return pos - Vector2(0, 1.0)
+
+
+## Walks to the throwing spot, faces the target, winds up and throws. Gives the throw up if the way is lost.
+func _throw_step(e: Engineer, dt: float) -> void:
+	var t := e.throwing
+	var target := Vector2(t.cell) + Vector2(0.5, 0.5)
+	var ground := _ground_of(e, e.pos.x)
+	var arrived := absf(e.spot_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
+	if not arrived:
+		var was := e.pos
+		_walk_to(e, e.spot_x, dt)
+		if e.pos == was:
+			_drop(e)
+		return
+	e.working = true
+	_show(e, false, signi(roundi((target.x - e.pos.x) * 100)))
+	t.windup += dt
+	if t.windup >= rules.throw_windup:
+		e.throwing = null
+		_throw(t, _hands(e.pos))
+
+
+func _throw(t: Throw, from: Vector2) -> void:
+	throws.erase(t)
+	t.taker = null
+	threw.emit(t, from)
 
 
 ## The engineer that has just finished digging cell (while dig_finished is handled), or null.
@@ -492,6 +609,10 @@ func _builder_of(m: Bridge.Member) -> Engineer:
 
 
 func _drop(e: Engineer) -> void:
+	if e.throwing:
+		e.throwing.taker = null
+		e.throwing.windup = 0.0
+		e.throwing = null
 	e.job = null
 	e.goal = null
 	e.route.clear()

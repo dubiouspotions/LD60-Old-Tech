@@ -991,3 +991,133 @@ func test_an_engineer_comes_down_off_a_structure_bolted_to_a_tower_wall_without_
 	for e: Crew.Engineer in world.crew.engineers:
 		assert_almost_eq(e.pos.y, 8.0, 0.05, "back on the ground")
 		assert_lt(e.pos.x, 10.0, "on the column's side of the tower")
+
+
+## Ground at row 6, a pit 4 wide at x 8..11 down to row 9.
+const SANDBAG_PIT: Array = [
+	"....................",
+	"....................",
+	"....................",
+	"....................",
+	"....................",
+	"....................",
+	"########....########",
+	"########....########",
+	"########....########",
+	"####################",
+	"BBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func _pit() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in SANDBAG_PIT.size():
+		for x in SANDBAG_PIT[y].length():
+			var key: String = WorldFixture.LEGEND[SANDBAG_PIT[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 2.5)
+	world.crew.spawn(2.5)
+
+
+func _sandbag_tool() -> ToolDefinition:
+	return GameState.campaign.tools.filter(func(t: ToolDefinition) -> bool: return t.kind == ToolDefinition.Kind.FILL)[0]
+
+
+## Runs the world until cell holds something or seconds pass; returns where the throw left the hands (INF if never).
+func _throw_and_wait(cell: Vector2i, seconds: float = 10.0) -> Vector2:
+	var from := [Vector2.INF]
+	world.crew.threw.connect(func(_t: Crew.Throw, at: Vector2) -> void: from[0] = at)
+	for i in int(seconds * 60):
+		world.terrain.settle()
+		world._physics_process(1.0 / 60.0)
+		if world.terrain.type_at(cell) != null:
+			break
+	return from[0]
+
+
+func test_an_engineer_throws_an_ordered_sandbag_from_5_tiles_aside_and_it_falls_to_the_ground() -> void:
+	_pit()
+	world.crew.order_throw(Vector2i(10, 3), _sandbag_tool())
+	var from := _throw_and_wait(Vector2i(10, 8))
+	assert_ne(from, Vector2.INF, "thrown")
+	assert_almost_eq(absf(from.x - 10.5), world.crew.rules.throw_distance, 0.26, "from its liked distance aside")
+	assert_eq(world.crew.rules.throw_distance, 5.0)
+	assert_eq(world.terrain.type_at(Vector2i(10, 8)), WorldFixture.type("sandbag"), "fell to the bottom of the pit")
+	assert_eq(world.crew.throws.size(), 0, "done")
+
+
+func test_there_is_no_height_limit_to_a_throw() -> void:
+	_pit()
+	world.crew.order_throw(Vector2i(10, -14), _sandbag_tool())
+	assert_ne(_throw_and_wait(Vector2i(10, 8), 15.0), Vector2.INF, "thrown 19 tiles up")
+	assert_eq(world.terrain.type_at(Vector2i(10, 8)), WorldFixture.type("sandbag"))
+
+
+## Ground only at both ends: a spiked gap from x 2 to 19 nobody walks into.
+const WIDE_GAP: Array = [
+	"......................",
+	"......................",
+	"......................",
+	"......................",
+	"......................",
+	"......................",
+	"##..................##",
+	"##..................##",
+	"##^^^^^^^^^^^^^^^^^^##",
+	"BBBBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func _wide_gap() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in WIDE_GAP.size():
+		for x in WIDE_GAP[y].length():
+			var key: String = WorldFixture.LEGEND[WIDE_GAP[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 1.0)
+	world.crew.spawn(1.0)
+
+
+func test_an_engineer_throws_up_to_8_tiles_aside() -> void:
+	_wide_gap()
+	assert_eq(world.crew.rules.throw_reach, 8.0)
+	world.crew.order_throw(Vector2i(9, 3), _sandbag_tool())
+	var from := _throw_and_wait(Vector2i(9, 3), 3.0)
+	assert_ne(from, Vector2.INF, "thrown from the gap's edge, near 8 tiles aside")
+	assert_between(absf(from.x - 9.5), 7.0, 8.0)
+
+
+func test_an_engineer_does_not_throw_further_than_8_tiles_aside() -> void:
+	_wide_gap()
+	world.crew.order_throw(Vector2i(10, 3), _sandbag_tool())
+	assert_eq(_throw_and_wait(Vector2i(10, 3), 3.0), Vector2.INF, "9 tiles from either edge: nobody throws it")
+	assert_eq(world.crew.throws.size(), 1, "still ordered")
+
+
+func test_an_engineer_throws_from_where_the_arc_is_clear() -> void:
+	_pit()
+	# A block of bedrock hanging in the arc from the liked spot (5 aside, x 5.5).
+	world.terrain.set_type(Vector2i(7, 2), WorldFixture.type("bedrock"))
+	world.crew.order_throw(Vector2i(10, 4), _sandbag_tool())
+	var from := _throw_and_wait(Vector2i(10, 8), 15.0)
+	assert_ne(from, Vector2.INF, "thrown")
+	assert_gt(absf(from.x - 5.5), 0.4, "not from the liked spot")
+	assert_eq(world.terrain.type_at(Vector2i(10, 8)), WorldFixture.type("sandbag"), "not broken on the roof: it landed")
+
+
+func test_instant_work_throws_ordered_sandbags_at_once() -> void:
+	_pit()
+	world.crew.order_throw(Vector2i(10, 3), _sandbag_tool())
+	world.crew.rules.instant_work = true
+	world.terrain.settle()
+	world._physics_process(1.0 / 60.0)
+	world.crew.rules.instant_work = false
+	assert_eq(world.crew.throws.size(), 0)
+	for i in 120:
+		world.terrain.settle()
+		world._physics_process(1.0 / 60.0)
+	assert_eq(world.terrain.type_at(Vector2i(10, 8)), WorldFixture.type("sandbag"))
