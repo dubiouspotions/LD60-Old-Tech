@@ -40,6 +40,8 @@ var resting: bool = false:
 var camp_x: float = NAN
 ## The level's exit flag: soldiers wait here until the whole column has gathered (see gathered()). NAN: none.
 var stop_x: float = NAN
+## Soldiers who mutinied: no longer in the column, walking back the way they came until they vanish.
+var deserters: Array[Soldier] = []
 
 
 func lead() -> Soldier:
@@ -52,9 +54,10 @@ func rear() -> Soldier:
 
 ## Places count soldiers on the ground, the first at x and the rest behind it.
 func spawn(count: int, x: float) -> void:
-	for s in soldiers:
+	for s in soldiers + deserters:
 		s.queue_free()
 	soldiers.clear()
+	deserters.clear()
 	for i in count:
 		_add(maxf(0.5, x - i * rules.spawn_spacing))
 	_update_leader()
@@ -90,6 +93,9 @@ func step(dt: float) -> void:
 		if s.dead:
 			continue
 		s.moving = false
+		# Only a blocked step this tick keeps the mutiny count going.
+		var blocked_for := s.blocked_time
+		s.blocked_time = 0.0
 		if not _settle_vertical(s, dt):
 			continue
 		if s.airborne or s.sleeping:
@@ -124,6 +130,12 @@ func step(dt: float) -> void:
 			var wall := Vector2i(floori(s.pos.x + rules.foot_half_width + dx), floori(s.pos.y - 0.5))
 			if _besiege(s, wall, dt):
 				block = rules.siege_text
+			elif rules.mutiny_time > 0.0:
+				s.blocked_time = blocked_for + dt
+				if s.blocked_time >= rules.mutiny_time:
+					s.deserting = true
+					continue
+				block = rules.mutiny_text % [block, ceili(rules.mutiny_time - s.blocked_time)]
 			if i == 0:
 				halt_reason = block
 			continue
@@ -137,6 +149,7 @@ func step(dt: float) -> void:
 	for s in soldiers:
 		_settle_down(s, dt)
 		s.sync()
+	_step_deserters(dt)
 
 
 ## Walks soldier rank i toward its camp spot, forward or back. Spots squeeze together when the world ends
@@ -376,10 +389,43 @@ func _remove_dead() -> void:
 	for s in soldiers:
 		if s.dead:
 			s.queue_free()
-	soldiers = soldiers.filter(func(s: Soldier) -> bool: return not s.dead)
+		elif s.deserting:
+			_desert(s)
+	soldiers = soldiers.filter(func(s: Soldier) -> bool: return not s.dead and not s.deserting)
 	if soldiers.size() != before:
 		_update_leader()
 		count_changed.emit(soldiers.size())
+
+
+## The soldier leaves the column for good: it turns round and heads back the way the army came.
+func _desert(s: Soldier) -> void:
+	s.on_member = null
+	s.set_leader(false)
+	s.facing = -1
+	s.desert_left = rules.desert_distance
+	deserters.append(s)
+	Effects.say(Grid.to_px(s.pos - Vector2(0, 1.4)), rules.desert_text, Color("e9a93b"))
+	Audio.play(rules.desert_sound, Grid.to_px(s.pos))
+
+
+## Deserters walk west over the top of the ground, climbing any cliff (no armour to carry), and vanish.
+func _step_deserters(dt: float) -> void:
+	for d: Soldier in deserters.duplicate():
+		var top := float(terrain.surface_row(floori(d.pos.x - rules.foot_half_width)))
+		d.moving = true
+		if top < d.pos.y - 0.05:
+			d.pos.y = move_toward(d.pos.y, top, rules.desert_climb_speed * dt)
+		else:
+			var dx := d.speed * dt
+			d.pos.x -= dx
+			d.desert_left -= dx
+			d.pos.y = move_toward(d.pos.y, float(terrain.surface_row(floori(d.pos.x))), rules.desert_climb_speed * dt)
+		d.sync()
+		if d.desert_left <= 0.0 or d.pos.x < terrain.min_x:
+			deserters.erase(d)
+			var tw := d.create_tween()
+			tw.tween_property(d, ^"modulate:a", 0.0, 0.5)
+			tw.tween_callback(d.queue_free)
 
 
 func _update_leader() -> void:
