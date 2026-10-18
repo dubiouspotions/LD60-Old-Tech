@@ -25,6 +25,10 @@ extends Resource
 @export var blocks_arrows: bool = true
 ## Soldiers can walk on top of it.
 @export var walkable: bool = true
+## How far the middle of a 5 m member sinks with one soldier (80 kg) standing at its middle. It grows with the load
+## and with the length cubed, like a real beam, so short pieces barely move. Only the look and the walking surface
+## bend; the joints and breaking are not affected. 0: rigid. Ropes never flex.
+@export_range(0.0, 1.0, 0.01, "suffix:m") var flex: float = 0.08
 
 @export_group("Messages")
 @export var snapped_text: String = "Log pulled apart"

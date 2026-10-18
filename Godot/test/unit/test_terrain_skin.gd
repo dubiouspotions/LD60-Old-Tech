@@ -129,27 +129,44 @@ func test_a_painted_variant_is_kept_while_it_still_fits() -> void:
 	assert_has(look.corner_tl, _tile(Vector2i(5, 2)), "re-picked once it no longer fits")
 
 
-func test_retile_turns_old_material_tiles_into_v2() -> void:
-	var old := terrain.atlas_tile(_type("soil"))
-	terrain.set_cell(Vector2i(5, 2), old[0], old[1])
+func test_painted_water_and_spikes_keep_their_old_art() -> void:
+	var old := terrain.atlas_tile(_type("water"))
+	terrain.set_cell(Vector2i(9, 6), old[0], old[1])
 	terrain.retile_all()
-	assert_true(_v2(Vector2i(5, 2)))
-	assert_eq(terrain.painted_type(Vector2i(5, 2)), _type("soil"))
+	assert_eq(terrain.get_cell_source_id(Vector2i(9, 6)), old[0], "designer's water kept")
+	assert_eq(terrain.painted_type(Vector2i(9, 6)), _type("water"))
 
 
-func test_switching_off_draws_the_old_tiles() -> void:
+func test_new_water_gets_the_v2_tile() -> void:
+	terrain.set_type(Vector2i(9, 4), _type("water"))
+	assert_true(_v2(Vector2i(9, 4)))
+
+
+func test_switching_off_draws_old_tiles_where_old_art_exists() -> void:
 	look.enabled = false
 	terrain.retile_all()
 	skin.refresh()
-	assert_eq(terrain.get_cell_source_id(Vector2i(5, 2)), look.classic_source)
-	assert_has(look.classic_grass, _tile(Vector2i(5, 2)), "old grass on top")
-	assert_has(look.classic_dirt, _tile(Vector2i(5, 3)), "old dirt below")
-	assert_has(look.classic_rock, _tile(Vector2i(4, 5)))
+	assert_eq(terrain.get_cell_source_id(Vector2i(9, 5)), look.classic_source, "water has old art")
 	assert_has(look.classic_water_top, _tile(Vector2i(9, 5)))
 	assert_has(look.classic_water, _tile(Vector2i(9, 6)))
 	assert_eq(terrain.get_cell_source_id(Vector2i(3, 2)), -1, "no fillets")
-	assert_eq(terrain.painted_type(Vector2i(4, 5)), _type("rock"), "materials unchanged")
 	assert_eq(skin.body_layer().get_used_cells().size(), 0, "no overlay")
+
+
+func test_a_material_without_old_art_keeps_its_v2_tile_when_switched_off() -> void:
+	look.enabled = false
+	terrain.retile_all()
+	if terrain.atlas_tile(_type("soil")).is_empty():
+		assert_true(_v2(Vector2i(5, 2)), "soil has no old art left, so it stays v2")
+
+
+## Whatever the look, a cell's tile always carries the cell's material: drawing never changes what the ground is.
+func test_tiles_always_carry_their_cells_material() -> void:
+	for on in [true, false]:
+		look.enabled = on
+		terrain.retile_all()
+		for cell in terrain.get_used_cells():
+			assert_eq(terrain.painted_type(cell), terrain.type_at(cell), "%s with the look %s" % [cell, "on" if on else "off"])
 
 
 func test_terrain_has_a_retile_button() -> void:

@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://ddwbaotdmjfto"]
 
 [ext_resource type="Script" uid="uid://b3dqm07h50tl1" path="res://levels/level.gd" id="1"]
-[ext_resource type="PackedScene" path="res://world/terrain.tscn" id="2"]
-[ext_resource type="AudioStream" uid="uid://dyv3yykx65lwm" path="res://audio/music/march_music.wav" id="2_p3adb"]
+[ext_resource type="PackedScene" uid="uid://gl6wsbyjukx4" path="res://world/terrain.tscn" id="2"]
+[ext_resource type="AudioStream" uid="uid://rsqcbf1000s0" path="res://audio/music/march_music.ogg" id="2_da5si"]
 [ext_resource type="PackedScene" path="res://objects/checkpoint_flag/checkpoint_flag.tscn" id="5"]
 
 [node name="Level" type="Node2D" unique_id=1546824629]
 script = ExtResource("1")
-music = ExtResource("2_p3adb")
+music = ExtResource("2_da5si")
 
 [node name="Terrain" parent="." unique_id=640212506 instance=ExtResource("2")]
 unique_name_in_owner = true
@@ -23,4 +23,3 @@ position = Vector2(208, 768)
 unique_name_in_owner = true
 position = Vector2(4048, 768)
 label = "L2"
-
