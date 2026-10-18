@@ -8,6 +8,7 @@ display_name = "Water"
 solid = false
 anchor = false
 fill_replaces = true
+refills = true
 buoyant = true
 hazard = 1
 death_text = "Drowned"

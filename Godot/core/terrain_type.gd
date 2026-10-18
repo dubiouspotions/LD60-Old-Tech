@@ -24,6 +24,8 @@ enum DigAction { NONE, REMOVE, FELL }
 @export var falls: bool = false
 ## A tile dropped by a Fill tool (a box) can land in this tile, replacing it.
 @export var fill_replaces: bool = false
+## Comes back when what took its place is gone (water: a sandbag dug out of it, or falling out of it).
+@export var refills: bool = false
 ## Wood floats in it.
 @export var buoyant: bool = false
 

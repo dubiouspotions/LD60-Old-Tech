@@ -70,6 +70,7 @@ var min_x: int = 0
 var drops_loose: bool = false
 
 var _types: Dictionary = {} # Vector2i -> TerrainType
+var _beneath: Dictionary = {} # Vector2i -> TerrainType that Refills, to come back when the cell empties
 var _tile_for: Dictionary = {} # TerrainType -> [source_id, atlas_coords]
 var _dirty_cols: Dictionary = {} # int -> true
 var _marks: Dictionary = {} # Vector2i -> dig progress 0..1
@@ -181,6 +182,7 @@ func _tile_data_runtime_update(coords: Vector2i, tile_data: TileData) -> void:
 ## Re-reads every painted cell. Call after painting from code.
 func rebuild() -> void:
 	_types.clear()
+	_beneath.clear()
 	_tile_for.clear()
 	_marks.clear()
 	_siege.clear()
@@ -237,8 +239,17 @@ func ramp_at(cell: Vector2i) -> int:
 	return 0
 
 
-## Changes one cell. null makes it air. Re-picks the tiles around it and marks the area for settle().
+## Changes one cell. null makes it air, or what it took the place of if that Refills (water). Re-picks the tiles
+## around it and marks the area for settle().
 func set_type(cell: Vector2i, type: TerrainType) -> void:
+	var old: TerrainType = _types.get(cell)
+	if type == null:
+		type = _beneath.get(cell)
+		_beneath.erase(cell)
+	elif type.refills:
+		_beneath.erase(cell)
+	elif old and old.refills:
+		_beneath[cell] = old
 	_changed[cell] = true
 	if type != _types.get(cell):
 		_marks.erase(cell)
@@ -585,6 +596,7 @@ func _erase_columns(hit: Callable) -> void:
 		if hit.call(cell.x):
 			erase_cell(cell)
 			_types.erase(cell)
+			_beneath.erase(cell)
 			_changed[cell] = true
 	for cell: Vector2i in _marks.keys():
 		if hit.call(cell.x):

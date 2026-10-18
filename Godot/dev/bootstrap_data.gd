@@ -71,7 +71,7 @@ func _terrain() -> void:
 		debris_color = Color("8ff0e0")})
 	_t("brick", "Brick", {anchor = false, structure = true, raze_time = 15.0, too_hard_text = too_hard,
 		bulk_yield = Supplies.make(0, 0, 0, 0, 1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})
-	_t("water", "Water", {solid = false, anchor = false, fill_replaces = true, buoyant = true,
+	_t("water", "Water", {solid = false, anchor = false, fill_replaces = true, refills = true, buoyant = true,
 		hazard = TerrainType.Hazard.WATER, death_text = "Drowned", ahead_text = "Water ahead", debris_color = Color("3480b6")})
 	_t("spikes", "Spikes", {solid = false, anchor = false, hazard = TerrainType.Hazard.SPIKES, breaks_falling = true,
 		death_text = "Spiked", ahead_text = "Spikes ahead", debris_color = Color("cfd4da")})
