@@ -46,7 +46,11 @@ func _ready() -> void:
 	_hud.tool_pressed.connect(_tools.select)
 	_hud.pause_pressed.connect(_toggle_pause)
 	_hud.speed_pressed.connect(_toggle_speed)
-	_hud.follow_pressed.connect(_camera.snap_to_lead)
+	_hud.follow_toggled.connect(func(on: bool) -> void:
+		if on:
+			_camera.snap_to_lead()
+		else:
+			_camera.follow = false)
 	_hud.build_pressed.connect(_on_build_pressed)
 	_hud.cancel_pressed.connect(_on_cancel_pressed)
 	_hud.march_pressed.connect(_march)

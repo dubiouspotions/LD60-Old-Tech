@@ -5,7 +5,8 @@ extends CanvasLayer
 signal tool_pressed(index: int)
 signal pause_pressed
 signal speed_pressed
-signal follow_pressed
+## The Follow button was switched on or off.
+signal follow_toggled(on: bool)
 ## The player clicked the Build button above plan number index (as last passed to set_build_spots).
 signal build_pressed(index: int)
 ## The player clicked the cancel button beside plan number index.
@@ -45,7 +46,9 @@ var _group := ButtonGroup.new()
 func _ready() -> void:
 	%PauseButton.pressed.connect(_emit.bind(pause_pressed))
 	%SpeedButton.pressed.connect(_emit.bind(speed_pressed))
-	%FollowButton.pressed.connect(_emit.bind(follow_pressed))
+	%FollowButton.toggled.connect(func(on: bool) -> void:
+		Audio.play(click_sound)
+		follow_toggled.emit(on))
 	%MarchButton.pressed.connect(_emit.bind(march_pressed))
 	%RecruitButton.pressed.connect(_emit.bind(recruit_pressed))
 	%BeginButton.pressed.connect(_emit.bind(begin_pressed))
@@ -155,8 +158,9 @@ func set_volumes(music: float, sound: float) -> void:
 	%SoundSlider.set_value_no_signal(sound)
 
 
+## Shows whether the camera follows, without reporting it back.
 func set_follow(on: bool) -> void:
-	%FollowButton.button_pressed = on
+	%FollowButton.set_pressed_no_signal(on)
 
 
 func set_level(number: int, marched_m: int) -> void:
