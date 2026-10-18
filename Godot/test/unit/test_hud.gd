@@ -48,7 +48,7 @@ func test_recruit_button_shows_at_camp_and_reports_clicks() -> void:
 	watch_signals(hud)
 	hud.set_recruit(true, 5, true, Vector2.ZERO)
 	var b: Button = hud.get_node("%RecruitButton")
-	assert_true(b.visible)
+	assert_true(b.is_visible_in_tree(), "on screen, not hidden by a parent")
 	assert_string_contains(b.text, "5")
 	b.pressed.emit()
 	assert_signal_emitted(hud, "recruit_pressed")
@@ -63,6 +63,7 @@ func test_build_and_cancel_buttons_float_above_plans() -> void:
 	hud.set_build_spots([Vector2(100, 200), Vector2(300, 220)], [2, 1])
 	var pairs := hud.get_node("%WorldButtons").get_children().filter(func(n: Node) -> bool: return n is PlanButtons and n.visible)
 	assert_eq(pairs.size(), 2)
+	assert_true((pairs[0] as Control).is_visible_in_tree(), "on screen, not hidden by a parent")
 	var second: PlanButtons = pairs[1]
 	assert_almost_eq(second.position.x + second.size.x / 2, 300.0, 1.0, "centred on its plan")
 	assert_almost_eq(second.position.y + second.size.y, 220.0, 1.0, "sits above it")
