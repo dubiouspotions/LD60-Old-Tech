@@ -179,6 +179,9 @@ class Snap:
 
 ## Slowest a piece can meet the ground (m/s) for it to count as a hit (damage by its energy), not settling.
 const HIT_SPEED: float = 1.0
+## A point is buried in the ground when solid lies this far around it on every side; a plan's buried end moved out
+## lands within twice this of the ground's face, and is put exactly on it.
+const BURIED_MARGIN: float = 0.01
 ## A point this close to a solid cell's edge touches it.
 const EDGE_TOUCH: float = 0.005
 ## Spacing (m) of the points along a member that are kept out of the ground.
@@ -263,7 +266,7 @@ func fit_to_ground(a: Snap, b: Snap) -> Snap:
 	var p := a.pos.lerp(b.pos, hi)
 	# Onto the cell edge it crossed, so the joint sits exactly on the ground's face.
 	for k in 2:
-		if absf(p[k] - roundf(p[k])) < 0.001:
+		if absf(p[k] - roundf(p[k])) <= BURIED_MARGIN * 2.0:
 			p[k] = roundf(p[k])
 	return Snap.new(p, null, anchorable(p))
 
@@ -814,8 +817,8 @@ func _joined(a: Joint, b: Joint) -> bool:
 
 ## Inside the ground: solid all around, not on its surface.
 func _buried(p: Vector2) -> bool:
-	for d: Vector2 in [Vector2(-0.01, -0.01), Vector2(0.01, -0.01), Vector2(-0.01, 0.01), Vector2(0.01, 0.01)]:
-		if not terrain.is_solid(Grid.cell_of(p + d)):
+	for d: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		if not terrain.is_solid(Grid.cell_of(p + d * BURIED_MARGIN)):
 			return false
 	return true
 
