@@ -166,11 +166,18 @@ func shop_spot() -> Vector2:
 
 
 ## Starts (or restarts) the column at level index with soldiers: everything from that level on is put back
-## as designed, and the column camps at its start flag.
+## as designed, and the column camps at its start flag. If the level behind was unloaded, it is put back too (as
+## designed), so the camp has ground behind it and the view can pan back over it, as on arrival.
 func begin(index: int, soldiers: int) -> void:
 	_done = false
 	if index == 0 or not _placements.has(index):
 		_wipe()
+	elif chunk(index - 1) == null and _placements.has(index - 1):
+		var keep := {index - 1: _placements[index - 1], index: _placements[index]}
+		_wipe()
+		_placements = keep
+		terrain.unload_before(keep[index - 1][1])
+		place_now(index - 1)
 	rewind(index)
 	current = index
 	GameState.level_index = index
@@ -232,7 +239,8 @@ func unload(index: int) -> void:
 	birds.forget_before(edge)
 	bridge.remove_outside(edge, INF)
 	_free_objects(func(x: float) -> bool: return x < edge)
-	_drop(index, true)
+	# Where it was placed is kept: a restart at the next level puts it back there.
+	_drop(index, false)
 
 
 ## Buys one soldier with gold while the column camps; it joins the camp. Returns false when not camping,

@@ -72,6 +72,25 @@ func test_unload_drops_the_level_behind() -> void:
 	assert_true(is_instance_valid(c1.start_flag), "camp flag of the next level kept")
 
 
+## Restarting from a checkpoint whose level behind was already unloaded puts that level back, as on arrival: the
+## column camps on the ground behind its flag and the view can pan back over it.
+func test_restarting_at_a_checkpoint_puts_the_level_behind_back() -> void:
+	world.begin(0, 3)
+	var c1 := world.place_now(1)
+	world.unload(0)
+	world.begin(1, 8)
+	assert_not_null(world.chunk(0), "the level behind is back")
+	c1 = world.chunk(1)
+	var flag := c1.start_flag.metres().x
+	assert_lt(world.terrain.min_x, floori(flag) - 10, "ground behind the camp flag")
+	for s in world.army.soldiers:
+		assert_lt(s.pos.x, flag + 0.01, "behind the flag")
+		assert_false(world.terrain.type_at(Grid.cell_of(s.pos + Vector2(0, 0.5))) == world.terrain.out_of_bounds,
+				"%s stands on the level's ground, not the edge of the world" % s.pos)
+		assert_almost_eq(s.pos.y, float(world.terrain.surface_row(floori(s.pos.x))), 0.01, "on its surface")
+		assert_gt(s.pos.y, 1.0, "not up in the sky")
+
+
 func test_column_arrives_and_camps_at_the_next_level() -> void:
 	world.begin(0, 3)
 	world.march()
