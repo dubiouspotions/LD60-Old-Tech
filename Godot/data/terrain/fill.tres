@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TerrainType" format=3 uid="uid://cyp0yfvbtc5r"]
+
+[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="1_kixym"]
+[ext_resource type="Resource" path="res://data/sounds/dig.tres" id="2_4pqph"]
+[ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="3_8jium"]
+
+[sub_resource type="Resource" id="Resource_mcdww"]
+script = ExtResource("1_kixym")
+logs = 2
+
+[sub_resource type="Resource" id="Resource_qbo1d"]
+script = ExtResource("1_kixym")
+logs = 2
+
+[resource]
+script = ExtResource("3_8jium")
+display_name = "Box"
+falls = true
+dig_action = 1
+dig_time = 0.3
+dig_yield = SubResource("Resource_qbo1d")
+dig_sound = ExtResource("2_4pqph")
+impact_strength = 150.0
+bulk_yield = SubResource("Resource_mcdww")
+debris_color = Color(0.627451, 0.4392157, 0.24705882, 1)

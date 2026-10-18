@@ -15,7 +15,7 @@ signal collapsed(found: Supplies, cells: Array[Vector2i])
 ## A tree is coming down, whatever brought it down: every cell of it, just before they are cleared, and its yield,
 ## which fell() then returns. A listener may take some of the yield out (the World drops the logs as wood).
 signal felled(cells: Array[Vector2i], found: Supplies)
-## A cell's material changed while playing (dug, filled, fell, collapsed).
+## A cell's material changed: dug, filled, fell or collapsed while playing, or painted in the editor.
 signal cell_changed(cell: Vector2i)
 ## A tower or tree lost the ground under it and came out as one piece (see lift()), when drops_loose is on.
 signal came_loose(tiles: Dictionary)
@@ -70,6 +70,7 @@ var min_x: int = 0
 var drops_loose: bool = false
 
 var _types: Dictionary = {} # Vector2i -> TerrainType
+var _beneath: Dictionary = {} # Vector2i -> TerrainType that Refills, to come back when the cell empties
 var _tile_for: Dictionary = {} # TerrainType -> [source_id, atlas_coords]
 var _dirty_cols: Dictionary = {} # int -> true
 var _marks: Dictionary = {} # Vector2i -> dig progress 0..1
@@ -82,6 +83,7 @@ var _alts: Dictionary = {} # v2 atlas coords -> {TerrainType, or AIR_KEY for air
 var _hits: Dictionary = {} # Vector2i -> seconds since it was hit
 var _ripple: Dictionary = {} # Vector2i -> seconds after the latest tower hit that the ripple reaches it
 var _ripple_age: float = 0.0 # seconds since the latest tower hit
+var _painted: Dictionary = {} # Vector2i -> true: cells painted in the editor, re-picked around after the paint
 
 
 func _ready() -> void:
@@ -169,6 +171,23 @@ func hit_flash_at(cell: Vector2i) -> Color:
 	return hit_flash if _hits.has(cell) and _hits[cell] < hit_time * hit_flash_share else Color.WHITE
 
 
+## In the editor, the tiles around cells painted by hand are re-picked after the paint (not inside this update:
+## cells set here are not drawn).
+func _update_cells(coords: Array[Vector2i], _forced_cleanup: bool) -> void:
+	if not Engine.is_editor_hint() or coords.is_empty():
+		return
+	if _painted.is_empty():
+		_retile_painted_later.call_deferred()
+	for c in coords:
+		_painted[c] = true
+
+
+func _retile_painted_later() -> void:
+	var cells := _painted.keys()
+	_painted.clear()
+	retile_painted(cells)
+
+
 func _use_tile_data_runtime_update(coords: Vector2i) -> bool:
 	return _hits.has(coords) or _ripple.has(coords)
 
@@ -181,6 +200,7 @@ func _tile_data_runtime_update(coords: Vector2i, tile_data: TileData) -> void:
 ## Re-reads every painted cell. Call after painting from code.
 func rebuild() -> void:
 	_types.clear()
+	_beneath.clear()
 	_tile_for.clear()
 	_marks.clear()
 	_siege.clear()
@@ -237,8 +257,17 @@ func ramp_at(cell: Vector2i) -> int:
 	return 0
 
 
-## Changes one cell. null makes it air. Re-picks the tiles around it and marks the area for settle().
+## Changes one cell. null makes it air, or what it took the place of if that Refills (water). Re-picks the tiles
+## around it and marks the area for settle().
 func set_type(cell: Vector2i, type: TerrainType) -> void:
+	var old: TerrainType = _types.get(cell)
+	if type == null:
+		type = _beneath.get(cell)
+		_beneath.erase(cell)
+	elif type.refills:
+		_beneath.erase(cell)
+	elif old and old.refills:
+		_beneath[cell] = old
 	_changed[cell] = true
 	if type != _types.get(cell):
 		_marks.erase(cell)
@@ -282,6 +311,15 @@ func retile_all() -> void:
 			editor.call(&"mark_scene_as_unsaved")
 
 
+## Reads the painted tiles again and re-picks the tiles around cells, painted by hand (the TileMap editor does
+## this as you paint).
+func retile_painted(cells: Array) -> void:
+	rebuild()
+	_retile_around(cells)
+	for c: Vector2i in cells:
+		cell_changed.emit(c)
+
+
 func _v2() -> bool:
 	return look != null and look.enabled and tile_set != null and tile_set.has_source(look.source_id)
 
@@ -316,7 +354,7 @@ func _retile(cell: Vector2i) -> void:
 	var v2 := _v2() or (t != null and look != null and atlas_tile(t).is_empty() and tile_set.has_source(look.source_id))
 	var role := rules().role(cell) if v2 and (t != null or _v2()) else &""
 	if role != &"":
-		if src == look.source_id and look.role_of(get_cell_atlas_coords(cell)) == role and _read_cell(cell) == t:
+		if src == look.source_id and look.fits(role, get_cell_atlas_coords(cell)) and _read_cell(cell) == t:
 			return
 		if src == look.classic_source and _read_cell(cell) == t and not look.is_ground(t):
 			return
@@ -585,6 +623,7 @@ func _erase_columns(hit: Callable) -> void:
 		if hit.call(cell.x):
 			erase_cell(cell)
 			_types.erase(cell)
+			_beneath.erase(cell)
 			_changed[cell] = true
 	for cell: Vector2i in _marks.keys():
 		if hit.call(cell.x):
@@ -625,6 +664,20 @@ func tile_texture(type: TerrainType) -> Texture2D:
 
 func cell_center_px(cell: Vector2i) -> Vector2:
 	return Grid.to_px(Vector2(cell) + Vector2(0.5, 0.5))
+
+
+## Splashes if something whose lowest point moved from a to b (metres), falling at vy m/s, went into a liquid
+## (a type with a Splash Amount) from out of it: at the liquid's surface above b, unless slower than Splash Speed.
+func splash(a: Vector2, b: Vector2, vy: float) -> void:
+	var cell := Grid.cell_of(b)
+	var t := type_at(cell)
+	if t == null or t.splash_amount <= 0 or vy < t.splash_speed or type_at(Grid.cell_of(a)) == t:
+		return
+	while cell.y > 0 and type_at(cell + Vector2i.UP) == t:
+		cell += Vector2i.UP
+	var at := Grid.to_px(Vector2(b.x, cell.y))
+	Effects.splash(at, t.debris_color, t.splash_amount)
+	Audio.play(t.splash_sound, at)
 
 
 func _detach_loose(xs: Array) -> void:

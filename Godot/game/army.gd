@@ -283,6 +283,7 @@ func _settle_vertical(s: Soldier, dt: float) -> bool:
 				kill(s, rules.fell_text)
 				return false
 		else:
+			terrain.splash(s.pos, Vector2(s.pos.x, ny), s.vy)
 			s.pos.y = ny
 	else:
 		var sup := _support(s, s.pos.y - rules.step_up)

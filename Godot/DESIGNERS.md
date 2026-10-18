@@ -65,11 +65,12 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Where stone comes from | Rock tiles (`data/terrain/rock.tres`, **Dig Yield**) and razed towers (`data/terrain/brick.tres`, **Bulk Yield**) |
 | Where gold comes from | Gold ore tiles (`data/terrain/crystal.tres`), the campaign's **Start Supplies**, and each level's **Supply Drop** |
 | Do archers shoot at night | **Rests At Night** on `objects/archer/archer.tscn` |
+| The dashed circle around each archer showing its shooting range (off by default; only the look, the range itself is **Shoot Range**) | **Show Range** and **Range Color** in the **Look** group on `objects/archer/archer.tscn` |
 | How early the next level loads, how far behind levels are removed | **Stream Ahead** / **Unload Behind** on `game/world.tscn` |
 
 ## Tiles and terrain types
 
-- `data/terrain/*.tres` holds one TerrainType per material. It sets: solid, natural ground (holds bricks up; bridge joints bolt to any solid tile), structure (falls when nothing holds it up), falls (boxes), hazard (water or spikes, with the death and "ahead" texts), dig action and yields, and debris colour.
+- `data/terrain/*.tres` holds one TerrainType per material. It sets: solid, natural ground (holds bricks up; bridge joints bolt to any solid tile), structure (falls when nothing holds it up), falls (boxes, sandbags), refills (water: it comes back when a sandbag or box that landed in it is dug out or falls out), hazard (water or spikes, with the death and "ahead" texts), dig action and yields, and debris colour.
 - `world/tileset.tres` is the TileSet. Each tile's **terrain** custom data points to a TerrainType. To add a material: create a TerrainType, add tiles to the atlas, and set their **terrain** data.
 - `world/tiles.png` is placeholder art. Replace it with your own; keep the layout or reassign the tiles in the TileSet editor.
 
@@ -87,9 +88,10 @@ v2 sheet; nothing uses it any more.
   tunnel roof meets its wall get the bottom inner corners. Digging a tunnel in play picks them for you.
 - **Rock in the dirt is drawn for you.** Paint rock cells with the full rock tile. The rounded dirt-to-rock edges are
   an overlay on the half-cell grid, and it shows in the editor as you paint.
-- **Retile** (select the level's **Terrain** node, then the button at the top of the Inspector) fixes every cell whose
-  tile does not fit its neighbours and keeps every tile that does. Paint roughly with any tile of the right material,
-  press Retile, then save. Variants you picked by hand stay as long as they still fit.
+- **Painting re-picks the tiles around it.** Paint roughly with any tile of the right material: the tiles around what
+  you painted that no longer fit their neighbours are re-picked as you go, and the rock overlay follows. Variants you
+  picked by hand stay as long as they still fit. **Retile** (select the level's **Terrain** node, then the button at
+  the top of the Inspector) does the same for every cell at once, for example after the roles changed.
 - **Decorations are kept.** An old tile with no material painted in the air (source 0) is never touched by Retile or
   by digging next to it.
 - **While playing,** the same rules re-pick the tiles around anything that changes the ground (digging, collapses,
@@ -97,25 +99,38 @@ v2 sheet; nothing uses it any more.
 - **Water, spikes and other materials** (brick, trees, box, gold ore) have no art on the sheet and use their old
   tiles. Water picks the *Classic look* surface and deep tiles; water or spikes you paint by hand are kept.
 - **The roles** are in `data/terrain_look.tres`: which atlas tiles are flat tops, corners, walls, inner corners
-  (top and bottom), ceilings, dirt, rock and fillets. A role with several tiles gives variety: a cell that needs a new
+  (top and bottom), ceilings, dirt, rock and fillets. **Flat Tops Fillet** are the tops under a fillet, drawn so the
+  slope's grass runs on into them without gaps (empty uses Flat Tops). A role with several tiles gives variety: a cell that needs a new
   tile picks one by its position, and solid rock varies over the **Rock** tiles. The `*_alt` roles (the square grass
   corners) are valid when painted but never picked. **Body** is the rock overlay: 16 tiles indexed by which of the four
   cells around a corner are rock (top-left 1, top-right 2, bottom-left 4, bottom-right 8). The two diagonal cases (6
   and 9) have no art yet and fall back to full rock. The grass tufts tile (0, 0) is not used yet.
 - **Switching off** (**Enabled** on the look, or **art › Terrain V2** on ValueTweaks) draws everything with the old
   tiles: the *Classic look* roles, with grass where soil meets the air. Levels need no repainting either way.
-- Rock touching the air gets the grass edge like dirt, because the sheet has no bare-rock edge pieces.
+- **Rock never gets grass.** Rock and bedrock touching the air (the surface, a tunnel dug into rock) use the **Rock
+  edges** roles on the look: the same places as the grass roles, plus fillets for steps of rock. The sheet has no rock
+  edge art yet, so they are empty: an empty edge role draws the Rock tiles (square edges) and an empty fillet draws
+  nothing. Draw the art, list it there, and run `build_tiles_v2.tscn -- tileset` so each tile gets its rock and bedrock
+  alternatives; no code changes.
 
 ### Tall grass
 
 Each level has a **Grass** layer (under the level root, after ExitFlag) for patches of tall grass that sway and are
-drawn in front of the soldiers, engineers and objects. Select **Grass**, pick the grass tile in the TileMap panel and
-paint it in the air cells right on top of the ground. Scatter it in small patches rather than everywhere.
+drawn in front of the soldiers, engineers and objects. It grows by itself in the editor: whenever you paint the
+Terrain, open the level or change a setting, the grass is regrown in patches on open soil, clear of the flags and
+objects. Moved a flag or an object? Press **Regrow Grass** on the level root.
 
-- Grass on ground that is dug away, or in a cell that gets filled, disappears while playing.
-- `godot --headless res://dev/scatter_grass.tscn` scatters a first coverage (runs of 2–4 cells on flat soil, 6–14 m
-  apart, clear of flags and objects) over every level that has no grass yet, to paint over by hand. Add `force` to
-  redo levels that already have grass (this replaces what you painted), and `gap=`, `width=` or `seed=` to vary it.
+- **The settings** are the **Scatter** on the Grass node, `data/grass_scatter.tres` for every level: what ground it
+  grows on, metres between patches (least, most), cells per patch (least, most), metres kept clear of flags, objects
+  and the level's ends, and a seed for other places. Each level gets its own pattern from its file name. For one
+  level that should differ, give its Grass node its own Scatter (*Make Unique*).
+- **To paint grass by hand,** clear the Scatter on that level's Grass node, then pick the grass tile in the TileMap
+  panel and paint it in the air cells right on top of the ground.
+- Painting the ground in one spot never moves the grass elsewhere: where patches go depends only on the seed.
+- Grass on ground that is dug away, or in a cell that gets filled, disappears while playing, and in the editor
+  as soon as you paint ground over it or erase the ground under it.
+- `godot --headless res://dev/scatter_grass.tscn` regrows and saves the grass of every level at once (after
+  changing the settings, so levels you have not opened match).
 - `test_levels` checks that every grass cell is in the air with ground under it.
 - **The animation** plays the frames of `world/grass_anim.png` (8 px each, left to right, drawn at 4x like the rest
   of the art) from `world/tall_grass_material.tres`. Each column of the world starts one frame later than the column
@@ -168,11 +183,12 @@ A sheet whose sky is a solid colour instead: set it as **Source Texture**, the c
 | Bridge / support / rope / stone strength, length, mass, cost (per started metre), colours | `data/bridge/log.tres` (Log), `support.tres`, `rope.tres`, `stone.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. **Flex** is how far the middle of a 5 m piece sinks with one soldier standing on it (it grows with the load and the length cubed; 0 is rigid; ropes never flex). **Solid To Bodies**: soldiers and archers collide with it (off for supports and ropes). **Solid Along**: its whole length collides (off for ropes). |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list). Each button shows its cost as supply swatches (build tools use their material's cost) and dims when it can't be afforded; the dim look is on `ui/tool_button.tscn` |
 | Arrows | `objects/arrow/arrow.tscn` |
-| Sandbag (the Sandbag tool, `data/tools/2_sandbag.tres`, 10 earth): the click orders it, and an engineer walks to a standing spot at most **Throw Reach** aside of it (any height, not under it), as near **Throw Distance** aside as it can without a long way round and with a clear arc, winds up (**Throw Windup**) and throws it in an arc (**Throw Speed**, **Throw Arc Per Metre**, **Throw Arc Least**); it then falls and lands as a sandbag tile (`data/terrain/sandbag.tres`, art `world/sandbag.png`). If it hits anything on the way (ground, a bridge piece, a soldier, archer or engineer) it breaks in a cloud of dust and hurts nobody. Clicking an order again takes it back with all its cost. A tool with **Thrown** off drops its block at the cursor instead | throw tuning in `data/crew_rules.tres`; the falling sandbag `objects/sandbag/sandbag.tscn`; on `objects/sandbag/thrown_bag.tscn`: **Spin** (turns a second, about its centre), **Hit Margin**, **Dust Amount**, **Break Sound** |
+| Sandbag (the Sandbag tool, `data/tools/2_sandbag.tres`, 10 earth): the click orders it, and an engineer walks to a standing spot at most **Throw Reach** aside of it (any height, not under it), as near **Throw Distance** aside as it can without a long way round and with a clear arc, winds up (**Throw Windup**) and throws it in an arc (**Throw Speed**, **Throw Arc Per Metre**, **Throw Arc Least**); it then falls and lands as a sandbag tile (`data/terrain/sandbag.tres`, art `world/sandbag.png`). If it hits anything on the way (ground, a bridge piece, a soldier, archer or engineer), or falls on a soldier or archer, it breaks in a cloud of dust and hurts nobody. Clicking an order again takes it back with all its cost. A tool with **Thrown** off drops its block at the cursor instead | throw tuning in `data/crew_rules.tres`; the falling sandbag `objects/sandbag/sandbag.tscn` (**Harmless**: breaks on people instead of crushing them; **Smash Dust**, **Smash Sound**: how it breaks); on `objects/sandbag/thrown_bag.tscn`: **Spin** (turns a second, about its centre), **Hit Margin** |
 | Debris, floating text | `objects/effects/` |
 | How a tile shakes and blinks when a soldier strikes it or a bridge piece hits it (**Hit Time**, **Hit Shake** in pixels, **Hit Flash** colour, **Hit Flash Share**), and the ripple that runs from it through the rest of the tower and its battlements to show the whole tower will fall (**Ripple Lift** in pixels, **Ripple Speed**, **Ripple Time**) | **Hit effect** group on the **Terrain** node (`world/terrain.tscn`). Sparks look: `objects/effects/sparks.tscn`. |
 | A razed tower's fall: the row struck (and anything below) is crushed at once; the rest drops a column at a time, left to right (**Collapse Stagger** seconds apart, on the **World** node in `game/world.tscn`), and each row breaks as it hits the ground. Its archer hangs a moment (**Topple Hang**), falls (**Topple Gravity**), lies flat and perfectly still (**Lie Time**), then blinks **Vanish Blinks** times (**Vanish Flash**) and vanishes in a puff (**Smoke Color**, **Smoke Puffs**). The column waits until it is all over, with **Collapse Text** as its status | Archer timings: **Topple** group on `objects/archer/archer.tscn`. Status text: `data/army_rules.tres`. How fast the rest falls: `objects/falling_piece/falling_piece.tscn`. |
 | A tower breaking up (razed or collapsing): chunks and dust per cell (**Collapse Rubble**, **Collapse Rubble Speed**, **Collapse Dust**, how much paler the dust is than the stone: **Collapse Dust Pale**); its battlements and other decorations painted on it come down with it | **Collapse effect** group on the **Terrain** node. Particle looks: `objects/effects/rubble.tscn`, `objects/effects/dust.tscn`. Chunks take the stone's **Debris Colour**. |
+| A splash where anything falls into water (a sandbag or box, a thrown sandbag, a soldier, an engineer, a bridge piece, a falling tower or tree): drops of the liquid's **Debris Colour** thrown up at its surface (**Splash Amount**, 0: none), only when it goes in at **Splash Speed** or faster (walking in does not splash), with **Splash Sound** | **Look** group on `data/terrain/water.tres` (any terrain type can splash). Particle look: `objects/effects/splash.tscn`; how much paler the drops are: **Splash Pale** on `core/effects.tscn` |
 | Sky, sun, stars, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |
 | Bridge physics feel, build messages, blueprint / ordered colours | **Bridge** node in `game/world.tscn` |

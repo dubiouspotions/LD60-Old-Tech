@@ -19,6 +19,7 @@ rock_types = Array[ExtResource("3_tt")]([ExtResource("5_rock"), ExtResource("6_b
 water_types = Array[ExtResource("3_tt")]([ExtResource("7_water")])
 spike_types = Array[ExtResource("3_tt")]([ExtResource("8_spikes")])
 flat_tops = Array[Vector2i]([Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 1)])
+flat_tops_fillet = Array[Vector2i]([Vector2i(4, 5), Vector2i(4, 6)])
 corner_tl = Array[Vector2i]([Vector2i(2, 0)])
 corner_tr = Array[Vector2i]([Vector2i(3, 0)])
 corner_tl_alt = Array[Vector2i]([Vector2i(5, 0)])

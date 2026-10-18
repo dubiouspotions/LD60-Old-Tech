@@ -69,6 +69,9 @@ func step(dt: float, world: World) -> void:
 	for r in riders:
 		if is_instance_valid(r):
 			r.position.y += (next - fallen) * Grid.PX
+	for c: Vector2i in tiles:
+		if not tiles.has(c + Vector2i.DOWN):
+			t.splash(Vector2(c.x + 0.5, c.y + 1 + fallen), Vector2(c.x + 0.5, c.y + 1 + next), _vy)
 	fallen = next
 	position.y = (_origin.y + fallen) * Grid.PX
 	world.crush_under(self)

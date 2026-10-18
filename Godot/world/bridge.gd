@@ -615,6 +615,9 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 	var h := dt / substeps
 	var h2 := h * h
 	_h = h
+	var was: Array[Vector2] = []
+	for n in nodes:
+		was.append(n.pos)
 	for s in substeps:
 		for n in nodes:
 			if n.fixed():
@@ -644,6 +647,9 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 		for n in nodes:
 			if not n.fixed():
 				_collide(n, h)
+	if terrain:
+		for i in nodes.size():
+			terrain.splash(was[i], nodes[i].pos, (nodes[i].pos.y - was[i].y) / dt)
 	_break_on_spikes()
 	var structures := _structures()
 	# Whole pieces against the ground, each other and bodies: once per tick, which is plenty against cells and

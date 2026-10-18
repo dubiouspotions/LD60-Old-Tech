@@ -25,6 +25,14 @@ func role(cell: Vector2i) -> StringName:
 		return &"spikes"
 	if not look.is_ground(t):
 		return &""
+	var r := _ground(cell)
+	if t in look.rock_types:
+		return &"rock" if r == &"dirt" else StringName("rock_" + r)
+	return r
+
+
+## The grass role of a ground cell, or &"dirt" with ground all round.
+func _ground(cell: Vector2i) -> StringName:
 	var up := _solid(cell + Vector2i.UP)
 	var left := _solid(cell + Vector2i.LEFT)
 	var right := _solid(cell + Vector2i.RIGHT)
@@ -33,7 +41,7 @@ func role(cell: Vector2i) -> StringName:
 			return &"corner_tl"
 		if left and not right:
 			return &"corner_tr"
-		return &"flat_tops"
+		return &"flat_tops_fillet" if _fillet(cell + Vector2i.UP) in [&"fillet_r", &"fillet_l"] else &"flat_tops"
 	if not _solid(cell + Vector2i.DOWN):
 		if not left and right:
 			return &"ceiling_l"
@@ -52,7 +60,7 @@ func role(cell: Vector2i) -> StringName:
 		return &"inner_bl"
 	if not _solid(cell + Vector2i(1, 1)):
 		return &"inner_br"
-	return &"rock" if t in look.rock_types else &"dirt"
+	return &"dirt"
 
 
 ## Rock in the dirt on the dual grid: the tile for the corner where cells corner to corner + (1, 1) meet,
@@ -69,18 +77,26 @@ func body(corner: Vector2i) -> Vector2i:
 	return look.body_tile(mask, corner)
 
 
-## Air at the foot of a step: grass filling the corner, or &"".
+## Air at the foot of a step: grass filling the corner (rock's own where the step or the ground below is rock),
+## or &"".
 func _fillet(cell: Vector2i) -> StringName:
-	if not look.is_ground(type_of.call(cell + Vector2i.DOWN)):
+	var below: TerrainType = type_of.call(cell + Vector2i.DOWN)
+	if not look.is_ground(below):
 		return &""
-	var left := look.is_ground(type_of.call(cell + Vector2i.LEFT))
-	var right := look.is_ground(type_of.call(cell + Vector2i.RIGHT))
-	if right and not left:
+	var left: TerrainType = type_of.call(cell + Vector2i.LEFT)
+	var right: TerrainType = type_of.call(cell + Vector2i.RIGHT)
+	var r := &""
+	var step: TerrainType = null
+	if look.is_ground(right) and not look.is_ground(left):
 		# The low fillet meets the rounded top-left corner of the ground below.
-		return &"fillet_r_low" if not _solid(cell + Vector2i(-1, 1)) else &"fillet_r"
-	if left and not right:
-		return &"fillet_l_low" if not _solid(cell + Vector2i(1, 1)) else &"fillet_l"
-	return &""
+		r = &"fillet_r_low" if not _solid(cell + Vector2i(-1, 1)) else &"fillet_r"
+		step = right
+	elif look.is_ground(left) and not look.is_ground(right):
+		r = &"fillet_l_low" if not _solid(cell + Vector2i(1, 1)) else &"fillet_l"
+		step = left
+	if r != &"" and (step in look.rock_types or below in look.rock_types):
+		return StringName("rock_" + r)
+	return r
 
 
 func _solid(cell: Vector2i) -> bool:

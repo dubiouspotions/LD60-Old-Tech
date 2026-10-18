@@ -307,3 +307,40 @@ func test_razed_tower_yields_stone() -> void:
 	assert_eq(got.earth, 0)
 
 
+
+
+## A pool two deep in the ground.
+const POOL: Array = [
+	"..........",
+	"..........",
+	"###~~~####",
+	"###~~~####",
+	"BBBBBBBBBB",
+]
+
+
+func test_water_comes_back_when_what_took_its_place_is_dug_out() -> void:
+	var t := WorldFixture.terrain(self, POOL)
+	var water := WorldFixture.type("water")
+	t.set_type(Vector2i(4, 3), WorldFixture.type("sandbag"))
+	t.set_type(Vector2i(4, 3), null)
+	assert_eq(t.type_at(Vector2i(4, 3)), water, "water again")
+
+
+func test_water_comes_back_when_what_took_its_place_falls_out_of_it() -> void:
+	var t := WorldFixture.terrain(self, POOL)
+	t.set_type(Vector2i(4, 2), WorldFixture.type("sandbag"))
+	watch_signals(t)
+	t.settle()
+	assert_signal_emitted(t, "tile_detached", "the sandbag falls: water under it")
+	assert_eq(t.type_at(Vector2i(4, 2)), WorldFixture.type("water"), "and leaves water behind")
+
+
+func test_ground_that_does_not_refill_stays_air() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	t.set_type(Vector2i(4, 2), WorldFixture.type("box"))
+	t.set_type(Vector2i(4, 2), null)
+	assert_null(t.type_at(Vector2i(4, 2)), "leaves do not grow back")
+	t.set_type(Vector2i(1, 6), WorldFixture.type("box"))
+	t.set_type(Vector2i(1, 6), null)
+	assert_null(t.type_at(Vector2i(1, 6)), "nor does soil")

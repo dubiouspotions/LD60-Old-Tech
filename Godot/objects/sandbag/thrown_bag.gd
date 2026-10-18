@@ -3,16 +3,13 @@ extends Node2D
 ## Something an engineer threw (a sandbag): flies in an arc (CrewRules) from its hands to the cell it was thrown at,
 ## spinning about its centre, then becomes the falling block it carries there, which falls on and lands as usual.
 ## If it hits anything on the way (ground, a bridge piece, a soldier, archer, engineer or falling block) it breaks
-## in a cloud of dust, hurting nobody; whoever it leaves the hands inside (the thrower, those beside it) it does
+## as its block does (FallingBlock.smash), hurting nobody; whoever it leaves the hands inside (the thrower, those beside it) it does
 ## not hit. The World makes it (see Crew.threw) and steps it. The node origin is the bag's centre.
 
 ## Turns per second while flying.
 @export_range(0.0, 4.0, 0.1) var spin: float = 1.5
 ## How far around itself (metres) it hits things.
 @export_range(0.0, 1.0, 0.05, "suffix:m") var hit_margin: float = 0.3
-## Puffs of dust when it breaks.
-@export_range(0, 20) var dust_amount: int = 6
-@export var break_sound: SoundEffect
 
 ## The block it becomes on arrival (not in the tree until then).
 var block: FallingBlock
@@ -47,6 +44,7 @@ func step(dt: float, world: World, bodies: Array) -> void:
 	_at = _rules.throw_point(_from, _to, s)
 	position = Grid.to_px(_at)
 	$Sprite.rotation = TAU * spin * _time
+	world.terrain.splash(was, _at, (_at.y - was.y) / dt if dt > 0.0 else 0.0)
 	if hits_ground(world.terrain, world.bridge, was, _at) or bodies.any(func(pair: Array) -> bool: return not pair[0] in _ignored and (pair[1] as Bridge.Body).touches(_at, hit_margin)):
 		_break()
 		return
@@ -74,9 +72,7 @@ static func clear(terrain: Terrain, bridge: Bridge, rules: CrewRules, from: Vect
 
 
 func _break() -> void:
-	var color := block.type.debris_color if block.type else Color.WHITE
-	Effects.dust(position, color, dust_amount)
-	Effects.debris(position, color, 4, 90.0)
-	Audio.play(break_sound, position)
-	block.free()
+	block.position = position - Vector2(0.5, 0.5) * Grid.PX
+	get_parent().add_child(block)
+	block.smash()
 	queue_free()

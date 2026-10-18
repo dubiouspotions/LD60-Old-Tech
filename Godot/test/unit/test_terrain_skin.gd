@@ -70,11 +70,48 @@ func test_ground_cells_get_v2_tiles_carrying_their_material() -> void:
 	assert_eq(terrain.painted_type(Vector2i(3, 7)), _type("bedrock"), "bedrock stays bedrock")
 
 
-func test_rock_at_the_surface_keeps_its_material() -> void:
+func test_rock_at_the_surface_gets_a_rock_edge() -> void:
 	terrain.set_type(Vector2i(12, 4), _type("rock"))
-	assert_has(look.flat_tops, _tile(Vector2i(12, 4)), "grass edge like dirt")
+	assert_has(look.tiles(&"rock_flat_tops"), _tile(Vector2i(12, 4)), "rock edge, no grass")
 	assert_eq(terrain.painted_type(Vector2i(12, 4)), _type("rock"))
 	assert_eq(terrain.type_at(Vector2i(12, 4)), _type("rock"))
+
+
+## Rock never gets the grass and dirt edges: digging into it leaves rock edges (the Rock tiles until there is art).
+func test_digging_in_rock_leaves_rock_edges() -> void:
+	for y in range(4, 7):
+		for x in range(0, 9):
+			terrain.set_type(Vector2i(x, y), _type("rock"))
+	terrain.set_type(Vector2i(3, 5), null)
+	terrain.set_type(Vector2i(4, 5), null)
+	var grassy: Array[Vector2i] = []
+	for role in TerrainLook.GROUND_ROLES + TerrainLook.FILLET_ROLES:
+		grassy.append_array(look.get(role))
+	for y in range(3, 8):
+		for x in range(0, 9):
+			var c := Vector2i(x, y)
+			if terrain.type_at(c) in look.rock_types or (terrain.type_at(c) == null and y >= 4):
+				assert_false(terrain.get_cell_source_id(c) == look.source_id and _tile(c) in grassy, "no grass at %s" % c)
+	assert_has(look.tiles(&"rock_ceiling"), _tile(Vector2i(3, 4)), "rock ceiling")
+	assert_has(look.tiles(&"rock_flat_tops"), _tile(Vector2i(3, 6)), "rock floor")
+	assert_has(look.tiles(&"rock_wall_r"), _tile(Vector2i(2, 5)), "rock wall")
+
+
+func test_no_grass_fillet_at_a_rock_step() -> void:
+	for x in range(10, 14):
+		terrain.set_type(Vector2i(x, 4), _type("rock"))
+	terrain.set_type(Vector2i(13, 3), _type("rock"))
+	assert_eq(terrain.get_cell_source_id(Vector2i(12, 3)), -1, "rock fillets have no art yet")
+	assert_null(terrain.type_at(Vector2i(12, 3)), "still air")
+
+
+func test_rock_edge_art_is_used_once_listed() -> void:
+	var l: TerrainLook = look.duplicate()
+	assert_eq(l.tiles(&"rock_wall_l"), l.rock, "the Rock tiles stand in")
+	l.rock_wall_l = [Vector2i(6, 6)]
+	assert_eq(l.tiles(&"rock_wall_l"), [Vector2i(6, 6)])
+	assert_true(l.fits(&"rock_wall_l", Vector2i(6, 6)))
+	assert_eq(l.materials(&"rock_wall_l"), l.rock_types)
 
 
 func test_grass_surface_corners_and_walls() -> void:
@@ -93,7 +130,7 @@ func test_tunnel_ceiling_and_its_inner_corners() -> void:
 	assert_has(look.ceiling, _tile(Vector2i(2, 5)), "ceiling")
 	assert_eq(terrain.painted_type(Vector2i(2, 5)), _type("soil"))
 	assert_has(look.inner_br, _tile(Vector2i(1, 5)), "inner corner where the roof meets the left wall")
-	assert_has(look.inner_bl, _tile(Vector2i(4, 5)), "inner corner on the other side")
+	assert_has(look.tiles(&"rock_inner_bl"), _tile(Vector2i(4, 5)), "rock's inner corner on the other side")
 	assert_eq(terrain.painted_type(Vector2i(4, 5)), _type("rock"), "rock keeps its material")
 
 
@@ -133,6 +170,17 @@ func test_fillets_are_air_tiles_at_the_foot_of_a_step() -> void:
 	assert_false(terrain.is_solid(Vector2i(3, 2)))
 
 
+## The ordinary grass tops have gaps along their top edge; under a fillet those would show the sky.
+func test_the_top_under_a_fillet_has_no_gaps() -> void:
+	assert_has(look.fillet_r, _tile(Vector2i(3, 2)))
+	assert_false(look.flat_tops_fillet.is_empty(), "the sheet has tops for under a slope")
+	assert_has(look.flat_tops_fillet, _tile(Vector2i(3, 3)))
+	assert_eq(terrain.painted_type(Vector2i(3, 3)), _type("soil"))
+	var l: TerrainLook = look.duplicate()
+	l.flat_tops_fillet = []
+	assert_eq(l.tiles(&"flat_tops_fillet"), l.flat_tops, "without them, the Flat Tops")
+
+
 func test_rock_pocket_overlay_on_the_dual_grid() -> void:
 	# The rock cell (4, 5) is the bottom-right corner of dual tile (3, 4), bottom-left of (4, 4), and so on.
 	assert_eq(_body(Vector2i(3, 4)), look.body[8])
@@ -141,6 +189,45 @@ func test_rock_pocket_overlay_on_the_dual_grid() -> void:
 	assert_eq(_body(Vector2i(4, 5)), look.body[1])
 	assert_eq(skin.body_layer().get_cell_source_id(Vector2i(1, 5)), -1, "no overlay away from the rock")
 	assert_eq(skin.body_layer().get_cell_source_id(Vector2i(4, 1)), -1, "no overlay touching the sky")
+
+
+## Solid rock varies over the Rock tiles; the overlay must hold every one of them, or most corners draw nothing.
+func test_overlay_has_every_tile_it_draws() -> void:
+	for y in range(4, 7):
+		for x in range(1, 4):
+			terrain.set_type(Vector2i(x, y), _type("rock"))
+	skin.refresh()
+	var body := skin.body_layer()
+	assert_gt(body.get_used_cells().size(), 0)
+	for c in body.get_used_cells():
+		assert_not_null(body.get_cell_tile_data(c), "overlay tile at %s exists" % c)
+
+
+## Paints cell with the tile at coords as material t, without re-picking anything (as the TileMap editor does).
+func _paint(cell: Vector2i, coords: Vector2i, t: TerrainType) -> void:
+	var src := terrain.tile_set.get_source(look.source_id) as TileSetAtlasSource
+	for k in src.get_alternative_tiles_count(coords):
+		var alt := src.get_alternative_tile_id(coords, k)
+		if src.get_tile_data(coords, alt).get_custom_data("terrain") == t:
+			terrain.set_cell(cell, look.source_id, coords, alt)
+			return
+	fail_test("no %s alternative of %s" % [t, coords])
+
+
+func test_painting_repicks_the_tiles_around_it() -> void:
+	_paint(Vector2i(5, 1), look.dirt[0], _type("soil"))
+	terrain.retile_painted([Vector2i(5, 1)])
+	assert_eq(terrain.type_at(Vector2i(5, 1)), _type("soil"), "painted ground is ground")
+	assert_has(look.flat_tops, _tile(Vector2i(5, 1)), "it gets the grass top")
+	assert_has(look.inner_tl, _tile(Vector2i(5, 2)), "the old top under it is an inner corner now")
+
+
+func test_painted_rock_shows_in_the_overlay() -> void:
+	_paint(Vector2i(2, 5), look.rock[0], _type("rock"))
+	terrain.retile_painted([Vector2i(2, 5)])
+	skin.refresh()
+	assert_eq(_body(Vector2i(1, 4)), look.body[8])
+	assert_eq(_body(Vector2i(2, 5)), look.body[1])
 
 
 func test_materials_without_v2_art_keep_their_old_tile() -> void:

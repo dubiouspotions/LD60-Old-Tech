@@ -507,6 +507,16 @@ func test_digging_up_a_sandbag_gives_back_what_it_cost_less_one() -> void:
 	assert_eq(GameState.supplies.earth, had + sandbag_tool.cost.earth - 1)
 
 
+func test_digging_a_sandbag_out_of_water_leaves_water() -> void:
+	var cell := Vector2i(8, 5)
+	world.terrain.set_type(cell, WorldFixture.type("water"))
+	world.terrain.set_type(cell, WorldFixture.type("sandbag"))
+	var had := GameState.supplies.earth
+	world._on_dig_finished(cell)
+	assert_eq(world.terrain.type_at(cell), WorldFixture.type("water"), "the water it lay in is back")
+	assert_gt(GameState.supplies.earth, had, "and the earth comes back as from dry ground")
+
+
 func test_dragging_dig_marks_every_cell_the_cursor_passes() -> void:
 	_select(ToolDefinition.Kind.DIG)
 	tools._mouse_m = Vector2(1.5, 6.5)

@@ -37,6 +37,9 @@ func refresh() -> void:
     var look := _terrain.look
     var on := look != null and look.enabled and look.texture != null
     if Engine.is_editor_hint():
+        # Painting does not emit changed; the Terrain re-reads the painted tiles (a rebuild) after each paint.
+        if _terrain.take_changes().all:
+            _editor_dirty = true
         if on and (_editor_dirty or not _on):
             _editor_dirty = false
             _on = true
@@ -77,9 +80,8 @@ func _use_texture(look: TerrainLook) -> void:
     src.texture = look.texture
     src.texture_region_size = Vector2i.ONE * look.tile_size
     ts.add_source(src, 0)
-    for c: Vector2i in look.body:
-        if c.x >= 0 and not src.has_tile(c):
-            src.create_tile(c)
+    for c: Vector2i in look.body_tiles():
+        src.create_tile(c)
     _body.tile_set = ts
 
 

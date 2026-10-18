@@ -1121,3 +1121,57 @@ func test_instant_work_throws_ordered_sandbags_at_once() -> void:
 		world.terrain.settle()
 		world._physics_process(1.0 / 60.0)
 	assert_eq(world.terrain.type_at(Vector2i(10, 8)), WorldFixture.type("sandbag"))
+
+
+## A tower as high as an engineer climbs, with a sandbag on its middle: its top is a slope up to the bag.
+const SLOPED_TOWER: Array = [
+	"....................",
+	"....................",
+	"....................",
+	"....................",
+	"....................",
+	"....................",
+	".........S..........",
+	"........KKK.........",
+	"........KKK.........",
+	"........KKK.........",
+	"####################",
+	"BBBBBBBBBBBBBBBBBBBB",
+]
+
+
+## Climbing the face of SLOPED_TOWER (mirrored: from the right) to throw from up on the tower, 5 aside.
+func _climb_sloped_tower(mirrored: bool) -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var w: int = SLOPED_TOWER[0].length()
+	for y in SLOPED_TOWER.size():
+		for x in w:
+			var key: String = WorldFixture.LEGEND[SLOPED_TOWER[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(w - 1 - x if mirrored else x, y), WorldFixture.type(key))
+	world.army.spawn(1, 2.5)
+	world.army.hold = true
+	world.crew.spawn(w - 2.5 if mirrored else 4.5)
+	var e := world.crew.engineers[0]
+	world.crew.order_throw(Vector2i(w - 1 - 13 if mirrored else 13, 2), _sandbag_tool())
+	var from := [Vector2.INF]
+	world.crew.threw.connect(func(_t: Crew.Throw, at: Vector2) -> void: from[0] = at)
+	var fell := false
+	for i in 300:
+		world.terrain.settle()
+		world._physics_process(1.0 / 60.0)
+		fell = fell or e.vy > 0.0
+		if from[0] != Vector2.INF:
+			break
+	assert_false(fell, "never fell off the face")
+	assert_almost_eq(from[0].x, w - 8.5 if mirrored else 8.5, 0.1, "thrown from up on the tower, 5 aside")
+	assert_lt(from[0].y, 7.0, "standing on top")
+
+
+func test_an_engineer_climbs_a_face_with_a_slope_on_top_without_falling_off() -> void:
+	_climb_sloped_tower(false)
+
+
+func test_an_engineer_climbs_a_face_with_a_slope_on_top_from_the_right_too() -> void:
+	_climb_sloped_tower(true)
