@@ -20,6 +20,8 @@ const ENGINEER_HALF_WIDTH: float = 0.2
 const EDGE: float = 0.01
 ## Idle engineers wait this far short of a plan's start joint.
 const READY_GAP: float = 0.4
+## Seconds a regrouping engineer takes to fade in.
+const REGROUP_FADE: float = 0.4
 
 
 class Engineer:
@@ -44,6 +46,8 @@ class Engineer:
 	var reach_x: float = NAN
 	## Falling speed while nothing holds the engineer up.
 	var vy: float = 0.0
+	## Seconds the idle engineer has been unable to get back to its place.
+	var stranded: float = 0.0
 	## Walks the ground beneath decks, climbing down past them (to dig a cell only reached from below one).
 	var under_decks: bool = false
 
@@ -71,9 +75,8 @@ func spawn(x: float) -> void:
 	engineers.clear()
 	for i in rules.crew_size:
 		var e := Engineer.new()
-		var ex := maxf(0.5, x - rules.follow_gap - i * rules.spacing)
-		e.pos = Vector2(ex, terrain.surface_row(floori(ex)))
 		e.node = engineer_scene.instantiate()
+		_place(e, maxf(0.5, x - rules.follow_gap - i * rules.spacing))
 		add_child(e.node)
 		engineers.append(e)
 		_show(e, false, 1)
@@ -120,9 +123,35 @@ func step(dt: float) -> void:
 		elif e.digging:
 			_dig_step(e, dt)
 		else:
-			_walk_to(e, _idle_x(i), dt)
+			var x := _idle_x(i)
+			var was := e.pos
+			_walk_to(e, x, dt)
+			_regroup_if_stranded(e, x, was, dt)
 	_update_strike(dt)
 	_update_work_sound(dt)
+
+
+## Puts the engineer on the ground at x, off any structure.
+func _place(e: Engineer, x: float) -> void:
+	e.pos = Vector2(x, terrain.surface_row(floori(x)))
+	e.at = null
+	e.route.clear()
+	e.vy = 0.0
+
+
+## An idle engineer that has not moved toward its place x for regroup_time fades in there instead.
+func _regroup_if_stranded(e: Engineer, x: float, was: Vector2, dt: float) -> void:
+	if e.pos != was or absf(x - e.pos.x) <= 0.05 or rules.regroup_time <= 0.0:
+		e.stranded = 0.0
+		return
+	e.stranded += dt
+	if e.stranded < rules.regroup_time:
+		return
+	e.stranded = 0.0
+	_place(e, x)
+	_show(e, false, 1)
+	e.node.modulate.a = 0.0
+	e.node.create_tween().tween_property(e.node, ^"modulate:a", 1.0, REGROUP_FADE)
 
 
 ## Drops an engineer that nothing holds up (its structure fell away) and that can not simply climb down.

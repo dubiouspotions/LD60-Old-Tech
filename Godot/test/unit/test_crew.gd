@@ -685,3 +685,14 @@ func test_engineer_builds_from_a_support_hanging_above_his_head() -> void:
 	world.bridge.order_blueprints()
 	_run(15.0, func() -> bool: return not m.blueprint)
 	assert_false(m.blueprint, "built off the hanging end")
+
+
+func test_stranded_engineer_rejoins_the_column() -> void:
+	_flat_strip()
+	for y in range(1, 6):
+		world.terrain.set_type(Vector2i(40, y), WorldFixture.type("soil"))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(40.6, 1.0)
+	_run(world.crew.rules.regroup_time + 2.0)
+	assert_almost_eq(e.pos.y, 6.0, 0.05, "off the pillar")
+	assert_gt(e.pos.x, 45.0, "back with the column")
