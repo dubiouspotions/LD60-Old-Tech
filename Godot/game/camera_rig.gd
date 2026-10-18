@@ -59,6 +59,21 @@ func center_on_lead() -> void:
 	_clamp()
 
 
+## While a drag pans the view, its motion and release are taken here, before the HUD sees them, and kept from it:
+## no button hovers or swallows the drag until the pan button is let go.
+func _input(event: InputEvent) -> void:
+	if not _dragging:
+		return
+	if event.is_action_released(&"drag_view") or event.is_action_released(&"use_tool"):
+		_dragging = false
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion:
+		position = _drag_cam - (event.position - _drag_from) / zoom
+		# Kept within its limit at once, so what is pinned to the world does not jump about until the next frame.
+		_clamp()
+		get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"follow"):
 		follow = true
@@ -69,14 +84,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		_drag_cam = position
 		follow = false
 		get_viewport().set_input_as_handled()
-	elif event.is_action_released(&"drag_view") or event.is_action_released(&"use_tool"):
-		_dragging = false
-	elif event is InputEventMouseMotion and _dragging:
-		position = _drag_cam - (event.position - _drag_from) / zoom
 	elif event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_LEFT, MOUSE_BUTTON_WHEEL_RIGHT]:
 		var dir := -1.0 if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_LEFT] else 1.0
 		position.x += dir * wheel_step * Grid.PX
+		_clamp()
 		follow = false
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_dragging = false
 
 
 func _process(delta: float) -> void:

@@ -104,6 +104,59 @@ func test_restart_button_restarts_the_level_from_its_checkpoint() -> void:
 	assert_true(InputMap.action_has_event(&"restart_level", _key(KEY_BACKSPACE)), "also on Backspace")
 
 
+## Dragging or wheeling the view past its limit leaves it where it is at once, not only on the next frame, so
+## nothing pinned to the world (the Camp Shoppe button) jumps about.
+func test_the_view_stays_put_against_its_limit_while_dragged() -> void:
+	game._begin()
+	var cam: CameraRig = game.get_node("%Camera")
+	cam.position.x = -1.0e6
+	cam._clamp()
+	var x0 := cam.position.x
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_MIDDLE
+	press.pressed = true
+	press.position = Vector2(500, 300)
+	cam._unhandled_input(press)
+	var drag := InputEventMouseMotion.new()
+	drag.position = Vector2(900, 300)
+	cam._unhandled_input(drag)
+	assert_eq(cam.position.x, x0, "dragging toward the locked side does not move it")
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed = true
+	cam._unhandled_input(wheel)
+	assert_eq(cam.position.x, x0, "nor does the wheel")
+
+
+## While a pan button is held, the camera takes the mouse's motion and the release before the HUD does and keeps
+## them from it (no hovering, no swallowing the drag), so panning stays smooth over its buttons. Input as a whole
+## is never switched off: the release still arrives and the next pan works too.
+func test_panning_over_the_hud_stays_smooth() -> void:
+	game._begin()
+	var cam: CameraRig = game.get_node("%Camera")
+	cam.position.x = 4000.0
+	cam._clamp()
+	for pan in 2:
+		var x0 := cam.position.x
+		var press := InputEventMouseButton.new()
+		press.button_index = MOUSE_BUTTON_MIDDLE
+		press.pressed = true
+		press.position = Vector2(500, 300)
+		cam._unhandled_input(press)
+		assert_false(get_viewport().gui_disable_input, "input stays on")
+		var drag := InputEventMouseMotion.new()
+		drag.position = Vector2(600, 300)
+		cam._input(drag)
+		assert_true(get_viewport().is_input_handled(), "the motion is kept from the HUD")
+		assert_lt(cam.position.x, x0, "pan %d moves on every motion, even over the HUD (seen before it)" % pan)
+		var release := InputEventMouseButton.new()
+		release.button_index = MOUSE_BUTTON_MIDDLE
+		release.pressed = false
+		release.position = Vector2(600, 300)
+		cam._input(release)
+		assert_false(cam._dragging, "let go")
+
+
 func test_the_game_starts_with_following_off_and_the_view_on_the_column() -> void:
 	game._begin()
 	var cam: CameraRig = game.get_node("%Camera")
