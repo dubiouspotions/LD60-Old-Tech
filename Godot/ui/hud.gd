@@ -297,11 +297,25 @@ func banner(title: String, sub: String) -> void:
 ## Arrow at the screen edge pointing at the column when it is off screen.
 func set_lead_marker(visible_on_side: int, screen_y: float) -> void:
 	_set_edge_marker(%LeadMarker, visible_on_side, screen_y)
+	_keep_markers_apart()
 
 
 ## Red arrow at the screen edge pointing at the nearest engineer off screen.
 func set_crew_marker(visible_on_side: int, screen_y: float) -> void:
 	_set_edge_marker(%CrewMarker, visible_on_side, screen_y)
+	_keep_markers_apart()
+
+
+## Moves the red arrow just clear of the blue one when both are on the same edge and would cover each other:
+## below it, or above it near the bottom of the screen.
+func _keep_markers_apart() -> void:
+	var red: Label = %CrewMarker
+	var blue: Label = %LeadMarker
+	if not (red.visible and blue.visible) or not red.get_rect().intersects(blue.get_rect()):
+		return
+	var below := blue.position.y + blue.size.y
+	var above := blue.position.y - red.size.y
+	red.position.y = below if below + red.size.y <= red.get_viewport_rect().size.y else above
 
 
 ## Shows marker at the screen edge on visible_on_side (-1 left, 1 right; 0 hides it), at screen_y, pointing out.

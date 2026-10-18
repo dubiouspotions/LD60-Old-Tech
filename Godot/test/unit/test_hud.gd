@@ -102,6 +102,25 @@ func test_crew_marker_points_at_an_engineer_off_screen() -> void:
 	assert_eq(m.get_theme_font_size(&"font_size"), lead.get_theme_font_size(&"font_size"), "the same arrow as the leader's")
 
 
+## The red and the blue arrow never cover each other, whichever is placed first and wherever on the edge.
+func test_crew_and_lead_markers_never_overlap() -> void:
+	var red: Label = hud.get_node("%CrewMarker")
+	var blue: Label = hud.get_node("%LeadMarker")
+	var bottom := red.get_viewport_rect().size.y
+	for y: float in [300.0, 0.0, bottom]:
+		for crew_first: bool in [true, false]:
+			if crew_first:
+				hud.set_crew_marker(1, y)
+				hud.set_lead_marker(1, y + 5.0)
+			else:
+				hud.set_lead_marker(1, y)
+				hud.set_crew_marker(1, y + 5.0)
+			assert_false(red.get_rect().intersects(blue.get_rect()), "apart at %s" % y)
+	hud.set_lead_marker(-1, 300.0)
+	hud.set_crew_marker(1, 300.0)
+	assert_almost_eq(red.position.y + red.size.y / 2.0, 300.0, 1.0, "on opposite sides it stays where it points")
+
+
 ## It fades in when it opens, and is gone at once when it closes.
 func test_camp_shoppe_fades_in() -> void:
 	var panel: PanelContainer = hud.get_node("%ShopPanel")
