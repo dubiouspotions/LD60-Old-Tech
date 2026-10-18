@@ -37,6 +37,7 @@ enum Mood { NORMAL, HALT, FIRE }
 @export var recruit_text: String = "Recruit · %d gold"
 
 var _tool_buttons: Array[ToolButton] = []
+var _tools: Array[ToolDefinition] = []
 var _build_buttons: Array[PlanButtons] = []
 var _group := ButtonGroup.new()
 
@@ -70,15 +71,18 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 	for b in _tool_buttons:
 		b.queue_free()
 	_tool_buttons.clear()
+	_tools = tools
+	var colors := {&"earth": %Earth.swatch, &"logs": %Logs.swatch, &"rope": %Rope.swatch, &"gold": %Gold.swatch}
 	for i in tools.size():
 		var b: ToolButton = tool_button_scene.instantiate()
 		b.button_group = _group
 		%Tools.add_child(b)
-		b.setup(tools[i])
+		b.setup(tools[i], colors)
 		b.pressed.connect(func() -> void:
 			Audio.play(click_sound)
 			tool_pressed.emit(i))
 		_tool_buttons.append(b)
+	_refresh_supplies()
 	_fit.call_deferred()
 
 
@@ -228,6 +232,8 @@ func _refresh_supplies() -> void:
 	%Logs.set_value(str(s.logs), true)
 	%Rope.set_value(str(s.rope), true)
 	%Gold.set_value(str(s.gold), true)
+	for i in _tool_buttons.size():
+		_tool_buttons[i].set_affordable(s.can_afford(_tools[i].price()))
 
 
 func _emit_index(sig: Signal, index: int) -> void:

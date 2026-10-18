@@ -4,6 +4,9 @@ extends Node2D
 ## onto unfinished bridges. Only a wall they can not climb halts them. The front soldier warns of danger ahead.
 ## Front soldier carries the flag. Tuning lives in the ArmyRules resource.
 
+## How far short of stop_x (and of the queue spacing) still counts as arrived.
+const GATHER_SLACK: float = 0.25
+
 signal soldier_died(pos: Vector2, text: String)
 signal count_changed(count: int)
 
@@ -35,6 +38,8 @@ var resting: bool = false:
 				s.still_time = 0.0
 ## Where the camp is (metres), or NAN. Nobody walks past it.
 var camp_x: float = NAN
+## The level's exit flag: soldiers wait here until the whole column has gathered (see gathered()). NAN: none.
+var stop_x: float = NAN
 
 
 func lead() -> Soldier:
@@ -108,10 +113,17 @@ func step(dt: float) -> void:
 		if ahead and not ahead.dead and ahead.pos.x - s.pos.x < rules.spacing and absf(ahead.pos.y - s.pos.y) < rules.queue_height:
 			continue
 		var dx := s.speed * dt
+		if not is_nan(stop_x) and s.pos.x + dx > stop_x:
+			if i == 0:
+				halt_reason = rules.gather_text
+			continue
 		if i == 0:
 			danger = _danger_ahead(s)
 		var block := _blocked_ahead(s, dx)
 		if not block.is_empty():
+			var wall := Vector2i(floori(s.pos.x + rules.foot_half_width + dx), floori(s.pos.y - 0.5))
+			if _besiege(s, wall, dt):
+				block = rules.siege_text
 			if i == 0:
 				halt_reason = block
 			continue
@@ -150,6 +162,19 @@ func _walk_to_camp(s: Soldier, i: int, dt: float) -> void:
 		s.stand_on(sup)
 
 
+## Attacks the wall cell in front of the soldier if it can be razed (a tower). Returns false if it can not.
+func _besiege(s: Soldier, cell: Vector2i, dt: float) -> bool:
+	var t := terrain.type_at(cell)
+	if t == null or t.raze_time <= 0.0:
+		return false
+	s.attack_cooldown -= dt
+	if s.attack_cooldown <= 0.0:
+		s.attack_cooldown = rules.attack_interval
+		Audio.play(rules.attack_sound, Grid.to_px(s.pos))
+	terrain.besiege(cell, dt)
+	return true
+
+
 ## While resting, a soldier who has stood still on the ground for settle_time lies down.
 func _settle_down(s: Soldier, dt: float) -> void:
 	if not resting or s.sleeping:
@@ -157,6 +182,25 @@ func _settle_down(s: Soldier, dt: float) -> void:
 	s.still_time = s.still_time + dt if not s.moving and not s.airborne else 0.0
 	if s.still_time >= rules.settle_time:
 		s.sleeping = true
+
+
+## Every living soldier has reached stop_x: the front stands at it (or past) and the rest are queued up behind it
+## on the ground, each close behind the next.
+func gathered() -> bool:
+	if is_nan(stop_x) or soldiers.is_empty():
+		return false
+	soldiers.sort_custom(func(a: Soldier, b: Soldier) -> bool: return a.pos.x > b.pos.x)
+	var gap := rules.spacing + GATHER_SLACK
+	for i in soldiers.size():
+		var s := soldiers[i]
+		if s.airborne:
+			return false
+		if i == 0:
+			if s.pos.x < stop_x - GATHER_SLACK:
+				return false
+		elif soldiers[i - 1].pos.x - s.pos.x > gap or absf(soldiers[i - 1].pos.y - s.pos.y) >= rules.queue_height:
+			return false
+	return true
 
 
 ## Damages one soldier. Returns true if it died.

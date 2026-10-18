@@ -80,3 +80,32 @@ func test_recruit_button_floats_above_the_camp() -> void:
 	assert_eq(b.get_parent(), hud.get_node("%WorldButtons"))
 	assert_almost_eq(b.position.x + b.size.x / 2, 400.0, 1.0)
 	assert_almost_eq(b.position.y + b.size.y, 300.0, 1.0)
+
+
+func test_supplies_sit_just_above_the_build_buttons() -> void:
+	var supplies: Control = hud.get_node("%Supplies")
+	var rack: Control = hud.get_node("%Rack")
+	var column := rack.get_parent()
+	assert_eq(supplies.get_parent().get_parent(), column, "in the bottom area, not the top bar")
+	assert_eq(supplies.get_parent().get_index() + 1, rack.get_index(), "right above the rack")
+
+
+func test_tool_buttons_show_cost_and_grey_out_when_unaffordable() -> void:
+	GameState.new_campaign()
+	var tools := GameState.campaign.tools
+	var log_index := -1
+	for i in tools.size():
+		if tools[i].kind == ToolDefinition.Kind.BUILD and tools[i].bridge_material.resource_path.ends_with("log.tres"):
+			log_index = i
+	var b: ToolButton = hud.get_node("%Tools").get_child(log_index)
+	assert_true(b.get_node("%Cost").visible, "cost shown")
+	assert_string_contains(b.tooltip_text, "1 log")
+	GameState.supplies.logs = 0
+	GameState.supplies_changed.emit()
+	assert_false(b.affordable, "greyed out with no logs")
+	GameState.supplies.logs = 5
+	GameState.supplies_changed.emit()
+	assert_true(b.affordable)
+	var dig: ToolButton = hud.get_node("%Tools").get_child(0)
+	assert_false(dig.get_node("%Cost").visible, "free tools show no cost")
+	assert_true(dig.affordable)

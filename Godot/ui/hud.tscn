@@ -79,35 +79,6 @@ unique_name_in_owner = true
 layout_mode = 2
 caption = "Best"
 
-[node name="Supplies" type="HBoxContainer" parent="Root/Margin/Column/TopBar"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 16
-
-[node name="Earth" parent="Root/Margin/Column/TopBar/Supplies" instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Earth"
-swatch = Color(0.627, 0.439, 0.247, 1)
-
-[node name="Logs" parent="Root/Margin/Column/TopBar/Supplies" instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Logs"
-swatch = Color(0.69, 0.478, 0.259, 1)
-
-[node name="Rope" parent="Root/Margin/Column/TopBar/Supplies" instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Rope"
-swatch = Color(0.851, 0.765, 0.561, 1)
-
-[node name="Gold" parent="Root/Margin/Column/TopBar/Supplies" instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Gold"
-swatch = Color(0.937, 0.761, 0.243, 1)
-
 [node name="Spacer" type="Control" parent="Root/Margin/Column/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -138,6 +109,42 @@ text = "March now"
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
+
+[node name="SupplyBar" type="PanelContainer" parent="Root/Margin/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+
+[node name="Supplies" type="HBoxContainer" parent="Root/Margin/Column/SupplyBar"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Earth" parent="Root/Margin/Column/SupplyBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Earth"
+swatch = Color(0.627, 0.439, 0.247, 1)
+
+[node name="Logs" parent="Root/Margin/Column/SupplyBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Logs"
+swatch = Color(0.69, 0.478, 0.259, 1)
+
+[node name="Rope" parent="Root/Margin/Column/SupplyBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Rope"
+swatch = Color(0.851, 0.765, 0.561, 1)
+
+[node name="Gold" parent="Root/Margin/Column/SupplyBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Gold"
+swatch = Color(0.937, 0.761, 0.243, 1)
 
 [node name="Rack" type="HBoxContainer" parent="Root/Margin/Column"]
 unique_name_in_owner = true

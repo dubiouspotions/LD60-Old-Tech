@@ -15,6 +15,8 @@ signal tool_changed(index: int)
 @export var text_shadow: Color = Color("17202b")
 ## Outline and progress bar of cells marked for digging.
 @export var mark_color: Color = Color("e9a93b")
+## Progress bar on a tower block the column is attacking.
+@export var siege_color: Color = Color("ff6a55")
 @export var preview_font_size: int = 16
 ## Light that follows the cursor so the engineers' work can be seen at night (optional).
 @export var lantern: Node2D
@@ -221,6 +223,12 @@ func _draw_marks() -> void:
         var done := world.terrain.dig_progress(cell)
         if done > 0.0:
             draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x * done, 4)), mark_color)
+    for cell in world.terrain.besieged_cells():
+        var done := world.terrain.siege_progress(cell)
+        if done > 0.0:
+            var r := Rect2(Vector2(cell) * px, Vector2.ONE * px).grow(-3)
+            draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), r.size * Vector2(1, 0) + Vector2(0, 4)), Color(siege_color, 0.3))
+            draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x * done, 4)), siege_color)
 
 
 func _draw_build(mat: BridgeMaterial) -> void:

@@ -220,3 +220,45 @@ func test_camp_marks_where_its_buttons_go() -> void:
 	var spot: Marker2D = camp.get_node("%ButtonSpot")
 	assert_eq(camp.button_spot(), camp.global_position + spot.position)
 	assert_lt(spot.position.y, -40.0, "above the tents")
+
+
+func test_level_ends_only_when_every_soldier_has_arrived() -> void:
+	world.begin(0, 3)
+	world.march()
+	_run(world.morning_time + 0.1)
+	world.place_now(1)
+	var exit_x := world.chunk(0).exit_flag.metres().x
+	world.army.spawn(3, exit_x - 2.0)
+	var straggler: Soldier = world.army.rear()
+	straggler.pos.x = exit_x - 12.0
+	straggler.pos.y = world.terrain.surface_row(floori(straggler.pos.x))
+	_run(4.0)
+	assert_eq(world.current, 0, "still waiting for the straggler")
+	assert_lt(world.army.lead().pos.x, exit_x + 0.1, "the front waits at the flag")
+	assert_eq(world.army.halt_reason, world.army.rules.gather_text)
+	_run(12.0)
+	assert_eq(world.current, 1, "level ends once everyone is in")
+
+
+func test_archers_ignore_engineers() -> void:
+	world.begin(0, 3)
+	world.march()
+	_run(world.morning_time + 0.1)
+	var x := world.army.lead().pos.x
+	for s in world.army.soldiers:
+		s.pos.x = x - 40.0
+	for e in world.crew.engineers:
+		e.pos = Vector2(x, world.terrain.surface_row(floori(x)))
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(x + 4, world.terrain.surface_row(floori(x) + 4)))
+	archer.first_shot_delay = 0.0
+	world.objects.add_child(archer)
+	var shots := [0]  # an array, so the lambda can write to it
+	world.objects.child_entered_tree.connect(func(n: Node) -> void: shots[0] += int(n is Arrow))
+	await wait_physics_frames(60)
+	assert_eq(shots[0], 0, "engineers in range draw no fire")
+	assert_false(archer.engaging)
+	world.army.lead().pos.x = x
+	await wait_physics_frames(30)
+	assert_gt(shots[0], 0, "a soldier in range does")
+

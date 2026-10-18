@@ -19,6 +19,12 @@ enum Kind { DIG, FILL, BUILD }
 @export var no_supply_text: String = ""
 @export var use_sound: SoundEffect
 
+## What one use costs: the material's cost for build tools, else cost. Never null.
+func price() -> Supplies:
+	var c: Supplies = bridge_material.cost if kind == Kind.BUILD and bridge_material else cost
+	return c if c else Supplies.new()
+
+
 @export_group("Build")
 @export var bridge_material: BridgeMaterial
 

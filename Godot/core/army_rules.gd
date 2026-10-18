@@ -51,8 +51,12 @@ extends Resource
 @export_group("Messages")
 ## Status while the front soldier fights an enemy.
 @export var fight_text: String = "Fighting an archer"
+## Status while the front soldier attacks a tower in its way (see each terrain type's Raze Time).
+@export var siege_text: String = "Besieging the tower"
 ## Shown while the column waits for the king's order to march.
 @export var hold_text: String = "Awaiting the king's order"
+## Status while the front waits at the level's exit for the rest of the column.
+@export var gather_text: String = "Waiting for the column"
 ## How far ahead the front soldier spots deep drops and hazards. Only a warning in the status bar.
 @export_range(0.5, 20.0, 0.5, "suffix:m") var warn_distance: float = 3.0
 @export var wall_text: String = "%d m wall ahead"
