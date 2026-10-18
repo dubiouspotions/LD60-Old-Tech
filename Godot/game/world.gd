@@ -60,6 +60,7 @@ class Chunk:
 ## Falling blocks, arrows, the camp and the levels' objects.
 @onready var objects: Node2D = %Objects
 @onready var flags: Node2D = %Flags
+@onready var grass: TallGrass = %Grass
 
 ## Campaign index of the level the column is in, -1 before begin().
 var current: int = -1
@@ -83,6 +84,7 @@ static func of(node: Node) -> World:
 
 func _ready() -> void:
 	bridge.terrain = terrain
+	grass.terrain = terrain
 	army.terrain = terrain
 	army.bridge = bridge
 	crew.terrain = terrain
@@ -139,6 +141,7 @@ func rewind(index: int) -> void:
 	for i: int in later:
 		_drop(i, i > index)
 	terrain.clear_from(seam)
+	grass.clear_from(seam)
 	bridge.remove_outside(-INF, seam)
 	_free_objects(func(x: float) -> bool: return x >= seam)
 	_strike_camp()
@@ -167,6 +170,7 @@ func unload(index: int) -> void:
 		return
 	var edge := c.end()
 	terrain.unload_before(edge)
+	grass.unload_before(edge)
 	bridge.remove_outside(edge, INF)
 	_free_objects(func(x: float) -> bool: return x < edge)
 	_drop(index, true)
@@ -366,6 +370,7 @@ func _place(index: int, scene: PackedScene) -> Chunk:
 		c.seam = terrain.min_x
 	_placements[index] = [c.offset, c.seam]
 	terrain.stamp(lv.terrain(), c.offset, c.seam)
+	grass.stamp(lv.grass(), c.offset, c.seam)
 	var shift := Grid.to_px(Vector2(c.offset))
 	if prev:
 		c.start_flag = prev.exit_flag
@@ -420,6 +425,7 @@ func _wipe() -> void:
 	_loading = -1
 	terrain.clear()
 	terrain.rebuild()
+	grass.clear()
 	bridge.clear()
 	_free_objects(func(_x: float) -> bool: return true)
 	for f in flags.get_children():
