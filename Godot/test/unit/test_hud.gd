@@ -252,6 +252,12 @@ func test_tool_buttons_show_cost_and_grey_out_when_unaffordable() -> void:
 	GameState.supplies.logs = 0
 	GameState.supplies_changed.emit()
 	assert_false(b.affordable, "greyed out with no logs")
+	for c in b.get_node("%Cost").get_children():
+		var shown: Color = (c as CanvasItem).modulate * (b.get_node("%Cost") as CanvasItem).modulate
+		if c is ColorRect:
+			assert_eq(shown, Color.WHITE, "the supply's swatch keeps its colour")
+		else:
+			assert_eq(shown, b.short_cost_color, "the count turns red")
 	GameState.supplies.logs = 5
 	GameState.supplies_changed.emit()
 	assert_true(b.affordable)

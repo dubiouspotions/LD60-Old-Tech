@@ -45,7 +45,10 @@ func setup(def: ToolDefinition, colors: Dictionary = {}, mat: BridgeMaterial = n
 func set_affordable(ok: bool) -> void:
     affordable = ok
     modulate = Color.WHITE if ok else unaffordable_modulate
-    %Cost.modulate = Color.WHITE if ok else short_cost_color
+    # Only the counts turn red: the swatches keep their colour, which says which supply it is.
+    for c in %Cost.get_children():
+        if c is Label:
+            (c as Label).modulate = Color.WHITE if ok else short_cost_color
 
 
 ## One swatch and count per supply the price asks for.
@@ -69,6 +72,7 @@ func _fill_cost(price: Supplies, colors: Dictionary, per: String = "") -> void:
         count.mouse_filter = Control.MOUSE_FILTER_IGNORE
         row.add_child(count)
     row.visible = row.get_child_count() > 0
+    set_affordable(affordable)
 
 
 ## An icon per material when the tool builds several, the one it builds now (mat, or the first) pressed. The icons
