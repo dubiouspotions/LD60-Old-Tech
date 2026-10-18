@@ -165,6 +165,17 @@ func test_losing_the_last_engineer_says_so_not_the_army() -> void:
 	assert_string_contains(hud.get_node("%LostText").text, "engineer")
 
 
+func test_the_status_says_the_engineers_are_lost_not_the_column() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	for e: Crew.Engineer in world.crew.engineers.duplicate():
+		world.crew._kill(e, "Spiked")
+	await get_tree().process_frame
+	game._update_status()
+	assert_eq(game.get_node("%HUD").get_node("%Status").text, game.crew_lost_status)
+	assert_ne(game.crew_lost_status, game.lost_status)
+
+
 func test_losing_the_army_still_says_the_army() -> void:
 	game._begin()
 	var world: World = game.get_node("%World")
