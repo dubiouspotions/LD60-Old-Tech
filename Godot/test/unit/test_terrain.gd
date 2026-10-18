@@ -40,10 +40,17 @@ func test_dig_soil_yields_earth() -> void:
 	assert_null(t.type_at(Vector2i(0, 6)))
 
 
-func test_dig_rock_refuses() -> void:
+func test_dig_rock_yields_stone_slowly() -> void:
 	var t := WorldFixture.terrain(self, MAP)
-	assert_null(t.dig(Vector2i(8, 6)))
-	assert_eq(t.type_at(Vector2i(8, 6)), WorldFixture.type("rock"))
+	assert_gt(WorldFixture.type("rock").dig_time, WorldFixture.type("soil").dig_time, "slower than soil")
+	assert_eq(t.dig(Vector2i(8, 6)).stone, 1)
+	assert_null(t.type_at(Vector2i(8, 6)))
+
+
+func test_dig_bedrock_refuses() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	assert_null(t.dig(Vector2i(8, 8)))
+	assert_eq(t.type_at(Vector2i(8, 8)), WorldFixture.type("bedrock"))
 
 
 func test_dig_gold_ore_yields_gold() -> void:
@@ -112,7 +119,7 @@ func test_brick_collapses_without_ground() -> void:
 	assert_null(t.type_at(Vector2i(3, 1)), "bricks fell")
 	assert_signal_emitted(t, "collapsed")
 	var found: Supplies = get_signal_parameters(t, "collapsed")[0]
-	assert_eq(found.earth, 3, "9 bricks give 3 earth")
+	assert_eq(found.stone, 3, "9 bricks give 3 stone")
 
 
 func test_brick_on_ground_stands() -> void:
@@ -207,3 +214,12 @@ func test_rock_can_not_be_besieged() -> void:
 	var t := WorldFixture.terrain(self, MAP)
 	assert_false(t.besiege(Vector2i(8, 6), 1000.0))
 	assert_eq(t.type_at(Vector2i(8, 6)), WorldFixture.type("rock"))
+
+
+func test_razed_tower_yields_stone() -> void:
+	var t := WorldFixture.terrain(self, TOWER)
+	watch_signals(t)
+	t.besiege(Vector2i(4, 3), WorldFixture.type("brick").raze_time + 1.0)
+	var got: Supplies = get_signal_parameters(t, "collapsed")[0]
+	assert_gt(got.stone, 0)
+	assert_eq(got.earth, 0)

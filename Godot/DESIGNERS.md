@@ -52,6 +52,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Camp music, dawn bugle | `data/campaign.tres` → Camp group |
 | Recruit button text and where it floats | **Recruit Text** on the **HUD** node in `ui/hud.tscn`; the button floats at the **ButtonSpot** marker in `objects/camp/camp.tscn` |
 | Price of a recruit, its sound and text | **Recruit Cost** / **Recruit Sound** / **Recruit Text** in `data/army_rules.tres` (the army limit is **Max Soldiers** there) |
+| Where stone comes from | Rock tiles (`data/terrain/rock.tres`, **Dig Yield**) and razed towers (`data/terrain/brick.tres`, **Bulk Yield**) |
 | Where gold comes from | Gold ore tiles (`data/terrain/crystal.tres`), the campaign's **Start Supplies**, and each level's **Supply Drop** |
 | Do archers shoot at night | **Rests At Night** on `objects/archer/archer.tscn` |
 | How early the next level loads, how far behind levels are removed | **Stream Ahead** / **Unload Behind** on `game/world.tscn` |

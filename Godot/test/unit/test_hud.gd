@@ -109,3 +109,9 @@ func test_tool_buttons_show_cost_and_grey_out_when_unaffordable() -> void:
 	var dig: ToolButton = hud.get_node("%Tools").get_child(0)
 	assert_false(dig.get_node("%Cost").visible, "free tools show no cost")
 	assert_true(dig.affordable)
+
+
+func test_supply_bar_shows_stone() -> void:
+	GameState.supplies.stone = 3
+	hud._refresh_supplies()
+	assert_eq((hud.get_node("%Stone").get_node("%Value") as Label).text, "3")

@@ -25,3 +25,10 @@ func test_copy_is_independent() -> void:
 	var b := a.copy()
 	b.earth = 9
 	assert_eq(a.earth, 1)
+
+
+func test_stone_is_a_supply() -> void:
+	var s := Supplies.make(0, 0, 0, 0, 2)
+	assert_eq(s.stone, 2)
+	assert_eq(s.describe(), "+2 stone")
+	assert_false(s.can_afford(Supplies.make(0, 0, 0, 0, 3)))

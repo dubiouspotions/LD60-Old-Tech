@@ -67,10 +67,16 @@ func test_dig_marked_cell_again_unmarks() -> void:
 	assert_false(world.terrain.is_marked(Vector2i(8, 6)))
 
 
-func test_dig_does_not_mark_rock() -> void:
+func test_dig_marks_rock() -> void:
 	_select(ToolDefinition.Kind.DIG)
 	_click(Vector2(5.5, 7.5))
-	assert_false(world.terrain.is_marked(Vector2i(5, 7)))
+	assert_true(world.terrain.is_marked(Vector2i(5, 7)))
+
+
+func test_dig_does_not_mark_bedrock() -> void:
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(5.5, 8.5))
+	assert_false(world.terrain.is_marked(Vector2i(5, 8)))
 
 
 func test_dig_marks_tree() -> void:

@@ -8,7 +8,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 
 | Tool | Key | What it does |
 | --- | --- | --- |
-| Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope) and gold ore (+1 gold) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
+| Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope), rock (+1 stone, slow) and gold ore (+1 gold) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
 | Fill | 2 | Drops a block of earth that falls until it lands. Costs 1 earth. |
 | Bridge | 3 | Drag from point to point to plan a bridge deck (a log soldiers walk on). Takes push and pull, up to 5 m. Costs 1 log. |
 | Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
@@ -19,6 +19,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 - Bridge ends snap to a 0.5 m grid, to existing joints, and to any point along a bridge or support (which is split there into two pieces joined by a hinge). An end touching ground is bolted down. A plan may start anywhere, even in mid-air, but the engineers can only build it once it connects to ground or finished work.
 - Joints are hinges, so build triangles or hang the deck from ropes. Members glow red as they near breaking, and each soldier adds 80 kg.
 - The march is one long road: each level joins the last. At the start of every level the column makes camp and sleeps through the night while your engineers keep working, until the king loses patience (30 s by default). Use the night to build ahead, and press **M** or **March** to break camp early. Archers hold their fire while the column sleeps.
+- **Stone** comes from digging rock and from towers your soldiers raze.
 - **Gold** comes from gold ore, your starting supplies and each camp's supply drop. While the column camps, press **R** or **Recruit** to buy another soldier (5 gold); recruits join the camp.
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
 - **F** toggles 2× speed. **C** makes the camera follow the column again. **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.

@@ -75,7 +75,9 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 		b.queue_free()
 	_tool_buttons.clear()
 	_tools = tools
-	var colors := {&"earth": %Earth.swatch, &"logs": %Logs.swatch, &"rope": %Rope.swatch, &"gold": %Gold.swatch}
+	var colors := {}
+	for k in Supplies.KEYS:
+		colors[k] = _readout(k).swatch
 	for i in tools.size():
 		var b: ToolButton = tool_button_scene.instantiate()
 		b.button_group = _group
@@ -230,12 +232,15 @@ func _fit() -> void:
 	fit_to(margin.get_viewport_rect().size.x - sides)
 
 
+## The supply bar readout of supply k (the node named after it: earth -> Earth).
+func _readout(k: StringName) -> Readout:
+	return get_node("%" + String(k).capitalize())
+
+
 func _refresh_supplies() -> void:
 	var s := GameState.supplies
-	%Earth.set_value(str(s.earth), true)
-	%Logs.set_value(str(s.logs), true)
-	%Rope.set_value(str(s.rope), true)
-	%Gold.set_value(str(s.gold), true)
+	for k in Supplies.KEYS:
+		_readout(k).set_value(str(s.get(k)), true)
 	for i in _tool_buttons.size():
 		_tool_buttons[i].set_affordable(s.can_afford(_tools[i].price()))
 
