@@ -107,6 +107,9 @@ func _ready() -> void:
 	crew.bridge = bridge
 	crew.army = army
 	terrain.tile_detached.connect(_on_tile_detached)
+	crew.chopped.connect(func(cell: Vector2i) -> void:
+		leaves.shake(cell)
+		birds.chop(cell))
 	terrain.felled.connect(func(cells: Array[Vector2i]) -> void:
 		leaves.burst(cells)
 		birds.from_tree(cells))

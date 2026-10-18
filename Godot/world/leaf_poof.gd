@@ -1,13 +1,16 @@
 class_name LeafPoof
 extends Node2D
 ## Leaves bursting from a tree as it comes down: a few per leaf cell, pushed outward from the middle of the crown,
-## then fluttering down (light gravity, strong air drag, a sideways sway). Each is gone when it touches solid
-## ground, or after max_life. The World connects it to Terrain.felled.
+## then fluttering down (light gravity, strong air drag, a sideways sway). Each swing of the axe while it is
+## being felled shakes a few loose too. Each is gone when it touches solid ground, or after max_life. The World
+## connects it to Terrain.felled and Crew.chopped.
 
 ## Terrain types whose cells shed leaves.
 @export var leaf_types: Array[TerrainType] = []
 ## Leaves per leaf cell.
 @export_range(0, 20) var per_cell: int = 5
+## Leaves shaken loose by each swing of the axe.
+@export_range(0, 20) var per_chop: int = 3
 ## Most leaves in the air at once.
 @export_range(0, 500) var max_leaves: int = 80
 ## Outward speed of the poof, metres per second.
@@ -52,22 +55,42 @@ func burst(cells: Array[Vector2i]) -> void:
 		centre += Vector2(c) + Vector2(0.5, 0.5)
 	centre /= crown.size()
 	for c in crown:
-		var tint: Color = colors[_rng.randi() % colors.size()] if not colors.is_empty() \
-				else world.terrain.type_at(c).debris_color
 		for i in per_cell:
-			if _leaves.size() >= max_leaves:
-				return
 			var p := Vector2(c) + Vector2(_rng.randf(), _rng.randf())
 			var out := p - centre
 			out = out.normalized() if out.length() > 0.05 else Vector2.from_angle(_rng.randf() * TAU)
-			_leaves.append({
-				pos = p,
-				vel = (out * _rng.randf_range(0.5, 1.0) + Vector2(0, -0.4)) * poof,
-				age = 0.0,
-				rate = _rng.randf_range(0.6, 1.4),
-				phase = _rng.randf() * TAU,
-				color = tint.lightened(_rng.randf_range(-0.1, 0.15)),
-			})
+			_add(p, (out * _rng.randf_range(0.5, 1.0) + Vector2(0, -0.4)) * poof, world.terrain.type_at(c))
+
+
+## A swing of the axe at the tree that cell belongs to shakes per_chop leaves loose from its crown, gently.
+func shake(cell: Vector2i) -> void:
+	var world := World.of(self)
+	if world == null:
+		return
+	var crown: Array[Vector2i] = []
+	for c in world.terrain.tree_cells(cell):
+		if world.terrain.type_at(c) in leaf_types:
+			crown.append(c)
+	if crown.is_empty():
+		return
+	for i in per_chop:
+		var c := crown[_rng.randi() % crown.size()]
+		var p := Vector2(c) + Vector2(_rng.randf(), _rng.randf_range(0.3, 1.0))
+		_add(p, Vector2(_rng.randf_range(-0.3, 0.3), _rng.randf_range(-0.1, 0.2)) * poof, world.terrain.type_at(c))
+
+
+func _add(p: Vector2, vel: Vector2, from: TerrainType) -> void:
+	if _leaves.size() >= max_leaves:
+		return
+	var tint: Color = colors[_rng.randi() % colors.size()] if not colors.is_empty() else from.debris_color
+	_leaves.append({
+		pos = p,
+		vel = vel,
+		age = 0.0,
+		rate = _rng.randf_range(0.6, 1.4),
+		phase = _rng.randf() * TAU,
+		color = tint.lightened(_rng.randf_range(-0.1, 0.15)),
+	})
 
 
 ## Moves the leaves on by dt seconds; drops those that touch the ground or are too old.

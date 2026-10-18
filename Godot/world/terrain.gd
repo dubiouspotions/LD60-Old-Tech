@@ -360,6 +360,14 @@ func besieged_cells() -> Array[Vector2i]:
 
 
 ## Every tile connected to cell that fells with it.
+## Every cell of the tree that cell belongs to (trunk and leaves), or [] if it is not a tree.
+func tree_cells(cell: Vector2i) -> Array[Vector2i]:
+    var t := type_at(cell)
+    if t == null or t.dig_action != TerrainType.DigAction.FELL:
+        return []
+    return _fell_group(cell)
+
+
 func _fell_group(cell: Vector2i) -> Array[Vector2i]:
     return _group(cell, func(t: TerrainType) -> bool: return t.dig_action == TerrainType.DigAction.FELL)
 

@@ -11,6 +11,8 @@ extends Node2D
 signal scaffolding_struck
 ## An engineer finished digging a marked cell. The level takes the tile and its supplies.
 signal dig_finished(cell: Vector2i)
+## A swing of the axe at a tree being felled (cell), on the beat of the work sound.
+signal chopped(cell: Vector2i)
 ## An engineer died; count is how many are left.
 signal count_changed(count: int)
 
@@ -42,6 +44,8 @@ class Engineer:
 	var spot_x: float
 	## Working this tick (building or digging).
 	var working: bool = false
+	## Seconds to the next swing of the axe while felling.
+	var chop_wait: float = 0.0
 	## Builds the job from the ground standing at this x (a plan not connected to anything), else NAN.
 	var reach_x: float = NAN
 	## Falling speed while nothing holds the engineer up.
@@ -352,6 +356,11 @@ func _dig_step(e: Engineer, dt: float) -> void:
 	var t := terrain.type_at(e.dig)
 	var done := terrain.dig_progress(e.dig) + dt * rules.dig_speed / t.dig_time
 	terrain.set_dig_progress(e.dig, done)
+	if t.dig_action == TerrainType.DigAction.FELL:
+		e.chop_wait -= dt
+		if e.chop_wait <= 0.0:
+			e.chop_wait = rules.work_sound_interval
+			chopped.emit(e.dig)
 	_show(e, false, signi(roundi((target.x - e.pos.x) * 100)))
 	if done >= 1.0:
 		e.digging = false
