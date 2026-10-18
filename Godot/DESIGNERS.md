@@ -14,6 +14,7 @@ Open `game/main.tscn` and select **ValueTweaks**. Its Inspector lists the main b
 | supplies | starting supplies, checkpoint supplies |
 | prices | what each tool costs (build tools: their material) |
 | yields | what digging each tile gives, and what felling a tree gives |
+| art | **Terrain V2**: draw the ground with `world/tiles_v2.png` (on) or the old tiles (off) |
 
 The node stores nothing itself. Each value is the real one in the file that owns it (`data/campaign.tres`,
 `data/army_rules.tres`, `data/crew_rules.tres`, `data/archer_rules.tres`, `data/tools/*.tres`, `data/bridge/*.tres`,
@@ -59,6 +60,21 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 - `data/terrain/*.tres` holds one TerrainType per material. It sets: solid, natural ground (anchors bridges and holds bricks), structure (collapses when nothing holds it up), falls (fill), hazard (water or spikes, with the death and "ahead" texts), dig action and yields, and debris colour.
 - `world/tileset.tres` is the TileSet. Each tile's **terrain** custom data points to a TerrainType. To add a material: create a TerrainType, add tiles to the atlas, and set their **terrain** data.
 - `world/tiles.png` is placeholder art. Replace it with your own; keep the layout or reassign the tiles in the TileSet editor.
+
+### The v2 terrain look
+
+`data/terrain_look.tres` (switch it with **Enabled**, or **art › Terrain V2** on ValueTweaks) draws dirt, rock, water and
+spikes from `world/tiles_v2.png`. Every other material keeps its old tile. No painting is needed: each tile is chosen from
+the cell's neighbours when the level loads and wherever something is dug, so pieces always meet edges they were drawn
+for.
+
+- The sheet's sky colour (**Sky Key**) is drawn as transparent, so the real sky shows.
+- Each role (flat tops, corners, walls, inner corners, fillets, water, spikes) lists atlas coordinates. List several tiles
+  in a role and each cell picks one by its position. The pick stays the same while digging, so add variants freely.
+- **Body** is the rock-in-dirt set. It is drawn half a cell offset, and each tile covers the corner where four cells
+  meet. Its 16 entries are indexed by which of those cells are rock: top-left 1, top-right 2, bottom-left 4,
+  bottom-right 8. Two diagonal cases have no art yet (6 and 9, set to (-1, -1)) and fall back to full rock.
+- Rock touching the air gets the grass edge like dirt, because the sheet has no bare-rock edge pieces.
 
 ## Objects and tuning
 

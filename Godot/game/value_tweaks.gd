@@ -21,6 +21,11 @@ extends Node
 	set(v):
 		archer_rules = v
 		notify_property_list_changed()
+## How the terrain is drawn (the v2 tile switch).
+@export var terrain_look: TerrainLook:
+	set(v):
+		terrain_look = v
+		notify_property_list_changed()
 ## Terrain types whose dig and fell yields are listed.
 @export var terrain_types: Array[TerrainType] = []:
 	set(v):
@@ -55,7 +60,7 @@ func _get_property_list() -> Array[Dictionary]:
 		out.append({
 			name = n,
 			type = typeof(value),
-			hint = PROPERTY_HINT_RANGE,
+			hint = PROPERTY_HINT_RANGE if not e.hint.is_empty() else PROPERTY_HINT_NONE,
 			hint_string = e.hint,
 			usage = PROPERTY_USAGE_EDITOR,
 		})
@@ -80,6 +85,8 @@ func _set(property: StringName, value: Variant) -> bool:
 ## path -> Entry, in Inspector order.
 func _entries() -> Dictionary:
 	var out := {}
+	if terrain_look:
+		out["art/terrain_v2"] = Entry.new(terrain_look, &"enabled", terrain_look, "")
 	if campaign:
 		var army := campaign.army_rules
 		out["army/start_soldiers"] = Entry.new(campaign, &"start_soldiers", campaign, "1,200,1")

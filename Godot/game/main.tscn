@@ -14,6 +14,7 @@
 [ext_resource type="Resource" path="res://data/campaign.tres" id="vt_campaign"]
 [ext_resource type="Resource" path="res://data/crew_rules.tres" id="vt_crew"]
 [ext_resource type="Resource" path="res://data/archer_rules.tres" id="vt_archer"]
+[ext_resource type="Resource" path="res://data/terrain_look.tres" id="vt_look"]
 [ext_resource type="Resource" path="res://data/terrain/bedrock.tres" id="vt_t_bedrock"]
 [ext_resource type="Resource" path="res://data/terrain/brick.tres" id="vt_t_brick"]
 [ext_resource type="Resource" path="res://data/terrain/crystal.tres" id="vt_t_crystal"]
@@ -91,4 +92,5 @@ script = ExtResource("vt_script")
 campaign = ExtResource("vt_campaign")
 crew_rules = ExtResource("vt_crew")
 archer_rules = ExtResource("vt_archer")
+terrain_look = ExtResource("vt_look")
 terrain_types = Array[ExtResource("vt_tt")]([ExtResource("vt_t_bedrock"), ExtResource("vt_t_brick"), ExtResource("vt_t_crystal"), ExtResource("vt_t_fill"), ExtResource("vt_t_leaves"), ExtResource("vt_t_rock"), ExtResource("vt_t_soil"), ExtResource("vt_t_spikes"), ExtResource("vt_t_trunk"), ExtResource("vt_t_water")])
