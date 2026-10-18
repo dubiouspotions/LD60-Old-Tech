@@ -423,6 +423,24 @@ func test_a_rope_dropped_across_a_tower_does_not_lie_on_it_like_a_rod() -> void:
 	assert_gt(rope.b.pos.y, 4.0)
 
 
+func test_spikes_destroy_a_box_that_falls_on_them() -> void:
+	_map([
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"######^^^^####",
+		"BBBBBBBBBBBBBB",
+	])
+	var block := _drop_fill(Vector2i(7, 0))
+	_run(2.0)
+	assert_false(is_instance_valid(block) and not block.is_queued_for_deletion(), "the box is gone")
+	assert_eq(world.terrain.type_at(Vector2i(7, 6)), WorldFixture.type("spikes"), "the spikes are still there")
+	assert_null(world.terrain.type_at(Vector2i(7, 5)), "and no box sits on them")
+
+
 func test_a_box_that_landed_stops_falling_before_it_is_freed() -> void:
 	_drop_fill(Vector2i(7, 0))
 	_run(2.0)
