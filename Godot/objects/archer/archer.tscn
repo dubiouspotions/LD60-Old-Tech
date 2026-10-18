@@ -95,6 +95,7 @@ animations = [{
 }]
 
 [node name="Archer" type="Node2D" unique_id=822854197]
+z_index = 2
 script = ExtResource("1")
 arrow_scene = ExtResource("2")
 shoot_sound = ExtResource("3")
