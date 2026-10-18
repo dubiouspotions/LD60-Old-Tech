@@ -114,6 +114,37 @@ func test_decoration_tiles_on_the_tower_fall_with_it() -> void:
 	assert_eq(t.get_cell_atlas_coords(Vector2i(6, 2)), deco, "on the tower where it landed")
 
 
+## A 2 x 2 tower on a 1 m post, 3 m above deep soil once the post is gone.
+const DROP: Array = [
+	"....................",
+	"......KK............",
+	"......KK............",
+	"......##............",
+	"....................",
+	"....................",
+	"####################",
+	"####################",
+	"####################",
+	"####################",
+	"####################",
+	"####################",
+	"####################",
+	"BBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_a_tower_landing_breaks_the_ground_under_it_and_sinks_until_a_short_drop() -> void:
+	_build(DROP)
+	_clear([Vector2i(6, 3), Vector2i(7, 3)])
+	_run(6.0)
+	# 3 m onto row 6: breaks rows 6 and 7, sinks 2 m: breaks row 8, sinks 1 m: stops on row 9.
+	assert_eq(_bricks().size(), 4, "stands, whole")
+	for c in [Vector2i(6, 7), Vector2i(7, 7), Vector2i(6, 8), Vector2i(7, 8)]:
+		assert_true(c in _bricks(), "sunk to %s" % c)
+	assert_eq(world.terrain.type_at(Vector2i(6, 9)), WorldFixture.type("soil"), "the last 1 m drop broke nothing")
+	assert_eq(world.terrain.type_at(Vector2i(5, 7)), WorldFixture.type("soil"), "only the ground under it")
+
+
 func test_archer_is_not_lost_while_its_tower_falls() -> void:
 	_build(MAP)
 	var archer: Archer = _on_top(ARCHER, 7.0, 2.0)

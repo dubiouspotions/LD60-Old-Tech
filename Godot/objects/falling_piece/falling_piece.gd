@@ -4,14 +4,19 @@ extends Node2D
 ## archers, flags, torches and any other object on top of it or inside it). It stops on the first cell of ground in
 ## its way and becomes ground again there, each tile as it was. If it fell further than its tiles' Survives Fall, or
 ## onto something that Breaks Falling (spikes), it breaks up instead: a tower collapses, a tree is felled, and its
-## riders go with it. It crushes soldiers, engineers, archers and boxes it falls onto. Stepped by the World. The node
-## origin is the top-left of its top-left cell.
+## riders go with it. Landing whole after more than crush_free_fall, it breaks a layer of the ground under it for
+## every metre more and sinks into the hole, again and again, until a short drop leaves it standing. It crushes
+## soldiers, engineers, archers and boxes it falls onto. Stepped by the World. The node origin is the top-left of
+## its top-left cell.
 
 @export var gravity: float = 30.0
 @export var max_speed: float = 22.0
 ## Played when it lands in one piece.
 @export var land_sound: SoundEffect
 @export_range(0.0, 2.0, 0.05) var land_shake: float = 0.2
+## Metres it can drop and land whole without breaking the ground under it. Each metre more breaks one layer (ground
+## that can not be dug, such as bedrock, holds).
+@export_range(0, 10) var crush_free_fall: int = 1
 
 ## The lifted tiles (Terrain.lift), by the cell each came from.
 var tiles: Dictionary = {}
@@ -96,8 +101,25 @@ func _land(world: World) -> void:
 				else:
 					r.queue_free()
 	else:
-		t.put(tiles, rows)
+		var cells := t.put(tiles, rows)
+		_crush_under(t, cells, rows - crush_free_fall)
 		Audio.play(land_sound, position)
 		Effects.shake(land_shake)
 	riders.clear()
 	queue_free()
+
+
+## Breaks layers of the ground under the landed cells (each column's lowest), stopping at ground that can not be
+## dug. With nothing under it the piece comes loose and falls on into the hole.
+func _crush_under(t: Terrain, cells: Array[Vector2i], layers: int) -> void:
+	for c in cells:
+		if c + Vector2i.DOWN in cells:
+			continue
+		for k in range(1, layers + 1):
+			var n := c + Vector2i(0, k)
+			var nt := t.type_at(n)
+			if nt != null and nt.dig_action == TerrainType.DigAction.NONE:
+				break
+			if nt != null:
+				t.set_type(n, null)
+				Effects.debris(t.cell_center_px(n), nt.debris_color, 3, 90.0)
