@@ -28,6 +28,9 @@ var _tile_for: Dictionary = {} # TerrainType -> [source_id, atlas_coords]
 var _dirty_cols: Dictionary = {} # int -> true
 var _marks: Dictionary = {} # Vector2i -> dig progress 0..1
 var _siege: Dictionary = {} # Vector2i -> seconds of attack taken
+## Cells changed since the last take_changes(), for anything drawing the terrain its own way (TerrainSkin).
+var _changed: Dictionary = {} # Vector2i -> true
+var _changed_all: bool = true
 
 
 func _ready() -> void:
@@ -45,6 +48,8 @@ func rebuild() -> void:
     _tile_for.clear()
     _marks.clear()
     _siege.clear()
+    _changed.clear()
+    _changed_all = true
     size = Vector2i.ZERO
     min_x = 0
     _index_tileset()
@@ -83,6 +88,7 @@ func surface_row(x: int) -> int:
 
 ## Changes one cell. null makes it air. Marks the area for settle().
 func set_type(cell: Vector2i, type: TerrainType) -> void:
+    _changed[cell] = true
     if type != _types.get(cell):
         _marks.erase(cell)
         _siege.erase(cell)
@@ -266,6 +272,7 @@ func stamp(src: TileMapLayer, offset: Vector2i, seam: int) -> void:
         if to.x < seam:
             continue
         set_cell(to, src.get_cell_source_id(cell), src.get_cell_atlas_coords(cell), src.get_cell_alternative_tile(cell))
+        _changed[to] = true
         var t := _read_cell(to)
         if t:
             _types[to] = t
@@ -289,12 +296,28 @@ func _erase_columns(hit: Callable) -> void:
         if hit.call(cell.x):
             erase_cell(cell)
             _types.erase(cell)
+            _changed[cell] = true
     for cell: Vector2i in _marks.keys():
         if hit.call(cell.x):
             _marks.erase(cell)
     for x: int in _dirty_cols.keys():
         if hit.call(x):
             _dirty_cols.erase(x)
+
+
+## Cells changed since the last call, and whether everything changed (a rebuild). {all: bool, cells: Array}.
+func take_changes() -> Dictionary:
+    var out := {all = _changed_all, cells = _changed.keys()}
+    _changed.clear()
+    _changed_all = false
+    return out
+
+
+## [source_id, atlas_coords] of the first tile in the TileSet with this terrain type, or [] if none.
+func atlas_tile(type: TerrainType) -> Array:
+    if _tile_for.is_empty():
+        _index_tileset()
+    return _tile_for.get(type, [])
 
 
 ## Picture of the first tile in the TileSet with this terrain type, for showing it off the map (falling fill).
@@ -328,6 +351,7 @@ func _detach_loose(xs: Array) -> void:
                 if t and t.falls and not is_solid(cell + Vector2i.DOWN) and _inside(cell):
                     _types.erase(cell)
                     erase_cell(cell)
+                    _changed[cell] = true
                     tile_detached.emit(cell, t)
 
 
@@ -381,6 +405,7 @@ func _collapse_unsupported(xa: int, xb: int, ca: int, cb: int) -> void:
         fallen.append(cell)
         _types.erase(cell)
         erase_cell(cell)
+        _changed[cell] = true
         Effects.debris(cell_center_px(cell), t.debris_color, 3, 110.0)
     if fallen.is_empty():
         return
