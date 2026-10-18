@@ -54,8 +54,11 @@ func test_the_camp_supply_drop_says_what_it_gave() -> void:
 	world.begin(0, 3)
 	world.march()
 	var c1 := world.place_now(1)
+	# A drop to show, whatever the campaign gives.
+	var drop := Supplies.new()
+	drop.logs = 3
+	c1.level.supply_drop = drop
 	world.army.spawn(3, c1.start_flag.metres().x + 0.05)
 	for i in 6:
 		world._physics_process(1.0 / 60.0)
-	var drop: Supplies = c1.level.supply_drop if c1.level.supply_drop else GameState.campaign.checkpoint_supplies
 	assert_has(_said(), drop.describe())

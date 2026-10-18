@@ -20,6 +20,11 @@ var tools: ToolController
 func before_each() -> void:
 	GameState.save_path = "user://test_sappers.cfg"
 	GameState.new_campaign()
+	# Enough to build with, whatever the campaign starts with.
+	GameState.supplies = Supplies.new()
+	GameState.supplies.earth = 8
+	GameState.supplies.logs = 12
+	GameState.supplies.rope = 6
 	world = load("res://game/world.tscn").instantiate()
 	add_child_autofree(world)
 	world.terrain.clear()
