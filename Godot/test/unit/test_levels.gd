@@ -59,3 +59,19 @@ func test_archers_are_under_objects() -> void:
 		for o in level.find_children("*", "Node2D", true, false):
 			if o is Archer:
 				assert_eq(o.get_parent(), level.objects(), "%s %s belongs under Objects" % [level.name, o.name])
+
+
+## The campaign levels are painted with the v2 tiles wherever the v2 sheet has art for the material.
+func test_levels_use_the_v2_tiles() -> void:
+	var look: TerrainLook = load("res://data/terrain_look.tres")
+	var drawn := look.dirt_types + look.rock_types + look.water_types + look.spike_types
+	for path: String in GameState.campaign.levels:
+		var lv: Level = load(path).instantiate()
+		var t: Terrain = lv.get_node("Terrain")
+		var old := 0
+		for cell in t.get_used_cells():
+			if t.painted_type(cell) in drawn and t.get_cell_source_id(cell) != look.source_id:
+				old += 1
+		assert_eq(old, 0, "%s cells still painted with old tiles" % path)
+		lv.free()
+

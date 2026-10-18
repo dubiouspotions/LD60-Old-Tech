@@ -251,6 +251,9 @@ func _save(_s: int, path: String) -> void:
 			var t: int = grid[x][y]
 			if t != Tile.AIR:
 				terrain.set_cell(Vector2i(x, y), 0, _atlas(t, x, y))
+	# Draw the ground with the v2 tiles where the look has art for it.
+	(terrain as Terrain).rebuild()
+	(terrain as Terrain).retile_all()
 	var lines: PackedStringArray = [
 		'[gd_scene format=3]',
 		'',
