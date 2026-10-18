@@ -199,6 +199,23 @@ func test_falling_tower_crushes_an_engineer_under_it() -> void:
 	assert_eq(world.crew.engineers.size(), before - 1, "crushed")
 
 
+## Only what Crushes kills: a tree coming down on people leaves them alive.
+func test_falling_tree_kills_nobody() -> void:
+	assert_false(WorldFixture.type("trunk").crushes)
+	assert_false(WorldFixture.type("leaves").crushes)
+	assert_true(WorldFixture.type("brick").crushes)
+	_build(TREE)
+	_clear([Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5)])
+	world.army.spawn(1, 6.5)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(6.5, 6.0)
+	var before := world.crew.engineers.size()
+	_run(2.0)
+	assert_eq(world.terrain.type_at(Vector2i(6, 5)), WorldFixture.type("trunk"), "the tree came down")
+	assert_eq(world.army.soldiers.size(), 1, "the soldier lives")
+	assert_eq(world.crew.engineers.size(), before, "the engineer lives")
+
+
 func test_tree_falls_onto_the_ground_below_and_stands_there() -> void:
 	_build(TREE)
 	_clear([Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5)])

@@ -17,6 +17,7 @@ display_name = "Leaves"
 solid = false
 anchor = false
 survives_fall = 1.0
+crushes = false
 fill_replaces = true
 dig_action = 2
 dig_time = 0.4

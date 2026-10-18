@@ -20,6 +20,9 @@ enum DigAction { NONE, REMOVE, FELL }
 ## A tower or tree whose ground is taken away falls as one piece, carrying what stands on it, and stands where it
 ## lands. Falling further than this breaks it up (a tower collapses, a tree is felled). The lowest in a piece counts.
 @export_range(0.0, 50.0, 0.5, "suffix:m") var survives_fall: float = 3.0
+## A falling piece with a tile of this kills the soldiers, engineers and archers it comes down on (a tower). Off, it
+## leaves them alive (a tree).
+@export var crushes: bool = true
 ## Falls when the tile below is not solid (a dropped box).
 @export var falls: bool = false
 ## A tile dropped by a Fill tool (a box) can land in this tile, replacing it.

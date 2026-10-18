@@ -5,8 +5,8 @@ extends Node2D
 ## its way and becomes ground again there, each tile as it was. If it fell further than its tiles' Survives Fall, or
 ## onto something that Breaks Falling (spikes), it breaks up instead: a tower collapses, a tree is felled, and its
 ## riders go with it. Landing whole after more than crush_free_fall, it breaks a layer of the ground under it for
-## every metre more and sinks into the hole, again and again, until a short drop leaves it standing. It crushes
-## soldiers, engineers, archers and boxes it falls onto. Stepped by the World. The node origin is the top-left of
+## every metre more and sinks into the hole, again and again, until a short drop leaves it standing. It smashes boxes
+## it falls onto, and crushes soldiers, engineers and archers if any of its tiles Crushes. Stepped by the World. The node origin is the top-left of
 ## its top-left cell.
 
 @export var gravity: float = 30.0
@@ -46,6 +46,11 @@ func setup(lifted: Dictionary, terrain: Terrain) -> void:
 		var tile: Dictionary = tiles[c]
 		if tile.source != -1:
 			layer.set_cell(c - _origin, tile.source, tile.coords, tile.alt)
+
+
+## Does it kill the people it comes down on: any of its tiles Crushes (a tower does, a tree does not).
+func crushes() -> bool:
+	return tiles.values().any(func(tile: Dictionary) -> bool: return tile.type != null and (tile.type as TerrainType).crushes)
 
 
 ## Does the piece cover the point p (metres) where it is now.

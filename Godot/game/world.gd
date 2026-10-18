@@ -589,16 +589,19 @@ func carries(node: Node) -> bool:
 	return objects.get_children().any(func(o: Node) -> bool: return o is FallingPiece and node in o.riders)
 
 
-## Crushes every soldier, engineer, archer and box the falling piece now covers, except what it carries.
+## Smashes every box the falling piece now covers and, if it crushes, kills every soldier, engineer and archer it
+## covers, except what it carries.
 func crush_under(piece: FallingPiece) -> void:
-	for s: Soldier in army.soldiers + army.deserters:
-		if not s.dead and piece.covers(s.pos - Vector2(0, 0.3)):
-			army.crush(s)
-	for e: Crew.Engineer in crew.engineers.duplicate():
-		if piece.covers(e.pos - Vector2(0, 0.3)):
-			crew.crush(e)
+	var kills := piece.crushes()
+	if kills:
+		for s: Soldier in army.soldiers + army.deserters:
+			if not s.dead and piece.covers(s.pos - Vector2(0, 0.3)):
+				army.crush(s)
+		for e: Crew.Engineer in crew.engineers.duplicate():
+			if piece.covers(e.pos - Vector2(0, 0.3)):
+				crew.crush(e)
 	for o: Node in objects.get_children():
-		if o is Archer and o.alive() and not o in piece.riders and piece.covers(o.feet_m() - Vector2(0, 0.3)):
+		if kills and o is Archer and o.alive() and not o in piece.riders and piece.covers(o.feet_m() - Vector2(0, 0.3)):
 			crush(o)
 		elif o is FallingBlock and not o.is_queued_for_deletion() and piece.covers(Grid.to_m(o.position) + Vector2(0.5, 0.5)):
 			o.smash()
