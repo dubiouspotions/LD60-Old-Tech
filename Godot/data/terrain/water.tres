@@ -13,3 +13,4 @@ hazard = 1
 death_text = "Drowned"
 ahead_text = "Water ahead"
 debris_color = Color(0.20392157, 0.5019608, 0.7137255, 1)
+splash_amount = 18

@@ -44,6 +44,7 @@ func step(dt: float, world: World, bodies: Array) -> void:
 	_at = _rules.throw_point(_from, _to, s)
 	position = Grid.to_px(_at)
 	$Sprite.rotation = TAU * spin * _time
+	world.terrain.splash(was, _at, (_at.y - was.y) / dt if dt > 0.0 else 0.0)
 	if hits_ground(world.terrain, world.bridge, was, _at) or bodies.any(func(pair: Array) -> bool: return not pair[0] in _ignored and (pair[1] as Bridge.Body).touches(_at, hit_margin)):
 		_break()
 		return

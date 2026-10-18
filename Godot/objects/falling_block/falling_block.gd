@@ -67,6 +67,8 @@ func step(dt: float, world: World, bodies: Array) -> void:
 			resting_on = pair[0]
 	if rest < INF:
 		next = rest
+	t.splash(Vector2(x + 0.5, bottom), Vector2(x + 0.5, next), _vy)
+	if rest < INF:
 		_vy = 0.0
 	position.y = (next - 1.0) * Grid.PX
 	if rest < INF:

@@ -5,7 +5,7 @@ extends Node2D
 signal shake_requested(amount: float)
 ## A floating text was shown (for tests and anything that follows the texts).
 signal said(text: String, at_px: Vector2)
-## A particle burst was spawned: kind is &"debris", &"sparks", &"rubble" or &"dust".
+## A particle burst was spawned: kind is &"debris", &"sparks", &"rubble", &"dust" or &"splash".
 signal burst(kind: StringName, at_px: Vector2, color: Color)
 
 ## CPUParticles2D scene used for debris. Its look is edited in the scene; colour and count are set per call.
@@ -15,6 +15,10 @@ signal burst(kind: StringName, at_px: Vector2, color: Color)
 ## CPUParticles2D scenes for a structure breaking up: heavy chunks of it, and a cloud of its dust.
 @export var rubble_scene: PackedScene
 @export var dust_scene: PackedScene
+## CPUParticles2D scene for drops thrown up where something falls into water, and how much paler (toward white) the
+## drops are than the water.
+@export var splash_scene: PackedScene
+@export_range(0.0, 1.0, 0.05) var splash_pale: float = 0.45
 ## Label scene that floats up and fades (see floating_text.gd).
 @export var text_scene: PackedScene
 
@@ -73,6 +77,18 @@ func dust(at_px: Vector2, color: Color, amount: int = 2) -> void:
 	p.position = at_px
 	_fire(p)
 	burst.emit(&"dust", at_px, color)
+
+
+## Drops of color thrown up from at_px (something fell into water there).
+func splash(at_px: Vector2, color: Color, amount: int = 10) -> void:
+	if splash_scene == null or amount <= 0:
+		return
+	var p: CPUParticles2D = splash_scene.instantiate()
+	p.amount = amount
+	p.color = color.lerp(Color.WHITE, splash_pale)
+	p.position = at_px
+	_fire(p)
+	burst.emit(&"splash", at_px, color)
 
 
 func _fire(p: CPUParticles2D) -> void:

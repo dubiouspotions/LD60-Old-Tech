@@ -65,6 +65,11 @@ enum DigAction { NONE, REMOVE, FELL }
 
 @export_group("Look")
 @export var debris_color: Color = Color("7b5131")
+## A liquid (water): drops of debris_color thrown up where something falls into it at Splash Speed or faster
+## (0: no splash), with splash_sound.
+@export_range(0, 40) var splash_amount: int = 0
+@export_range(0.0, 20.0, 0.5, "suffix:m/s") var splash_speed: float = 2.0
+@export var splash_sound: SoundEffect
 
 
 ## Short label, shown on the tiles in the TileSet editor's paint view.

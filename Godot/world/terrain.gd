@@ -627,6 +627,20 @@ func cell_center_px(cell: Vector2i) -> Vector2:
 	return Grid.to_px(Vector2(cell) + Vector2(0.5, 0.5))
 
 
+## Splashes if something whose lowest point moved from a to b (metres), falling at vy m/s, went into a liquid
+## (a type with a Splash Amount) from out of it: at the liquid's surface above b, unless slower than Splash Speed.
+func splash(a: Vector2, b: Vector2, vy: float) -> void:
+	var cell := Grid.cell_of(b)
+	var t := type_at(cell)
+	if t == null or t.splash_amount <= 0 or vy < t.splash_speed or type_at(Grid.cell_of(a)) == t:
+		return
+	while cell.y > 0 and type_at(cell + Vector2i.UP) == t:
+		cell += Vector2i.UP
+	var at := Grid.to_px(Vector2(b.x, cell.y))
+	Effects.splash(at, t.debris_color, t.splash_amount)
+	Audio.play(t.splash_sound, at)
+
+
 func _detach_loose(xs: Array) -> void:
 	var seen := {}
 	for x: int in xs:

@@ -265,7 +265,9 @@ func _fall(e: Engineer, dt: float) -> bool:
 		return false
 	_drop(e)
 	e.vy = minf(e.vy + rules.fall_gravity * dt, rules.max_fall_speed)
+	var was := e.pos
 	e.pos.y = minf(e.pos.y + e.vy * dt, below)
+	terrain.splash(was, e.pos, e.vy)
 	_show(e, false, 0)
 	return true
 
