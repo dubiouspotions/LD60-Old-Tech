@@ -37,9 +37,15 @@ var _hover: bool = false
 var _holding: bool = false
 var _hold_left: float = 0.0
 var _build_from: Bridge.Snap
-## Building with clicks (not a drag): each click places a plank from _build_from and starts the next one from its
-## end. Clicking the last point again, right-click or Esc finishes.
+## Building with clicks (not a drag): the first click starts a plank, the second places its end. While chain is
+## held, the next plank follows the mouse from the end just placed (see chain); letting go of it ends the chain.
+## Clicking the last point again, right-click or Esc finishes.
 var _build_waiting: bool = false
+## Chain key (Shift, the "chain_build" action) held. Held with nothing being drawn, a new plank from the end of
+## the last one placed follows the mouse, if that plan has not been ordered yet: a click places it.
+var chain: bool = false
+## Where the last plank placed ended (picked up again with chain), or NAN.
+var _last_end: Vector2 = Vector2(NAN, NAN)
 ## While Dig is held: true marks cells, false clears marks (decided by the first cell clicked).
 var _dig_marking: bool = true
 var _material: Dictionary = {} # tool index -> index into its materials()
@@ -84,6 +90,28 @@ func cancel() -> void:
 	_build_from = null
 	_build_waiting = false
 	_holding = false
+	_last_end = Vector2(NAN, NAN)
+
+
+## Where the plank following the mouse starts: the one being drawn, or (chain held) the end of the last one placed.
+## null when there is none.
+func preview_from() -> Bridge.Snap:
+	if _build_from:
+		return _build_from
+	return _resume_point() if chain else null
+
+
+## The end of the last plank placed as a point to build on, while its plan is still a plan nobody has ordered.
+func _resume_point() -> Bridge.Snap:
+	if world == null or is_nan(_last_end.x):
+		return null
+	var p := world.bridge.snap_point(_last_end)
+	if p.node == null:
+		return null
+	for m in world.bridge.members:
+		if (m.a == p.node or m.b == p.node) and (not m.blueprint or m.ordered):
+			return null
+	return p
 
 
 ## Hands every blueprint in the world to the crew. Returns how many.
@@ -111,6 +139,8 @@ func _on_ordered(planned: Array[Bridge.Member]) -> void:
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"cancel"):
 		cancel()
+	elif event.is_action(&"chain_build"):
+		chain = event.is_pressed()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -141,6 +171,7 @@ func _notification(what: int) -> void:
 		_hover = false
 	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		cancel()
+		chain = false
 
 
 func _process(delta: float) -> void:
@@ -159,18 +190,22 @@ func _update_mouse() -> void:
 	_mouse_m = Grid.to_m(get_global_mouse_position())
 
 
-## Build tools take a drag (press at the start, release at the end) or a chain of clicks (see _build_waiting).
+## Build tools take a drag (press at the start, release at the end) or clicks (see _build_waiting and chain).
 func _press() -> void:
 	var t := tool()
 	_drop_lost_chain()
 	if t.kind == ToolDefinition.Kind.BUILD:
+		if _build_from == null and chain:
+			_build_from = _resume_point()
+			_build_waiting = _build_from != null
 		if _build_from and _build_waiting:
 			var to := world.bridge.snap_point(_mouse_m, _build_from.node)
 			if to.pos == _build_from.pos:
 				cancel()
 			elif _place_build():
-				# Carry on from the end just placed.
-				_build_from = world.bridge.snap_point(to.pos)
+				# Done. With chain held, the next plank follows from its end (preview_from) until Shift is let go.
+				_build_from = null
+				_build_waiting = false
 			return
 		_build_from = world.bridge.snap_point(_mouse_m)
 		return
@@ -202,7 +237,7 @@ func _place_build() -> bool:
 	var to: Bridge.Snap = ends[1]
 	var check := world.bridge.check_build(from, to, mat, GameState.supplies)
 	if check.ok and GameState.spend(check.cost):
-		world.bridge.build(from, to, mat, true)
+		_last_end = world.bridge.build(from, to, mat, true).b.pos
 		Audio.play(tool().use_sound, Grid.to_px((from.pos + to.pos) / 2))
 		return true
 	if not check.msg.is_empty():
@@ -310,19 +345,20 @@ func _draw_marks() -> void:
 func _draw_build(mat: BridgeMaterial) -> void:
 	var px := Grid.PX
 	var bridge := world.bridge
-	if _build_from == null:
+	var start := preview_from()
+	if start == null:
 		var p := bridge.snap_point(_mouse_m)
 		_marker(p)
 		return
-	var mouse := bridge.snap_point(_mouse_m, _build_from.node)
-	var ends := _plan_ends(_build_from, mouse)
+	var mouse := bridge.snap_point(_mouse_m, start.node)
+	var ends := _plan_ends(start, mouse)
 	var from: Bridge.Snap = ends[0]
 	var to: Bridge.Snap = ends[1]
 	var check := bridge.check_build(from, to, mat, GameState.supplies)
 	var color: Color = mat.color if check.ok else bad_color
 	color.a = 0.75
 	# The line follows the drag; the markers show where the ends land (out of the ground).
-	var a := _build_from.pos * px
+	var a := start.pos * px
 	var b := mouse.pos * px
 	if mat.draw_as_rope:
 		draw_dashed_line(a, b, color, maxf(2.0, mat.thickness * px), 6.0)
