@@ -11,7 +11,6 @@ logs = 1
 
 [resource]
 script = ExtResource("4_am5kb")
-display_name = "Log"
 hint = "≤ 5 m · push + pull"
 cost = SubResource("Resource_ipm0b")
 snapped_text = "Bridge pulled apart"
