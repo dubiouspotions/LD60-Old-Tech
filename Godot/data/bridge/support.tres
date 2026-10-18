@@ -14,6 +14,7 @@ script = ExtResource("4_s8k2p")
 display_name = "Support"
 hint = "≤ 5 m · not walked on"
 cost = SubResource("Resource_s8k2p")
+metres_per_cost = 2.0
 kg_per_m = 14.0
 break_force = 13000.0
 blocks_arrows = false

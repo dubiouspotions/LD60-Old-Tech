@@ -8,8 +8,10 @@ extends Resource
 @export var icon: Texture2D
 ## Small hint on the tool button while this material is chosen.
 @export var hint: String = ""
-## What each started metre costs: a 3.2 m piece costs four times this.
+## What each started stretch of metres_per_cost costs: with 1 m, a 3.2 m piece costs four times this.
 @export var cost: Supplies
+## Metres one Cost buys (2: a log per started 2 m).
+@export_range(0.25, 10.0, 0.25, "suffix:m") var metres_per_cost: float = 1.0
 ## Shown when the player can not afford it; %s is what is missing ("3 logs").
 @export var no_supply_text: String = "%s missing. Fell a tree"
 
@@ -67,3 +69,17 @@ extends Resource
 @export_group("Sound")
 @export var place_sound: SoundEffect
 @export var break_sound: SoundEffect
+
+
+## The length one Cost buys, as written after a price: "m", or "2m".
+func cost_unit() -> String:
+	return "m" if is_equal_approx(metres_per_cost, 1.0) else _metres() + "m"
+
+
+## The length one Cost buys, in words: "metre", or "2 m".
+func cost_stretch() -> String:
+	return "metre" if is_equal_approx(metres_per_cost, 1.0) else _metres() + " m"
+
+
+func _metres() -> String:
+	return str(metres_per_cost).trim_suffix(".0")

@@ -38,6 +38,15 @@ func test_anchorable_only_touching_ground() -> void:
 	assert_false(b.anchorable(Vector2(5, 1)), "mid air")
 
 
+## A support costs 1 log per started 2 m (its Metres Per Cost); a log 1 per started metre.
+func test_supports_cost_a_log_per_started_two_metres() -> void:
+	var support: BridgeMaterial = load("res://data/bridge/support.tres")
+	assert_eq(support.metres_per_cost, 2.0)
+	for pair in [[1.0, 1], [2.0, 1], [2.5, 2], [4.0, 2], [4.5, 3]]:
+		assert_eq(Bridge.cost_for(support, pair[0]).logs, pair[1], "%s m of support" % pair[0])
+	assert_eq(Bridge.cost_for(LOG, 2.5).logs, 3, "a log still per started metre")
+
+
 func test_check_build_says_how_much_is_missing() -> void:
 	var t := WorldFixture.terrain(self, CHASM)
 	var b := WorldFixture.bridge(self, t)

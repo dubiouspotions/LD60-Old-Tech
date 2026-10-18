@@ -314,6 +314,14 @@ func test_tool_buttons_show_cost_and_grey_out_when_unaffordable() -> void:
 	assert_true(b.affordable)
 	var dig: ToolButton = hud.get_node("%Tools").get_child(0)
 	assert_false(dig.get_node("%Cost").visible, "free tools show no cost")
+	var support_index := -1
+	for i in tools.size():
+		if tools[i].bridge_material and tools[i].bridge_material.resource_path.ends_with("support.tres"):
+			support_index = i
+	var support: ToolButton = hud.get_node("%Tools").get_child(support_index)
+	var counts: Array = support.get_node("%Cost").get_children().filter(func(c: Node) -> bool: return c is Label)
+	assert_eq((counts[0] as Label).text, "1/2m", "a support's price is per 2 m")
+	assert_string_contains(support.tooltip_text, "per started 2 m")
 	assert_true(dig.affordable)
 
 
