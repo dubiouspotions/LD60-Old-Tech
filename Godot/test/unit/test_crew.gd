@@ -412,45 +412,61 @@ func test_column_follows_the_engineer_out_onto_a_piece_being_built() -> void:
 	assert_gt(furthest[0], 6.5, "out on the built part before the piece is finished")
 
 
-## A flat 40 m strip with the column at x 20.5 and the crew around it.
-func _flat_strip() -> void:
+## A flat 100 m strip with the column at x 50.5, the crew around it and a camera on it.
+func _flat_strip() -> CameraRig:
 	world.terrain.clear()
 	world.terrain.rebuild()
-	for x in 40:
+	for x in 100:
 		world.terrain.set_type(Vector2i(x, 6), WorldFixture.type("soil"))
 		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("bedrock"))
-	world.army.spawn(1, 20.5)
-	world.crew.spawn(20.5)
+	world.army.spawn(1, 50.5)
+	world.crew.spawn(50.5)
+	var cam := CameraRig.new()
+	cam.world = world
+	add_child_autofree(cam)
+	cam.make_current()
+	return cam
 
 
-func _nobody_behind() -> bool:
-	var edge := world.army.rear().pos.x - world.crew.rules.work_behind
+## Nobody is further back than the camera can be panned.
+func _nobody_behind(cam: CameraRig) -> bool:
+	var edge := cam.reach_m().x
 	return world.crew.engineers.all(func(e: Crew.Engineer) -> bool: return e.pos.x >= edge - 0.05)
 
 
 func test_crew_leaves_old_sites_behind_the_column_alone() -> void:
-	_flat_strip()
+	var cam := _flat_strip()
 	world.terrain.mark(Vector2i(3, 6))
+	assert_gt(cam.reach_m().x, 4.0, "the old site is out of the camera's reach")
 	var stayed := [true]
 	_run(8.0, func() -> bool:
-		stayed[0] = stayed[0] and _nobody_behind()
+		stayed[0] = stayed[0] and _nobody_behind(cam)
 		return false)
 	assert_true(stayed[0], "nobody runs back to the old site")
 	assert_true(world.terrain.is_marked(Vector2i(3, 6)))
 
 
+func test_crew_builds_behind_the_column_as_far_as_the_camera_reaches() -> void:
+	var cam := _flat_strip()
+	var m := _plan(Vector2(30, 6), Vector2(31, 3), ROPE)
+	assert_lt(cam.reach_m().x, 30.0, "the camera can be panned to it")
+	world.bridge.order_blueprints()
+	_run(30.0, func() -> bool: return not m.blueprint)
+	assert_false(m.blueprint, "20 m behind the column, built")
+
+
 func test_crew_builds_ahead_of_the_column_wherever_the_camera_is() -> void:
 	_flat_strip()
-	world.terrain.mark(Vector2i(34, 6))
-	_run(10.0, func() -> bool: return world.terrain.type_at(Vector2i(34, 6)) == null)
-	assert_null(world.terrain.type_at(Vector2i(34, 6)), "far ahead, still done")
+	world.terrain.mark(Vector2i(64, 6))
+	_run(10.0, func() -> bool: return world.terrain.type_at(Vector2i(64, 6)) == null)
+	assert_null(world.terrain.type_at(Vector2i(64, 6)), "far ahead, still done")
 
 
 func test_crew_left_behind_catches_up_with_the_column() -> void:
-	_flat_strip()
+	var cam := _flat_strip()
 	world.crew.spawn(3.0)
 	_run(8.0)
-	assert_true(_nobody_behind())
+	assert_true(_nobody_behind(cam))
 
 
 func test_idle_crew_waits_in_front_of_the_camp_at_night() -> void:

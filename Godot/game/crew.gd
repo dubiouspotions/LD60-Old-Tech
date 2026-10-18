@@ -431,18 +431,21 @@ func _idle_x(i: int) -> float:
 	return _keep_in_zone(maxf(0.5, army.rear().pos.x - rules.follow_gap - i * rules.spacing))
 
 
-## Is x within the crew's work area: not further behind the last soldier than work_behind.
+## Is x within the crew's work area: anywhere the camera can be panned to show, so nobody runs off to an old
+## site the player can no longer see.
 func _in_zone(x: float) -> bool:
-	return x >= _zone_start()
+	var r := _zone()
+	return x >= r.x and x <= r.y
 
 
 func _keep_in_zone(x: float) -> float:
-	return maxf(x, _zone_start())
+	var r := _zone()
+	return clampf(x, r.x, r.y)
 
 
-func _zone_start() -> float:
-	var rear := army.rear() if army else null
-	return rear.pos.x - rules.work_behind if rear else -INF
+func _zone() -> Vector2:
+	var cam := get_viewport().get_camera_2d() as CameraRig
+	return cam.reach_m() if cam and cam.world else Vector2(-INF, INF)
 
 
 ## Strikes each structure's scaffolding once it is done and clear of engineers for strike_delay.

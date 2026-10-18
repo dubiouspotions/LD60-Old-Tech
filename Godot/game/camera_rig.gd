@@ -94,11 +94,27 @@ func _clamp() -> void:
 		return
 	var view := view_size_m()
 	var m := view_m()
+	var lim := _left_edge_limits(view)
+	m.x = clampf(m.x, lim.x, lim.y)
+	m.y = clampf(m.y, 0.0, maxf(0.0, world.terrain.size.y - view.y))
+	position = Grid.to_px(m)
+
+
+## Leftmost and rightmost x, in metres, the view can be panned to show.
+func reach_m() -> Vector2:
+	var view := view_size_m()
+	var lim := _left_edge_limits(view)
+	return Vector2(lim.x, lim.y + view.x)
+
+
+## Lowest and highest x the view's left edge may take: near the column and inside the terrain.
+func _left_edge_limits(view: Vector2) -> Vector2:
+	var lo := -INF
+	var hi := INF
 	var lead := world.army.lead()
 	if lead:
-		m.x = clampf(m.x, world.army.rear().pos.x - view.x * keep_rear_in_view, lead.pos.x + max_lead_ahead)
-	var size := Vector2(world.terrain.size)
+		lo = world.army.rear().pos.x - view.x * keep_rear_in_view
+		hi = lead.pos.x + max_lead_ahead
 	var left := float(world.terrain.min_x)
-	m.x = clampf(m.x, left, maxf(left, size.x - view.x))
-	m.y = clampf(m.y, 0.0, maxf(0.0, size.y - view.y))
-	position = Grid.to_px(m)
+	var right := maxf(left, world.terrain.size.x - view.x)
+	return Vector2(clampf(lo, left, right), clampf(hi, left, right))

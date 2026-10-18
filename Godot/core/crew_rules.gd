@@ -27,9 +27,6 @@ extends Resource
 ## Digging pace: multiplies each terrain type's Dig Time (2 = twice as fast). Building pace is per material
 ## (Build Speed on data/bridge/*.tres).
 @export_range(0.05, 10.0, 0.05) var dig_speed: float = 1.0
-## Engineers take no work and wait nowhere further than this behind the last soldier, so they never run
-## back to old sites the column has passed.
-@export_range(0.0, 50.0, 0.5, "suffix:m") var work_behind: float = 3.0
 ## Idle engineers trail this far behind the last soldier (at camp: this far in front of the first)...
 @export_range(0.0, 10.0, 0.1, "suffix:m") var follow_gap: float = 1.2
 ## ...and this far apart.
