@@ -44,5 +44,5 @@ extends Resource
 @export var strike_sound: SoundEffect
 
 @export_group("Cheats")
-## For testing: ordered plans are finished the moment they are ordered. F2 toggles it while playing.
+## For testing: ordered plans are finished the moment they are ordered. F2 toggles it (with a supply top-up) while playing.
 @export var instant_build: bool = false
