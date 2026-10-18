@@ -1,6 +1,6 @@
-.DS_Store
 # Godot 4+ specific ignores
 .godot/
+/android/
 .nomedia
 
 # Godot-specific ignores
@@ -16,9 +16,9 @@ export_credentials.cfg
 data_*/
 mono_crash.*.json
 
+# Export output (export.sh and the CI workflow)
+/build/
+build.log
+
 # A place to put private files
 exploration/
-
-# Tools venv (download_assets.sh)
-tools/.venv/
-tools/__pycache__/
