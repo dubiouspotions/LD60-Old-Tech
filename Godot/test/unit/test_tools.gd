@@ -99,22 +99,24 @@ func test_dig_marks_tree() -> void:
 	assert_eq(world.terrain.type_at(Vector2i(3, 5)), WorldFixture.type("trunk"))
 
 
-func test_box_spends_five_logs_and_drops_a_box() -> void:
+func test_box_spends_its_cost_and_drops_a_box() -> void:
 	_select(ToolDefinition.Kind.FILL)
 	assert_eq(tools.tool().display_name, "Box")
-	GameState.supplies.logs = 7
+	var cost := tools.tool().cost.logs
+	assert_gt(cost, 0, "a box costs logs")
+	GameState.supplies.logs = cost + 2
 	var earth := GameState.supplies.earth
 	_click(Vector2(10.5, 1.5))
-	assert_eq(GameState.supplies.logs, 2, "five logs")
+	assert_eq(GameState.supplies.logs, 2, "its cost in logs")
 	assert_eq(GameState.supplies.earth, earth, "no earth")
 	await wait_physics_frames(60)
 	assert_eq(world.terrain.type_at(Vector2i(10, 5)), WorldFixture.type("fill"), "landed on the ground")
 	assert_eq(world.terrain.type_at(Vector2i(10, 5)).display_name, "Box")
 
 
-func test_box_without_five_logs_does_nothing() -> void:
+func test_box_without_enough_logs_does_nothing() -> void:
 	_select(ToolDefinition.Kind.FILL)
-	GameState.supplies.logs = 4
+	GameState.supplies.logs = tools.tool().cost.logs - 1
 	watch_signals(Effects)
 	_click(Vector2(10.5, 1.5))
 	await wait_physics_frames(60)
