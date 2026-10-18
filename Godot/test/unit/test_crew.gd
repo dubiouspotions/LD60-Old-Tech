@@ -913,6 +913,23 @@ func test_unreachable_marks_do_not_slow_the_crew_down() -> void:
 	assert_lt(worst, 8.0, "ms in the slowest step")
 
 
+## An engineer standing on a deck end at the water line lives, as a soldier there does: only a body in the water
+## drowns, not feet resting on its surface.
+func test_an_engineer_on_a_deck_end_at_the_water_line_lives() -> void:
+	for x in range(6, 10):
+		world.terrain.set_type(Vector2i(x, 6), WorldFixture.type("water"))
+		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("water"))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(7.5, 6.0)
+	e.at = null
+	var before := world.crew.engineers.size()
+	world.crew.step(1.0 / 60.0)
+	assert_eq(world.crew.engineers.size(), before, "feet on the water's surface: alive")
+	e.pos = Vector2(7.5, 6.6)
+	world.crew.step(1.0 / 60.0)
+	assert_eq(world.crew.engineers.size(), before - 1, "body in the water: drowned")
+
+
 func test_instant_work_cheat_finishes_ordered_plans_at_once() -> void:
 	var rules := world.crew.rules
 	rules.instant_work = true

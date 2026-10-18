@@ -298,8 +298,8 @@ func _settle_vertical(s: Soldier, dt: float) -> bool:
 	if s.pos.y >= terrain.size.y - 1:
 		kill(s, "")
 		return false
-	var body := terrain.type_at(Grid.cell_of(s.pos - Vector2(0, 0.5)))
-	if body and body.is_hazard():
+	var body := terrain.hazard_for_body(s.pos)
+	if body:
 		kill(s, body.death_text)
 		return false
 	return true

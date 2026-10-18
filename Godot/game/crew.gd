@@ -232,13 +232,9 @@ func _update_stranded(e: Engineer, x: float, was: Vector2, dt: float) -> void:
 	e.any_height = e.any_height or e.stranded >= rules.stranded_time
 
 
-## The hazard (spikes, water) the engineer's feet or body are in, else null.
+## The hazard (spikes, water) the engineer's body is in, else null (see Terrain.hazard_for_body).
 func _hazard_at(e: Engineer) -> TerrainType:
-	for p: Vector2 in [e.pos + Vector2(0, 0.01), e.pos - Vector2(0, 0.5)]:
-		var t := terrain.type_at(Grid.cell_of(p))
-		if t and t.is_hazard():
-			return t
-	return null
+	return terrain.hazard_for_body(e.pos)
 
 
 ## Kills an engineer crushed by something heavy (a falling tower or tree).
@@ -272,8 +268,12 @@ func _fall(e: Engineer, dt: float) -> bool:
 	if e.at:
 		e.vy = 0.0
 		return false
-	# Either foot on something holds it, like a soldier standing at a cliff edge.
-	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y)
+	# Either foot on something holds it, like a soldier standing at a cliff edge. A hazard holds neither: it falls in.
+	var below := INF
+	for dx: float in [-ENGINEER_HALF_WIDTH, ENGINEER_HALF_WIDTH]:
+		var s := army.surface_at(e.pos.x + dx, e.pos.y, not e.under_decks)
+		if s.hazard == null:
+			below = minf(below, s.y)
 	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and _can_hold_on(e)):
 		e.vy = 0.0
 		return false
