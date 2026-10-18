@@ -65,6 +65,8 @@ class Chunk:
 @onready var objects: Node2D = %Objects
 @onready var flags: Node2D = %Flags
 @onready var grass: TallGrass = %Grass
+## Fireflies under the trees at night (DayNight fades them in).
+@onready var fireflies: Fireflies = %Fireflies
 
 ## Campaign index of the level the column is in, -1 before begin().
 var current: int = -1
