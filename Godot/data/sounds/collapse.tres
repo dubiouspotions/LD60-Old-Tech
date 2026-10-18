@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SoundEffect" format=3]
+[gd_resource type="Resource" script_class="SoundEffect" format=3 uid="uid://828bl6a1bmgi"]
 
-[ext_resource type="Script" path="res://core/sound_effect.gd" id="1_c776j"]
-[ext_resource type="AudioStream" path="res://audio/sfx/tower_crunch.wav" id="2_3buik"]
+[ext_resource type="Script" uid="uid://bks1ys6qkwu4q" path="res://core/sound_effect.gd" id="1_c776j"]
+[ext_resource type="AudioStream" uid="uid://cd8mcm2krj43s" path="res://audio/sfx/tower_crunch.wav" id="2_3buik"]
 
 [resource]
 script = ExtResource("1_c776j")
