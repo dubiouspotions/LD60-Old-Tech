@@ -39,8 +39,6 @@ enum DigAction { NONE, REMOVE, FELL }
 @export_range(0.1, 30.0, 0.1, "suffix:s") var dig_time: float = 1.0
 ## Given for each tile removed with the Dig tool.
 @export var dig_yield: Supplies
-## Floating text after digging one tile. Empty shows nothing.
-@export var dig_text: String = ""
 ## Shown when Dig is used on a tile that can not be dug.
 @export var too_hard_text: String = ""
 @export var dig_sound: SoundEffect

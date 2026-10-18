@@ -62,10 +62,10 @@ func _terrain() -> void:
 	_t("fill", "Box", {falls = true, dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.3, dig_yield = Supplies.make(0, 2),
 		bulk_yield = Supplies.make(0, 2), dig_sound = _snd("dig"), impact_strength = 150.0, debris_color = Color("a0703f")})
 	_t("rock", "Rock", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 2.0, dig_yield = Supplies.make(0, 0, 0, 0, 1),
-		dig_text = "+1 stone", dig_sound = _snd("dig"), impact_strength = 3000.0, debris_color = Color("5b6472")})
+		dig_sound = _snd("dig"), impact_strength = 3000.0, debris_color = Color("5b6472")})
 	_t("bedrock", "Bedrock", {debris_color = Color("262a33")})
 	_t("crystal", "Gold ore", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.8, dig_yield = Supplies.make(0, 0, 0, 1),
-		dig_text = "+1 gold", bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), impact_strength = 1000.0,
+		bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), impact_strength = 1000.0,
 		debris_color = Color("8ff0e0")})
 	_t("brick", "Brick", {anchor = false, structure = true, raze_time = 15.0, too_hard_text = too_hard,
 		bulk_yield = Supplies.make(0, 0, 0, 0, 1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})

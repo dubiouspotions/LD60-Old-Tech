@@ -220,7 +220,7 @@ func _use(cell: Vector2i, first: bool) -> void:
 		ToolDefinition.Kind.DIG:
 			var m := world.bridge.member_at(_mouse_m, member_pick_radius)
 			if m:
-				GameState.gain(m.material.cost)
+				world.gain(m.material.cost, (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6))
 				if m.blueprint:
 					world.bridge.remove_member(m)
 				else:

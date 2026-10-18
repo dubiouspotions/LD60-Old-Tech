@@ -119,3 +119,30 @@ func test_picking_stone_in_the_picker_switches_bridge_to_stone() -> void:
 	assert_eq(tools.build_material().display_name, "Stone")
 	assert_true((row.get_child(1) as Button).button_pressed, "the pick shows")
 	assert_engine_error_count(0, "no button freed while it was being pressed")
+
+
+func test_cancelling_a_plan_says_what_came_back() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	var b := world.bridge
+	var lead := world.army.lead().pos
+	b.build(b.snap_point(lead + Vector2(2, 0)), b.snap_point(lead + Vector2(4, 0)), preload("res://data/bridge/log.tres"), true)
+	game._show_plans()
+	watch_signals(Effects)
+	game._on_cancel_pressed(0)
+	assert_signal_emitted(Effects, "said")
+	assert_eq(get_signal_parameters(Effects, "said")[0], "+1 logs")
+
+
+func test_the_cheat_top_up_says_what_it_gave() -> void:
+	game._begin()
+	var rules: CrewRules = game.get_node("%World").crew.rules
+	rules.instant_work = false
+	GameState.supplies = Supplies.new()
+	watch_signals(Effects)
+	game._toggle_cheats()
+	rules.instant_work = false
+	var texts := []
+	for i in get_signal_emit_count(Effects, "said"):
+		texts.append(get_signal_parameters(Effects, "said", i)[0])
+	assert_true(texts.any(func(t: String) -> bool: return t.contains("+99 earth")), "the top-up shown")

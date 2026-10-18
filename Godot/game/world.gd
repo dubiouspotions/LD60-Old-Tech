@@ -22,6 +22,8 @@ signal level_streamed(index: int)
 ## A body (soldier or archer) for bridge hits: a circle this high above the feet with this radius, metres.
 const BODY_MID: float = 0.9
 const BODY_RADIUS: float = 0.6
+## Colour of the "+N ..." text when supplies are gained.
+const GAIN_COLOR: Color = Color("ece4d2")
 
 enum Phase { DAY, DUSK, NIGHT, MORNING }
 
@@ -95,7 +97,7 @@ func _ready() -> void:
 	crew.bridge = bridge
 	crew.army = army
 	terrain.tile_detached.connect(_on_tile_detached)
-	terrain.collapsed.connect(func(found: Supplies, _cells: Array[Vector2i]) -> void: GameState.gain(found))
+	terrain.collapsed.connect(func(found: Supplies, cells: Array[Vector2i]) -> void: gain(found, _top_of(cells)))
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
 	crew.dig_finished.connect(_on_dig_finished)
@@ -262,6 +264,7 @@ func _arrive(index: int) -> void:
 	c.start_flag.reached = true
 	var drop := c.level.supply_drop if c.level.supply_drop else GameState.campaign.checkpoint_supplies
 	var joined := GameState.arrive(index, c.level.reinforcements, drop)
+	_show_gain(drop, c.start_flag.metres() - Vector2(0, 2.0))
 	army.reinforce(joined)
 	army.stop_x = c.exit_flag.metres().x
 	_make_camp(c.start_flag.metres().x, c.level.march_delay)
@@ -486,18 +489,39 @@ func _on_tile_detached(cell: Vector2i, type: TerrainType) -> void:
 	objects.add_child(block)
 
 
+## Adds found to the supplies and shows "+N ..." at at (metres). Every gain of supplies goes through here (or, for
+## the camp's supply drop, which GameState adds itself, through _show_gain), so none goes unseen.
+func gain(found: Supplies, at: Vector2, color: Color = GAIN_COLOR) -> void:
+	if found == null or found.is_empty():
+		return
+	GameState.gain(found)
+	_show_gain(found, at, color)
+
+
+func _show_gain(found: Supplies, at: Vector2, color: Color = GAIN_COLOR) -> void:
+	if found and not found.is_empty():
+		Effects.say(Grid.to_px(at), found.describe(), color)
+
+
+## Top centre of a group of cells, metres.
+static func _top_of(cells: Array[Vector2i]) -> Vector2:
+	var lo := INF
+	var hi := -INF
+	var top := INF
+	for c in cells:
+		lo = minf(lo, c.x)
+		hi = maxf(hi, c.x + 1)
+		top = minf(top, c.y)
+	return Vector2((lo + hi) / 2.0, top)
+
+
 ## An engineer finished digging a marked cell: take the tile and its supplies.
 func _on_dig_finished(cell: Vector2i) -> void:
 	var here := terrain.type_at(cell)
 	var got := terrain.dig(cell)
 	if got == null:
 		return
-	GameState.gain(got)
-	var at := Grid.to_px(Vector2(cell) + Vector2(0.5, 0))
-	if here.dig_action == TerrainType.DigAction.FELL:
-		Effects.say(at, got.describe(), Color("ece4d2"))
-	else:
-		Effects.say(at, here.dig_text, here.debris_color)
+	gain(got, Vector2(cell) + Vector2(0.5, 0), GAIN_COLOR if here.dig_action == TerrainType.DigAction.FELL else here.debris_color)
 
 
 ## Every living soldier and archer, and every falling block, as a body bridge pieces and falling blocks collide

@@ -312,3 +312,15 @@ func test_cancelling_the_plan_ends_the_chain_building_onto_it() -> void:
 	GameState.gain(world.bridge.cancel_plan(world.bridge.plans()[0]))
 	_click(Vector2(11, 5))
 	assert_eq(world.bridge.members.size(), 0, "the click starts a new chain, not a plank from a joint that is gone")
+
+
+func test_digging_away_a_plan_says_what_came_back() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	tools._mouse_m = Vector2(6, 6)
+	tools._press()
+	tools._mouse_m = Vector2(9, 6)
+	tools._release()
+	watch_signals(Effects)
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(7.5, 6.05))
+	assert_signal_emitted_with_parameters(Effects, "said", ["+1 logs", Grid.to_px(Vector2(7.5, 6) - Vector2(0, 0.6))])

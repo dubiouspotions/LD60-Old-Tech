@@ -14,7 +14,6 @@ display_name = "Rock"
 dig_action = 1
 dig_time = 2.0
 dig_yield = SubResource("Resource_stone")
-dig_text = "+1 stone"
 dig_sound = ExtResource("3_stone")
 impact_strength = 3000.0
 debris_color = Color(0.35686275, 0.39215687, 0.44705883, 1)

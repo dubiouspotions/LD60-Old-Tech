@@ -102,7 +102,8 @@ func _toggle_cheats() -> void:
 		var top_up := Supplies.new()
 		for k in Supplies.KEYS:
 			top_up.set(k, maxi(0, cheat_supplies - GameState.supplies.get(k)))
-		GameState.gain(top_up)
+		var lead := _world.army.lead()
+		_world.gain(top_up, lead.pos - Vector2(0, 2.6) if lead else Vector2.ZERO)
 	var lead := _world.army.lead()
 	if lead:
 		Effects.say(Grid.to_px(lead.pos - Vector2(0, 2.0)), cheats_text % ("on" if rules.instant_work else "off"), Color("e9a93b"))
@@ -132,6 +133,19 @@ func _march() -> void:
 		_world.march()
 
 
+## Where a plan's buttons float (pixels): a little over its highest point, centred.
+func _plan_spot(plan: Array) -> Vector2:
+	var lo := INF
+	var hi := -INF
+	var top := INF
+	for m: Bridge.Member in plan:
+		for j: Bridge.Joint in [m.a, m.b]:
+			lo = minf(lo, j.pos.x)
+			hi = maxf(hi, j.pos.x)
+			top = minf(top, j.pos.y)
+	return Grid.to_px(Vector2((lo + hi) / 2, top - plan_button_rise))
+
+
 ## A Build button above each plan, a little over its highest point.
 func _show_plans() -> void:
 	_plans.clear()
@@ -140,15 +154,7 @@ func _show_plans() -> void:
 	var spots: Array = []
 	var counts: Array = []
 	for plan in _plans:
-		var lo := INF
-		var hi := -INF
-		var top := INF
-		for m: Bridge.Member in plan:
-			for j: Bridge.Joint in [m.a, m.b]:
-				lo = minf(lo, j.pos.x)
-				hi = maxf(hi, j.pos.x)
-				top = minf(top, j.pos.y)
-		spots.append(Grid.to_px(Vector2((lo + hi) / 2, top - plan_button_rise)))
+		spots.append(_plan_spot(plan))
 		counts.append(plan.size())
 	_hud.set_build_spots(spots, counts)
 
@@ -160,7 +166,8 @@ func _on_build_pressed(index: int) -> void:
 
 func _on_cancel_pressed(index: int) -> void:
 	if index < _plans.size():
-		GameState.gain(_world.bridge.cancel_plan(_plans[index]))
+		var at := Grid.to_m(_plan_spot(_plans[index]))
+		_world.gain(_world.bridge.cancel_plan(_plans[index]), at)
 
 
 func _recruit() -> void:
