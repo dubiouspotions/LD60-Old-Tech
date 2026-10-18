@@ -34,6 +34,8 @@ extends Resource
 
 @export_group("Surface (cells with air above)")
 @export var flat_tops: Array[Vector2i] = []
+## A flat top under a fillet: the fillet's grass runs on into it with no gaps along the top. Empty uses Flat Tops.
+@export var flat_tops_fillet: Array[Vector2i] = []
 ## Air to the left (top-left) or to the right (top-right).
 @export var corner_tl: Array[Vector2i] = []
 @export var corner_tr: Array[Vector2i] = []
@@ -112,7 +114,7 @@ extends Resource
 @export var body: Array[Vector2i] = []
 
 ## Roles with grass/dirt art, painted for any dirt or rock material.
-const GROUND_ROLES: Array[StringName] = [&"flat_tops", &"corner_tl", &"corner_tr", &"wall_l", &"wall_r",
+const GROUND_ROLES: Array[StringName] = [&"flat_tops", &"flat_tops_fillet", &"corner_tl", &"corner_tr", &"wall_l", &"wall_r",
 	&"inner_tl", &"inner_tr", &"inner_bl", &"inner_br", &"ceiling", &"ceiling_l", &"ceiling_r", &"dirt"]
 const FILLET_ROLES: Array[StringName] = [&"fillet_r", &"fillet_r_low", &"fillet_l", &"fillet_l_low"]
 ## Rock's own version of each grass role (a rock_ prefix), and of the fillets.
@@ -122,7 +124,7 @@ const ROCK_EDGE_ROLES: Array[StringName] = [&"rock_flat_tops", &"rock_corner_tl"
 const ROCK_FILLET_ROLES: Array[StringName] = [&"rock_fillet_r", &"rock_fillet_r_low", &"rock_fillet_l",
 	&"rock_fillet_l_low"]
 ## Every cell role: the TileSet source gets one tile per listed coordinate.
-const CELL_ROLES: Array[StringName] = [&"flat_tops", &"corner_tl", &"corner_tr", &"corner_tl_alt", &"corner_tr_alt",
+const CELL_ROLES: Array[StringName] = [&"flat_tops", &"flat_tops_fillet", &"corner_tl", &"corner_tr", &"corner_tl_alt", &"corner_tr_alt",
 	&"wall_l", &"wall_r", &"inner_tl", &"inner_tr", &"inner_bl", &"inner_br", &"ceiling", &"ceiling_l", &"ceiling_r",
 	&"dirt", &"rock", &"fillet_r", &"fillet_r_low", &"fillet_l", &"fillet_l_low", &"water_top", &"water", &"spikes"] 	+ ROCK_EDGE_ROLES + ROCK_FILLET_ROLES
 
@@ -157,11 +159,14 @@ func body_tiles() -> Array[Vector2i]:
 	return out
 
 
-## Tiles a cell of role may be given when it needs a new one. A rock edge role with no art gets the Rock tiles.
+## Tiles a cell of role may be given when it needs a new one. A role with no tiles borrows them: a rock edge role
+## the Rock tiles, the top under a fillet the Flat Tops.
 func tiles(role: StringName) -> Array[Vector2i]:
 	var out: Array[Vector2i] = get(role)
 	if out.is_empty() and role in ROCK_EDGE_ROLES:
 		return rock
+	if out.is_empty() and role == &"flat_tops_fillet":
+		return flat_tops
 	return out
 
 

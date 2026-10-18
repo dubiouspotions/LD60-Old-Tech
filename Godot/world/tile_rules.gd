@@ -41,7 +41,7 @@ func _ground(cell: Vector2i) -> StringName:
 			return &"corner_tl"
 		if left and not right:
 			return &"corner_tr"
-		return &"flat_tops"
+		return &"flat_tops_fillet" if _fillet(cell + Vector2i.UP) in [&"fillet_r", &"fillet_l"] else &"flat_tops"
 	if not _solid(cell + Vector2i.DOWN):
 		if not left and right:
 			return &"ceiling_l"

@@ -99,7 +99,8 @@ v2 sheet; nothing uses it any more.
 - **Water, spikes and other materials** (brick, trees, box, gold ore) have no art on the sheet and use their old
   tiles. Water picks the *Classic look* surface and deep tiles; water or spikes you paint by hand are kept.
 - **The roles** are in `data/terrain_look.tres`: which atlas tiles are flat tops, corners, walls, inner corners
-  (top and bottom), ceilings, dirt, rock and fillets. A role with several tiles gives variety: a cell that needs a new
+  (top and bottom), ceilings, dirt, rock and fillets. **Flat Tops Fillet** are the tops under a fillet, drawn so the
+  slope's grass runs on into them without gaps (empty uses Flat Tops). A role with several tiles gives variety: a cell that needs a new
   tile picks one by its position, and solid rock varies over the **Rock** tiles. The `*_alt` roles (the square grass
   corners) are valid when painted but never picked. **Body** is the rock overlay: 16 tiles indexed by which of the four
   cells around a corner are rock (top-left 1, top-right 2, bottom-left 4, bottom-right 8). The two diagonal cases (6

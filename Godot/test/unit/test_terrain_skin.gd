@@ -170,6 +170,17 @@ func test_fillets_are_air_tiles_at_the_foot_of_a_step() -> void:
 	assert_false(terrain.is_solid(Vector2i(3, 2)))
 
 
+## The ordinary grass tops have gaps along their top edge; under a fillet those would show the sky.
+func test_the_top_under_a_fillet_has_no_gaps() -> void:
+	assert_has(look.fillet_r, _tile(Vector2i(3, 2)))
+	assert_false(look.flat_tops_fillet.is_empty(), "the sheet has tops for under a slope")
+	assert_has(look.flat_tops_fillet, _tile(Vector2i(3, 3)))
+	assert_eq(terrain.painted_type(Vector2i(3, 3)), _type("soil"))
+	var l: TerrainLook = look.duplicate()
+	l.flat_tops_fillet = []
+	assert_eq(l.tiles(&"flat_tops_fillet"), l.flat_tops, "without them, the Flat Tops")
+
+
 func test_rock_pocket_overlay_on_the_dual_grid() -> void:
 	# The rock cell (4, 5) is the bottom-right corner of dual tile (3, 4), bottom-left of (4, 4), and so on.
 	assert_eq(_body(Vector2i(3, 4)), look.body[8])
