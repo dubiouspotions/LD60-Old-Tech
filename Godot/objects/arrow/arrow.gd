@@ -17,6 +17,9 @@ var gravity: float = 12.0
 var shooter_column: int = -999
 var shooter_feet_y: float = INF
 
+## Seconds after the shot during which the archer's own crenellations are ignored.
+const OWN_TOWER_TIME: float = 0.12
+
 var _age: float = 0.0
 var _stuck: float = -1.0
 
@@ -40,15 +43,11 @@ func _physics_process(dt: float) -> void:
 	velocity.y += gravity * dt
 	rotation = velocity.angle()
 	var p := Grid.to_m(position)
-	var block: Variant = world.bridge.arrow_block(from, p)
-	if block != null:
-		position = Grid.to_px(block)
-		Audio.play(hit_sound, position)
-		_stuck = stuck_time
-		return
-	var cell := Grid.cell_of(p)
-	var own_tower := _age < 0.12 and absi(cell.x - shooter_column) <= 1 and p.y < shooter_feet_y
-	if not own_tower and world.terrain.is_solid(cell):
+	var hit := obstacle(world, from, p, _age, shooter_column, shooter_feet_y)
+	if not hit.is_empty():
+		if hit.bridge:
+			position = Grid.to_px(hit.point)
+			Audio.play(hit_sound, position)
 		_stuck = stuck_time
 		return
 	if _age > max_flight:
@@ -60,3 +59,15 @@ func _physics_process(dt: float) -> void:
 			world.army.hit(s, kill_text)
 			queue_free()
 			return
+
+
+## What stops an arrow flying from a to b, age seconds after it was shot: {point, bridge: true} for an
+## arrow-blocking bridge member, {point, bridge: false} for solid ground, or {} if nothing.
+static func obstacle(world: World, a: Vector2, b: Vector2, age: float, column: int, feet_y: float) -> Dictionary:
+	var block: Variant = world.bridge.arrow_block(a, b)
+	if block != null:
+		return {point = block, bridge = true}
+	var own_tower := age < OWN_TOWER_TIME and Archer.own_tower(b, column, feet_y)
+	if not own_tower and world.terrain.is_solid(Grid.cell_of(b)):
+		return {point = b, bridge = false}
+	return {}
