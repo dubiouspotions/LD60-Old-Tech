@@ -71,6 +71,8 @@ class Chunk:
 @onready var pollen: Pollen = %Pollen
 ## Birds hiding in the tall grass.
 @onready var birds: Birds = %Birds
+## Leaves bursting from felled trees.
+@onready var leaves: LeafPoof = %Leaves
 
 ## Campaign index of the level the column is in, -1 before begin().
 var current: int = -1
@@ -101,7 +103,9 @@ func _ready() -> void:
 	crew.bridge = bridge
 	crew.army = army
 	terrain.tile_detached.connect(_on_tile_detached)
-	terrain.felled.connect(func(cells: Array[Vector2i]) -> void: birds.from_tree(cells))
+	terrain.felled.connect(func(cells: Array[Vector2i]) -> void:
+		leaves.burst(cells)
+		birds.from_tree(cells))
 	terrain.collapsed.connect(func(found: Supplies, _cells: Array[Vector2i]) -> void: GameState.gain(found))
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
