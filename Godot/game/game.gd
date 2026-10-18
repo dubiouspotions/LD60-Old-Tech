@@ -128,6 +128,8 @@ func _unhandled_input(event: InputEvent) -> void:
         _retry()
     elif event.is_action_pressed(&"cheat_instant_work"):
         _toggle_cheats()
+    elif event.is_action_pressed(&"cheat_skip_level"):
+        _skip_level()
 
 
 ## For testers: instant work (building and digging), and (turning on) plenty of every supply.
@@ -143,6 +145,15 @@ func _toggle_cheats() -> void:
     var lead := _world.army.lead()
     if lead:
         Effects.say(Grid.to_px(lead.pos - Vector2(0, 2.0)), cheats_text % ("on" if rules.instant_work else "off"), Color("e9a93b"))
+
+
+## For testers: ends the level as if it was won (see World.skip_level), with the view on the column.
+func _skip_level() -> void:
+    if _over:
+        return
+    _tools.cancel()
+    _world.skip_level()
+    _camera.center_on_lead()
 
 
 func _process(_delta: float) -> void:

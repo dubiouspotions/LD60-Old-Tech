@@ -337,6 +337,24 @@ func _check_exit() -> void:
 	_arrive(next)
 
 
+## Testing cheat: ends the level as if every soldier had gathered at its exit flag. The column and the crew are
+## put at the next level's camp and arrive there (reinforcements, supply drop, checkpoint); on the last level the
+## campaign is won.
+func skip_level() -> void:
+	if _done or current < 0:
+		return
+	var next := current + 1
+	if next >= GameState.campaign.levels.size():
+		_done = true
+		current_chunk().exit_flag.reached = true
+		victory.emit()
+		return
+	var x := place_now(next).start_flag.metres().x
+	army.spawn(army.soldiers.size(), x)
+	crew.spawn(x, crew.engineers.size())
+	_arrive(next)
+
+
 func _arrive(index: int) -> void:
 	var c := chunk(index)
 	current = index

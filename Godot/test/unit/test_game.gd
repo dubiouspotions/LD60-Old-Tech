@@ -107,6 +107,41 @@ func test_f2_toggles_the_cheats_instant_work_and_supplies() -> void:
 	assert_true(InputMap.action_has_event(&"cheat_instant_work", _key(KEY_F2)), "on F2")
 
 
+## F3 (a testing cheat) ends the level as if it was won: the column is at the next level's camp, with its
+## reinforcements and supply drop, and the view on it.
+func test_f3_skips_the_level_as_if_it_was_won() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	assert_eq(world.current, 0)
+	var soldiers := world.army.soldiers.size()
+	var engineers := world.crew.engineers.size()
+	var press := InputEventAction.new()
+	press.action = &"cheat_skip_level"
+	press.pressed = true
+	game._unhandled_input(press)
+	assert_eq(world.current, 1, "at the next level")
+	assert_eq(GameState.level_index, 1, "its checkpoint reached")
+	var flag := world.chunk(1).start_flag.metres().x
+	assert_true(world.camping(), "camped there")
+	assert_eq(world.army.soldiers.size(), soldiers + world.chunk(1).level.reinforcements, "with its reinforcements")
+	assert_eq(world.crew.engineers.size(), engineers, "the whole crew")
+	for s in world.army.soldiers:
+		assert_lt(absf(s.pos.x - flag), 15.0, "the column at its camp")
+	var cam: CameraRig = game.get_node("%Camera")
+	assert_lt(absf(cam.view_m().x - flag), cam.view_size_m().x, "the view on it")
+	assert_true(InputMap.action_has_event(&"cheat_skip_level", _key(KEY_F3)), "on F3")
+
+
+func test_skipping_the_last_level_wins_the_campaign() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	var last := GameState.campaign.levels.size() - 1
+	game._start_at_level(last)
+	watch_signals(world)
+	world.skip_level()
+	assert_signal_emitted(world, "victory")
+
+
 func _key(code: Key) -> InputEventKey:
 	var k := InputEventKey.new()
 	k.physical_keycode = code
