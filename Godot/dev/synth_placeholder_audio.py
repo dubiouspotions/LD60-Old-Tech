@@ -84,6 +84,7 @@ def sfx():
     write("sfx/dig.wav", mix(noise_burst(0.12, 0.25, 4), gain(tone(90, 0.1, 4), 0.6)))
     write("sfx/fill_land.wav", mix(noise_burst(0.18, 0.08, 3), gain(tone(70, 0.16, 3, sweep=-0.3), 0.9)))
     write("sfx/log_place.wav", mix(gain(tone(220, 0.15, 6, tri), 0.8), gain(tone(330, 0.1, 8, tri), 0.4), gain(noise_burst(0.04, 0.6, 2), 0.3)))
+    write("sfx/log_pickup.wav", mix(gain(tone(260, 0.07, 5, tri, sweep=0.4), 0.7), at(gain(tone(390, 0.09, 5, tri), 0.5), 0.05, n(0.14)), gain(noise_burst(0.03, 0.5, 3), 0.25)))
     write("sfx/rope_place.wav", mix(gain(tone(180, 0.25, 2, tri, sweep=0.15), 0.6), gain(noise_burst(0.2, 0.05, 2), 0.3)))
     write("sfx/member_snap.wav", mix(noise_burst(0.22, 0.7, 5, 0.0005), gain(tone(140, 0.2, 5, sweep=-0.5), 0.5)))
     write("sfx/arrow_shot.wav", mix(gain(noise_burst(0.25, 0.35, 1.5, 0.05), 0.6), gain(tone(700, 0.08, 6, tri, sweep=-0.4), 0.2)))

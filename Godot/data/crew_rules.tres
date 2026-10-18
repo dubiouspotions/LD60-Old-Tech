@@ -6,6 +6,7 @@
 [ext_resource type="Resource" path="res://data/sounds/soldier_death.tres" id="4_crew"]
 [ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="5_crew"]
 [ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="6_crew"]
+[ext_resource type="Resource" path="res://data/sounds/log_pickup.tres" id="7_crew"]
 
 [sub_resource type="Resource" id="hire_cost"]
 script = ExtResource("5_crew")
@@ -19,3 +20,5 @@ hire_sound = ExtResource("6_crew")
 work_sound = ExtResource("2_crew")
 strike_sound = ExtResource("3_crew")
 death_sound = ExtResource("4_crew")
+pickup_time = 0.25
+pickup_sound = ExtResource("7_crew")

@@ -596,7 +596,6 @@ func _gather_step(e: Engineer, dt: float) -> void:
 	if not p.resting or absf(p.pos.y - e.pos.y) > 1.2:
 		_show(e, false, 0)
 		return
-	e.working = true
 	e.stoop += dt
 	_show(e, false, signi(roundi((p.pos.x - e.pos.x) * 100)))
 	if e.stoop >= rules.pickup_time:
@@ -604,6 +603,7 @@ func _gather_step(e: Engineer, dt: float) -> void:
 
 
 func _pick(e: Engineer, p: Wood.Piece) -> void:
+	Audio.play(rules.pickup_sound, Grid.to_px(p.pos))
 	e.fetch = null
 	e.stoop = 0.0
 	p.taker = null

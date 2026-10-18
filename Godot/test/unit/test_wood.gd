@@ -106,6 +106,27 @@ func test_the_feller_gathers_every_piece_and_the_logs_then_count() -> void:
 	assert_eq(GameState.supplies.logs, had + logs)
 
 
+## Picking a piece up is quick and makes its own sound when done, not the chopping of work.
+func test_each_piece_makes_a_pickup_sound_and_no_work_sound() -> void:
+	var rules: CrewRules = world.crew.rules
+	assert_not_null(rules.pickup_sound)
+	assert_ne(rules.pickup_sound, rules.work_sound)
+	assert_lte(rules.pickup_time, 0.3, "a quick pick-up")
+	_tree()
+	world.terrain.mark(Vector2i(2, 5))
+	_run(15.0, _felled)
+	var pieces := world.wood.count()
+	assert_gt(pieces, 0)
+	var heard: Array[SoundEffect] = []
+	var listen := func(sfx: SoundEffect) -> void: heard.append(sfx)
+	Audio.played.connect(listen)
+	_run(20.0, func() -> bool: return world.wood.count() == 0)
+	Audio.played.disconnect(listen)
+	assert_eq(world.wood.count(), 0, "all picked up")
+	assert_eq(heard.count(rules.pickup_sound), pieces, "one pickup sound per piece")
+	assert_false(rules.work_sound in heard, "no chopping while picking up")
+
+
 func test_the_feller_takes_no_other_work_until_its_wood_is_in() -> void:
 	_tree()
 	world.terrain.mark(Vector2i(2, 5))
