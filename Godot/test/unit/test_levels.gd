@@ -53,6 +53,14 @@ func test_levels_stitch_into_one_walkable_world() -> void:
 		assert_false(t.is_solid(Grid.cell_of(c.start_flag.metres() - Vector2(0, 0.5))), "camp %d not buried" % (i + 1))
 
 
+## Tall grass stands in the air on top of the ground.
+func test_tall_grass_stands_on_ground() -> void:
+	for level: Level in _levels():
+		for cell in level.grass().get_used_cells():
+			assert_false(level.terrain().is_solid(cell), "%s grass at %s not buried" % [level.name, cell])
+			assert_true(level.terrain().is_solid(cell + Vector2i.DOWN), "%s grass at %s on ground" % [level.name, cell])
+
+
 ## The game finds archers (to fight, and for the "under fire" status) only under Objects.
 func test_archers_are_under_objects() -> void:
 	for level: Level in _levels():

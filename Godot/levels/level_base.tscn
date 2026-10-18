@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://gl6wsbyjukx4" path="res://world/terrain.tscn" id="2"]
 [ext_resource type="AudioStream" uid="uid://rsqcbf1000s0" path="res://audio/music/march_music.ogg" id="2_da5si"]
 [ext_resource type="PackedScene" path="res://objects/checkpoint_flag/checkpoint_flag.tscn" id="5"]
+[ext_resource type="TileSet" path="res://world/tall_grass_tileset.tres" id="6_grass"]
+[ext_resource type="Material" path="res://world/tall_grass_material.tres" id="7_grass"]
 
 [node name="Level" type="Node2D" unique_id=1546824629]
 script = ExtResource("1")
@@ -23,3 +25,9 @@ position = Vector2(208, 768)
 unique_name_in_owner = true
 position = Vector2(4048, 768)
 label = "L2"
+
+[node name="Grass" type="TileMapLayer" parent="." unique_id=1873402215]
+z_index = 4
+material = ExtResource("7_grass")
+scale = Vector2(4, 4)
+tile_set = ExtResource("6_grass")
