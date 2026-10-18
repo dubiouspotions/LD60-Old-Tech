@@ -13,6 +13,8 @@ extends Resource
 ## Tools in rack order.
 @export var tools: Array[ToolDefinition] = []
 @export var level_up_sound: SoundEffect
+## Played the moment the level is lost; lost_sound follows with the lost card.
+@export var game_over_sound: SoundEffect
 @export var lost_sound: SoundEffect
 @export var victory_sound: SoundEffect
 @export_group("Camp")

@@ -41,15 +41,23 @@ enum Mood { NORMAL, HALT, FIRE }
 ## Recruit button text (%d = gold per soldier).
 @export var recruit_text: String = "Recruit · %d gold"
 
+## The lost card: seconds to fade the screen to its overlay, then to slide the card up from below.
+@export_range(0.0, 3.0, 0.05, "suffix:s") var card_fade_time: float = 0.5
+@export_range(0.0, 3.0, 0.05, "suffix:s") var card_slide_time: float = 0.45
+
 var _tool_buttons: Array[ToolButton] = []
 var _tools: Array[ToolDefinition] = []
 var _build_buttons: Array[PlanButtons] = []
 var _group := ButtonGroup.new()
 var _picker_tool: int = -1 # tool whose materials the picker shows, -1 if none
 var _colors: Dictionary = {} # supply key -> swatch colour, for the tool buttons' costs
+var _lost_tween: Tween
+## The lost overlay's colour as set in the scene, faded to by show_lost.
+var _lost_color: Color
 
 
 func _ready() -> void:
+	_lost_color = (%Lost as ColorRect).color
 	%PauseButton.pressed.connect(_emit.bind(pause_pressed))
 	%SpeedButton.pressed.connect(_emit.bind(speed_pressed))
 	%FollowButton.toggled.connect(func(on: bool) -> void:
@@ -263,10 +271,20 @@ func show_intro(on: bool) -> void:
 	%Intro.visible = on
 
 
+## Fades the screen to the lost overlay, then slides the card with title and text up from below.
 func show_lost(title: String, text: String) -> void:
 	%LostTitle.text = title
 	%LostText.text = text
-	%Lost.visible = true
+	var lost: ColorRect = %Lost
+	var center: Control = lost.get_node(^"Center")
+	if _lost_tween:
+		_lost_tween.kill()
+	lost.visible = true
+	lost.color = Color(_lost_color, 0.0)
+	center.position.y = lost.size.y if lost.size.y > 0.0 else get_viewport().get_visible_rect().size.y
+	_lost_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).set_ignore_time_scale()
+	_lost_tween.tween_property(lost, ^"color", _lost_color, card_fade_time)
+	_lost_tween.tween_property(center, ^"position:y", 0.0, card_slide_time).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func show_victory(text: String) -> void:
@@ -276,7 +294,11 @@ func show_victory(text: String) -> void:
 
 func hide_cards() -> void:
 	%Intro.visible = false
+	if _lost_tween:
+		_lost_tween.kill()
 	%Lost.visible = false
+	%Lost.color = _lost_color
+	%Lost.get_node(^"Center").position.y = 0.0
 	%Victory.visible = false
 
 

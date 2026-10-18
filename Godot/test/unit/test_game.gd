@@ -190,6 +190,17 @@ func test_the_lost_card_waits_a_moment_while_the_world_goes_on() -> void:
 	assert_true(get_tree().paused)
 
 
+func test_the_game_over_sound_plays_the_moment_the_level_is_lost() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	watch_signals(Audio)
+	for s: Soldier in world.army.soldiers.duplicate():
+		world.army.crush(s)
+	await get_tree().process_frame
+	assert_signal_emitted_with_parameters(Audio, "played", [GameState.campaign.game_over_sound])
+	assert_false(game.get_node("%HUD").get_node("%Lost").visible, "before the card")
+
+
 func test_retrying_during_the_wait_keeps_the_lost_card_away() -> void:
 	game._begin()
 	var world: World = game.get_node("%World")
