@@ -89,10 +89,30 @@ func _ready() -> void:
 	_world.army_lost.connect(_lose.bind(lost_title, lost_text, lost_status), CONNECT_DEFERRED)
 	_world.crew_lost.connect(_lose.bind(crew_lost_title, crew_lost_text, crew_lost_status), CONNECT_DEFERRED)
 	_tools.select(0)
+	var index := _take_start_level()
 	GameState.new_campaign()
-	_start_at_level(0)
-	_set_paused(true)
-	_hud.show_intro(true)
+	_start_at_level(maxi(index, 0))
+	if index >= 0:
+		_begin()
+	else:
+		_set_paused(true)
+		_hud.show_intro(true)
+
+
+## The campaign index of the level the game was asked to start at (a level run on its own), or -1. A level not in
+## the campaign becomes a campaign of its own.
+func _take_start_level() -> int:
+	var path := GameState.start_level
+	GameState.start_level = ""
+	if path.is_empty():
+		return -1
+	var index := GameState.campaign.levels.find(path)
+	if index < 0:
+		var only: Campaign = GameState.campaign.duplicate()
+		only.levels = [path] as Array[String]
+		GameState.campaign = only
+		index = 0
+	return index
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -185,6 +185,19 @@ func test_tile_texture_comes_from_the_tileset() -> void:
 	assert_eq(tex.region, Rect2(src.get_tile_texture_region(t.get_cell_atlas_coords(Vector2i(0, 0)))))
 
 
+## A new material can bring its tiles in an atlas source of its own (the sandbag): it is drawn and pictured with them.
+func test_a_material_in_a_tileset_source_of_its_own_is_drawn_with_it() -> void:
+	var t := WorldFixture.terrain(self, MAP)
+	var sandbag := WorldFixture.type("sandbag")
+	t.set_type(Vector2i(0, 0), sandbag)
+	var sid := t.get_cell_source_id(Vector2i(0, 0))
+	assert_ne(sid, -1, "drawn")
+	assert_ne(sid, t.look.classic_source, "not from the old atlas, which has no sandbag")
+	assert_ne(sid, t.look.source_id, "nor from the v2 ground tiles")
+	assert_eq(t.painted_type(Vector2i(0, 0)), sandbag)
+	assert_not_null(t.tile_texture(sandbag), "pictured off the map too (thrown, falling)")
+
+
 ## A 3 x 3 brick tower on soil: walls the column can only get past by razing it.
 const TOWER: Array = [
 	"..........",

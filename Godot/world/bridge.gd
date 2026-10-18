@@ -102,6 +102,12 @@ class Body:
 	func is_box() -> bool:
 		return half != Vector2.ZERO
 
+	## Is p within margin of the body.
+	func touches(p: Vector2, margin: float) -> bool:
+		if is_box():
+			return absf(p.x - center.x) < half.x + margin and absf(p.y - center.y) < half.y + margin
+		return p.distance_to(center) < radius + margin
+
 	## Top of the body (y, metres).
 	func top() -> float:
 		return center.y - (half.y if is_box() else radius)
@@ -539,9 +545,18 @@ func break_member(m: Member, quiet: bool = false, why: String = "") -> void:
 
 ## Where a path from a to b (metres) first hits a built member that blocks arrows, or null.
 func arrow_block(a: Vector2, b: Vector2) -> Variant:
+	return _first_hit(a, b, func(m: Member) -> bool: return m.material.blocks_arrows)
+
+
+## Where a to b first crosses a built piece solid to bodies (a thrown sandbag hits it), else null.
+func body_block(a: Vector2, b: Vector2) -> Variant:
+	return _first_hit(a, b, func(m: Member) -> bool: return m.material.solid_to_bodies)
+
+
+func _first_hit(a: Vector2, b: Vector2, blocks: Callable) -> Variant:
 	var best: Variant = null
 	for m in members:
-		if m.blueprint or not m.material.blocks_arrows:
+		if m.blueprint or not blocks.call(m):
 			continue
 		var hit: Variant = Geometry2D.segment_intersects_segment(a, b, m.a.pos, m.b.pos)
 		if hit != null and (best == null or a.distance_to(hit) < a.distance_to(best)):

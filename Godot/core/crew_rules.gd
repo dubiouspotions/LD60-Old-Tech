@@ -49,6 +49,16 @@ extends Resource
 ## Pause after the last engineer is back on the ground before the scaffolding comes down.
 @export_range(0.0, 5.0, 0.1, "suffix:s") var strike_delay: float = 0.6
 
+## Throwing (a sandbag): how far aside an engineer throws at most (any height), the distance aside it likes to
+## throw from, how long it winds up, and how fast the thrown thing flies.
+@export_range(1.0, 20.0, 0.5, "suffix:m") var throw_reach: float = 8.0
+@export_range(0.0, 20.0, 0.5, "suffix:m") var throw_distance: float = 5.0
+@export_range(0.0, 2.0, 0.05, "suffix:s") var throw_windup: float = 0.35
+@export_range(1.0, 40.0, 0.5, "suffix:m/s") var throw_speed: float = 10.0
+## How high the throw's arc rises over the straight line, per metre thrown, and at least.
+@export_range(0.0, 2.0, 0.05) var throw_arc_per_metre: float = 0.3
+@export_range(0.0, 4.0, 0.1, "suffix:m") var throw_arc_least: float = 0.5
+
 ## Shown when a falling tower or tree crushes an engineer.
 @export var crushed_text: String = "Crushed"
 
@@ -64,3 +74,15 @@ extends Resource
 ## For testing: ordered plans are built and marked cells dug (trees felled, their wood picked up) the moment
 ## they are ordered or marked. F2 toggles it (with a supply top-up) while playing.
 @export var instant_work: bool = false
+
+
+## Seconds a throw from from to to (metres) flies.
+func throw_time(from: Vector2, to: Vector2) -> float:
+	return from.distance_to(to) / throw_speed
+
+
+## Where a throw from from to to (metres) is at s (0 at the hands, 1 there), along its arc.
+func throw_point(from: Vector2, to: Vector2, s: float) -> Vector2:
+	var distance := from.distance_to(to)
+	var arc := throw_arc_per_metre * distance + throw_arc_least if distance > 0.0 else 0.0
+	return from.lerp(to, s) - Vector2(0, 4.0 * arc * s * (1.0 - s))

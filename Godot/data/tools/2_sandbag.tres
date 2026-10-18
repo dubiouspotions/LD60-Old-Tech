@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ToolDefinition" format=3 uid="uid://v2obnb31kc6k"]
+
+[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="1_sb"]
+[ext_resource type="Script" uid="uid://dihsek0i6d5w5" path="res://core/bridge_material.gd" id="2_ddcyh"]
+[ext_resource type="Script" uid="uid://ckdj86qctx6e0" path="res://core/tool_definition.gd" id="2_sb"]
+[ext_resource type="PackedScene" path="res://objects/sandbag/sandbag.tscn" id="3_sb"]
+
+[sub_resource type="Resource" id="Resource_sb_cost"]
+script = ExtResource("1_sb")
+earth = 10
+
+[resource]
+script = ExtResource("2_sb")
+kind = 1
+display_name = "Sandbag"
+hint = "an engineer throws it there"
+action = &"tool_sandbag"
+key_label = "5"
+cost = SubResource("Resource_sb_cost")
+no_supply_text = "%s missing. Dig earth"
+spawn_scene = ExtResource("3_sb")
+thrown = true

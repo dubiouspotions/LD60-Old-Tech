@@ -296,11 +296,24 @@ func _use(cell: Vector2i, first: bool) -> void:
 				elif first and here:
 					_say(center - Vector2(0, 0.5), here.too_hard_text, ok_color)
 		ToolDefinition.Kind.FILL:
+			if t.thrown and first:
+				# An engineer throws it: the click orders it, or takes back the order already there (all its cost).
+				var order := world.crew.throw_at(cell)
+				if order:
+					world.crew.cancel_throw(order)
+					world.gain(order.tool.price().copy(), center - Vector2(0, 0.5))
+					return
+			elif t.thrown:
+				return
 			if (here and not here.fill_replaces) or _falling_at(cell):
 				return
 			if not GameState.spend(t.cost):
 				if first:
 					_say(center - Vector2(0, 0.5), GameState.supplies.missing_text(t.cost, t.no_supply_text), ok_color)
+				return
+			if t.thrown:
+				world.crew.order_throw(cell, t)
+				Audio.play(t.use_sound, Grid.to_px(center))
 				return
 			if here:
 				terrain.set_type(cell, null)
@@ -363,6 +376,10 @@ func _draw_marks() -> void:
 		if m.dismantle and not m.blueprint:
 			draw_line(m.a.pos * px, m.b.pos * px, Color(mark_color, 0.35), 0.36 * px)
 			draw_line(m.a.pos * px, m.a.pos.lerp(m.b.pos, 1.0 - m.progress) * px, mark_color, 3.0)
+	for order in world.crew.throws:
+		var r := Rect2(Vector2(order.cell) * px, Vector2.ONE * px).grow(-3)
+		draw_rect(r, mark_color, false, 2.0)
+		draw_line(r.position + Vector2(0, r.size.y), r.position + Vector2(r.size.x, 0), Color(mark_color, 0.5), 1.5)
 	for cell in world.terrain.besieged_cells():
 		var done := world.terrain.siege_progress(cell)
 		if done > 0.0:

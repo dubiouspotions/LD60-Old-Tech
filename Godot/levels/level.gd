@@ -17,6 +17,13 @@ extends Node2D
 @export_range(0.0, 300.0, 1.0, "suffix:s") var march_delay: float = 30.0
 
 
+func _ready() -> void:
+	# Run on its own (Run Current Scene in the editor): play the game from this level.
+	if get_tree().current_scene == self:
+		GameState.start_level = scene_file_path
+		get_tree().change_scene_to_file.call_deferred(ProjectSettings.get_setting("application/run/main_scene"))
+
+
 func terrain() -> Terrain:
 	return get_node(^"Terrain")
 

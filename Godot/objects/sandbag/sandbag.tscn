@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://objects/falling_block/falling_block.gd" id="1"]
+[ext_resource type="Resource" path="res://data/terrain/sandbag.tres" id="2"]
+[ext_resource type="Resource" path="res://data/sounds/block_land.tres" id="3"]
+
+[node name="Sandbag" type="Node2D"]
+script = ExtResource("1")
+type = ExtResource("2")
+land_sound = ExtResource("3")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+centered = false

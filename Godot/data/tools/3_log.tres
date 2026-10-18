@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="ToolDefinition" format=3]
+[gd_resource type="Resource" script_class="ToolDefinition" format=3 uid="uid://bi22qx6eeujc7"]
 
-[ext_resource type="Resource" path="res://data/bridge/log.tres" id="1_lanng"]
-[ext_resource type="Script" path="res://core/tool_definition.gd" id="2_pb6ww"]
-[ext_resource type="Resource" path="res://data/bridge/stone.tres" id="3_stone"]
-[ext_resource type="Script" path="res://core/bridge_material.gd" id="4_bm"]
+[ext_resource type="Resource" uid="uid://dhve7dfvpqtep" path="res://data/bridge/log.tres" id="1_lanng"]
+[ext_resource type="Script" uid="uid://ckdj86qctx6e0" path="res://core/tool_definition.gd" id="2_pb6ww"]
+[ext_resource type="Resource" uid="uid://p6djdgm7cij4" path="res://data/bridge/stone.tres" id="3_stone"]
+[ext_resource type="Script" uid="uid://dihsek0i6d5w5" path="res://core/bridge_material.gd" id="4_bm"]
 
 [resource]
 script = ExtResource("2_pb6ww")

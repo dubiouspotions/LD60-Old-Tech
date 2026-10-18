@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="ToolDefinition" format=3]
+[gd_resource type="Resource" script_class="ToolDefinition" format=3 uid="uid://b1a3qy8qrfipn"]
 
-[ext_resource type="Resource" path="res://data/bridge/support.tres" id="1_s8k2p"]
-[ext_resource type="Script" path="res://core/tool_definition.gd" id="2_s8k2p"]
+[ext_resource type="Resource" uid="uid://btg5vyljyw35y" path="res://data/bridge/support.tres" id="1_s8k2p"]
+[ext_resource type="Script" uid="uid://dihsek0i6d5w5" path="res://core/bridge_material.gd" id="2_4div7"]
+[ext_resource type="Script" uid="uid://ckdj86qctx6e0" path="res://core/tool_definition.gd" id="2_s8k2p"]
 
 [resource]
 script = ExtResource("2_s8k2p")

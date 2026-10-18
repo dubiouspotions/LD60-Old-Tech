@@ -50,6 +50,8 @@ class Chunk:
 
 
 @export var falling_block_scene: PackedScene
+## Flies what an engineer throws (a sandbag) to its cell.
+@export var thrown_scene: PackedScene
 ## Drops a tower or tree whose ground was taken away.
 @export var falling_piece_scene: PackedScene
 ## A razed tower comes down a column at a time, left to right, each this many seconds after the one before.
@@ -129,6 +131,7 @@ func _ready() -> void:
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
 	crew.dig_finished.connect(_on_dig_finished)
+	crew.threw.connect(_on_threw)
 	crew.dismantled.connect(func(m: Bridge.Member) -> void: gain(bridge.take_apart(m), (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6)))
 	army.count_changed.connect(_on_army_count)
 	crew.count_changed.connect(_on_crew_count)
@@ -272,6 +275,11 @@ func _physics_process(dt: float) -> void:
 	_step_bridge(dt, bodies, blocks)
 	for b: FallingBlock in blocks:
 		b.step(dt, self, bodies)
+	var bags := objects.get_children().filter(func(o: Node) -> bool: return o is ThrownBag and not o.is_queued_for_deletion())
+	if not bags.is_empty():
+		var hittable := bodies + _crew_bodies()
+		for bag: ThrownBag in bags:
+			bag.step(dt, self, hittable)
 	_crush_under_weight(bodies, blocks)
 	for p: FallingPiece in objects.get_children().filter(func(o: Node) -> bool: return o is FallingPiece and not o.is_queued_for_deletion()):
 		p.step(dt, self)
@@ -622,6 +630,16 @@ static func _top_of(cells: Array[Vector2i]) -> Vector2:
 	return Vector2((lo + hi) / 2.0, top)
 
 
+## An engineer threw an ordered throw: it flies from its hands to its cell and falls on from there.
+func _on_threw(order: Crew.Throw, from: Vector2) -> void:
+	var block: FallingBlock = order.tool.spawn_scene.instantiate()
+	var bag: ThrownBag = thrown_scene.instantiate()
+	bag.block = block
+	objects.add_child(bag)
+	bag.throw(from, order.cell, crew.rules, terrain.tile_texture(block.type))
+	Audio.play(order.tool.use_sound, Grid.to_px(from))
+
+
 ## A tree is coming down, chopped or not: leaves and birds fly, and its logs drop as pieces of wood for the crew
 ## to pick up (they count once picked up).
 func _on_felled(cells: Array[Vector2i], found: Supplies) -> void:
@@ -681,6 +699,11 @@ func _bodies(blocks: Array) -> Array:
 	for b: FallingBlock in blocks:
 		out.append([b, Bridge.Body.box(Grid.to_m(b.position) + Vector2(0.5, 0.5), Vector2(0.5, 0.5), b.on_member)])
 	return out
+
+
+## Every engineer as a body, as _bodies has the soldiers (only what is thrown hits them).
+func _crew_bodies() -> Array:
+	return crew.engineers.map(func(e: Crew.Engineer) -> Array: return [e, Bridge.Body.new(e.pos - Vector2(0, BODY_MID), BODY_RADIUS)])
 
 
 ## Steps the bridge under the column and the blocks resting on it, colliding with bodies; crushes those it hits
