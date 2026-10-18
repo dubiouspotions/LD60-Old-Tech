@@ -179,13 +179,22 @@ func _kill(e: Engineer, text: String) -> void:
 
 ## Drops an engineer that nothing holds up (its structure fell away) and that can not simply climb down.
 ## True while it falls; it gives up its job.
+## Can the engineer, not falling, stay where it is: ground it can climb to under it, or beside it (it clings to a
+## cliff face it can climb, like one it was building from).
+func _can_hold_on(e: Engineer) -> bool:
+	for dx: float in [0.0, -ENGINEER_HALF_WIDTH, ENGINEER_HALF_WIDTH]:
+		if not is_nan(_ground_of(e, e.pos.x + dx)):
+			return true
+	return false
+
+
 func _fall(e: Engineer, dt: float) -> bool:
 	if e.at:
 		e.vy = 0.0
 		return false
 	# Either foot on something holds it, like a soldier standing at a cliff edge.
 	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y)
-	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and not is_nan(_ground_of(e, e.pos.x))):
+	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and _can_hold_on(e)):
 		e.vy = 0.0
 		return false
 	_drop(e)

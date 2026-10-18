@@ -821,3 +821,38 @@ func test_the_level_is_lost_when_the_last_engineer_dies() -> void:
 		world._physics_process(1.0 / 60.0)
 	assert_eq(world.crew.engineers.size(), 0)
 	assert_signal_emitted(world, "army_lost", "no crew left: game over")
+
+
+func test_an_engineer_left_idle_on_a_cliff_face_joint_climbs_back_up() -> void:
+	# The plan's end is bolted to the left cliff's face, half a metre below its top. Another engineer took the
+	# job, so this one is left at the joint with nothing to do.
+	var m := _plan(Vector2(6, 6.5), Vector2(10, 6.5))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.at = m.a
+	e.pos = m.a.pos
+	e.route.clear()
+	var inside := [false]
+	_run(6.0, func() -> bool:
+		inside[0] = inside[0] or world.terrain.is_solid(Grid.cell_of(e.pos - Vector2(0, 0.3)))
+		return false)
+	assert_false(inside[0], "never inside the cliff")
+	assert_almost_eq(e.pos.y, 6.0, 0.05, "back up on the cliff top")
+	assert_lt(e.pos.x, 6.0)
+
+
+func test_a_lone_engineer_climbs_down_to_a_face_joint_and_builds_from_it() -> void:
+	# Only one engineer, so nobody else can take the job over if it is given up on the way.
+	while world.crew.engineers.size() > 1:
+		var extra: Crew.Engineer = world.crew.engineers.pop_back()
+		extra.node.queue_free()
+	var m := _plan(Vector2(6, 7), Vector2(10, 7))
+	world.bridge.order_blueprints()
+	var gave_up := [false]
+	var e: Crew.Engineer = world.crew.engineers[0]
+	var had := [false]
+	_run(20.0, func() -> bool:
+		had[0] = had[0] or e.job == m
+		gave_up[0] = gave_up[0] or (had[0] and e.job != m and m.blueprint)
+		return not m.blueprint)
+	assert_false(gave_up[0], "kept the job on the way down the face")
+	assert_false(m.blueprint, "built it")
