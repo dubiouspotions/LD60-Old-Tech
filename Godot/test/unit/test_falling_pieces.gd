@@ -177,15 +177,20 @@ func test_falling_tower_crushes_an_engineer_under_it() -> void:
 
 func test_tree_falls_onto_the_ground_below_and_stands_there() -> void:
 	_build(TREE)
-	_clear([Vector2i(6, 5), Vector2i(6, 6)])
-	world.terrain.set_type(Vector2i(5, 5), null)
-	world.terrain.set_type(Vector2i(7, 5), null)
-	world.terrain.set_type(Vector2i(5, 6), null)
-	world.terrain.set_type(Vector2i(7, 6), null)
+	_clear([Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5)])
 	_run(2.0)
-	assert_eq(world.terrain.type_at(Vector2i(6, 6)), WorldFixture.type("trunk"), "fell 2 m")
-	assert_eq(world.terrain.type_at(Vector2i(6, 3)), WorldFixture.type("leaves"), "in one piece")
-	assert_null(world.terrain.type_at(Vector2i(6, 2)))
+	assert_eq(world.terrain.type_at(Vector2i(6, 5)), WorldFixture.type("trunk"), "fell 1 m")
+	assert_eq(world.terrain.type_at(Vector2i(6, 2)), WorldFixture.type("leaves"), "in one piece")
+	assert_null(world.terrain.type_at(Vector2i(6, 1)))
+
+
+func test_a_two_metre_fall_fells_a_tree() -> void:
+	_build(TREE)
+	_clear([Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5), Vector2i(5, 6), Vector2i(6, 6), Vector2i(7, 6)])
+	var expected := _tree_logs()
+	_run(2.0)
+	assert_eq(world.wood.count(), expected, "felled: its logs lie about as wood")
+	assert_null(world.terrain.type_at(Vector2i(6, 6)), "no trunk left standing")
 
 
 func test_tree_falling_further_than_it_survives_is_felled() -> void:
