@@ -150,6 +150,15 @@ func camp() -> Node2D:
 	return _camp if is_instance_valid(_camp) else null
 
 
+## Where the Camp Shoppe button hangs (world pixels): under the camp, below the lowest tent of the sleeping column.
+func shop_spot() -> Vector2:
+	var lowest := -INF
+	for s: Soldier in army.soldiers:
+		if s.sleeping:
+			lowest = maxf(lowest, s.tent_bottom())
+	return (camp() as Camp).button_spot(lowest)
+
+
 ## Starts (or restarts) the column at level index with soldiers: everything from that level on is put back
 ## as designed, and the column camps at its start flag.
 func begin(index: int, soldiers: int) -> void:

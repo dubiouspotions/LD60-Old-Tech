@@ -77,6 +77,15 @@ func sync() -> void:
 	_anim.speed_scale = speed / 1.7
 
 
+## Bottom (world pixels, y) of what it sleeps in: the sprites under Asleep. Its feet if it has none.
+func tent_bottom() -> float:
+	var bottom := -INF
+	if _asleep:
+		for s: Sprite2D in _asleep.find_children("*", "Sprite2D"):
+			bottom = maxf(bottom, (s.global_transform * Vector2(0, s.get_rect().end.y)).y)
+	return bottom if is_finite(bottom) else global_position.y
+
+
 func _process(delta: float) -> void:
 	_stood = 0.0 if moving else _stood + delta
 

@@ -189,6 +189,22 @@ func test_the_shoppe_hangs_under_the_camp() -> void:
 	assert_gt(camp.button_spot().y, camp.global_position.y, "below the camp's ground, not above the tents")
 
 
+## The Camp Shoppe button hangs one tile (Tiles Below Tents) below the bottom of the lowest tent.
+func test_the_shoppe_hangs_a_tile_below_the_lowest_tent() -> void:
+	world.begin(0, 3)
+	_run(world.dusk_time)
+	var camp: Camp = world.camp()
+	var asleep := world.army.soldiers.filter(func(s: Soldier) -> bool: return s.sleeping)
+	assert_gt(asleep.size(), 0, "the column sleeps in its tents")
+	var lowest := -INF
+	for s: Soldier in asleep:
+		var tent: Sprite2D = s.get_node("Asleep/Tent")
+		lowest = maxf(lowest, (tent.global_transform * Vector2(0, tent.get_rect().end.y)).y)
+	assert_eq(camp.tiles_below_tents, 1.0)
+	assert_almost_eq(world.shop_spot().y, lowest + Grid.PX, 0.5)
+	assert_almost_eq(world.shop_spot().x, camp.button_spot().x, 0.5, "across, where the camp says")
+
+
 func test_hire_an_engineer_at_camp() -> void:
 	world.begin(0, 3)
 	var crew := world.crew.engineers.size()

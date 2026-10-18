@@ -4,6 +4,8 @@ extends Node2D
 ## the column sleeps behind it. The World pitches it at nightfall and calls strike() at dawn.
 
 @export_range(0.1, 10.0, 0.1, "suffix:s") var fade_time: float = 1.5
+## Tiles between the bottom of the lowest tent and the Camp Shoppe button.
+@export_range(0.0, 5.0, 0.25, "suffix:tiles") var tiles_below_tents: float = 1.0
 
 @onready var _crackle: AudioStreamPlayer2D = %Crackle
 @onready var _light: PointLight2D = %FireLight
@@ -13,9 +15,13 @@ func _ready() -> void:
 	_crackle.finished.connect(_crackle.play)
 
 
-## Where the Camp Shoppe button hangs from: the ButtonSpot marker, under the camp. World pixels.
-func button_spot() -> Vector2:
-	return %ButtonSpot.global_position
+## Where the Camp Shoppe button hangs from, in world pixels: across from the ButtonSpot marker, tiles_below_tents
+## under lowest_tent (the bottom of the lowest tent, world pixels y), or at the marker without tents.
+func button_spot(lowest_tent: float = -INF) -> Vector2:
+	var spot: Vector2 = %ButtonSpot.global_position
+	if is_finite(lowest_tent):
+		spot.y = lowest_tent + tiles_below_tents * Grid.PX
+	return spot
 
 
 ## Fades the camp out and removes it.
