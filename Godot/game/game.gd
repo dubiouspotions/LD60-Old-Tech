@@ -252,7 +252,6 @@ func _on_victory() -> void:
 func _lose(title: String, text: String) -> void:
 	_over = true
 	_tools.enabled = false
-	Audio.play(GameState.campaign.game_over_sound)
 	_losses += 1
 	var loss := _losses
 	if lost_delay > 0.0:
