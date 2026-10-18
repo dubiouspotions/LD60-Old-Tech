@@ -108,3 +108,14 @@ func test_the_game_starts_with_following_off_and_the_view_on_the_column() -> voi
 	var lead: Soldier = game.get_node("%World").army.lead()
 	var view := Rect2(cam.view_m(), cam.view_size_m())
 	assert_true(view.has_point(lead.pos), "the column is in view")
+
+
+func test_picking_stone_in_the_picker_switches_bridge_to_stone() -> void:
+	game._begin()
+	var tools: ToolController = game.get_node("%ToolController")
+	tools.select(1)
+	var row: Node = game.get_node("%HUD").get_node("%Materials")
+	(row.get_child(1) as Button).pressed.emit()
+	assert_eq(tools.build_material().display_name, "Stone")
+	assert_true((row.get_child(1) as Button).button_pressed, "the pick shows")
+	assert_engine_error_count(0, "no button freed while it was being pressed")

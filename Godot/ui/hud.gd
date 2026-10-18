@@ -45,6 +45,7 @@ var _tool_buttons: Array[ToolButton] = []
 var _tools: Array[ToolDefinition] = []
 var _build_buttons: Array[PlanButtons] = []
 var _group := ButtonGroup.new()
+var _picker_tool: int = -1 # tool whose materials the picker shows, -1 if none
 var _colors: Dictionary = {} # supply key -> swatch colour, for the tool buttons' costs
 
 
@@ -81,6 +82,7 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 		b.queue_free()
 	_tool_buttons.clear()
 	_tools = tools
+	_picker_tool = -1
 	_colors = {}
 	# Opaque: a readout may hide its swatch (shown by an icon instead), but the cost swatches need the colour.
 	for k in Supplies.KEYS:
@@ -118,10 +120,19 @@ func _show_picker(index: int, material: BridgeMaterial) -> void:
 	var all := _tools[index].materials()
 	picker.visible = all.size() > 1
 	if not picker.visible:
+		_picker_tool = -1
 		return
 	var row: HBoxContainer = %Materials
+	var chosen := material if material else all[0]
+	if _picker_tool == index:
+		# Same tool: only the pick moved. The buttons stay (one of them may be emitting this very pick).
+		for i in all.size():
+			(row.get_child(i) as Button).set_pressed_no_signal(all[i] == chosen)
+		return
+	_picker_tool = index
 	for c in row.get_children():
-		c.free()
+		c.queue_free()
+		row.remove_child(c)
 	var group := ButtonGroup.new()
 	for m in all:
 		var mb := Button.new()
@@ -130,7 +141,7 @@ func _show_picker(index: int, material: BridgeMaterial) -> void:
 		mb.focus_mode = Control.FOCUS_NONE
 		mb.text = "%s · %s" % [m.display_name, m.cost.describe_cost() if m.cost else ""]
 		mb.tooltip_text = m.hint
-		mb.button_pressed = m == (material if material else all[0])
+		mb.button_pressed = m == chosen
 		mb.pressed.connect(func() -> void:
 			Audio.play(click_sound)
 			material_picked.emit(m))
