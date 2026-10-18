@@ -283,9 +283,9 @@ func fit_to_ground(a: Snap, b: Snap) -> Snap:
 	return Snap.new(p, null, anchorable(p))
 
 
-## What a piece of mat this long costs: its cost for every started metre.
+## What a piece of mat this long costs: its cost for every started stretch of its metres_per_cost.
 static func cost_for(mat: BridgeMaterial, length: float) -> Supplies:
-	return mat.cost.times(maxi(1, ceili(length - 0.001))) if mat.cost else Supplies.new()
+	return mat.cost.times(maxi(1, ceili(length / mat.metres_per_cost - 0.001))) if mat.cost else Supplies.new()
 
 
 ## {ok: bool, msg: String, length: float, cost: Supplies}. Too long is only said when a shorter piece could be

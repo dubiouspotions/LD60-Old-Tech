@@ -33,10 +33,13 @@ func setup(def: ToolDefinition, colors: Dictionary = {}, mat: BridgeMaterial = n
     %Hint.text = hint
     tooltip_text = "%s (%s)" % [def.display_name, def.key_label]
     var price := def.price(mat)
-    # Build tools pay per started metre of what is planned.
-    var per := "/m" if def.kind == ToolDefinition.Kind.BUILD else ""
-    if not price.is_empty():
-        tooltip_text += "\nCosts " + price.describe_cost() + (" per started metre" if per else "")
+    # Build tools pay per started metre (or metres_per_cost) of what is planned.
+    var built: BridgeMaterial = (mat if mat else def.bridge_material) if def.kind == ToolDefinition.Kind.BUILD else null
+    var per := "/" + built.cost_unit() if built else ""
+    if not price.is_empty() and built:
+        tooltip_text += "\nCosts " + price.describe_cost() + " per started " + built.cost_stretch()
+    elif not price.is_empty():
+        tooltip_text += "\nCosts " + price.describe_cost()
     if not hint.is_empty():
         tooltip_text += "\n" + hint
     _fill_cost(price, colors, per)
@@ -98,7 +101,7 @@ func _fill_materials(def: ToolDefinition, mat: BridgeMaterial) -> void:
                 b.icon = m.icon
                 b.expand_icon = true
                 b.custom_minimum_size = Vector2.ONE * material_icon_size
-                b.tooltip_text = "%s · %s/m" % [m.display_name, m.cost.describe_cost() if m.cost else ""]
+                b.tooltip_text = "%s · %s/%s" % [m.display_name, m.cost.describe_cost() if m.cost else "", m.cost_unit()]
                 b.pressed.connect(func() -> void: material_pressed.emit(m))
                 row.add_child(b)
     var chosen := mat if mat else (all[0] if not all.is_empty() else null)

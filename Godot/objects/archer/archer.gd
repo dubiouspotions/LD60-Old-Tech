@@ -1,7 +1,9 @@
 class_name Archer
 extends Node2D
 ## An enemy archer on a tower. Shoots at the nearest soldier in range that it has a clear shot at (no ground or
-## arrow-blocking bridge member on the arrow's arc), or at the nearest in range if it has a clear shot at none.
+## arrow-blocking bridge member on the arrow's arc). With a clear shot at none from where it stands, it first walks
+## along its tower top (out to the edges) to the nearest spot that gives it one; if there is none, it shoots at the
+## nearest in range anyway.
 ## Place it with its feet (node origin) on top of a solid tile. It dies when that tile is destroyed,
 ## or when soldiers reach it and cut it down. It rides its tower down when the tower falls (holding fire meanwhile),
 ## and dies if the tower breaks up.
@@ -15,6 +17,8 @@ extends Node2D
 @export_range(0.0, 0.5, 0.01) var aim_error: float = 0.04
 @export_range(0.0, 10.0, 0.1, "suffix:s") var first_shot_delay: float = 1.5
 @export_range(0.1, 10.0, 0.05, "suffix:s") var reload_time: float = 2.2
+## How fast it walks along its tower top to get a clear shot.
+@export_range(0.1, 10.0, 0.1, "suffix:m/s") var walk_speed: float = 1.5
 @export var shoot_sound: SoundEffect
 @export var down_sound: SoundEffect
 @export var down_text: String = "Tower down"
@@ -47,6 +51,8 @@ extends Node2D
 var engaging: bool = false
 var hp: int = 3
 var _cooldown: float = 0.0
+## Where on its tower top it is walking to for a clear shot, or NAN.
+var _goal_x: float = NAN
 var _down: bool = false
 enum Topple { NONE, HANG, FALL, LIE, GONE }
 ## Seconds of each half of a vanishing blink (bright, then back).
@@ -97,10 +103,24 @@ func _physics_process(dt: float) -> void:
 		engaging = false
 		return
 	_cooldown -= dt
-	var origin := _bow()
-	engaging = not _in_range(world).is_empty()
-	if not engaging or _cooldown > 0.0:
+	var near := _in_range(world)
+	engaging = not near.is_empty()
+	if not engaging:
+		_goal_x = NAN
 		return
+	if not is_nan(_goal_x):
+		position.x = move_toward(position.x, _goal_x * Grid.PX, walk_speed * Grid.PX * dt)
+		if absf(position.x - _goal_x * Grid.PX) > 0.01:
+			return
+		_goal_x = NAN
+	if _cooldown > 0.0:
+		return
+	if not near.any(func(s: Soldier) -> bool: return sees(world, s)):
+		var x := _clear_shot_spot(world, near)
+		if not is_nan(x) and absf(x - feet_m().x) > 0.01:
+			_goal_x = x
+			return
+	var origin := _bow()
 	var target := pick_target(world)
 	_cooldown = reload_time
 	var arrow: Arrow = arrow_scene.instantiate()
@@ -120,6 +140,31 @@ func pick_target(world: World) -> Soldier:
 		if sees(world, s):
 			return s
 	return near[0] if not near.is_empty() else null
+
+
+## The nearest spot on its tower top (the solid cells level with its feet, open above, out to the edges) from
+## where it has a clear shot at one of near, or NAN.
+func _clear_shot_spot(world: World, near: Array[Soldier]) -> float:
+	var t := world.terrain
+	var row := floori(feet_m().y + 0.5)
+	var here := floori(feet_m().x)
+	var spots: Array[float] = []
+	for dir: int in [-1, 1]:
+		var c := here if dir < 0 else here + 1
+		while t.is_solid(Vector2i(c, row)) and not t.is_solid(Vector2i(c, row - 1)) and t.type_at(Vector2i(c, row - 1)) == null:
+			for f: float in [0.25, 0.5, 0.75]:
+				spots.append(c + f)
+			c += dir
+	var x0 := position.x
+	spots.sort_custom(func(a: float, b: float) -> bool: return absf(a - x0 / Grid.PX) < absf(b - x0 / Grid.PX))
+	var found := NAN
+	for x in spots:
+		position.x = x * Grid.PX
+		if near.any(func(s: Soldier) -> bool: return sees(world, s)):
+			found = x
+			break
+	position.x = x0
+	return found
 
 
 ## Soldiers within shoot_range of the bow, nearest first.
