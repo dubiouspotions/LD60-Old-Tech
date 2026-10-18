@@ -25,6 +25,8 @@ func strike() -> void:
 	%Flicker.stop()
 	var tw := create_tween().set_parallel()
 	tw.tween_property(self, ^"modulate:a", 0.0, fade_time)
-	tw.tween_property(_light, ^"energy", 0.0, fade_time)
+	# Back to daylight, not to dark: the fire is a Mix light (see NightLight).
+	tw.tween_property(_light, ^"energy", NightLight.DAY_ENERGY, fade_time)
+	tw.tween_property(_light, ^"color", NightLight.DAY_COLOR, fade_time)
 	tw.tween_property(_crackle, ^"volume_db", -40.0, fade_time)
 	tw.chain().tween_callback(queue_free)
