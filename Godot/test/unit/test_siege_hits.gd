@@ -110,3 +110,21 @@ func test_razing_a_tower_takes_its_battlements_down_too() -> void:
 	for x in range(10, 13):
 		assert_eq(t.get_cell_source_id(Vector2i(x, 0)), -1, "battlement %d gone with the tower" % x)
 	assert_eq(t.get_cell_source_id(Vector2i(3, 3)), t.look.classic_source, "a decoration elsewhere stays")
+
+
+## The row struck bursts at once; the rows above burst as they come down (see test_tower_collapse).
+func test_the_row_struck_bursts_into_rubble_and_dust_at_once() -> void:
+	var t := world.terrain
+	var bursts := []
+	Effects.burst.connect(func(kind: StringName, at_px: Vector2, color: Color) -> void: bursts.append([kind, at_px, color]))
+	t.besiege(Vector2i(10, 3), WorldFixture.type("brick").raze_time + 1.0)
+	var brick := WorldFixture.type("brick")
+	var rubble := bursts.filter(func(b: Array) -> bool: return b[0] == &"rubble")
+	var dust := bursts.filter(func(b: Array) -> bool: return b[0] == &"dust")
+	assert_eq(rubble.size(), 3, "rubble from every cell of the row struck")
+	assert_eq(dust.size(), 3, "and a cloud of dust")
+	for b: Array in rubble:
+		assert_eq(b[2], brick.debris_color, "chunks of its stone")
+		var cell := Grid.cell_of(Grid.to_m(b[1]))
+		assert_between(cell.x, 10, 12, "where the tower stood")
+		assert_eq(cell.y, 3, "in the row struck")

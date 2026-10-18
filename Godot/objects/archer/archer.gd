@@ -27,6 +27,18 @@ extends Node2D
 ## Holds fire while the column camps for the night.
 @export var rests_at_night: bool = true
 
+@export_group("Topple")
+## When its tower is razed under it, the archer hangs in the air this long, then falls...
+@export_range(0.0, 3.0, 0.05, "suffix:s") var topple_hang: float = 0.5
+@export_range(1.0, 100.0, 1.0, "suffix:m/s²") var topple_gravity: float = 30.0
+## ...lands lying flat and lies there this long, then blinks once and vanishes in a puff of smoke.
+@export_range(0.0, 10.0, 0.1, "suffix:s") var lie_time: float = 2.0
+@export var vanish_flash: Color = Color(3, 3, 3)
+## How many times it blinks before it vanishes.
+@export_range(1, 10) var vanish_blinks: int = 2
+@export var smoke_color: Color = Color(0.78, 0.75, 0.7)
+@export_range(0, 30) var smoke_puffs: int = 6
+
 @export_group("Look")
 @export var show_range: bool = true
 @export var range_color: Color = Color(0.851, 0.314, 0.247, 0.28)
@@ -36,6 +48,12 @@ var engaging: bool = false
 var hp: int = 3
 var _cooldown: float = 0.0
 var _down: bool = false
+enum Topple { NONE, HANG, FALL, LIE, GONE }
+## Seconds of each half of a vanishing blink (bright, then back).
+const VANISH_BLINK: float = 0.1
+var _topple: Topple = Topple.NONE
+var _topple_time: float = 0.0
+var _vy: float = 0.0
 
 
 func _ready() -> void:
@@ -64,6 +82,9 @@ func feet_m() -> Vector2:
 
 func _physics_process(dt: float) -> void:
 	var world := World.of(self)
+	if world and _topple != Topple.NONE:
+		_topple_step(world, dt)
+		return
 	if world == null or _down:
 		return
 	if world.carries(self):
@@ -154,6 +175,77 @@ func _aim_point(s: Soldier) -> Vector2:
 
 
 ## Its tower broke up under it.
+## Its tower was razed under it: it hangs a moment, falls, lies flat, then vanishes (see Topple).
+func topple() -> void:
+	if _topple != Topple.NONE:
+		return
+	if not _down:
+		Effects.say(position - Vector2(0, Grid.PX), down_text, Color("e9a93b"))
+		Audio.play(down_sound, position)
+	_down = true
+	engaging = false
+	queue_redraw()
+	_topple = Topple.HANG
+	_topple_time = 0.0
+	_vy = 0.0
+
+
+## Coming down off a razed tower, from the hang until it has vanished.
+func toppling() -> bool:
+	return _topple != Topple.NONE and not is_queued_for_deletion()
+
+
+## Lying on the ground after toppling.
+func lying() -> bool:
+	return _topple == Topple.LIE
+
+
+func _topple_step(world: World, dt: float) -> void:
+	_topple_time += dt
+	match _topple:
+		Topple.HANG:
+			if _topple_time >= topple_hang:
+				_topple = Topple.FALL
+		Topple.FALL:
+			_vy += topple_gravity * dt
+			var feet := feet_m()
+			var next := feet.y + _vy * dt
+			if _on_falling_piece(world, Vector2(feet.x, next)):
+				# Rides the rubble of its tower until that breaks too.
+				_vy = 0.0
+				return
+			if world.terrain.is_solid(Grid.cell_of(Vector2(feet.x, next))):
+				_lie_down(floorf(next))
+				return
+			position.y = next * Grid.PX
+		Topple.LIE:
+			if _topple_time >= lie_time:
+				_topple = Topple.GONE
+				_topple_time = 0.0
+		Topple.GONE:
+			# Full-body blinks, then a puff of smoke.
+			modulate = vanish_flash if fmod(_topple_time, VANISH_BLINK * 2.0) < VANISH_BLINK else Color.WHITE
+			if _topple_time >= VANISH_BLINK * 2.0 * vanish_blinks:
+				Effects.dust(position - Vector2(0, 0.25 * Grid.PX), smoke_color, smoke_puffs)
+				queue_free()
+
+
+func _on_falling_piece(world: World, p: Vector2) -> bool:
+	return world.objects.get_children().any(func(o: Node) -> bool:
+		return o is FallingPiece and not o.is_queued_for_deletion() and (o as FallingPiece).covers(p))
+
+
+## Lands lying flat on its side on the ground at y (metres), and lies perfectly still: its animations stop.
+func _lie_down(y: float) -> void:
+	for s in find_children("*", "AnimatedSprite2D", true, false):
+		(s as AnimatedSprite2D).pause()
+	_topple = Topple.LIE
+	_topple_time = 0.0
+	rotation = -PI / 2
+	position.y = (y - 0.25) * Grid.PX
+	Audio.play(down_sound, position)
+
+
 func lose_ground() -> void:
 	if not _down:
 		_go_down(down_text)

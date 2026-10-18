@@ -29,6 +29,8 @@ var danger: String = ""
 var foes: Array = []
 ## Waiting for the order to march. Soldiers still fall, but do not walk.
 var hold: bool = false
+## Set while the column must stand back (a tower coming down): it waits where it is, with this as its status.
+var wait_reason: String = ""
 ## Camp is made: each soldier walks to its spot behind camp_x (camp_spacing apart, backwards if the column
 ## is too dense) and lies down once it has stood still a moment. Turning it off wakes everyone.
 var resting: bool = false:
@@ -105,6 +107,10 @@ func step(dt: float) -> void:
 		if hold:
 			if i == 0:
 				halt_reason = rules.hold_text
+			continue
+		if not wait_reason.is_empty():
+			if i == 0:
+				halt_reason = wait_reason
 			continue
 		if resting and not is_nan(camp_x):
 			_walk_to_camp(s, i, dt)

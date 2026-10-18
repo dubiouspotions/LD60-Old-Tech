@@ -5,13 +5,16 @@ extends Node2D
 signal shake_requested(amount: float)
 ## A floating text was shown (for tests and anything that follows the texts).
 signal said(text: String, at_px: Vector2)
-## A particle burst was spawned: kind is &"debris" or &"sparks".
+## A particle burst was spawned: kind is &"debris", &"sparks", &"rubble" or &"dust".
 signal burst(kind: StringName, at_px: Vector2, color: Color)
 
 ## CPUParticles2D scene used for debris. Its look is edited in the scene; colour and count are set per call.
 @export var debris_scene: PackedScene
 ## CPUParticles2D scene for sparks (metal on stone). Its look, colours included, is edited in the scene.
 @export var sparks_scene: PackedScene
+## CPUParticles2D scenes for a structure breaking up: heavy chunks of it, and a cloud of its dust.
+@export var rubble_scene: PackedScene
+@export var dust_scene: PackedScene
 ## Label scene that floats up and fades (see floating_text.gd).
 @export var text_scene: PackedScene
 
@@ -44,6 +47,32 @@ func sparks(at_px: Vector2, amount: int = 6, direction: Vector2 = Vector2.UP) ->
 	p.position = at_px
 	_fire(p)
 	burst.emit(&"sparks", at_px, Color.WHITE)
+
+
+## Heavy chunks of color flying out of at_px (a structure breaking up).
+func rubble(at_px: Vector2, color: Color, amount: int = 4, speed_px: float = 200.0) -> void:
+	if rubble_scene == null or amount <= 0:
+		return
+	var p: CPUParticles2D = rubble_scene.instantiate()
+	p.amount = amount
+	p.color = color
+	p.initial_velocity_max = speed_px
+	p.initial_velocity_min = speed_px * 0.3
+	p.position = at_px
+	_fire(p)
+	burst.emit(&"rubble", at_px, color)
+
+
+## A cloud of dust of color swelling and drifting up from at_px.
+func dust(at_px: Vector2, color: Color, amount: int = 2) -> void:
+	if dust_scene == null or amount <= 0:
+		return
+	var p: CPUParticles2D = dust_scene.instantiate()
+	p.amount = amount
+	p.color = color
+	p.position = at_px
+	_fire(p)
+	burst.emit(&"dust", at_px, color)
 
 
 func _fire(p: CPUParticles2D) -> void:
