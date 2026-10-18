@@ -6,6 +6,12 @@ extends Node2D
 ## New members start as blueprints: drawn, but not simulated or walkable. Ordered blueprints are built one by one
 ## by the Crew (finish), held on scaffolding, and released to the physics when the crew strikes the scaffolding.
 
+## Flex is given for this load (kg) at the middle of a member this long (m).
+const REFERENCE_LOAD: float = 80.0
+const REFERENCE_LENGTH: float = 5.0
+## A member never sags more than this share of its length.
+const MAX_SAG: float = 0.08
+
 signal member_built(member: Member)
 signal member_broken(member: Member, text: String)
 
@@ -45,6 +51,12 @@ class Member:
 	var scaffolded: bool = false
 	## Share built so far (0..1), growing from from_joint.
 	var progress: float = 0.0
+	## How far its middle sinks under the soldiers on it, in metres (see BridgeMaterial.flex).
+	var sag: float = 0.0
+
+	## Sag at t along the member (0 at the ends, sag at the middle).
+	func sag_at(t: float) -> float:
+		return sag * 4.0 * t * (1.0 - t)
 	var from_joint: Joint
 
 	func stress() -> float:
@@ -75,6 +87,8 @@ class Snap:
 @export var water_drag: float = 0.97
 ## Smoothing of member force before the break test, per tick. Filters single-substep spikes.
 @export_range(0.01, 1.0) var force_smoothing: float = 0.2
+## How fast a plank bends to its load and springs back, per tick.
+@export_range(0.01, 1.0) var sag_smoothing: float = 0.15
 ## Ground friction: fraction of velocity kept when a joint touches ground.
 @export_range(0.0, 1.0) var ground_friction: float = 0.3
 
@@ -421,7 +435,7 @@ func walk_surface(x: float, y_from: float) -> Dictionary:
 		var t := (x - a.x) / run
 		if built < 1.0 and (t > built if m.from_joint == m.a else t < 1.0 - built):
 			continue
-		var y := a.y + (b.y - a.y) * t - deck_offset
+		var y := a.y + (b.y - a.y) * t - deck_offset + m.sag_at(t)
 		if y >= y_from - 1e-6 and (best.is_empty() or y < best.y):
 			best = {y = y, member = m, t = t}
 	return best
@@ -435,12 +449,16 @@ func step(dt: float, loads: Array = []) -> void:
 		n.load = 0.0
 		if n.pinned and not anchorable(n.pos):
 			n.pinned = false
+	var bending := {}
 	for l: Array in loads:
 		var m: Member = l[0]
 		if m.dead:
 			continue
 		m.a.load += l[2] * (1.0 - l[1])
 		m.b.load += l[2] * l[1]
+		# A load bends a member most at its middle and not at all at a joint.
+		bending[m] = bending.get(m, 0.0) + l[2] * 4.0 * l[1] * (1.0 - l[1])
+	_bend(bending)
 	for n in nodes:
 		n.inv_mass = 0.0 if n.fixed() else 1.0 / (n.mass + n.load)
 	for m in members:
@@ -491,6 +509,18 @@ func step(dt: float, loads: Array = []) -> void:
 			remove_member(m)
 
 
+## Eases each member's sag toward what its loads ({member: kg weighted by where they stand}) call for.
+func _bend(bending: Dictionary) -> void:
+	for m in members:
+		var mat := m.material
+		var target := 0.0
+		if not mat.draw_as_rope and mat.flex > 0.0 and bending.has(m):
+			target = minf(mat.flex * bending[m] / REFERENCE_LOAD * pow(m.length / REFERENCE_LENGTH, 3.0), m.length * MAX_SAG)
+		m.sag += (target - m.sag) * sag_smoothing
+		if m.sag < 0.0005 and target == 0.0:
+			m.sag = 0.0
+
+
 func clear() -> void:
 	members.clear()
 	nodes.clear()
@@ -533,6 +563,19 @@ func _draw() -> void:
 				var t := i / 12.0
 				pts.append(a.lerp(ctrl, t).lerp(ctrl.lerp(b, t), t))
 			draw_polyline(pts, hot if m.stress() > 0.3 else mat.color, maxf(1.5, mat.thickness * px), true)
+		elif m.sag > 0.002:
+			var pts := PackedVector2Array()
+			for i in 13:
+				var t := i / 12.0
+				pts.append(a.lerp(b, t) + Vector2(0, m.sag_at(t) * px))
+			var lit := pts.duplicate()
+			for i in lit.size():
+				lit[i] -= Vector2(0, 0.05 * px)
+			draw_polyline(pts, mat.edge_color, mat.thickness * 1.5 * px, true)
+			draw_polyline(pts, hot, mat.thickness * px, true)
+			draw_polyline(lit, highlight_color, maxf(1.0, 0.04 * px), true)
+			draw_circle(a, mat.thickness * 0.75 * px, mat.edge_color)
+			draw_circle(b, mat.thickness * 0.75 * px, mat.edge_color)
 		else:
 			draw_line(a, b, mat.edge_color, mat.thickness * 1.5 * px)
 			draw_line(a, b, hot, mat.thickness * px)
