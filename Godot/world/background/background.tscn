@@ -29,7 +29,7 @@ fill_to = Vector2(1, 0.5)
 [node name="Background" type="CanvasLayer" unique_id=339266599]
 layer = -10
 
-[node name="SkyTint" type="CanvasModulate" parent="."]
+[node name="SkyTint" type="CanvasModulate" parent="." unique_id=791415413]
 
 [node name="Sky" type="TextureRect" parent="." unique_id=489870164]
 anchors_preset = 15
@@ -65,8 +65,7 @@ script = ExtResource("1")
 [node name="RidgeNear" type="Node2D" parent="." unique_id=151638868]
 script = ExtResource("1")
 color = Color(0.2745, 0.3137, 0.4157, 1)
-parallax = 0.3
+parallax = 0.32
 base = 0.86
-amplitude = 0.2
 frequency = 0.08
 seed_salt = 202

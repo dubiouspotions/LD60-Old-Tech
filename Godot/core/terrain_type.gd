@@ -12,7 +12,7 @@ enum DigAction { NONE, REMOVE, FELL }
 @export_group("Physical")
 ## Blocks soldiers, supports fill, and stops logs passing through.
 @export var solid: bool = true
-## Natural ground: holds structures up and bolts bridge joints that touch it.
+## Natural ground: holds structures (bricks, towers) up. Bridge joints bolt to any solid tile, this or not.
 @export var anchor: bool = true
 ## Collapses when no chain of structure tiles connects it to anchor ground (bricks, towers).
 @export var structure: bool = false

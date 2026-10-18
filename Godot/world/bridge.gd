@@ -188,7 +188,7 @@ func _process(_delta: float) -> void:
 	queue_redraw()
 
 
-## Does a joint at p bolt down: does it touch natural ground (TerrainType.anchor, not bricks or trees)?
+## Does a joint at p bolt down: does it touch a solid tile (ground, rock, a tower, a box)?
 func anchorable(p: Vector2) -> bool:
 	if terrain == null:
 		return false
@@ -196,7 +196,7 @@ func anchorable(p: Vector2) -> bool:
 	var ys := [roundi(p.y) - 1, roundi(p.y)] if _on_grid(p.y) else [floori(p.y)]
 	for x: int in xs:
 		for y: int in ys:
-			if terrain.is_anchor(Vector2i(x, y)):
+			if terrain.is_solid(Vector2i(x, y)):
 				return true
 	return false
 

@@ -20,10 +20,15 @@ unique_name_in_owner = true
 [node name="StartFlag" parent="." unique_id=1604052212 instance=ExtResource("5")]
 unique_name_in_owner = true
 position = Vector2(208, 768)
+open_color = Color(0.9137255, 0.6627451, 0.23137255, 0)
+reached_color = Color(0.3019608, 0.54509807, 0.9411765, 0)
+label = ""
 
 [node name="ExitFlag" parent="." unique_id=1990000613 instance=ExtResource("5")]
 unique_name_in_owner = true
 position = Vector2(4048, 768)
+open_color = Color(0.9137255, 0.6627451, 0.23137255, 0)
+reached_color = Color(0.3019608, 0.54509807, 0.9411765, 0)
 label = "L2"
 
 [node name="Grass" type="TileMapLayer" parent="." unique_id=1873402215]

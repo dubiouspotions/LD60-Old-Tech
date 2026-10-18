@@ -1,27 +1,97 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://c4hph47h8634x"]
 
-[ext_resource type="Script" path="res://objects/checkpoint_flag/checkpoint_flag.gd" id="1"]
+[ext_resource type="Script" uid="uid://d1v13g7afro08" path="res://objects/checkpoint_flag/checkpoint_flag.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://28j71k80nis2" path="res://world/green_flag_ani.png" id="2_kg76h"]
 
-[node name="CheckpointFlag" type="Node2D"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_r1scb"]
+atlas = ExtResource("2_kg76h")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h6g8s"]
+atlas = ExtResource("2_kg76h")
+region = Rect2(128, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e2lph"]
+atlas = ExtResource("2_kg76h")
+region = Rect2(256, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l5xlm"]
+atlas = ExtResource("2_kg76h")
+region = Rect2(384, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s31v8"]
+atlas = ExtResource("2_kg76h")
+region = Rect2(512, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rjhu6"]
+atlas = ExtResource("2_kg76h")
+region = Rect2(640, 0, 128, 128)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_hy4tk"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r1scb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h6g8s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e2lph")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l5xlm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s31v8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rjhu6")
+}],
+"loop": 1,
+"name": &"grön flagga",
+"speed": 9.0
+}]
+
+[node name="CheckpointFlag" type="Node2D" unique_id=1921567967]
 script = ExtResource("1")
+label = ""
 
-[node name="Pole" type="Line2D" parent="."]
-points = PackedVector2Array(0.00, 0.00, 0.00, -108.80)
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1660085895]
+z_index = 1
+position = Vector2(-11, -101)
+rotation = -0.052359886
+scale = Vector2(0.4753372, 0.4753372)
+sprite_frames = SubResource("SpriteFrames_hy4tk")
+animation = &"grön flagga"
+autoplay = "grön flagga"
+
+[node name="Pole" type="Line2D" parent="." unique_id=1113655438]
+points = PackedVector2Array(0, 0, 0, -108.8)
 width = 2.56
-default_color = Color(0.925, 0.894, 0.824, 1)
+default_color = Color(0.9254902, 0.89411765, 0.8235294, 0)
 
-[node name="Cloth" type="Polygon2D" parent="."]
-unique_name_in_owner = true
-color = Color(0.914, 0.663, 0.231, 1)
-polygon = PackedVector2Array(0.00, -108.80, 41.60, -108.80, 41.60, -83.20, 0.00, -83.20)
+[node name="Pole2" type="Line2D" parent="Pole" unique_id=613540948]
+position = Vector2(18.000006, -28.999975)
+scale = Vector2(1.4590969, 1.1116977)
+points = PackedVector2Array(-7.53891, 26.086243, -12, -65)
+width = 1.6
+default_color = Color(0.54509807, 0.33333334, 0.12941177, 1)
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=2065834342]
 unique_name_in_owner = true
-offset_left = 4.0
-offset_top = -108.8
-offset_right = 41.6
-offset_bottom = -83.2
+visible = false
+offset_left = 113.0
+offset_top = -191.0
+offset_right = 150.6
+offset_bottom = -136.0
 theme_override_colors/font_color = Color(0.0902, 0.1255, 0.1686, 1)
 theme_override_font_sizes/font_size = 18
-text = "L1"
 vertical_alignment = 1
+
+[node name="Cloth" type="Polygon2D" parent="." unique_id=772342002]
+unique_name_in_owner = true
+visible = false
+position = Vector2(-98, -127)
+color = Color(0.9137255, 0.6627451, 0.23137255, 0)
+polygon = PackedVector2Array(0, -108.8, 41.6, -108.8, 41.6, -83.2, 0, -83.2)
