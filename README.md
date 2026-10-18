@@ -23,6 +23,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 - The march is one long road: each level joins the last. At the start of every level the column makes camp and sleeps through the night while your engineers keep working, until the king loses patience (30 s by default). Use the night to build ahead, and press **M** or **March** to break camp early. Archers hold their fire while the column sleeps.
 - **Stone** comes from digging rock and from towers your soldiers raze.
 - **Gold** comes from gold ore, your starting supplies and each camp's supply drop. While the column camps, press **R** or **Recruit** to buy another soldier (5 gold); recruits join the camp.
+- Engineers die in spikes and water. If the last one dies, the level is lost, as when the last soldier dies.
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
 - **Backspace** or **Restart** restarts the level from its checkpoint: the column and supplies you arrived with.
 - **F** toggles 2× speed. **C** or **Follow** makes the camera follow the column (off when a level starts; panning by hand turns it off). **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.

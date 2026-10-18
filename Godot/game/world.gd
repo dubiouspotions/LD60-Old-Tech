@@ -100,6 +100,7 @@ func _ready() -> void:
 	bridge.struck.connect(_on_bridge_struck)
 	crew.dig_finished.connect(_on_dig_finished)
 	army.count_changed.connect(_on_army_count)
+	crew.count_changed.connect(_on_crew_count)
 
 
 func chunk(index: int) -> Chunk:
@@ -464,6 +465,13 @@ func _view_m() -> Rect2:
 
 func _on_army_count(count: int) -> void:
 	GameState.set_soldiers(count)
+	if count == 0 and not _done:
+		_done = true
+		army_lost.emit()
+
+
+## The level is lost when the last engineer dies, as when the last soldier does.
+func _on_crew_count(count: int) -> void:
 	if count == 0 and not _done:
 		_done = true
 		army_lost.emit()

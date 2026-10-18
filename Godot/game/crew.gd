@@ -11,6 +11,8 @@ extends Node2D
 signal scaffolding_struck
 ## An engineer finished digging a marked cell. The level takes the tile and its supplies.
 signal dig_finished(cell: Vector2i)
+## An engineer died; count is how many are left.
+signal count_changed(count: int)
 
 ## Seconds between looks for work by an idle engineer.
 const THINK_INTERVAL: float = 0.2
@@ -54,6 +56,8 @@ class Engineer:
 
 @export var rules: CrewRules
 @export var engineer_scene: PackedScene
+## Debris colours when an engineer dies.
+@export var body_colors: Array[Color] = [Color("8c2f2f"), Color("ece4d2")]
 
 var terrain: Terrain
 var bridge: Bridge
@@ -84,6 +88,10 @@ func spawn(x: float) -> void:
 
 
 func step(dt: float) -> void:
+	for e in engineers.duplicate():
+		var t := _hazard_at(e)
+		if t:
+			_kill(e, t.death_text)
 	if rules.instant_work:
 		for m in bridge.members.duplicate():
 			if m.blueprint and m.ordered:
@@ -147,6 +155,26 @@ func _update_stranded(e: Engineer, x: float, was: Vector2, dt: float) -> void:
 		return
 	e.stranded += dt
 	e.any_height = e.any_height or e.stranded >= rules.stranded_time
+
+
+## The hazard (spikes, water) the engineer's feet or body are in, else null.
+func _hazard_at(e: Engineer) -> TerrainType:
+	for p: Vector2 in [e.pos + Vector2(0, 0.01), e.pos - Vector2(0, 0.5)]:
+		var t := terrain.type_at(Grid.cell_of(p))
+		if t and t.is_hazard():
+			return t
+	return null
+
+
+func _kill(e: Engineer, text: String) -> void:
+	var at := Grid.to_px(e.pos - Vector2(0, 0.5))
+	for c in body_colors:
+		Effects.debris(at, c, 4, 190.0)
+	Effects.say(Grid.to_px(e.pos - Vector2(0, 1.4)), text, Color("ff6a55"))
+	Audio.play(rules.death_sound, at)
+	e.node.queue_free()
+	engineers.erase(e)
+	count_changed.emit(engineers.size())
 
 
 ## Drops an engineer that nothing holds up (its structure fell away) and that can not simply climb down.

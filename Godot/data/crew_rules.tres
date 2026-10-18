@@ -3,8 +3,10 @@
 [ext_resource type="Script" uid="uid://ce1rkdtrw4ypn" path="res://core/crew_rules.gd" id="1_crew"]
 [ext_resource type="Resource" path="res://data/sounds/dig.tres" id="2_crew"]
 [ext_resource type="Resource" path="res://data/sounds/rope_place.tres" id="3_crew"]
+[ext_resource type="Resource" path="res://data/sounds/soldier_death.tres" id="4_crew"]
 
 [resource]
 script = ExtResource("1_crew")
 work_sound = ExtResource("2_crew")
 strike_sound = ExtResource("3_crew")
+death_sound = ExtResource("4_crew")

@@ -802,3 +802,22 @@ func test_crew_builds_from_a_loose_end_by_the_cliff_when_the_bolted_end_is_acros
 	world.bridge.order_blueprints()
 	_run(20.0, func() -> bool: return not m.blueprint)
 	assert_false(m.blueprint, "built out from the loose end")
+
+
+func test_an_engineer_falling_on_spikes_dies() -> void:
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(7.5, 2.0)
+	var crew := world.crew.engineers.size()
+	_run(3.0)
+	assert_eq(world.crew.engineers.size(), crew - 1, "spiked")
+	assert_false(e in world.crew.engineers)
+
+
+func test_the_level_is_lost_when_the_last_engineer_dies() -> void:
+	watch_signals(world)
+	for e: Crew.Engineer in world.crew.engineers:
+		e.pos = Vector2(7.5, 2.0)
+	for i in 180:
+		world._physics_process(1.0 / 60.0)
+	assert_eq(world.crew.engineers.size(), 0)
+	assert_signal_emitted(world, "army_lost", "no crew left: game over")

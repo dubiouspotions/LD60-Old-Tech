@@ -42,6 +42,8 @@ extends Resource
 @export var work_sound: SoundEffect
 @export_range(0.05, 3.0, 0.05, "suffix:s") var work_sound_interval: float = 0.45
 @export var strike_sound: SoundEffect
+## Played when an engineer dies (in spikes or water).
+@export var death_sound: SoundEffect
 
 @export_group("Cheats")
 ## For testing: ordered plans are built and marked cells dug (trees felled) the moment they are ordered or
