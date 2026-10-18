@@ -14,7 +14,10 @@ signal build_pressed(index: int)
 ## The player clicked the cancel button beside plan number index.
 signal cancel_pressed(index: int)
 signal march_pressed
+## Soldier bought in the Camp Shoppe.
 signal recruit_pressed
+## Engineer bought in the Camp Shoppe.
+signal hire_pressed
 signal begin_pressed
 signal retry_pressed
 ## Restart the current level from its checkpoint (any time, not only when lost).
@@ -39,7 +42,11 @@ enum Mood { NORMAL, HALT, FIRE }
 ## Build button text above a plan (%d = members in it).
 @export var build_text: String = "Build %d"
 ## Recruit button text (%d = gold per soldier).
-@export var recruit_text: String = "Recruit · %d gold"
+## The Camp Shoppe's purchases, on the left of their buttons; the price in gold is on the right, with the gold icon.
+@export var soldier_text: String = "Soldier"
+## The Camp Shoppe keeps at least this far (pixels) from where the view stops scrolling.
+@export_range(0.0, 200.0, 1.0, "suffix:px") var shop_edge_margin: float = 12.0
+@export var engineer_text: String = "Engineer"
 
 ## The lost card: seconds to fade the screen to its overlay, then to slide the card up from below.
 @export_range(0.0, 3.0, 0.05, "suffix:s") var card_fade_time: float = 0.5
@@ -57,16 +64,32 @@ var _lost_color: Color
 
 func _ready() -> void:
 	_lost_color = (%Lost as ColorRect).color
-	# Holds the Build/Cancel and Recruit buttons, which show and hide themselves: never hidden as a whole, even if
-	# it was hidden while editing the scene.
-	%WorldButtons.visible = true
+	# Holds the buttons that belong to the world (the plans' Build/Cancel, the camp's Camp Shoppe), which show and
+	# hide themselves: never hidden as a whole, even if it was hidden while editing the scene. Moved to the very
+	# back, so every other part of the HUD is drawn in front of them and gets the clicks where they meet.
+	var world_buttons: Control = %WorldButtons
+	world_buttons.visible = true
+	world_buttons.reparent(self, false)
+	move_child(world_buttons, 0)
+	# Out from under Root, so it takes Root's theme along.
+	world_buttons.theme = ($Root as Control).theme
 	%PauseButton.pressed.connect(_emit.bind(pause_pressed))
 	%SpeedButton.pressed.connect(_emit.bind(speed_pressed))
 	%FollowButton.toggled.connect(func(on: bool) -> void:
 		Audio.play(click_sound)
 		follow_toggled.emit(on))
 	%MarchButton.pressed.connect(_emit.bind(march_pressed))
-	%RecruitButton.pressed.connect(_emit.bind(recruit_pressed))
+	%ShopButton.pressed.connect(func() -> void: %ShopMenu.visible = not %ShopMenu.visible)
+	for o: Button in [%ShopSoldier, %ShopEngineer]:
+		# The row inside reads like the button's own text, and lights up under the mouse.
+		for l: Label in [o.get_node("Row/Name"), o.get_node("Row/Price")]:
+			l.add_theme_font_override(&"font", o.get_theme_font(&"font"))
+			l.add_theme_font_size_override(&"font_size", o.get_theme_font_size(&"font_size"))
+			l.add_theme_color_override(&"font_color", o.get_theme_color(&"font_color"))
+		o.mouse_entered.connect(_light_row.bind(o, true))
+		o.mouse_exited.connect(_light_row.bind(o, false))
+	%ShopSoldier.pressed.connect(_emit.bind(recruit_pressed))
+	%ShopEngineer.pressed.connect(_emit.bind(hire_pressed))
 	%BeginButton.pressed.connect(_emit.bind(begin_pressed))
 	%RetryButton.pressed.connect(_emit.bind(retry_pressed))
 	%RestartButton.pressed.connect(_emit.bind(restart_level_pressed))
@@ -135,23 +158,69 @@ func set_speed(speed: float) -> void:
 
 ## Shows the March button while the column waits for the king.
 func set_march(waiting: bool) -> void:
-	if %MarchButton.visible != waiting:
-		%MarchButton.visible = waiting
+	if %MarchPanel.visible != waiting:
+		%MarchPanel.visible = waiting
 		_fit.call_deferred()
 
 
-## Shows the Recruit button above the camp (world pixels) while the column camps; greyed out when a soldier
-## can not be bought.
-func set_recruit(at_camp: bool, gold: int, can_buy: bool, world_px: Vector2) -> void:
-	var b: WorldButton = %RecruitButton
-	b.visible = at_camp
+## Shows the Camp Shoppe panel hanging under the camp (world pixels) while the column camps. Its button drops
+## down, inside the same panel, its purchases: a soldier for soldier_gold and an engineer for engineer_gold, each
+## greyed out (letting clicks through to the world behind it) when it can not be bought. reach is the leftmost and
+## rightmost x (world pixels) the view can scroll to: the panel keeps shop_edge_margin inside it.
+func set_shop(at_camp: bool, soldier_gold: int, can_recruit: bool, engineer_gold: int, can_hire: bool,
+		world_px: Vector2, reach: Vector2 = Vector2(-INF, INF)) -> void:
+	var panel: PanelContainer = %ShopPanel
+	panel.visible = at_camp
 	if not at_camp:
+		%ShopMenu.visible = false
 		return
-	b.text = recruit_text % gold
-	b.disabled = not can_buy
-	# Greyed out, it lets clicks through to the world behind it.
-	b.mouse_filter = Control.MOUSE_FILTER_STOP if can_buy else Control.MOUSE_FILTER_IGNORE
-	b.pin(_to_screen(world_px))
+	_offer(%ShopSoldier, soldier_text, soldier_gold, can_recruit)
+	_offer(%ShopEngineer, engineer_text, engineer_gold, can_hire)
+	# The Camp Shoppe button and its purchases are all as wide as the widest of them.
+	var b: Button = %ShopButton
+	var items: Array[Button] = [%ShopSoldier, %ShopEngineer]
+	b.custom_minimum_size.x = 0
+	var w := b.get_combined_minimum_size().x
+	for o in items:
+		var row: HBoxContainer = o.get_node("Row")
+		w = maxf(w, row.get_combined_minimum_size().x + row.offset_left - row.offset_right + SHOP_GAP)
+	for o in items:
+		o.custom_minimum_size.x = w
+	b.custom_minimum_size.x = w
+	# Hangs from the spot and grows downward as the list opens.
+	panel.size = panel.get_combined_minimum_size()
+	var at := _to_screen(world_px) - Vector2(panel.size.x / 2, 0)
+	var lo := _to_screen(Vector2(reach.x, 0)).x + shop_edge_margin if is_finite(reach.x) else -INF
+	var hi := _to_screen(Vector2(reach.y, 0)).x - shop_edge_margin - panel.size.x if is_finite(reach.y) else INF
+	at.x = clampf(at.x, lo, maxf(lo, hi))
+	panel.position = at.round()
+
+
+## Shows a purchase's words in its button's hover colour while the mouse is over it, else in its own colour.
+func _light_row(o: Button, lit: bool) -> void:
+	var color := o.get_theme_color(&"font_hover_color" if lit else &"font_color")
+	for l: Label in [o.get_node("Row/Name"), o.get_node("Row/Price")]:
+		l.add_theme_color_override(&"font_color", color)
+	(o.get_node("Row/Icon") as TextureRect).modulate = Color(1.25, 1.25, 1.25) if lit else Color.WHITE
+
+
+## Room left between the longest purchase's name and its price.
+const SHOP_GAP: float = 14.0
+
+
+## One purchase: what on the left, its price in gold on the right; greyed out and letting clicks through when it can
+## not be bought.
+func _offer(o: Button, what: String, gold: int, can_buy: bool) -> void:
+	var row: HBoxContainer = o.get_node("Row")
+	(o.get_node("Row/Name") as Label).text = what
+	(o.get_node("Row/Price") as Label).text = str(gold)
+	o.custom_minimum_size = Vector2(0, row.get_combined_minimum_size().y + 8)
+	o.disabled = not can_buy
+	o.mouse_filter = Control.MOUSE_FILTER_STOP if can_buy else Control.MOUSE_FILTER_IGNORE
+	row.modulate.a = 1.0 if can_buy else 0.45
+	if not can_buy:
+		# It no longer hears the mouse, so it would stay lit.
+		_light_row(o, false)
 
 
 ## Folds the rows to fit width pixels: tool hints go first, then the title.

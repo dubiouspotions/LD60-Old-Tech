@@ -74,6 +74,7 @@ func _ready() -> void:
 	_hud.cancel_pressed.connect(_on_cancel_pressed)
 	_hud.march_pressed.connect(_march)
 	_hud.recruit_pressed.connect(_recruit)
+	_hud.hire_pressed.connect(_hire)
 	_hud.begin_pressed.connect(_begin)
 	_hud.retry_pressed.connect(_retry)
 	_hud.restart_level_pressed.connect(_retry)
@@ -130,9 +131,12 @@ func _process(_delta: float) -> void:
 	_show_plans()
 	_hud.set_march(_world.camping() and not _over)
 	var rules := _world.army.rules
-	var room := _world.army.soldiers.size() < rules.max_soldiers
+	var crew := _world.crew.rules
 	var camp: Camp = _world.camp()
-	_hud.set_recruit(_world.camping() and camp != null and not _over, rules.recruit_cost.gold, room and GameState.supplies.can_afford(rules.recruit_cost), camp.button_spot() if camp else Vector2.ZERO)
+	var can_recruit := _world.army.soldiers.size() < rules.max_soldiers and GameState.supplies.can_afford(rules.recruit_cost)
+	var can_hire := _world.crew.engineers.size() < crew.max_crew and GameState.supplies.can_afford(crew.hire_cost)
+	_hud.set_shop(_world.camping() and camp != null and not _over, rules.recruit_cost.gold, can_recruit,
+			crew.hire_cost.gold, can_hire, camp.button_spot() if camp else Vector2.ZERO, Grid.to_px(_camera.reach_m()))
 	_update_status()
 	_update_lead_marker(lead)
 
@@ -188,6 +192,11 @@ func _on_cancel_pressed(index: int) -> void:
 func _recruit() -> void:
 	if not _over and not _hud.any_card_open():
 		_world.recruit()
+
+
+func _hire() -> void:
+	if not _over and not _hud.any_card_open():
+		_world.hire_engineer()
 
 
 func _on_march_ordered(by_player: bool) -> void:
@@ -298,8 +307,9 @@ func _update_status() -> void:
 			break
 	if _over:
 		_hud.set_status(_over_status, Hud.Mood.FIRE)
-	elif get_tree().paused:
-		_hud.set_status("Paused" if not _hud.any_card_open() else "Awaiting orders", Hud.Mood.HALT)
+	elif get_tree().paused and _hud.any_card_open():
+		# Paused for a card (the intro). A plain pause shows the PAUSED tag, and the status carries on as below.
+		_hud.set_status("Awaiting orders", Hud.Mood.HALT)
 	elif _world.camping():
 		_hud.set_status(patience_text % ceili(_world.march_left()), Hud.Mood.HALT)
 	elif _world.at_camp():

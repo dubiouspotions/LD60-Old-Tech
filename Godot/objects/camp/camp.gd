@@ -13,7 +13,7 @@ func _ready() -> void:
 	_crackle.finished.connect(_crackle.play)
 
 
-## Where camp buttons (Recruit) float: the ButtonSpot marker, above the tents. World pixels.
+## Where the Camp Shoppe button hangs from: the ButtonSpot marker, under the camp. World pixels.
 func button_spot() -> Vector2:
 	return %ButtonSpot.global_position
 

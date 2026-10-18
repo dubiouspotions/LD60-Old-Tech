@@ -157,6 +157,17 @@ func test_panning_over_the_hud_stays_smooth() -> void:
 		assert_false(cam._dragging, "let go")
 
 
+## The PAUSED tag says the game is paused; the status line keeps telling what the column is doing (the night timer).
+func test_pausing_at_camp_keeps_the_night_timer_in_the_status() -> void:
+	game._begin()
+	game._hud.get_node("%Intro").visible = false
+	get_tree().paused = true
+	game._update_status()
+	var status: String = (game._hud.get_node("%Status") as Label).text
+	assert_false(status.contains("Paused"), "the PAUSED tag says that")
+	assert_true(status.contains(str(ceili(game._world.march_left()))), "still the night timer: %s" % status)
+
+
 func test_the_game_starts_with_following_off_and_the_view_on_the_column() -> void:
 	game._begin()
 	var cam: CameraRig = game.get_node("%Camera")

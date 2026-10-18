@@ -96,6 +96,7 @@ func _entries() -> Dictionary:
 			_supplies(out, "army/recruit_cost", army, &"recruit_cost", army)
 	if crew_rules:
 		out["crew/engineers"] = Entry.new(crew_rules, &"crew_size", crew_rules, "1,12,1")
+		_supplies(out, "crew/hire_cost", crew_rules, &"hire_cost", crew_rules)
 	if archer_rules:
 		out["enemies/archer_hit_points"] = Entry.new(archer_rules, &"hit_points", archer_rules, "1,50,1")
 	if campaign:

@@ -178,6 +178,46 @@ func test_falling_block_looks_like_its_tile() -> void:
 	assert_eq((sprite.texture as AtlasTexture).atlas, (world.terrain.tile_texture(box) as AtlasTexture).atlas)
 
 
+func test_soldiers_cost_two_gold_and_engineers_five() -> void:
+	assert_eq(world.army.rules.recruit_cost.gold, 2)
+	assert_eq(world.crew.rules.hire_cost.gold, 5)
+
+
+func test_the_shoppe_hangs_under_the_camp() -> void:
+	world.begin(0, 3)
+	var camp: Camp = world.camp()
+	assert_gt(camp.button_spot().y, camp.global_position.y, "below the camp's ground, not above the tents")
+
+
+func test_hire_an_engineer_at_camp() -> void:
+	world.begin(0, 3)
+	var crew := world.crew.engineers.size()
+	var cost: Supplies = world.crew.rules.hire_cost
+	GameState.supplies.gold = cost.gold * 2
+	assert_true(world.hire_engineer())
+	assert_eq(world.crew.engineers.size(), crew + 1)
+	assert_eq(GameState.supplies.gold, cost.gold)
+	var e: Crew.Engineer = world.crew.engineers[-1]
+	assert_true(world.terrain.is_solid(Grid.cell_of(e.pos + Vector2(0, 0.5))), "on the ground")
+	assert_almost_eq(e.pos.x, world.camp().position.x / Grid.PX, 4.0, "at the camp")
+
+
+func test_no_hiring_by_day_without_gold_or_past_the_crew_limit() -> void:
+	world.begin(0, 3)
+	var crew := world.crew.engineers.size()
+	GameState.supplies.gold = world.crew.rules.hire_cost.gold - 1
+	assert_false(world.hire_engineer(), "short of gold")
+	GameState.supplies.gold = 100
+	for i in world.crew.rules.max_crew:
+		world.hire_engineer()
+	assert_eq(world.crew.engineers.size(), world.crew.rules.max_crew, "up to the limit")
+	assert_false(world.hire_engineer(), "past the limit")
+	world.march()
+	_run(world.morning_time + 0.1)
+	world.crew.engineers.resize(crew)
+	assert_false(world.hire_engineer(), "not by day")
+
+
 func test_recruit_at_camp_spends_gold_and_joins_the_camp() -> void:
 	world.begin(0, 3)
 	var cost: Supplies = world.army.rules.recruit_cost
@@ -219,7 +259,7 @@ func test_camp_marks_where_its_buttons_go() -> void:
 	var camp: Camp = world.camp()
 	var spot: Marker2D = camp.get_node("%ButtonSpot")
 	assert_eq(camp.button_spot(), camp.global_position + spot.position)
-	assert_lt(spot.position.y, -40.0, "above the tents")
+	assert_gt(spot.position.y, 0.0, "under the camp, where the Camp Shoppe hangs")
 
 
 func test_level_ends_only_when_every_soldier_has_arrived() -> void:

@@ -9,7 +9,7 @@
 
 [sub_resource type="Resource" id="recruit_cost"]
 script = ExtResource("5_supplies")
-gold = 5
+gold = 2
 
 [resource]
 script = ExtResource("3_16x7n")

@@ -8,7 +8,7 @@ Open `game/main.tscn` and select **ValueTweaks**. Its Inspector lists the main b
 
 | Section | Values |
 | --- | --- |
-| army | starting soldiers, soldier hit points, mutiny time (seconds blocked before a soldier deserts), recruit price |
+| army | starting soldiers, soldier hit points, mutiny time (seconds blocked before a soldier deserts), recruit price; crew: engineer hire price |
 | crew | number of engineers |
 | enemies | archer hit points |
 | supplies | starting supplies, checkpoint supplies |
@@ -55,8 +55,12 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Night colour grade: which LUT the night fades into, how much of each light's reach keeps the day colours (**Reach**), how hard the edge is (**Falloff**), and the light energy that keeps them fully (**Full Light Energy**) | **Grade** node in `post/night_grade.tscn`. Every visible light in the game counts (camp fire, engineers' lamps, cursor lantern, any light you add). LUTs live in `post/lut/` as 17-slice strips imported as 3D textures; `low_17.png` changes nothing. |
 | Stars: how many, colour, how far down the sky, share of bigger cross stars, twinkle depth and speed, shooting-star interval, length, speed and trail | **Stars** node in `world/background/background.tscn`. They fade in with the night and keep their own colour under the night tint. **Star Seed** picks a different sky. |
 | Camp music, dawn bugle | `data/campaign.tres` → Camp group |
-| Recruit button text and where it floats | **Recruit Text** on the **HUD** node in `ui/hud.tscn`; the button floats at the **ButtonSpot** marker in `objects/camp/camp.tscn` |
+| Where the status (night timer) and March Now sit | **StatusPanel** and **MarchPanel** (with **MarchButton** in it) in `ui/hud.tscn`, both anchored to the top centre and growing both ways as their text changes. March Now wears the NinePatchPanel / PanelButton look. |
+| Panning with the mouse | While the middle or right button drags the view, the HUD takes no mouse at all (no hovering, so the drag stays smooth over its buttons) until the button is let go. |
+| A nine-patch panel with words-only buttons on it (the Camp Shoppe's look), for any menu | Set a PanelContainer's **Theme Type Variation** to **NinePatchPanel** and its Buttons' to **PanelButton** (both in `ui/theme.tres`: Alagard 16, no button backgrounds, the hover colour). A PanelButton glows with the highlight frame (`ui/styles/ninepatch_highlight.tres`, `ui/elements/panel_highlight_ninepatch.png`, the same nine-patch settings) when hovered or toggled on: the Camp Shoppe, March Now and the tool buttons, whose row sits on a NinePatchPanel too. **PanelText** is the matching Label look (tool names). The panel style itself is `ui/styles/ninepatch_panel.tres` (`ui/elements/panel_ninepatch.png`, its texture margins, tiling and tint), usable directly as a StyleBox too. |
+| Camp Shoppe: the button hanging under the camp that drops down a soldier and an engineer to buy | Purchase texts (**Soldier Text**, **Engineer Text**; the price follows with the gold icon), and how far it keeps from where the view stops scrolling (**Shop Edge Margin**). It belongs to the camp, so it stays under it: the rest of the HUD is drawn in front of it (the **WorldButtons** layer is moved to the back of the HUD when the game starts) on the **HUD** node in `ui/hud.tscn`, which also holds the **ShopButton** and **ShopMenu** nodes; the button hangs from the **ButtonSpot** marker in `objects/camp/camp.tscn` |
 | Price of a recruit, its sound and text | **Recruit Cost** / **Recruit Sound** / **Recruit Text** in `data/army_rules.tres` (the army limit is **Max Soldiers** there) |
+| Price of an engineer, its sound and text, and the crew limit | **Hire Cost** / **Hire Sound** / **Hire Text** / **Max Crew** in `data/crew_rules.tres` |
 | Where stone comes from | Rock tiles (`data/terrain/rock.tres`, **Dig Yield**) and razed towers (`data/terrain/brick.tres`, **Bulk Yield**) |
 | Where gold comes from | Gold ore tiles (`data/terrain/crystal.tres`), the campaign's **Start Supplies**, and each level's **Supply Drop** |
 | Do archers shoot at night | **Rests At Night** on `objects/archer/archer.tscn` |
