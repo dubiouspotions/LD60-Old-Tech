@@ -85,6 +85,31 @@ func test_filling_its_cell_removes_it() -> void:
 	assert_false(_has(Vector2i(2, 1)))
 
 
+## Editing a level: grass goes as soon as ground is painted over it or erased under it.
+func test_level_grass_follows_the_levels_terrain() -> void:
+	var level: Level = load("res://levels/level_base.tscn").instantiate()
+	add_child_autofree(level)
+	var g := level.grass() as TallGrass
+	assert_not_null(g, "the level's Grass is tall grass")
+	assert_eq(g.terrain, level.get_node(^"Terrain"))
+
+
+func test_painting_ground_over_it_removes_it() -> void:
+	_paint(Vector2i(2, 1))
+	terrain.set_cell(Vector2i(2, 1), terrain.look.source_id, terrain.look.dirt[0], 0)
+	terrain.retile_painted([Vector2i(2, 1)])
+	assert_false(_has(Vector2i(2, 1)))
+
+
+func test_erasing_the_ground_under_it_removes_it() -> void:
+	_paint(Vector2i(2, 1))
+	_paint(Vector2i(3, 1))
+	terrain.erase_cell(Vector2i(2, 2))
+	terrain.retile_painted([Vector2i(2, 2)])
+	assert_false(_has(Vector2i(2, 1)), "nothing to stand on")
+	assert_true(_has(Vector2i(3, 1)), "the patch beside stays")
+
+
 func test_stamped_with_the_level_and_dropped_with_it() -> void:
 	var src := TileMapLayer.new()
 	src.tile_set = grass.tile_set

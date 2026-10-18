@@ -118,7 +118,8 @@ Each level has a **Grass** layer (under the level root, after ExitFlag) for patc
 drawn in front of the soldiers, engineers and objects. Select **Grass**, pick the grass tile in the TileMap panel and
 paint it in the air cells right on top of the ground. Scatter it in small patches rather than everywhere.
 
-- Grass on ground that is dug away, or in a cell that gets filled, disappears while playing.
+- Grass on ground that is dug away, or in a cell that gets filled, disappears while playing, and in the editor
+  as soon as you paint ground over it or erase the ground under it.
 - `godot --headless res://dev/scatter_grass.tscn` scatters a first coverage (runs of 2–4 cells on flat soil, 6–14 m
   apart, clear of flags and objects) over every level that has no grass yet, to paint over by hand. Add `force` to
   redo levels that already have grass (this replaces what you painted), and `gap=`, `width=` or `seed=` to vary it.

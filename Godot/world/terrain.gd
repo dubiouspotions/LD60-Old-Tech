@@ -15,7 +15,7 @@ signal collapsed(found: Supplies, cells: Array[Vector2i])
 ## A tree is coming down, whatever brought it down: every cell of it, just before they are cleared, and its yield,
 ## which fell() then returns. A listener may take some of the yield out (the World drops the logs as wood).
 signal felled(cells: Array[Vector2i], found: Supplies)
-## A cell's material changed while playing (dug, filled, fell, collapsed).
+## A cell's material changed: dug, filled, fell or collapsed while playing, or painted in the editor.
 signal cell_changed(cell: Vector2i)
 ## A tower or tree lost the ground under it and came out as one piece (see lift()), when drops_loose is on.
 signal came_loose(tiles: Dictionary)
@@ -316,6 +316,8 @@ func retile_all() -> void:
 func retile_painted(cells: Array) -> void:
 	rebuild()
 	_retile_around(cells)
+	for c: Vector2i in cells:
+		cell_changed.emit(c)
 
 
 func _v2() -> bool:
