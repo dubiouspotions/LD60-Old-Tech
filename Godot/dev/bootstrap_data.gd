@@ -10,6 +10,7 @@ func _ready() -> void:
 	_bridge()
 	_army()
 	_crew()
+	_archer()
 	_tools()
 	_campaign()
 	get_tree().quit()
@@ -63,7 +64,7 @@ func _terrain() -> void:
 	_t("bedrock", "Bedrock", {debris_color = Color("262a33")})
 	_t("crystal", "Gold ore", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.8, dig_yield = Supplies.make(0, 0, 0, 1),
 		dig_text = "+1 gold", bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), debris_color = Color("8ff0e0")})
-	_t("brick", "Brick", {anchor = false, structure = true, too_hard_text = too_hard,
+	_t("brick", "Brick", {anchor = false, structure = true, raze_time = 15.0, too_hard_text = too_hard,
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})
 	_t("water", "Water", {solid = false, anchor = false, fill_replaces = true, buoyant = true,
 		hazard = TerrainType.Hazard.WATER, death_text = "Drowned", ahead_text = "Water ahead", debris_color = Color("3480b6")})
@@ -128,6 +129,10 @@ func _army() -> void:
 	_save(r, "res://data/army_rules.tres")
 
 
+func _archer() -> void:
+	_save(ArcherRules.new(), "res://data/archer_rules.tres")
+
+
 func _crew() -> void:
 	var r := CrewRules.new()
 	r.work_sound = _snd("dig")
@@ -145,14 +150,14 @@ func _tool(file: String, props: Dictionary) -> void:
 func _tools() -> void:
 	_tool("1_dig", {kind = ToolDefinition.Kind.DIG, display_name = "Dig", hint = "earth · trees · undo",
 		action = &"tool_dig", key_label = "1", repeat_interval = 0.06})
-	_tool("2_fill", {kind = ToolDefinition.Kind.FILL, display_name = "Fill", hint = "1 earth · falls",
+	_tool("2_fill", {kind = ToolDefinition.Kind.FILL, display_name = "Fill", hint = "falls where you drop it",
 		action = &"tool_fill", key_label = "2", repeat_interval = 0.11, cost = Supplies.make(1),
 		no_supply_text = "No earth. Dig some", spawn_scene = load("res://objects/falling_block/falling_block.tscn")})
-	_tool("3_log", {kind = ToolDefinition.Kind.BUILD, display_name = "Bridge", hint = "1 log · ≤ 5 m · push + pull",
+	_tool("3_log", {kind = ToolDefinition.Kind.BUILD, display_name = "Bridge", hint = "≤ 5 m · push + pull",
 		action = &"tool_log", key_label = "3", bridge_material = load("res://data/bridge/log.tres")})
-	_tool("4_support", {kind = ToolDefinition.Kind.BUILD, display_name = "Support", hint = "1 log · ≤ 5 m · not walked on",
+	_tool("4_support", {kind = ToolDefinition.Kind.BUILD, display_name = "Support", hint = "≤ 5 m · not walked on",
 		action = &"tool_support", key_label = "4", bridge_material = load("res://data/bridge/support.tres")})
-	_tool("5_rope", {kind = ToolDefinition.Kind.BUILD, display_name = "Rope", hint = "1 rope · ≤ 12 m · pull only",
+	_tool("5_rope", {kind = ToolDefinition.Kind.BUILD, display_name = "Rope", hint = "≤ 12 m · pull only",
 		action = &"tool_rope", key_label = "5", bridge_material = load("res://data/bridge/rope.tres")})
 
 
@@ -165,6 +170,7 @@ func _campaign() -> void:
 	c.levels = levels
 	c.start_soldiers = 10
 	c.start_supplies = Supplies.make(8, 12, 6, 10)
+	c.checkpoint_supplies = Supplies.make(4, 8, 4, 5)
 	c.army_rules = load("res://data/army_rules.tres")
 	var tools: Array[ToolDefinition] = []
 	for f in ["1_dig", "2_fill", "3_log", "4_support", "5_rope"]:

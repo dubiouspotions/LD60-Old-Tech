@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="TerrainLook" format=3]
+
+[ext_resource type="Script" path="res://core/terrain_look.gd" id="1_look"]
+[ext_resource type="Texture2D" path="res://world/tiles_v2.png" id="2_tex"]
+[ext_resource type="Script" path="res://core/terrain_type.gd" id="3_tt"]
+[ext_resource type="Resource" path="res://data/terrain/soil.tres" id="4_soil"]
+[ext_resource type="Resource" path="res://data/terrain/rock.tres" id="5_rock"]
+[ext_resource type="Resource" path="res://data/terrain/bedrock.tres" id="6_bedrock"]
+[ext_resource type="Resource" path="res://data/terrain/water.tres" id="7_water"]
+[ext_resource type="Resource" path="res://data/terrain/spikes.tres" id="8_spikes"]
+
+[resource]
+script = ExtResource("1_look")
+texture = ExtResource("2_tex")
+dirt_types = Array[ExtResource("3_tt")]([ExtResource("4_soil")])
+rock_types = Array[ExtResource("3_tt")]([ExtResource("5_rock"), ExtResource("6_bedrock")])
+water_types = Array[ExtResource("3_tt")]([ExtResource("7_water")])
+spike_types = Array[ExtResource("3_tt")]([ExtResource("8_spikes")])
+flat_tops = Array[Vector2i]([Vector2i(3, 0), Vector2i(6, 0), Vector2i(3, 2), Vector2i(0, 4), Vector2i(3, 4), Vector2i(6, 4), Vector2i(4, 1), Vector2i(4, 4), Vector2i(5, 4)])
+corner_tl = Array[Vector2i]([Vector2i(2, 0)])
+corner_tr = Array[Vector2i]([Vector2i(4, 0)])
+wall_l = Array[Vector2i]([Vector2i(5, 1)])
+wall_r = Array[Vector2i]([Vector2i(6, 2)])
+inner_tl = Array[Vector2i]([Vector2i(0, 2)])
+inner_tr = Array[Vector2i]([Vector2i(1, 3)])
+dirt = Array[Vector2i]([Vector2i(4, 3), Vector2i(0, 5)])
+fillet_r = Array[Vector2i]([Vector2i(1, 0), Vector2i(2, 4)])
+fillet_r_low = Array[Vector2i]([Vector2i(1, 5)])
+fillet_l = Array[Vector2i]([Vector2i(5, 0), Vector2i(1, 4)])
+fillet_l_low = Array[Vector2i]([Vector2i(4, 2)])
+water_top = Array[Vector2i]([Vector2i(4, 5), Vector2i(4, 6), Vector2i(5, 6)])
+water = Array[Vector2i]([Vector2i(5, 5)])
+spikes = Array[Vector2i]([Vector2i(1, 6)])
+body = Array[Vector2i]([Vector2i(-1, -1), Vector2i(2, 3), Vector2i(2, 2), Vector2i(2, 1), Vector2i(5, 2), Vector2i(0, 3), Vector2i(-1, -1), Vector2i(6, 3), Vector2i(6, 1), Vector2i(-1, -1), Vector2i(1, 2), Vector2i(5, 3), Vector2i(0, 1), Vector2i(3, 5), Vector2i(2, 5), Vector2i(1, 1)])

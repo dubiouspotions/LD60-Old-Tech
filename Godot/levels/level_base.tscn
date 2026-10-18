@@ -4,19 +4,10 @@
 [ext_resource type="PackedScene" path="res://world/terrain.tscn" id="2"]
 [ext_resource type="AudioStream" uid="uid://dyv3yykx65lwm" path="res://audio/music/march_music.wav" id="2_p3adb"]
 [ext_resource type="PackedScene" path="res://objects/checkpoint_flag/checkpoint_flag.tscn" id="5"]
-[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="7"]
-
-[sub_resource type="Resource" id="drop"]
-script = ExtResource("7")
-earth = 4
-logs = 8
-rope = 4
-gold = 5
 
 [node name="Level" type="Node2D" unique_id=1546824629]
 script = ExtResource("1")
 music = ExtResource("2_p3adb")
-supply_drop = SubResource("drop")
 
 [node name="Terrain" parent="." unique_id=640212506 instance=ExtResource("2")]
 unique_name_in_owner = true

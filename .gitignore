@@ -1,0 +1,7 @@
+# OS clutter, anywhere in the repo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local working files
+LUT_makepsd.psd

@@ -48,11 +48,27 @@ extends Resource
 @export_range(1, 10) var melee_damage: int = 1
 @export var attack_sound: SoundEffect
 
+@export_group("Mutiny")
+## Seconds a soldier stands blocked (by a wall or a low ceiling) before it deserts. Besieging a tower or
+## fighting an enemy does not count. 0 turns mutiny off.
+@export_range(0.0, 60.0, 0.5, "suffix:s") var mutiny_time: float = 8.0
+## Deserters walk back the way they came, climbing any cliff, and vanish after this far.
+@export_range(1.0, 100.0, 1.0, "suffix:m") var desert_distance: float = 20.0
+@export_range(0.5, 20.0, 0.5, "suffix:m/s") var desert_climb_speed: float = 4.0
+@export var desert_sound: SoundEffect
+
 @export_group("Messages")
+## Status while the front soldier is blocked (%s = why, %d = seconds before it deserts).
+@export var mutiny_text: String = "%s · deserting in %d s"
+@export var desert_text: String = "Deserted!"
 ## Status while the front soldier fights an enemy.
 @export var fight_text: String = "Fighting an archer"
+## Status while the front soldier attacks a tower in its way (see each terrain type's Raze Time).
+@export var siege_text: String = "Besieging the tower"
 ## Shown while the column waits for the king's order to march.
 @export var hold_text: String = "Awaiting the king's order"
+## Status while the front waits at the level's exit for the rest of the column.
+@export var gather_text: String = "Waiting for the column"
 ## How far ahead the front soldier spots deep drops and hazards. Only a warning in the status bar.
 @export_range(0.5, 20.0, 0.5, "suffix:m") var warn_distance: float = 3.0
 @export var wall_text: String = "%d m wall ahead"

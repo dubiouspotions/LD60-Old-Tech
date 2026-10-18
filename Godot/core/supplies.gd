@@ -62,6 +62,16 @@ func describe() -> String:
 	return " · ".join(parts)
 
 
+## "1 log · 2 earth": what a price asks for. Empty string when free.
+func describe_cost() -> String:
+	var parts: PackedStringArray = []
+	for k in KEYS:
+		var v: int = get(k)
+		if v > 0:
+			parts.append("%d %s" % [v, "log" if k == &"logs" and v == 1 else String(k)])
+	return " · ".join(parts)
+
+
 func copy() -> Supplies:
 	var s := Supplies.new()
 	s.add(self)

@@ -6,6 +6,7 @@
 [ext_resource type="Resource" path="res://data/sounds/tower_down.tres" id="4"]
 [ext_resource type="Texture2D" uid="uid://bydp0wj23xm6k" path="res://world/enemy_animated.png" id="5_cgja7"]
 [ext_resource type="Texture2D" uid="uid://73bogj4nu6k6" path="res://world/red_flag.png" id="7_cgja7"]
+[ext_resource type="Resource" path="res://data/archer_rules.tres" id="8_rules"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xp456"]
 atlas = ExtResource("5_cgja7")
@@ -98,6 +99,7 @@ script = ExtResource("1")
 arrow_scene = ExtResource("2")
 shoot_sound = ExtResource("3")
 down_sound = ExtResource("4")
+rules = ExtResource("8_rules")
 
 [node name="Banner" type="Node2D" parent="." unique_id=387621047]
 

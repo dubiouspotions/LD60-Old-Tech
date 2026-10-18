@@ -9,6 +9,22 @@
 [ext_resource type="PackedScene" path="res://game/world.tscn" id="7"]
 [ext_resource type="CompressedTexture3D" uid="uid://bgadupm8eb0qp" path="res://post/lut/low_17.png" id="7_wjctj"]
 [ext_resource type="Script" uid="uid://crrmlhkv6vxe2" path="res://game/day_night.gd" id="8"]
+[ext_resource type="Script" path="res://game/value_tweaks.gd" id="vt_script"]
+[ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="vt_tt"]
+[ext_resource type="Resource" path="res://data/campaign.tres" id="vt_campaign"]
+[ext_resource type="Resource" path="res://data/crew_rules.tres" id="vt_crew"]
+[ext_resource type="Resource" path="res://data/archer_rules.tres" id="vt_archer"]
+[ext_resource type="Resource" path="res://data/terrain_look.tres" id="vt_look"]
+[ext_resource type="Resource" path="res://data/terrain/bedrock.tres" id="vt_t_bedrock"]
+[ext_resource type="Resource" path="res://data/terrain/brick.tres" id="vt_t_brick"]
+[ext_resource type="Resource" path="res://data/terrain/crystal.tres" id="vt_t_crystal"]
+[ext_resource type="Resource" path="res://data/terrain/fill.tres" id="vt_t_fill"]
+[ext_resource type="Resource" path="res://data/terrain/leaves.tres" id="vt_t_leaves"]
+[ext_resource type="Resource" path="res://data/terrain/rock.tres" id="vt_t_rock"]
+[ext_resource type="Resource" path="res://data/terrain/soil.tres" id="vt_t_soil"]
+[ext_resource type="Resource" path="res://data/terrain/spikes.tres" id="vt_t_spikes"]
+[ext_resource type="Resource" path="res://data/terrain/trunk.tres" id="vt_t_trunk"]
+[ext_resource type="Resource" path="res://data/terrain/water.tres" id="vt_t_water"]
 
 [sub_resource type="Gradient" id="lantern_g"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
@@ -70,3 +86,11 @@ unique_name_in_owner = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1380559701]
 environment = SubResource("Environment_sfb0x")
+
+[node name="ValueTweaks" type="Node" parent="."]
+script = ExtResource("vt_script")
+campaign = ExtResource("vt_campaign")
+crew_rules = ExtResource("vt_crew")
+archer_rules = ExtResource("vt_archer")
+terrain_look = ExtResource("vt_look")
+terrain_types = Array[ExtResource("vt_tt")]([ExtResource("vt_t_bedrock"), ExtResource("vt_t_brick"), ExtResource("vt_t_crystal"), ExtResource("vt_t_fill"), ExtResource("vt_t_leaves"), ExtResource("vt_t_rock"), ExtResource("vt_t_soil"), ExtResource("vt_t_spikes"), ExtResource("vt_t_trunk"), ExtResource("vt_t_water")])

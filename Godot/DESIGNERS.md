@@ -2,6 +2,26 @@
 
 Everything below is done in the Godot editor (4.7). No code needed.
 
+## Balancing: the ValueTweaks node
+
+Open `game/main.tscn` and select **ValueTweaks**. Its Inspector lists the main balance values in one place:
+
+| Section | Values |
+| --- | --- |
+| army | starting soldiers, soldier hit points, mutiny time (seconds blocked before a soldier deserts), recruit price |
+| crew | number of engineers |
+| enemies | archer hit points |
+| supplies | starting supplies, checkpoint supplies |
+| prices | what each tool costs (build tools: their material) |
+| yields | what digging each tile gives, and what felling a tree gives |
+| art | **Terrain V2**: draw the ground with `world/tiles_v2.png` (on) or the old tiles (off) |
+
+The node stores nothing itself. Each value is the real one in the file that owns it (`data/campaign.tres`,
+`data/army_rules.tres`, `data/crew_rules.tres`, `data/archer_rules.tres`, `data/tools/*.tres`, `data/bridge/*.tres`,
+`data/terrain/*.tres`). Changing it here changes and saves that file, and changing the file shows up here. There is no
+undo for edits made here. Tools and terrain types with a cost or yield appear on their own; to list another terrain
+type, add it to the node's **Terrain Types**.
+
 ## Levels
 
 | Task | How |
@@ -10,8 +30,8 @@ Everything below is done in the Godot editor (4.7). No code needed.
 | Paint ground | Select **Terrain**, open the TileMap panel, paint. Every tile's behaviour comes from its TerrainType (below). Left, right and below the painted area count as bedrock. Above is open sky. |
 | Start / end | Move **StartFlag** (the column camps here) and **ExitFlag** (the level ends when the front soldier passes it). Put each flag's origin on the ground. |
 | How levels join | The game is one continuous march. Each level is attached so its **StartFlag** lands on the previous level's **ExitFlag**, moved up or down to match. Ground left of the StartFlag column is only used on the first level, so keep the area right of the ExitFlag a flat run at the same height as the next level's start. The next level loads in the background while the column is still on this one, and levels far behind are removed. |
-| Enemies | Drag `objects/archer/archer.tscn` under **Objects** (the game only finds archers there, and the level checks flag one placed anywhere else). Its origin is its feet, so put it on top of a solid tile. It dies when that tile is dug or collapses, or when soldiers reach it and cut it down. Tune range, reload and **Hit Points** in the Inspector. |
-| Music, reinforcements, supply drop | Select the root node and use the Inspector. The supply drop and reinforcements are given on arrival, but not on the first level. |
+| Enemies | Drag `objects/archer/archer.tscn` under **Objects** (the game only finds archers there, and the level checks flag one placed anywhere else). Its origin is its feet, so put it on top of a solid tile. It dies when that tile is dug or collapses, or when soldiers reach it and cut it down. Tune range and reload in the Inspector. Hit points are shared by all archers: **Hit Points** in `data/archer_rules.tres` (or ValueTweaks). |
+| Music, reinforcements, supply drop | Select the root node and use the Inspector. The supply drop and reinforcements are given on arrival, but not on the first level. Leave **Supply Drop** empty to use the campaign's **Checkpoint Supplies**; set it only for a level that should drop something different. |
 | Order of levels | `data/campaign.tres` → **Levels** (a list of level files). Starting soldiers, starting supplies, tools, jingles, the camp music and the dawn bugle are set there too. |
 
 Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with buried or floating flags, archers standing on nothing, seams the column can't walk over, and similar mistakes.
@@ -41,19 +61,35 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 - `world/tileset.tres` is the TileSet. Each tile's **terrain** custom data points to a TerrainType. To add a material: create a TerrainType, add tiles to the atlas, and set their **terrain** data.
 - `world/tiles.png` is placeholder art. Replace it with your own; keep the layout or reassign the tiles in the TileSet editor.
 
+### The v2 terrain look
+
+`data/terrain_look.tres` (switch it with **Enabled**, or **art › Terrain V2** on ValueTweaks) draws dirt, rock, water and
+spikes from `world/tiles_v2.png`. Every other material keeps its old tile. No painting is needed: each tile is chosen from
+the cell's neighbours when the level loads and wherever something is dug, so pieces always meet edges they were drawn
+for.
+
+- The sheet's sky colour (**Sky Key**) is drawn as transparent, so the real sky shows.
+- Each role (flat tops, corners, walls, inner corners, fillets, water, spikes) lists atlas coordinates. List several tiles
+  in a role and each cell picks one by its position. The pick stays the same while digging, so add variants freely.
+- **Body** is the rock-in-dirt set. It is drawn half a cell offset, and each tile covers the corner where four cells
+  meet. Its 16 entries are indexed by which of those cells are rock: top-left 1, top-right 2, bottom-left 4,
+  bottom-right 8. Two diagonal cases have no art yet (6 and 9, set to (-1, -1)) and fall back to full rock.
+- Rock touching the air gets the grass edge like dirt, because the sheet has no bare-rock edge pieces.
+
 ## Objects and tuning
 
 | What | Where |
 | --- | --- |
 | Soldier look and walk cycle | `objects/soldier/soldier.tscn` (sprite + AnimationPlayer "walk"/"idle"/"sleep") |
-| March speed, step-up, fall damage, how far ahead dangers are warned about, melee reach/speed/damage against archers, max army, messages | `data/army_rules.tres` |
+| March speed, step-up, fall damage, how far ahead dangers are warned about, melee reach/speed/damage against archers, max army, messages (including the siege and "waiting for the column" status) | `data/army_rules.tres` |
+| How long soldiers must attack a tower before it falls | **Raze Time** on the terrain type (`data/terrain/brick.tres`, 15 s of one soldier's attack; 0 means it can't be attacked) |
 | How long the column camps before the king orders the march | **March Delay** on each level's root node (default in `levels/level_base.tscn`) |
 | March and camp banner texts, march sound, camp status | **Game** node in `game/main.tscn` |
 | How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |
 | Engineer crew: size, walk and climb speed, dig speed, dig reach, step-up, ground climb and drop limits, fall gravity, strike delay, sounds | `data/crew_rules.tres` (how fast each piece type is built: **Build Speed** on `data/bridge/*.tres`) |
 | Engineer look | `objects/engineer/engineer.tscn` (its own placeholder until engineer art exists; keep the Body, Wounded and AnimationPlayer nodes the soldier script uses) |
 | Bridge / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
-| Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list) |
+| Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list). Each button shows its cost as supply swatches (build tools use their material's cost) and dims when it can't be afforded; the dim look is on `ui/tool_button.tscn` |
 | Arrows | `objects/arrow/arrow.tscn` |
 | Falling fill | `objects/falling_block/falling_block.tscn` |
 | Debris, floating text | `objects/effects/` |

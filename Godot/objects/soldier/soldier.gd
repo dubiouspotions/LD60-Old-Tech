@@ -32,6 +32,12 @@ var facing: int = 1
 var _stood: float = INF
 ## Seconds until the next strike while fighting.
 var attack_cooldown: float = 0.0
+## Seconds stood blocked by a wall. Owned by Army.
+var blocked_time: float = 0.0
+## Left the column. Owned by Army.
+var deserting: bool = false
+## Metres a deserter still walks before it vanishes. Owned by Army.
+var desert_left: float = 0.0
 
 @onready var _anim: AnimationPlayer = %AnimationPlayer
 @onready var _body: CanvasItem = %Body

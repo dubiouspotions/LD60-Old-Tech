@@ -22,10 +22,18 @@ logs = 12
 rope = 6
 gold = 10
 
+[sub_resource type="Resource" id="checkpoint_supplies"]
+script = ExtResource("11_0ut44")
+earth = 4
+logs = 8
+rope = 4
+gold = 5
+
 [resource]
 script = ExtResource("10_1pfus")
 levels = Array[String](["res://levels/level_01.tscn", "res://levels/level_02.tscn", "res://levels/level_03.tscn", "res://levels/level_04.tscn", "res://levels/level_05.tscn", "res://levels/level_06.tscn"])
 start_supplies = SubResource("Resource_kpggy")
+checkpoint_supplies = SubResource("checkpoint_supplies")
 army_rules = ExtResource("1_f5uj3")
 tools = Array[ExtResource("12_aqc2n")]([ExtResource("13_rhlp7"), ExtResource("14_y2rpw"), ExtResource("15_v2pp1"), ExtResource("20_s8k2p"), ExtResource("16_jeutq")])
 level_up_sound = ExtResource("2_4757c")

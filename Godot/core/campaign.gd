@@ -7,6 +7,8 @@ extends Resource
 @export_file("*.tscn") var levels: Array[String] = []
 @export_range(1, 200) var start_soldiers: int = 10
 @export var start_supplies: Supplies
+## Supplies dropped at each checkpoint (level start, from the second level on). A level's own Supply Drop wins.
+@export var checkpoint_supplies: Supplies
 @export var army_rules: ArmyRules
 ## Tools in rack order.
 @export var tools: Array[ToolDefinition] = []

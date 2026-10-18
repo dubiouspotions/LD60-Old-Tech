@@ -120,6 +120,7 @@ func begin(index: int, soldiers: int) -> void:
 	var c := chunk(index)
 	c.start_flag.reached = true
 	start_at(c.start_flag.metres().x, soldiers, c.level.march_delay)
+	army.stop_x = c.exit_flag.metres().x
 
 
 ## Puts the column and the crew at x and camps for march_delay seconds (0 marches at once).
@@ -222,10 +223,10 @@ func _process(_delta: float) -> void:
 	_stream()
 
 
+## The level ends when every living soldier has gathered at its exit flag, not just the front one.
 func _check_exit() -> void:
-	var lead := army.lead()
 	var c := current_chunk()
-	if lead == null or c == null or _done or lead.pos.x < c.exit_flag.metres().x:
+	if c == null or _done or not army.gathered():
 		return
 	var next := current + 1
 	if next >= GameState.campaign.levels.size():
@@ -243,8 +244,10 @@ func _arrive(index: int) -> void:
 	var c := chunk(index)
 	current = index
 	c.start_flag.reached = true
-	var joined := GameState.arrive(index, c.level.reinforcements, c.level.supply_drop)
+	var drop := c.level.supply_drop if c.level.supply_drop else GameState.campaign.checkpoint_supplies
+	var joined := GameState.arrive(index, c.level.reinforcements, drop)
 	army.reinforce(joined)
+	army.stop_x = c.exit_flag.metres().x
 	_make_camp(c.start_flag.metres().x, c.level.march_delay)
 	camp_made.emit(index, joined)
 
