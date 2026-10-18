@@ -47,6 +47,9 @@ extends Resource
 @export_range(0.1, 5.0, 0.05, "suffix:s") var attack_interval: float = 0.6
 @export_range(1, 10) var melee_damage: int = 1
 @export var attack_sound: SoundEffect
+## Each blow on a tower throws this many chips of its stone (its Debris Colour) and sparks off the blade.
+@export_range(0, 30) var hit_chips: int = 3
+@export_range(0, 30) var hit_sparks: int = 6
 
 @export_group("Mutiny")
 ## Seconds a soldier stands blocked (by a wall or a low ceiling) before it deserts. Besieging a tower or

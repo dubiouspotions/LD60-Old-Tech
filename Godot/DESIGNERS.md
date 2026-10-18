@@ -147,7 +147,7 @@ A sheet whose sky is a solid colour instead: set it as **Source Texture**, the c
 | What | Where |
 | --- | --- |
 | Soldier look and walk cycle | `objects/soldier/soldier.tscn` (sprite + AnimationPlayer "walk"/"idle"/"sleep") |
-| March speed, step-up, fall damage, how far ahead dangers are warned about, melee reach/speed/damage against archers, max army, messages (including the siege and "waiting for the column" status) | `data/army_rules.tres` |
+| March speed, step-up, fall damage, how far ahead dangers are warned about, melee reach/speed/damage against archers, stone chips and sparks per blow on a tower (**Hit Chips**, **Hit Sparks**; chips take the tower stone's **Debris Colour**), max army, messages (including the siege and "waiting for the column" status) | `data/army_rules.tres` |
 | How long soldiers must attack a tower before it falls | **Raze Time** on the terrain type (`data/terrain/brick.tres`, 15 s of one soldier's attack; 0 means it can't be attacked) |
 | A tower or tree whose ground is dug away: it falls as one piece with everything on it (the archer, battlements and other tiles painted in the air on it, flags, torches, any object on top or inside), crushing soldiers, engineers, archers and boxes under it, and stands where it lands. If it fell more than **Survives Fall** (3 m), or onto spikes, it breaks up instead (a tower collapses, a tree is felled) and what it carried goes with it | **Survives Fall** on `data/terrain/brick.tres`, `trunk.tres`, `leaves.tres` (the lowest in a piece counts); fall gravity, top speed, landing sound and shake on `objects/falling_piece/falling_piece.tscn`; the crunch of a tower breaking up (razed or fallen) is **Collapse Sound** on `world/terrain.tscn` (`data/sounds/collapse.tres`) |
 | How long the column camps before the king orders the march | **March Delay** on each level's root node (default in `levels/level_base.tscn`) |
@@ -163,6 +163,7 @@ A sheet whose sky is a solid colour instead: set it as **Source Texture**, the c
 | Arrows | `objects/arrow/arrow.tscn` |
 | Falling box (the Box tool, `data/tools/2_fill.tres`; the landed tile is `data/terrain/fill.tres`) | `objects/falling_block/falling_block.tscn` |
 | Debris, floating text | `objects/effects/` |
+| How a tile shakes and blinks when a soldier strikes it (**Hit Time**, **Hit Shake** in pixels, **Hit Flash** colour, **Hit Flash Share**) | **Hit effect** group on the **Terrain** node (`world/terrain.tscn`). Sparks look: `objects/effects/sparks.tscn`. |
 | Sky, sun, stars, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |
 | Bridge physics feel, build messages, blueprint / ordered / scaffold colours | **Bridge** node in `game/world.tscn` |
