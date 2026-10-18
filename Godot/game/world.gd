@@ -150,6 +150,12 @@ func camp() -> Node2D:
 	return _camp if is_instance_valid(_camp) else null
 
 
+## The Camp Shoppe is open: camped at a level that has one (Level.camp_shoppe), once a tent is up.
+func shop_open() -> bool:
+	var c := chunk(current)
+	return camping() and camp() != null and c != null and c.level.camp_shoppe 			and army.soldiers.any(func(s: Soldier) -> bool: return s.sleeping)
+
+
 ## Where the Camp Shoppe button hangs (world pixels): under the camp, below the lowest tent of the sleeping column.
 func shop_spot() -> Vector2:
 	var lowest := -INF

@@ -205,6 +205,19 @@ func test_the_shoppe_hangs_a_tile_below_the_lowest_tent() -> void:
 	assert_almost_eq(world.shop_spot().x, camp.button_spot().x, 0.5, "across, where the camp says")
 
 
+## The Camp Shoppe opens only once a tent is up, and only on levels that have it.
+func test_the_shoppe_opens_once_a_tent_is_up() -> void:
+	world.begin(1, 3)
+	assert_true(world.chunk(1).level.camp_shoppe, "levels have it by default")
+	assert_true(world.camping())
+	assert_false(world.army.soldiers.any(func(s: Soldier) -> bool: return s.sleeping))
+	assert_false(world.shop_open(), "no tent yet")
+	_run(world.dusk_time)
+	assert_true(world.shop_open(), "open once the tents are up")
+	world.chunk(1).level.camp_shoppe = false
+	assert_false(world.shop_open(), "a level can keep it closed")
+
+
 func test_hire_an_engineer_at_camp() -> void:
 	world.begin(0, 3)
 	var crew := world.crew.engineers.size()

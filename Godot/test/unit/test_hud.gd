@@ -85,6 +85,21 @@ func test_camp_shoppe_panel_shows_under_the_camp() -> void:
 	assert_false(hud.get_node("%ShopMenu").visible, "and its list folded up")
 
 
+## It fades in when it opens, and is gone at once when it closes.
+func test_camp_shoppe_fades_in() -> void:
+	var panel: PanelContainer = hud.get_node("%ShopPanel")
+	assert_gt(hud.shop_fade_time, 0.0)
+	_shop()
+	assert_true(panel.visible)
+	assert_lt(panel.modulate.a, 0.1, "starts see-through")
+	_shop()
+	await wait_seconds(hud.shop_fade_time + 0.1)
+	_shop()
+	assert_almost_eq(panel.modulate.a, 1.0, 0.01, "faded in")
+	hud.set_shop(false, 2, true, 5, true, Vector2.ZERO)
+	assert_false(panel.visible)
+
+
 ## The panel never hangs past where the view can be scrolled (reach, world pixels): it keeps shop_edge_margin from
 ## that edge instead. (Without a camera, world and screen pixels are the same here.)
 func test_the_panel_keeps_a_margin_from_where_scrolling_stops() -> void:

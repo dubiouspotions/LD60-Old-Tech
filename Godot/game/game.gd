@@ -155,7 +155,7 @@ func _process(_delta: float) -> void:
     var camp: Camp = _world.camp()
     var can_recruit := _world.army.soldiers.size() < rules.max_soldiers and GameState.supplies.can_afford(rules.recruit_cost)
     var can_hire := _world.crew.engineers.size() < crew.max_crew and GameState.supplies.can_afford(crew.hire_cost)
-    _hud.set_shop(_world.camping() and camp != null and not _over, rules.recruit_cost.gold, can_recruit,
+    _hud.set_shop(_world.shop_open() and not _over, rules.recruit_cost.gold, can_recruit,
             crew.hire_cost.gold, can_hire, _world.shop_spot() if camp else Vector2.ZERO, Grid.to_px(_camera.reach_m()))
     _update_status()
     _update_lead_marker(lead)

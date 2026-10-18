@@ -17,6 +17,8 @@ extends Node2D
 ## Seconds the column camps at the start before the king orders the march. 0 marches at once.
 ## The army sleeps through the night while the engineers keep working. The player can order the march earlier.
 @export_range(0.0, 300.0, 1.0, "suffix:s") var march_delay: float = 30.0
+## The Camp Shoppe (soldiers and engineers for gold) opens at this level's camp.
+@export var camp_shoppe: bool = true
 ## Regrows the tall grass now, for example after moving a flag or an object.
 @export_tool_button("Regrow Grass", "Reload") var regrow: Callable = regrow_grass
 
