@@ -4,6 +4,8 @@ extends Resource
 ## A bridge member type (log, rope, ...). Physics units are SI: m, kg, N.
 
 @export var display_name: String = "Log"
+## Shown on its tool's button, to pick it, when the tool builds more than one material.
+@export var icon: Texture2D
 ## Small hint on the tool button while this material is chosen.
 @export var hint: String = ""
 ## What each started metre costs: a 3.2 m piece costs four times this.

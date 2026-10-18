@@ -264,16 +264,6 @@ focus_mode = 0
 toggle_mode = true
 text = "Sound"
 
-[node name="MaterialPicker" type="PanelContainer" parent="Root" unique_id=794381188]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-
-[node name="Materials" type="HBoxContainer" parent="Root/MaterialPicker" unique_id=218306886]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 6
-
 [node name="SoundPanel" type="PanelContainer" parent="Root" unique_id=477728629]
 unique_name_in_owner = true
 visible = false

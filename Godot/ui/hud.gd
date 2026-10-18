@@ -3,7 +3,7 @@ extends CanvasLayer
 ## Top bar, tool rack, banners and the intro / lost / victory cards. It only shows state and reports clicks.
 
 signal tool_pressed(index: int)
-## A material was picked in the material picker of the chosen build tool.
+## A material was picked with its icon on a build tool's button.
 signal material_picked(material: BridgeMaterial)
 signal pause_pressed
 signal speed_pressed
@@ -49,7 +49,6 @@ var _tool_buttons: Array[ToolButton] = []
 var _tools: Array[ToolDefinition] = []
 var _build_buttons: Array[PlanButtons] = []
 var _group := ButtonGroup.new()
-var _picker_tool: int = -1 # tool whose materials the picker shows, -1 if none
 var _colors: Dictionary = {} # supply key -> swatch colour, for the tool buttons' costs
 var _lost_tween: Tween
 ## The lost overlay's colour as set in the scene, faded to by show_lost.
@@ -93,7 +92,6 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 		b.queue_free()
 	_tool_buttons.clear()
 	_tools = tools
-	_picker_tool = -1
 	_colors = {}
 	# Opaque: a readout may hide its swatch (shown by an icon instead), but the cost swatches need the colour.
 	for k in Supplies.KEYS:
@@ -106,13 +104,16 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 		b.pressed.connect(func() -> void:
 			Audio.play(click_sound)
 			tool_pressed.emit(i))
+		b.material_pressed.connect(func(m: BridgeMaterial) -> void:
+			Audio.play(click_sound)
+			tool_pressed.emit(i)
+			material_picked.emit(m))
 		_tool_buttons.append(b)
 	_refresh_supplies()
 	_fit.call_deferred()
 
 
-## Shows tool index as chosen, building material (for a build tool) if given. A tool with several materials
-## gets the material picker above its button.
+## Shows tool index as chosen, building material (for a build tool) if given (pressed among the icons on its button).
 func set_tool(index: int, material: BridgeMaterial = null) -> void:
 	if index >= _tool_buttons.size():
 		return
@@ -121,51 +122,6 @@ func set_tool(index: int, material: BridgeMaterial = null) -> void:
 	if material and material != b.build_material:
 		b.setup(_tools[index], _colors, material)
 		_refresh_supplies()
-	_show_picker(index, material)
-
-
-## One button per material of tool index above its button, the one it builds (material) pressed; hidden for tools
-## with a single material.
-func _show_picker(index: int, material: BridgeMaterial) -> void:
-	var picker: Control = %MaterialPicker
-	var all := _tools[index].materials()
-	picker.visible = all.size() > 1
-	if not picker.visible:
-		_picker_tool = -1
-		return
-	var row: HBoxContainer = %Materials
-	var chosen := material if material else all[0]
-	if _picker_tool == index:
-		# Same tool: only the pick moved. The buttons stay (one of them may be emitting this very pick).
-		for i in all.size():
-			(row.get_child(i) as Button).set_pressed_no_signal(all[i] == chosen)
-		return
-	_picker_tool = index
-	for c in row.get_children():
-		c.queue_free()
-		row.remove_child(c)
-	var group := ButtonGroup.new()
-	for m in all:
-		var mb := Button.new()
-		mb.toggle_mode = true
-		mb.button_group = group
-		mb.focus_mode = Control.FOCUS_NONE
-		mb.text = "%s · %s/m" % [m.display_name, m.cost.describe_cost() if m.cost else ""]
-		mb.tooltip_text = m.hint
-		mb.button_pressed = m == chosen
-		mb.pressed.connect(func() -> void:
-			Audio.play(click_sound)
-			material_picked.emit(m))
-		row.add_child(mb)
-	_place_picker.call_deferred(_tool_buttons[index])
-
-
-## Over the tool button, above the supply bar so it hides no counts.
-func _place_picker(over: Control) -> void:
-	var picker: Control = %MaterialPicker
-	picker.size = picker.get_combined_minimum_size()
-	var top := minf(over.global_position.y, $Root/Margin/Column/SupplyBar.global_position.y)
-	picker.global_position = Vector2(over.global_position.x + (over.size.x - picker.size.x) / 2.0, top - picker.size.y - 6.0)
 
 
 func set_paused(paused: bool, show_tag: bool) -> void:
