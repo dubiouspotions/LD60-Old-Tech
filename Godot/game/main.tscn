@@ -68,10 +68,11 @@ lantern = NodePath("../Lantern")
 visible = false
 color = Color(1, 0.86, 0.6, 1)
 energy = 0.0
+blend_mode = 2
 texture = SubResource("lantern_tex")
 texture_scale = 2.2
 script = ExtResource("night_light")
-night_energy = 0.9
+night_energy = 1.2
 
 [node name="DayNight" type="Node" parent="." unique_id=1668103146 node_paths=PackedStringArray("world_tint", "sky_tint", "stars", "grade")]
 unique_name_in_owner = true

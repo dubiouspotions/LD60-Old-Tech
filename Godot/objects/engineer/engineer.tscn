@@ -228,10 +228,11 @@ visible = false
 position = Vector2(0, -30)
 color = Color(1, 0.8, 0.5, 1)
 energy = 0.0
+blend_mode = 2
 texture = SubResource("lamp_tex")
 texture_scale = 0.9
 script = ExtResource("night_light")
-night_energy = 0.7
+night_energy = 1.0
 
 [node name="Body" type="Node2D" parent="." unique_id=692712909]
 unique_name_in_owner = true
