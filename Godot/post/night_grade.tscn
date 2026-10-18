@@ -1,0 +1,21 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://post/night_grade.gd" id="1"]
+[ext_resource type="Shader" path="res://post/night_grade.gdshader" id="2"]
+[ext_resource type="CompressedTexture3D" uid="uid://52he3b0kj18w" path="res://post/lut/low_17_blue_out.png" id="3"]
+
+[sub_resource type="ShaderMaterial" id="grade_mat"]
+shader = ExtResource("2")
+
+[node name="NightGrade" type="CanvasLayer"]
+
+[node name="Grade" type="ColorRect" parent="."]
+material = SubResource("grade_mat")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1")
+lut = ExtResource("3")
