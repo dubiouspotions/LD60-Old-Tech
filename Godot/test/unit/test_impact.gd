@@ -194,3 +194,35 @@ func test_fill_lands_on_a_bridge_instead_of_falling_through() -> void:
 	assert_true(is_instance_valid(block), "still on the deck")
 	assert_null(world.terrain.type_at(Vector2i(7, 5)), "did not fall into the pit")
 	assert_almost_eq(block.position.y / Grid.PX + 1.0, world.bridge.members[0].a.pos.y, 0.4, "on the deck")
+
+
+## Siege done to the tower top by a piece of mat dropped from height above it.
+func _siege_from(mat: BridgeMaterial, height: float) -> float:
+	before_each()
+	_map([
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....KKK.............",
+		"....KKK.............",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	var b := world.bridge
+	b.build(b.snap_point(Vector2(4.5, 4 - height)), b.snap_point(Vector2(6.5, 4 - height)), mat)
+	var cells := [Vector2i(4, 4), Vector2i(5, 4), Vector2i(6, 4)]
+	var most := 0.0
+	for i in 120:
+		world._physics_process(1.0 / 60.0)
+		for c: Vector2i in cells:
+			most = maxf(most, world.terrain.siege_progress(c))
+	return most
+
+
+func test_heavier_pieces_batter_towers_harder() -> void:
+	var by_log := _siege_from(LOG, 4.0)
+	var by_stone := _siege_from(preload("res://data/bridge/stone.tres"), 4.0)
+	assert_gt(by_log, 0.0, "a log dents it")
+	assert_gt(by_stone, by_log * 1.4, "stone does far more")
+	assert_gt(by_stone, 0.5, "a stone beam takes half a tower cell's strength")

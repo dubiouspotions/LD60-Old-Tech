@@ -120,7 +120,7 @@ godot --headless res://dev/convert_levels_v2.tscn           # optional: retile e
 | Sky, sun, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |
 | Bridge physics feel, build messages, blueprint / ordered / scaffold colours | **Bridge** node in `game/world.tscn` |
-| Bridge pieces against soldiers and archers, and damage from fast pieces (**Harm Speed**, **Strike Siege**): bodies stop slower pieces; faster ones crush them, break ground they hit that can be dug, batter towers | **Bridge** node in `game/world.tscn`, group **Impact** |
+| Bridge pieces against soldiers and archers, and damage from fast pieces (**Harm Speed**, **Siege Per kJ**): bodies stop slower pieces; faster ones crush them, break ground they hit that can be dug, batter towers | **Bridge** node in `game/world.tscn`, group **Impact** |
 | Build buttons above plans: text, look, height | **Build Text** on the **HUD** node in `ui/hud.tscn`; the Build + cancel pair is `ui/plan_buttons.tscn`; **Plan Button Rise** on the **Game** node in `game/main.tscn` |
 
 ## Sound and music

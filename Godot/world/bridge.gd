@@ -8,8 +8,8 @@ extends Node2D
 
 signal member_built(member: Member)
 signal member_broken(member: Member, text: String)
-## A joint hit the ground in cell at speed (m/s), at least harm_speed.
-signal struck(cell: Vector2i, speed: float)
+## Joints hit the ground in cell at harm_speed or more this tick, with this much energy in all (J).
+signal struck(cell: Vector2i, energy: float)
 
 
 class Joint:
@@ -102,8 +102,8 @@ class Snap:
 ## A built piece hitting a soldier or archer at least this fast (m/s) crushes it (slower ones are stopped by
 ## it); hitting ground this fast breaks a cell that can be dug, or batters a tower.
 @export var harm_speed: float = 6.0
-## Seconds of siege a tower cell takes from one hit.
-@export var strike_siege: float = 4.0
+## Seconds of siege a tower cell takes per kJ of impact energy (½·m·v² of the joint and its load).
+@export var siege_per_kj: float = 10.0
 
 @export_group("Building")
 ## Walking surface sits this far above the member line (log radius).
@@ -140,7 +140,7 @@ var nodes: Array[Joint] = []
 var members: Array[Member] = []
 ## Length of the last substep, for joint velocities.
 var _h: float = 1.0 / 600.0
-var _strikes: Dictionary = {} # Vector2i -> fastest hit speed this tick
+var _strikes: Dictionary = {} # Vector2i -> impact energy (J) this tick
 
 
 func _process(_delta: float) -> void:
@@ -753,7 +753,7 @@ func _collide(n: Joint, h: float) -> void:
 	var v := n.pos - n.prev
 	var into := -v.dot(normal) / h
 	if into >= harm_speed:
-		_strikes[c] = maxf(_strikes.get(c, 0.0), into)
+		_strikes[c] = _strikes.get(c, 0.0) + 0.5 * (n.mass + n.load) * into * into
 	var slide := v - normal * v.dot(normal)
 	n.pos = best
 	n.prev = n.pos - slide * ground_friction
