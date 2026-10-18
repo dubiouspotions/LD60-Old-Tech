@@ -108,6 +108,9 @@ drawn in front of the soldiers, engineers and objects. Select **Grass**, pick th
 paint it in the air cells right on top of the ground. Scatter it in small patches rather than everywhere.
 
 - Grass on ground that is dug away, or in a cell that gets filled, disappears while playing.
+- `godot --headless res://dev/scatter_grass.tscn` scatters a first coverage (runs of 2–4 cells on flat soil, 6–14 m
+  apart, clear of flags and objects) over every level that has no grass yet, to paint over by hand. Add `force` to
+  redo levels that already have grass (this replaces what you painted), and `gap=`, `width=` or `seed=` to vary it.
 - `test_levels` checks that every grass cell is in the air with ground under it.
 - **The animation** plays the frames of `world/grass_anim.png` (8 px each, left to right, drawn at 4x like the rest
   of the art) from `world/tall_grass_material.tres`. Each column of the world starts one frame later than the column
