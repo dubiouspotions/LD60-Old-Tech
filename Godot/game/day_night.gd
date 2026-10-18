@@ -1,9 +1,12 @@
 class_name DayNight
 extends Node
-## Night falls while the column camps: tints the world and the sky and lights the engineers' lantern.
+## Night falls while the column camps: tints the world and the sky, brings out the stars and lights the engineers'
+## lantern.
 
 @export var world_tint: CanvasModulate
 @export var sky_tint: CanvasModulate
+## Faded in at night (optional).
+@export var stars: Stars
 ## Light that follows the cursor at night (optional).
 @export var lantern: PointLight2D
 @export var day_color: Color = Color.WHITE
@@ -32,9 +35,13 @@ func set_night(on: bool, instant: bool = false, seconds: float = -1.0) -> void:
 		_tween.tween_property(world_tint, ^"color", night_world_color if on else day_color, maxf(t, 0.01))
 	if sky_tint:
 		_tween.tween_property(sky_tint, ^"color", night_sky_color if on else day_color, maxf(t, 0.01))
+	if stars:
+		_tween.tween_property(stars, ^"amount", 1.0 if on else 0.0, maxf(t, 0.01))
 	if lantern:
 		if on:
 			lantern.visible = true
 		_tween.tween_property(lantern, ^"energy", lantern_energy if on else 0.0, maxf(t, 0.01))
 		if not on:
 			_tween.chain().tween_callback(func() -> void: lantern.visible = night)
+	if t == 0.0:
+		_tween.custom_step(1.0)
