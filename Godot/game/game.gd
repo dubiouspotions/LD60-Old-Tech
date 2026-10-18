@@ -206,7 +206,9 @@ func _on_tool_changed(index: int) -> void:
 func _start_at_level(index: int) -> void:
 	_tools.cancel()
 	_world.begin(index, GameState.soldiers)
-	_camera.snap_to_lead()
+	# The view starts on the column; following is the player's choice (Follow / C).
+	_camera.follow = false
+	_camera.center_on_lead()
 	_over = false
 	var c := _world.current_chunk()
 	if not _world.at_camp():

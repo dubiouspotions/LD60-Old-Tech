@@ -196,7 +196,6 @@ layout_mode = 2
 focus_mode = 0
 tooltip_text = "Follow the column (C)"
 toggle_mode = true
-button_pressed = true
 text = "Follow"
 
 [node name="SoundButton" type="Button" parent="Root/Margin/Column/Rack"]

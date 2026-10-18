@@ -22,11 +22,10 @@ func test_plans_clear_without_errors_once_the_game_is_over() -> void:
 func test_follow_button_turns_following_off_and_on() -> void:
 	var cam: CameraRig = game.get_node("%Camera")
 	var button: Button = game.get_node("%HUD").get_node("%FollowButton")
-	assert_true(button.button_pressed, "on from the start, like the camera")
+	button.button_pressed = true
+	assert_true(cam.follow, "marking follows")
 	button.button_pressed = false
 	assert_false(cam.follow, "unmarking stops following")
-	button.button_pressed = true
-	assert_true(cam.follow, "marking follows again")
 
 
 func test_engineers_carry_a_small_light_at_night() -> void:
@@ -98,3 +97,14 @@ func test_restart_button_restarts_the_level_from_its_checkpoint() -> void:
 	assert_eq(world.army.soldiers.size(), soldiers, "the column as at the checkpoint")
 	assert_false(get_tree().paused, "playing")
 	assert_true(InputMap.action_has_event(&"restart_level", _key(KEY_BACKSPACE)), "also on Backspace")
+
+
+func test_the_game_starts_with_following_off_and_the_view_on_the_column() -> void:
+	game._begin()
+	var cam: CameraRig = game.get_node("%Camera")
+	var button: Button = game.get_node("%HUD").get_node("%FollowButton")
+	assert_false(cam.follow, "not following")
+	assert_false(button.button_pressed, "the button says so")
+	var lead: Soldier = game.get_node("%World").army.lead()
+	var view := Rect2(cam.view_m(), cam.view_size_m())
+	assert_true(view.has_point(lead.pos), "the column is in view")

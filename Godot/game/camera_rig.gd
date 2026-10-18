@@ -1,7 +1,7 @@
 class_name CameraRig
 extends Camera2D
-## Follows the front of the column; pans with keys, right/middle drag, the wheel, or the Pan tool.
-## Panning by hand turns follow off; the Follow action turns it back on.
+## Starts each level on the front of the column without following it; the Follow action (button or C) follows it.
+## Pans with keys, right/middle drag or the wheel. Panning by hand turns follow off.
 
 signal follow_changed(on: bool)
 
@@ -19,7 +19,7 @@ signal follow_changed(on: bool)
 @export var shake_px: float = 16.0
 
 var world: World
-var follow: bool = true:
+var follow: bool = false:
 	set(v):
 		if v != follow:
 			follow = v
@@ -45,8 +45,14 @@ func view_size_m() -> Vector2:
 	return Grid.to_m(get_viewport_rect().size / zoom)
 
 
+## Follows the column, starting with the view on it.
 func snap_to_lead() -> void:
 	follow = true
+	center_on_lead()
+
+
+## Puts the view on the column (where following would hold it) without following it.
+func center_on_lead() -> void:
 	var lead := world.army.lead() if world else null
 	if lead:
 		position = Grid.to_px(lead.pos - view_size_m() * follow_anchor)

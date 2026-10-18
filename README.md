@@ -24,7 +24,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 - **Gold** comes from gold ore, your starting supplies and each camp's supply drop. While the column camps, press **R** or **Recruit** to buy another soldier (5 gold); recruits join the camp.
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
 - **Backspace** or **Restart** restarts the level from its checkpoint: the column and supplies you arrived with.
-- **F** toggles 2× speed. **C** makes the camera follow the column again. **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.
+- **F** toggles 2× speed. **C** or **Follow** makes the camera follow the column (off when a level starts; panning by hand turns it off). **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.
 - Move the view with **WASD**/arrow keys, right or middle drag, or the mouse wheel.
 - A soldier stuck in front of a wall or a ceiling too low to pass loses heart: after 8 s it deserts, turns round and climbs back the way the army came. Besieging a tower or fighting an archer doesn't count. The status bar counts down.
 - Soldiers who reach a level's exit flag wait there for the rest of the column. Once every living soldier has arrived, it means camp, reinforcements and supplies. If the column falls, you retry from that camp with the army and supplies you had when you got there; work done since is undone.
