@@ -47,7 +47,8 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Gap between sleepers, how long a soldier stands before lying down | **Camp Spacing** / **Settle Time** in `data/army_rules.tres` (the gap shrinks if the world ends close behind the camp) |
 | Tents, fire, firelight, crackle | `objects/camp/camp.tscn` (its origin is the camp flag; the column sleeps to its left) |
 | Sleeping soldier pose and the "z" | **Asleep** node and the "sleep" animation in `objects/soldier/soldier.tscn` |
-| Night colours, fade time, cursor lantern strength | **DayNight** node in `game/main.tscn` (lantern light: **Lantern** node) |
+| Night colours, fade time | **DayNight** node in `game/main.tscn` |
+| Night lights: cursor lantern, engineers' lamps (strength: **Night Energy**) | **Lantern** node in `game/main.tscn`, **Lamp** node in `objects/engineer/engineer.tscn` |
 | Camp music, dawn bugle | `data/campaign.tres` → Camp group |
 | Recruit button text and where it floats | **Recruit Text** on the **HUD** node in `ui/hud.tscn`; the button floats at the **ButtonSpot** marker in `objects/camp/camp.tscn` |
 | Price of a recruit, its sound and text | **Recruit Cost** / **Recruit Sound** / **Recruit Text** in `data/army_rules.tres` (the army limit is **Max Soldiers** there) |

@@ -1,15 +1,13 @@
 class_name DayNight
 extends Node
-## Night falls while the column camps: tints the world and the sky and lights the engineers' lantern.
+## Night falls while the column camps: tints the world and the sky and lights every NightLight (the cursor
+## lantern, the engineers' lamps).
 
 @export var world_tint: CanvasModulate
 @export var sky_tint: CanvasModulate
-## Light that follows the cursor at night (optional).
-@export var lantern: PointLight2D
 @export var day_color: Color = Color.WHITE
 @export var night_world_color: Color = Color(0.3, 0.34, 0.52)
 @export var night_sky_color: Color = Color(0.2, 0.23, 0.4)
-@export_range(0.0, 4.0, 0.05) var lantern_energy: float = 0.9
 @export_range(0.0, 10.0, 0.1, "suffix:s") var fade_time: float = 2.0
 
 var night: bool = false
@@ -18,6 +16,9 @@ var _tween: Tween
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().node_added.connect(func(n: Node) -> void:
+		if n is NightLight:
+			_light(n, null, 0.0))
 	set_night(false, true)
 
 
@@ -32,9 +33,17 @@ func set_night(on: bool, instant: bool = false, seconds: float = -1.0) -> void:
 		_tween.tween_property(world_tint, ^"color", night_world_color if on else day_color, maxf(t, 0.01))
 	if sky_tint:
 		_tween.tween_property(sky_tint, ^"color", night_sky_color if on else day_color, maxf(t, 0.01))
-	if lantern:
-		if on:
-			lantern.visible = true
-		_tween.tween_property(lantern, ^"energy", lantern_energy if on else 0.0, maxf(t, 0.01))
-		if not on:
-			_tween.chain().tween_callback(func() -> void: lantern.visible = night)
+	for l in get_tree().get_nodes_in_group(NightLight.GROUP):
+		_light(l, null if instant else _tween, t)
+
+
+## Turns light l to the current time of day, over seconds on tween (at once without one).
+func _light(l: NightLight, tween: Tween, seconds: float) -> void:
+	if night:
+		l.visible = true
+	if tween == null:
+		l.energy = l.night_energy if night else 0.0
+		l.visible = night
+		return
+	tween.tween_property(l, ^"energy", l.night_energy if night else 0.0, maxf(seconds, 0.01))
+	tween.chain().tween_callback(func() -> void: l.visible = night)
