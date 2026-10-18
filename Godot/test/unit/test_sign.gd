@@ -52,3 +52,12 @@ func test_lit_at_night_by_a_mix_lamp() -> void:
 	var lamp: NightLight = _sign("x").get_node("%Lamp")
 	assert_eq(lamp.blend_mode, Light2D.BLEND_MODE_MIX)
 	assert_gt(lamp.night_energy, 0.0)
+
+
+func test_level_one_teaches_with_signs() -> void:
+	var level: Level = load(GameState.campaign.levels[0]).instantiate()
+	add_child_autofree(level)
+	var signs := level.objects().get_children().filter(func(o: Node) -> bool: return o is Sign)
+	assert_gt(signs.size(), 0)
+	for s: Sign in signs:
+		assert_false(s.text.strip_edges().is_empty(), "%s has a text" % s.name)
