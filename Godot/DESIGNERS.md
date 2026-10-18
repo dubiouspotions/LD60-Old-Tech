@@ -111,7 +111,7 @@ godot --headless res://dev/convert_levels_v2.tscn           # optional: retile e
 | How long a tile takes to dig | **Dig Time** on each terrain type in `data/terrain/` |
 | Engineer crew: size, walk and climb speed, dig speed, dig reach, step-up, ground climb and drop limits, fall gravity, stranded time (then an engineer climbs any height back to the column), strike delay, sounds | `data/crew_rules.tres` (how fast each piece type is built: **Build Speed** on `data/bridge/*.tres`) |
 | Engineer look | `objects/engineer/engineer.tscn` (its own placeholder until engineer art exists; keep the Body, Wounded and AnimationPlayer nodes the soldier script uses) |
-| Bridge / support / rope strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
+| Bridge / support / rope / stone strength, length, mass, cost, colours | `data/bridge/log.tres` (Bridge), `support.tres`, `rope.tres`, `stone.tres`. **Walkable** decides if soldiers walk on it; **Draw Layer** puts it behind (lower) or over (higher) other members. |
 | Tool rack: names, hints, keys, costs, hold-repeat | `data/tools/*.tres` (rack order is the Campaign's **Tools** list). Each button shows its cost as supply swatches (build tools use their material's cost) and dims when it can't be afforded; the dim look is on `ui/tool_button.tscn` |
 | Arrows | `objects/arrow/arrow.tscn` |
 | Falling fill | `objects/falling_block/falling_block.tscn` |
@@ -119,6 +119,7 @@ godot --headless res://dev/convert_levels_v2.tscn           # optional: retile e
 | Sky, sun, mountain ridges | `world/background/background.tscn` |
 | HUD layout, texts, theme, fonts | `ui/hud.tscn`, `ui/theme.tres`, `ui/fonts/` |
 | Bridge physics feel, build messages, blueprint / ordered / scaffold colours | **Bridge** node in `game/world.tscn` |
+| Damage from fast bridge pieces (**Harm Speed**, **Harm Cooldown**, **Strike Siege**): they hurt soldiers and archers they pass through, break ground they hit that can be dug, batter towers | **Bridge** node in `game/world.tscn`, group **Impact** |
 | Build buttons above plans: text, look, height | **Build Text** on the **HUD** node in `ui/hud.tscn`; the Build + cancel pair is `ui/plan_buttons.tscn`; **Plan Button Rise** on the **Game** node in `game/main.tscn` |
 
 ## Sound and music

@@ -19,6 +19,10 @@ signal night_changed(night: bool, seconds: float)
 signal victory
 signal level_streamed(index: int)
 
+## A body (soldier or archer) for bridge hits: a circle this high above the feet with this radius, metres.
+const BODY_MID: float = 0.9
+const BODY_RADIUS: float = 0.6
+
 enum Phase { DAY, DUSK, NIGHT, MORNING }
 
 
@@ -73,6 +77,7 @@ var _march_left: float = 0.0
 var _phase_left: float = 0.0
 var _done: bool = false
 var _camp: Node2D
+var _harm_wait: Dictionary = {} # soldier or archer -> seconds before a bridge can hurt it again
 
 
 static func of(node: Node) -> World:
@@ -91,6 +96,7 @@ func _ready() -> void:
 	terrain.tile_detached.connect(_on_tile_detached)
 	terrain.collapsed.connect(func(found: Supplies, _cells: Array[Vector2i]) -> void: GameState.gain(found))
 	bridge.member_broken.connect(_on_member_broken)
+	bridge.struck.connect(_on_bridge_struck)
 	crew.dig_finished.connect(_on_dig_finished)
 	army.count_changed.connect(_on_army_count)
 
@@ -212,6 +218,7 @@ func _physics_process(dt: float) -> void:
 	bridge.step(dt, army.bridge_loads())
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
 	army.step(dt)
+	_harm_from_bridge(dt)
 	crew.step(dt)
 	_check_exit()
 
@@ -473,6 +480,36 @@ func _on_dig_finished(cell: Vector2i) -> void:
 		Effects.say(at, got.describe(), Color("ece4d2"))
 	else:
 		Effects.say(at, here.dig_text, here.debris_color)
+
+
+## Hurts every soldier and archer a fast-moving bridge piece passes through (see Bridge.harm_speed).
+func _harm_from_bridge(dt: float) -> void:
+	for k: Object in _harm_wait.keys():
+		_harm_wait[k] -= dt
+		if _harm_wait[k] <= 0.0 or not is_instance_valid(k):
+			_harm_wait.erase(k)
+	for s: Soldier in army.soldiers + army.deserters:
+		if s.dead or _harm_wait.has(s):
+			continue
+		var vel := Vector2(0, s.vy) if s.airborne else Vector2.ZERO
+		if bridge.harm_at(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, vel, s.on_member) > 0.0:
+			_harm_wait[s] = bridge.harm_cooldown
+			army.hit(s, army.rules.crushed_text)
+	for a: Archer in army.foes:
+		if a.alive() and not _harm_wait.has(a) and bridge.harm_at(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS, Vector2.ZERO) > 0.0:
+			_harm_wait[a] = bridge.harm_cooldown
+			a.hit(1)
+
+
+## A bridge piece hit the ground fast: a tower cell is battered, ground that can be dug breaks (nothing gained).
+func _on_bridge_struck(cell: Vector2i, _speed: float) -> void:
+	var t := terrain.type_at(cell)
+	if t == null:
+		return
+	if t.raze_time > 0.0:
+		terrain.besiege(cell, bridge.strike_siege)
+	elif t.dig_action != TerrainType.DigAction.NONE:
+		terrain.dig(cell)
 
 
 func _on_member_broken(member: Bridge.Member, text: String) -> void:

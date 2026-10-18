@@ -8,6 +8,8 @@ extends Node2D
 
 signal member_built(member: Member)
 signal member_broken(member: Member, text: String)
+## A joint hit the ground in cell at speed (m/s), at least harm_speed.
+signal struck(cell: Vector2i, speed: float)
 
 
 class Joint:
@@ -78,6 +80,15 @@ class Snap:
 ## Ground friction: fraction of velocity kept when a joint touches ground.
 @export_range(0.0, 1.0) var ground_friction: float = 0.3
 
+@export_group("Impact")
+## A built piece moving at least this fast (m/s) hurts soldiers and archers it passes through, breaks ground it
+## hits that can be dug, and batters towers.
+@export var harm_speed: float = 6.0
+## Seconds before the same soldier or archer can be hurt by a bridge again.
+@export var harm_cooldown: float = 0.5
+## Seconds of siege a tower cell takes from one hit.
+@export var strike_siege: float = 4.0
+
 @export_group("Building")
 ## Walking surface sits this far above the member line (log radius).
 @export var deck_offset: float = 0.14
@@ -111,6 +122,9 @@ class Snap:
 var terrain: Terrain
 var nodes: Array[Joint] = []
 var members: Array[Member] = []
+## Length of the last substep, for joint velocities.
+var _h: float = 1.0 / 600.0
+var _strikes: Dictionary = {} # Vector2i -> fastest hit speed this tick
 
 
 func _process(_delta: float) -> void:
@@ -476,6 +490,7 @@ func step(dt: float, loads: Array = []) -> void:
 		m._acc = 0.0
 	var h := dt / substeps
 	var h2 := h * h
+	_h = h
 	for s in substeps:
 		for n in nodes:
 			if n.fixed():
@@ -504,7 +519,7 @@ func step(dt: float, loads: Array = []) -> void:
 			m._acc -= dl / h2
 		for n in nodes:
 			if not n.fixed():
-				_collide(n)
+				_collide(n, h)
 	var broken: Array[Member] = []
 	for m in members:
 		if m.blueprint:
@@ -518,6 +533,10 @@ func step(dt: float, loads: Array = []) -> void:
 	for m in members.duplicate():
 		if not m.blueprint and m.a.pos.y > bottom or m.b.pos.y > bottom:
 			remove_member(m)
+	var strikes := _strikes
+	_strikes = {}
+	for c: Vector2i in strikes:
+		struck.emit(c, strikes[c])
 
 
 func clear() -> void:
@@ -687,7 +706,7 @@ func _through_ground(a: Vector2, b: Vector2) -> bool:
 	return false
 
 
-func _collide(n: Joint) -> void:
+func _collide(n: Joint, h: float) -> void:
 	var c := Grid.cell_of(n.pos)
 	if not terrain.is_solid(c):
 		return
@@ -714,9 +733,32 @@ func _collide(n: Joint) -> void:
 	# Contact: no velocity into the ground, sliding slowed by friction. Working the velocity out from the
 	# push-out instead would make every contact a small kick upward, and loose pieces would never rest.
 	var v := n.pos - n.prev
+	var into := -v.dot(normal) / h
+	if into >= harm_speed:
+		_strikes[c] = maxf(_strikes.get(c, 0.0), into)
 	var slide := v - normal * v.dot(normal)
 	n.pos = best
 	n.prev = n.pos - slide * ground_friction
+
+
+## Velocity (m/s) of joint n over the last substep.
+func velocity(n: Joint) -> Vector2:
+	return Vector2.ZERO if n.fixed() else (n.pos - n.prev) / _h
+
+
+## Fastest speed, relative to vel, at which a built member other than skip passes within radius of p, if at least
+## harm_speed; else 0.
+func harm_at(p: Vector2, radius: float, vel: Vector2, skip: Member = null) -> float:
+	var worst := 0.0
+	for m in members:
+		if m.blueprint or m == skip or _seg_dist(p, m.a.pos, m.b.pos) > radius:
+			continue
+		var d := m.b.pos - m.a.pos
+		var t := clampf((p - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
+		var speed := (velocity(m.a).lerp(velocity(m.b), t) - vel).length()
+		if speed >= harm_speed:
+			worst = maxf(worst, speed)
+	return worst
 
 
 static func _on_grid(v: float) -> bool:
