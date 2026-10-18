@@ -806,16 +806,41 @@ func _read_cell(cell: Vector2i) -> TerrainType:
 	return data.get_custom_data(CUSTOM_DATA) as TerrainType
 
 
+## Indexes each material's old tile: from the classic atlas first, then from any other source (a new material's own
+## atlas). Materials the v2 tiles draw are left to them.
 func _index_tileset() -> void:
 	if tile_set == null:
 		return
+	var sources: Array[int] = []
 	for i in tile_set.get_source_count():
-		var sid := tile_set.get_source_id(i)
+		sources.append(tile_set.get_source_id(i))
+	if look:
+		sources.erase(look.source_id)
+		if sources.has(look.classic_source):
+			sources.erase(look.classic_source)
+			sources.push_front(look.classic_source)
+	var v2_types := _types_in(look.source_id) if look else {}
+	for sid in sources:
 		var src := tile_set.get_source(sid) as TileSetAtlasSource
-		if src == null or (look and sid != look.classic_source):
+		if src == null:
 			continue
 		for t in src.get_tiles_count():
 			var coords := src.get_tile_id(t)
 			var type := src.get_tile_data(coords, 0).get_custom_data(CUSTOM_DATA) as TerrainType
-			if type and not _tile_for.has(type):
+			if type and not _tile_for.has(type) and (not v2_types.has(type) or sid == look.classic_source):
 				_tile_for[type] = [sid, coords]
+
+
+## The materials the source's tiles (all alternatives) are tagged with, as a set.
+func _types_in(sid: int) -> Dictionary:
+	var out := {}
+	var src := tile_set.get_source(sid) as TileSetAtlasSource if tile_set.has_source(sid) else null
+	if src == null:
+		return out
+	for t in src.get_tiles_count():
+		var coords := src.get_tile_id(t)
+		for k in src.get_alternative_tiles_count(coords):
+			var type := src.get_tile_data(coords, src.get_alternative_tile_id(coords, k)).get_custom_data(CUSTOM_DATA) as TerrainType
+			if type:
+				out[type] = true
+	return out
