@@ -444,3 +444,38 @@ func test_only_natural_ground_bolts_a_joint() -> void:
 	var m := b.build(b.snap_point(Vector2(3, 3)), b.snap_point(Vector2(7, 3)), LOG)
 	_run(b, 3.0)
 	assert_gt(m.b.pos.y, 5.0, "a log held out from a tower's corner tips off it")
+
+
+## A loose 4 m log dropped onto the ledge (top at row 4, ground up to x = 4) with on_ledge metres of it over the ledge.
+func _log_over_ledge(on_ledge: float) -> Bridge.Member:
+	var t := WorldFixture.terrain(self, [
+		"............",
+		"............",
+		"............",
+		"............",
+		"####........",
+		"####........",
+		"####........",
+		"####........",
+		"############",
+		"BBBBBBBBBBBB",
+	])
+	var b := WorldFixture.bridge(self, t)
+	var x0 := 4.0 - on_ledge
+	# Let go half a metre above the ledge, so it rests there instead of being bolted.
+	var m := b.build(b.snap_point(Vector2(x0, 3.5)), b.snap_point(Vector2(x0 + 4.0, 3.5)), LOG)
+	assert_false(m.a.pinned or m.b.pinned, "loose")
+	_run(b, 4.0)
+	return m
+
+
+func test_a_log_mostly_off_a_ledge_tips_off_it() -> void:
+	var m := _log_over_ledge(0.5)
+	assert_gt(m.b.pos.y, 6.0, "the overhanging end went down")
+	assert_gt(m.a.pos.x, 4.0, "and it slid off the ledge")
+
+
+func test_a_log_mostly_on_a_ledge_stays() -> void:
+	var m := _log_over_ledge(3.0)
+	assert_lt(m.a.pos.y, 4.1, "still lying on the ledge")
+	assert_lt(m.b.pos.y, 4.1)

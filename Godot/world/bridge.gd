@@ -116,8 +116,9 @@ class Snap:
 @export var water_drag: float = 0.97
 ## Smoothing of member force before the break test, per tick. Filters single-substep spikes.
 @export_range(0.01, 1.0) var force_smoothing: float = 0.2
-## Ground friction: fraction of velocity kept when a joint touches ground.
-@export_range(0.0, 1.0) var ground_friction: float = 0.3
+## Friction coefficient of ground and bodies against pieces (Coulomb): sliding is slowed by at most this times
+## the push into the surface, so pieces slide on slopes steeper than about atan(friction).
+@export_range(0.0, 2.0, 0.05) var ground_friction: float = 0.6
 
 @export_group("Impact")
 ## A built piece hitting a soldier or archer at least this fast (m/s) crushes it (slower ones are stopped by
@@ -766,7 +767,7 @@ func _collide(n: Joint, h: float) -> void:
 		if not m.blueprint and (m.a == n or m.b == n):
 			_strike(Grid.cell_of(n.pos), m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
 	n.pos = out[0]
-	_stop_against(n, v, out[1])
+	n.prev = n.pos - (v + _contact_dv(v, out[1]))
 
 
 ## Keeps built member m out of what push_out (point -> [pushed point, normal] or []) reports: by default the
@@ -797,8 +798,7 @@ func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground
 		var push: Vector2 = (out[0] - p) / w
 		m.a.pos += push * wa
 		m.b.pos += push * wb
-		_stop_against(m.a, va, out[1])
-		_stop_against(m.b, vb, out[1])
+		_contact_at(m, t, va, vb, wa, wb, w, out[1])
 
 
 ## Where p, if inside solid ground, is pushed out to, and that face's outward normal: [Vector2, Vector2]. [] if p is
@@ -974,10 +974,27 @@ func _resolve_hits() -> void:
 			struck.emit(c, damage[c])
 
 
-## Contact with the ground: no velocity into it, sliding slowed by friction. Working the velocity out from the
-## push-out instead would make every contact a small kick upward, and loose pieces would never rest.
-func _stop_against(j: Joint, v: Vector2, normal: Vector2) -> void:
-	j.prev = j.pos - (v - normal * v.dot(normal)) * ground_friction
+## Velocity change (per substep) a contact with this outward normal gives a point moving v: no velocity into the
+## surface, and sliding slowed by Coulomb friction (at most ground_friction times that stop). Working velocity out
+## from the push-out instead would make every contact a small kick upward, and loose pieces would never rest.
+func _contact_dv(v: Vector2, normal: Vector2) -> Vector2:
+	var vn := v.dot(normal)
+	if vn >= 0.0:
+		return Vector2.ZERO
+	var vt := v - normal * vn
+	var grip := ground_friction * -vn
+	var dt := -vt if vt.length() <= grip else -vt.normalized() * grip
+	return normal * -vn + dt
+
+
+## Applies a contact at t along member m (its ends moving va, vb before; wa, wb, w: their shares, as for the
+## push) as an impulse at that point only, so the piece turns about it instead of stopping dead.
+## surface_vel: how fast what it touches moves (per substep).
+func _contact_at(m: Member, t: float, va: Vector2, vb: Vector2, wa: float, wb: float, w: float, normal: Vector2,
+		surface_vel: Vector2 = Vector2.ZERO) -> void:
+	var dv := _contact_dv(va.lerp(vb, t) - surface_vel, normal) / w
+	m.a.prev = m.a.pos - (va + dv * wa)
+	m.b.prev = m.b.pos - (vb + dv * wb)
 
 
 ## Keeps built members out of body b, or marks it crushed by one reaching it at harm_speed or more.
@@ -1015,11 +1032,7 @@ func _collide_body(b: Body, h: float) -> void:
 		var push := (b.radius - dist) / w
 		m.a.pos += n * push * wa
 		m.b.pos += n * push * wb
-		# Contact: no velocity into the body.
-		for jv: Array in [[m.a, va], [m.b, vb]]:
-			var j: Joint = jv[0]
-			var v: Vector2 = jv[1]
-			j.prev = j.pos - (v - n * minf(v.dot(n), 0.0))
+		_contact_at(m, t, va, vb, wa, wb, w, n, b.vel * h)
 
 
 static func _on_grid(v: float) -> bool:
