@@ -12,6 +12,12 @@ extends Node2D
 ## Weight it puts on a bridge piece it rests on.
 @export var mass: float = 600.0
 @export var land_sound: SoundEffect
+## Breaks on any soldier or archer it falls on, hurting nobody (a sandbag), instead of resting on them or crushing
+## them at Harm Speed.
+@export var harmless: bool = false
+## Puffs of dust when it breaks, and its sound then (the landing sound if none).
+@export_range(0, 20) var smash_dust: int = 0
+@export var smash_sound: SoundEffect
 
 ## The bridge piece it rests on (and where along it), else null.
 var on_member: Bridge.Member
@@ -50,6 +56,9 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		var head := b.top()
 		if pair[0] == self or absf(b.center.x - (x + 0.5)) >= 0.5 + b.half_width() or head < bottom - 0.05 or head > next:
 			continue
+		if harmless and not b.is_box():
+			smash()
+			return
 		if _vy >= world.bridge.harm_speed and not b.is_box():
 			world.crush(pair[0])
 		elif head < rest:
@@ -77,11 +86,13 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		queue_free()
 
 
-## Smashed (on spikes, or under a falling tower or tree): debris, the landing sound, gone.
+## Smashed (on spikes, on someone when harmless, or under a falling tower or tree): debris, dust, gone.
 func smash() -> void:
 	var at := position + Vector2(0.5, 1.0) * Grid.PX
-	Effects.debris(at, type.debris_color if type else Color.WHITE, 6, 120.0)
-	Audio.play(land_sound, at)
+	var color := type.debris_color if type else Color.WHITE
+	Effects.debris(at, color, 6, 120.0)
+	Effects.dust(position + Vector2(0.5, 0.5) * Grid.PX, color, smash_dust)
+	Audio.play(smash_sound if smash_sound else land_sound, at)
 	queue_free()
 
 

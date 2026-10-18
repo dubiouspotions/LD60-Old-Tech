@@ -273,13 +273,13 @@ func _physics_process(dt: float) -> void:
 	var blocks := objects.get_children().filter(func(o: Node) -> bool: return o is FallingBlock and not o.is_queued_for_deletion())
 	var bodies := _bodies(blocks)
 	_step_bridge(dt, bodies, blocks)
+	# What is thrown, and harmless blocks (sandbags), break on engineers too.
+	var with_crew := bodies + _crew_bodies()
 	for b: FallingBlock in blocks:
-		b.step(dt, self, bodies)
-	var bags := objects.get_children().filter(func(o: Node) -> bool: return o is ThrownBag and not o.is_queued_for_deletion())
-	if not bags.is_empty():
-		var hittable := bodies + _crew_bodies()
-		for bag: ThrownBag in bags:
-			bag.step(dt, self, hittable)
+		b.step(dt, self, with_crew if b.harmless else bodies)
+	for o: Node in objects.get_children():
+		if o is ThrownBag and not o.is_queued_for_deletion():
+			(o as ThrownBag).step(dt, self, with_crew)
 	_crush_under_weight(bodies, blocks)
 	for p: FallingPiece in objects.get_children().filter(func(o: Node) -> bool: return o is FallingPiece and not o.is_queued_for_deletion()):
 		p.step(dt, self)
@@ -701,7 +701,7 @@ func _bodies(blocks: Array) -> Array:
 	return out
 
 
-## Every engineer as a body, as _bodies has the soldiers (only what is thrown hits them).
+## Every engineer as a body, as _bodies has the soldiers (only thrown and harmless things hit them).
 func _crew_bodies() -> Array:
 	return crew.engineers.map(func(e: Crew.Engineer) -> Array: return [e, Bridge.Body.new(e.pos - Vector2(0, BODY_MID), BODY_RADIUS)])
 

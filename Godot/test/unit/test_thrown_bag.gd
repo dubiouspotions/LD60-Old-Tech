@@ -135,3 +135,53 @@ func test_it_spins_about_its_centre() -> void:
 	assert_almost_eq(middle, bag.global_position, Vector2(0.01, 0.01), "turned about the picture's middle")
 	assert_almost_eq(Grid.to_m(bag.global_position).distance_to(world.crew.rules.throw_point(Vector2(9.5, 7.0), Vector2(13.5, 3.5), 0.1 / world.crew.rules.throw_time(Vector2(9.5, 7.0), Vector2(13.5, 3.5)))), 0.0, 0.01, "which follows the arc")
 	bag.block.free()
+
+
+## Drops a sandbag from high up at column x and runs the world a few seconds.
+func _drop_sandbag(x: int) -> void:
+	var bag: FallingBlock = _sandbag_tool().spawn_scene.instantiate()
+	bag.position = Grid.to_px(Vector2(x, -6))
+	world.objects.add_child(bag)
+	for i in 180:
+		world.terrain.settle()
+		world._physics_process(1.0 / 60.0)
+
+
+func _dust_count() -> int:
+	var n := 0
+	for i in get_signal_emit_count(Effects, "burst"):
+		n += int(get_signal_parameters(Effects, "burst", i)[0] == &"dust")
+	return n
+
+
+func test_a_sandbag_falling_on_a_soldier_breaks_in_dust_without_hurting_them() -> void:
+	world.army.spawn(1, 12.5)
+	world.army.hold = true
+	var s := world.army.soldiers[0]
+	watch_signals(Effects)
+	_drop_sandbag(12)
+	assert_false(s.dead, "not crushed")
+	assert_eq(s.hp, s.max_hp, "not hurt")
+	assert_eq(_sandbags(), 0, "it broke")
+	assert_gt(_dust_count(), 0, "in a cloud of dust")
+
+
+func test_a_sandbag_falling_on_an_archer_breaks_without_hurting_them() -> void:
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(15.5, 8))
+	world.objects.add_child(archer)
+	var hp := archer.hp
+	_drop_sandbag(15)
+	assert_true(archer.alive())
+	assert_eq(archer.hp, hp, "not hurt")
+	assert_eq(_sandbags(), 0, "it broke")
+
+
+func test_a_sandbag_falling_on_an_engineer_breaks_without_hurting_them() -> void:
+	_crew(1, 14.0)
+	var e := world.crew.engineers[0]
+	world.crew.rules.walk_speed = 0.01
+	var x := floori(e.pos.x)
+	_drop_sandbag(x)
+	assert_true(e in world.crew.engineers, "alive")
+	assert_eq(_sandbags(), 0, "it broke on them, not landed in their place")
