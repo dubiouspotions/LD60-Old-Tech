@@ -350,17 +350,22 @@ func _danger_ahead(s: Soldier) -> String:
 	return ""
 
 
-## Highest surface at x at or below y_from: tile tops, hazards and (unless decks is false) bridge decks.
-## {y, hazard: TerrainType or null, member, t}
+## Highest surface at x at or below y_from: tile tops, slopes up one-high steps (Terrain.ramp_at), hazards and
+## (unless decks is false) bridge decks. {y, hazard: TerrainType or null, member, t, ramp: on a slope}
 func surface_at(x: float, y_from: float, decks: bool = true) -> Dictionary:
 	var col := floori(x)
-	var best := {y = float(terrain.size.y), hazard = null, member = null, t = 0.0}
+	var best := {y = float(terrain.size.y), hazard = null, member = null, t = 0.0, ramp = false}
 	for r in range(maxi(0, ceili(y_from - 1e-6)), terrain.size.y):
 		var t := terrain.type_at(Vector2i(col, r))
 		if t == null:
 			continue
 		if t.solid:
 			best.y = float(r)
+			var ramp := terrain.ramp_at(Vector2i(col, r - 1))
+			var up := x - col if ramp > 0 else col + 1 - x
+			if ramp != 0 and r - up >= y_from:
+				best.y = r - up
+				best.ramp = true
 			break
 		if t.is_hazard():
 			best.y = float(r)
@@ -369,17 +374,30 @@ func surface_at(x: float, y_from: float, decks: bool = true) -> Dictionary:
 	if bridge and decks:
 		var deck := bridge.walk_surface(x, y_from)
 		if not deck.is_empty() and deck.y < best.y:
-			best = {y = deck.y, hazard = null, member = deck.member, t = deck.t}
+			best = {y = deck.y, hazard = null, member = deck.member, t = deck.t, ramp = false}
 	return best
 
 
-## Surface under both feet. A foot over a hazard is ignored if the other is on safe ground.
+## Surface under both feet. A foot over a hazard is ignored if the other is on safe ground. On a slope the soldier
+## stands at the slope's height under its middle, so it walks up and down it rather than tiptoeing on one foot.
 func _support(s: Soldier, y_from: float) -> Dictionary:
-	var a := surface_at(s.pos.x - rules.foot_half_width, y_from)
-	var b := surface_at(s.pos.x + rules.foot_half_width, y_from)
+	var mid := surface_at(s.pos.x, y_from)
+	if mid.ramp:
+		return mid
+	var a := _foot(s.pos.x - rules.foot_half_width, s.pos.x, y_from)
+	var b := _foot(s.pos.x + rules.foot_half_width, s.pos.x, y_from)
 	if (a.hazard == null) != (b.hazard == null):
 		return b if a.hazard != null else a
 	return a if a.y <= b.y else b
+
+
+## Surface under a foot at x of a soldier whose middle is at mid_x. A foot on a slope its middle is not on yet (or
+## any more) stands where the slope meets the middle's side, so the height runs on smoothly onto and off it.
+func _foot(x: float, mid_x: float, y_from: float) -> Dictionary:
+	var f := surface_at(x, y_from)
+	if f.ramp:
+		f = surface_at(clampf(mid_x, floorf(x), floorf(x) + 0.999999), y_from)
+	return f
 
 
 func _add(x: float) -> Soldier:

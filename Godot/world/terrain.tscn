@@ -5,7 +5,7 @@
 [ext_resource type="Resource" uid="uid://hv3txf15xhcx" path="res://data/terrain/bedrock.tres" id="3"]
 [ext_resource type="Resource" path="res://data/sounds/collapse.tres" id="4"]
 [ext_resource type="Script" uid="uid://balsehg4qwkh3" path="res://world/terrain_skin.gd" id="5_skin"]
-[ext_resource type="Resource" path="res://data/terrain_look.tres" id="6_look"]
+[ext_resource type="Resource" uid="uid://fhten3f8x6ri" path="res://data/terrain_look.tres" id="6_look"]
 
 [node name="Terrain" type="TileMapLayer" unique_id=884933322]
 process_mode = 3

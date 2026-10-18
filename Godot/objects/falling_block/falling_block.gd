@@ -65,7 +65,7 @@ func step(dt: float, world: World, bodies: Array) -> void:
 	var r := floori(position.y / Grid.PX)
 	var inside := t.type_at(Vector2i(x, floori(next - 0.5)))
 	if inside and inside.breaks_falling:
-		_break()
+		smash()
 		return
 	if r + 1 >= t.size.y or t.is_solid(Vector2i(x, r + 1)):
 		while r > 0 and t.is_solid(Vector2i(x, r)):
@@ -77,8 +77,8 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		queue_free()
 
 
-## Smashed (on spikes): debris, the landing sound, gone.
-func _break() -> void:
+## Smashed (on spikes, or under a falling tower or tree): debris, the landing sound, gone.
+func smash() -> void:
 	var at := position + Vector2(0.5, 1.0) * Grid.PX
 	Effects.debris(at, type.debris_color if type else Color.WHITE, 6, 120.0)
 	Audio.play(land_sound, at)

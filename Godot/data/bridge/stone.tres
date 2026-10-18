@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="BridgeMaterial" format=3]
+[gd_resource type="Resource" script_class="BridgeMaterial" format=3 uid="uid://p6djdgm7cij4"]
 
 [ext_resource type="Resource" path="res://data/sounds/member_snap.tres" id="1_stone"]
 [ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="2_stone"]

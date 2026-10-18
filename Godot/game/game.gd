@@ -9,6 +9,8 @@ extends Node
 ## When the last engineer dies instead.
 @export var crew_lost_title: String = "The engineers are gone"
 @export var crew_lost_text: String = "Lost on level %d: no engineers are left to build. Retrying restores the army, the engineers and the supplies you had at the checkpoint."
+## Seconds the world goes on after the level is lost, so the player sees how, before the lost card covers it.
+@export_range(0.0, 10.0, 0.1, "suffix:s") var lost_delay: float = 1.5
 @export var victory_text: String = "All %d levels crossed with %d soldiers standing."
 ## Banner title when the level has no display name.
 @export var arrival_title: String = "Level %d"
@@ -38,6 +40,8 @@ extends Node
 @onready var _day_night: DayNight = %DayNight
 
 var _over: bool = false
+## Counts losses, so a lost card still waiting is dropped when the level is retried meanwhile.
+var _losses: int = 0
 ## Plans shown with Build buttons this frame (see _show_plans).
 var _plans: Array[Array] = []
 
@@ -244,10 +248,16 @@ func _on_victory() -> void:
 	Audio.play(GameState.campaign.victory_sound)
 
 
-## The level is lost: title and text (with %d for the level) say why.
+## The level is lost: title and text (with %d for the level) say why. The card comes after lost_delay.
 func _lose(title: String, text: String) -> void:
 	_over = true
 	_tools.enabled = false
+	_losses += 1
+	var loss := _losses
+	if lost_delay > 0.0:
+		await get_tree().create_timer(lost_delay, true, false, true).timeout
+	if not _over or loss != _losses:
+		return
 	_hud.show_lost(title, text % GameState.level_number())
 	_set_paused(true)
 	Audio.play(GameState.campaign.lost_sound)

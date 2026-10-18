@@ -48,6 +48,7 @@ func _run(seconds: float, done: Callable = func() -> bool: return false, speed: 
 	for i in int(seconds * 60 / speed):
 		world.bridge.step(speed / 60.0)
 		world.crew.step(speed / 60.0)
+		world.wood.advance(speed / 60.0)
 		if done.call():
 			return
 
@@ -157,7 +158,8 @@ func test_crew_fells_marked_tree() -> void:
 	world.terrain.mark(Vector2i(2, 5))
 	_run(15.0, func() -> bool: return world.terrain.type_at(Vector2i(2, 5)) == null)
 	assert_null(world.terrain.type_at(Vector2i(2, 4)), "whole tree felled")
-	assert_gt(GameState.supplies.logs, logs)
+	_run(20.0, func() -> bool: return world.wood.count() == 0)
+	assert_gt(GameState.supplies.logs, logs, "its logs, once the wood is picked up")
 
 
 ## Each swing of the axe while felling: on the beat of the work sound, at the cell being felled.
@@ -438,6 +440,48 @@ func test_crew_climbs_a_step_without_entering_the_rock() -> void:
 	assert_false(inside[0], "nobody walks into the rock")
 	for e in world.crew.engineers:
 		assert_almost_eq(e.pos.y, 4.0, 0.05, "up on the step")
+
+
+## Ground at row 6 with a one-high step up from x = 8 to 13: both ends are slopes.
+const BUMP: Array = [
+	"......................",
+	"......................",
+	"......................",
+	"......................",
+	"......................",
+	"........######........",
+	"######################",
+	"BBBBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_engineers_walk_over_slopes_at_walking_speed_without_shaking() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in BUMP.size():
+		for x in BUMP[y].length():
+			var key: String = WorldFixture.LEGEND[BUMP[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 21.5)
+	world.crew.spawn(4.0)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	var path: Array[Vector2] = [e.pos]
+	_run(4.0, func() -> bool:
+		path.append(e.pos)
+		return e.pos.x > 16.0)
+	assert_gt(e.pos.x, 16.0, "over the bump")
+	var dt := 1.0 / 60.0
+	var started := -1
+	for i in range(1, path.size()):
+		var d := path[i] - path[i - 1]
+		assert_lt(absf(d.y), world.crew.rules.walk_speed * dt + 0.01, "no jump at %s" % path[i])
+		if started < 0 and path[i].x > 6.0:
+			started = i
+		if i > 1 and path[i].x > 6.0 and path[i].x < 16.0:
+			assert_gt(d.x, 0.0, "keeps walking at %s" % path[i])
+			assert_true(signf(d.y) == 0.0 or signf(path[i - 1].y - path[i - 2].y) != -signf(d.y), "no shaking at %s" % path[i])
+	assert_lt((path.size() - started) * dt, 10.0 / world.crew.rules.walk_speed * 1.2, "about walking speed from x 6 to 16")
 
 
 func test_column_follows_the_engineer_out_onto_a_piece_being_built() -> void:

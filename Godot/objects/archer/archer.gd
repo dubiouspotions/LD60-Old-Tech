@@ -3,7 +3,8 @@ extends Node2D
 ## An enemy archer on a tower. Shoots at the nearest soldier in range that it has a clear shot at (no ground or
 ## arrow-blocking bridge member on the arrow's arc), or at the nearest in range if it has a clear shot at none.
 ## Place it with its feet (node origin) on top of a solid tile. It dies when that tile is destroyed,
-## or when soldiers reach it and cut it down.
+## or when soldiers reach it and cut it down. It rides its tower down when the tower falls (holding fire meanwhile),
+## and dies if the tower breaks up.
 
 @export_range(1.0, 40.0, 0.5, "suffix:m") var shoot_range: float = 13.0
 @export var arrow_scene: PackedScene
@@ -64,6 +65,9 @@ func feet_m() -> Vector2:
 func _physics_process(dt: float) -> void:
 	var world := World.of(self)
 	if world == null or _down:
+		return
+	if world.carries(self):
+		engaging = false
 		return
 	if not world.terrain.is_solid(Grid.cell_of(feet_m() + Vector2(0, 0.5))):
 		_go_down(down_text)
@@ -147,6 +151,12 @@ func _bow() -> Vector2:
 
 func _aim_point(s: Soldier) -> Vector2:
 	return s.pos - Vector2(0, 0.5)
+
+
+## Its tower broke up under it.
+func lose_ground() -> void:
+	if not _down:
+		_go_down(down_text)
 
 
 func _go_down(text: String) -> void:

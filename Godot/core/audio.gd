@@ -1,6 +1,9 @@
 extends Node
 ## Plays SoundEffect resources and the level music, and keeps the player's bus volumes. Autoload "Audio".
 
+## A sound effect was played (for tests and anything that reacts to sounds).
+signal played(sfx: SoundEffect)
+
 const POOL_SIZE: int = 16
 ## Buses the player can set the volume of (see default_bus_layout.tres).
 const VOLUME_BUSES: Array[StringName] = [&"Music", &"SFX"]
@@ -77,6 +80,7 @@ func play(sfx: SoundEffect, world_px: Variant = null) -> void:
 	if world_px is Vector2:
 		(player as AudioStreamPlayer2D).global_position = world_px
 	player.play()
+	played.emit(sfx)
 
 
 func play_music(stream: AudioStream) -> void:

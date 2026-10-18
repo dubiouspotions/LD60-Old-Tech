@@ -13,6 +13,11 @@ func after_each() -> void:
 	get_tree().paused = false
 
 
+## Waits seconds of real time, also while the game pauses itself (GUT's wait_seconds stops then).
+func _real_seconds(seconds: float) -> void:
+	await get_tree().create_timer(seconds, true, false, true).timeout
+
+
 func test_plans_clear_without_errors_once_the_game_is_over() -> void:
 	game._over = true
 	game._show_plans()
@@ -153,7 +158,7 @@ func test_losing_the_last_engineer_says_so_not_the_army() -> void:
 	var world: World = game.get_node("%World")
 	for e: Crew.Engineer in world.crew.engineers.duplicate():
 		world.crew._kill(e, "Spiked")
-	await get_tree().process_frame
+	await _real_seconds(game.lost_delay + 0.2)
 	var hud: Node = game.get_node("%HUD")
 	assert_true(hud.get_node("%Lost").visible, "the level is lost")
 	assert_eq(hud.get_node("%LostTitle").text, game.crew_lost_title)
@@ -165,5 +170,33 @@ func test_losing_the_army_still_says_the_army() -> void:
 	var world: World = game.get_node("%World")
 	for s: Soldier in world.army.soldiers.duplicate():
 		world.army.crush(s)
-	await get_tree().process_frame
+	await _real_seconds(game.lost_delay + 0.2)
 	assert_eq(game.get_node("%HUD").get_node("%LostTitle").text, game.lost_title)
+
+
+func test_the_lost_card_waits_a_moment_while_the_world_goes_on() -> void:
+	game._begin()
+	game._march()
+	var world: World = game.get_node("%World")
+	var hud: Node = game.get_node("%HUD")
+	for s: Soldier in world.army.soldiers.duplicate():
+		world.army.crush(s)
+	await _real_seconds(game.lost_delay * 0.5)
+	assert_false(hud.get_node("%Lost").visible, "not yet")
+	assert_false(get_tree().paused, "the world goes on meanwhile")
+	assert_true(game._over, "but the level is lost")
+	await _real_seconds(game.lost_delay * 0.5 + 0.2)
+	assert_true(hud.get_node("%Lost").visible, "then the card")
+	assert_true(get_tree().paused)
+
+
+func test_retrying_during_the_wait_keeps_the_lost_card_away() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	for s: Soldier in world.army.soldiers.duplicate():
+		world.army.crush(s)
+	await get_tree().process_frame
+	game._retry()
+	await _real_seconds(game.lost_delay + 0.2)
+	assert_false(game.get_node("%HUD").get_node("%Lost").visible)
+	assert_false(game._over)

@@ -7,6 +7,7 @@
 
 [resource]
 script = ExtResource("1_crew")
+crew_size = 1
 work_sound = ExtResource("2_crew")
 strike_sound = ExtResource("3_crew")
 death_sound = ExtResource("4_crew")

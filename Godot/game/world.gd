@@ -50,6 +50,8 @@ class Chunk:
 
 
 @export var falling_block_scene: PackedScene
+## Drops a tower or tree whose ground was taken away.
+@export var falling_piece_scene: PackedScene
 ## Pitched at the camp flag while the column sleeps. Needs a strike() method that removes it.
 @export var camp_scene: PackedScene
 ## Load the next level when the view's right edge comes this close to the end of the ground.
@@ -77,6 +79,8 @@ class Chunk:
 @onready var birds: Birds = %Birds
 ## Leaves bursting from felled trees.
 @onready var leaves: LeafPoof = %Leaves
+## Pieces of wood from felled trees, waiting to be picked up by the crew.
+@onready var wood: Wood = %Wood
 
 ## Campaign index of the level the column is in, -1 before begin().
 var current: int = -1
@@ -90,6 +94,8 @@ var _march_left: float = 0.0
 var _phase_left: float = 0.0
 var _done: bool = false
 var _camp: Node2D
+## The pieces of wood the last tree to come down dropped.
+var _dropped: Array[Wood.Piece] = []
 
 
 static func of(node: Node) -> World:
@@ -106,13 +112,15 @@ func _ready() -> void:
 	crew.terrain = terrain
 	crew.bridge = bridge
 	crew.army = army
+	crew.wood = wood
+	crew.picked_up.connect(_on_picked_up)
 	terrain.tile_detached.connect(_on_tile_detached)
 	crew.chopped.connect(func(cell: Vector2i) -> void:
 		leaves.shake(cell)
 		birds.chop(cell))
-	terrain.felled.connect(func(cells: Array[Vector2i]) -> void:
-		leaves.burst(cells)
-		birds.from_tree(cells))
+	terrain.drops_loose = falling_piece_scene != null
+	terrain.came_loose.connect(_on_came_loose)
+	terrain.felled.connect(_on_felled)
 	terrain.collapsed.connect(func(found: Supplies, cells: Array[Vector2i]) -> void: gain(found, _top_of(cells)))
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
@@ -166,6 +174,7 @@ func rewind(index: int) -> void:
 		_drop(i, i > index)
 	terrain.clear_from(seam)
 	grass.clear_from(seam)
+	wood.clear_from(seam)
 	birds.forget_from(seam)
 	bridge.remove_outside(-INF, seam)
 	_free_objects(func(x: float) -> bool: return x >= seam)
@@ -196,6 +205,7 @@ func unload(index: int) -> void:
 	var edge := c.end()
 	terrain.unload_before(edge)
 	grass.unload_before(edge)
+	wood.clear_before(edge)
 	birds.forget_before(edge)
 	bridge.remove_outside(edge, INF)
 	_free_objects(func(x: float) -> bool: return x < edge)
@@ -236,8 +246,6 @@ func at_camp() -> bool:
 
 
 func _physics_process(dt: float) -> void:
-	if _done:
-		return
 	_advance_phase(dt)
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
 	# A block that landed or broke is freed only at the end of the frame; it must not fall on meanwhile.
@@ -247,6 +255,8 @@ func _physics_process(dt: float) -> void:
 	for b: FallingBlock in blocks:
 		b.step(dt, self, bodies)
 	_crush_under_weight(bodies, blocks)
+	for p: FallingPiece in objects.get_children().filter(func(o: Node) -> bool: return o is FallingPiece and not o.is_queued_for_deletion()):
+		p.step(dt, self)
 	army.step(dt)
 	crew.step(dt)
 	_check_exit()
@@ -459,6 +469,7 @@ func _wipe() -> void:
 	terrain.clear()
 	terrain.rebuild()
 	grass.clear()
+	wood.clear_all()
 	birds.clear()
 	bridge.clear()
 	_free_objects(func(_x: float) -> bool: return true)
@@ -508,6 +519,37 @@ func _on_tile_detached(cell: Vector2i, type: TerrainType) -> void:
 	objects.add_child(block)
 
 
+func _on_came_loose(tiles: Dictionary) -> void:
+	var piece: FallingPiece = falling_piece_scene.instantiate()
+	piece.setup(tiles, terrain)
+	for o: Node in objects.get_children() + flags.get_children():
+		if o is Node2D and not (o is FallingBlock or o is FallingPiece or o is Arrow or carries(o)):
+			var feet := Grid.to_m(o.position)
+			if tiles.has(Grid.cell_of(feet)) or tiles.has(Grid.cell_of(feet + Vector2(0, 0.5))):
+				piece.riders.append(o)
+	objects.add_child(piece)
+
+
+## Is node riding down on a falling tower or tree.
+func carries(node: Node) -> bool:
+	return objects.get_children().any(func(o: Node) -> bool: return o is FallingPiece and node in o.riders)
+
+
+## Crushes every soldier, engineer, archer and box the falling piece now covers, except what it carries.
+func crush_under(piece: FallingPiece) -> void:
+	for s: Soldier in army.soldiers + army.deserters:
+		if not s.dead and piece.covers(s.pos - Vector2(0, 0.3)):
+			army.crush(s)
+	for e: Crew.Engineer in crew.engineers.duplicate():
+		if piece.covers(e.pos - Vector2(0, 0.3)):
+			crew.crush(e)
+	for o: Node in objects.get_children():
+		if o is Archer and o.alive() and not o in piece.riders and piece.covers(o.feet_m() - Vector2(0, 0.3)):
+			crush(o)
+		elif o is FallingBlock and not o.is_queued_for_deletion() and piece.covers(Grid.to_m(o.position) + Vector2(0.5, 0.5)):
+			o.smash()
+
+
 ## Adds found to the supplies and shows "+N ..." at at (metres). Every gain of supplies goes through here (or, for
 ## the camp's supply drop, which GameState adds itself, through _show_gain), so none goes unseen.
 func gain(found: Supplies, at: Vector2, color: Color = GAIN_COLOR) -> void:
@@ -534,13 +576,35 @@ static func _top_of(cells: Array[Vector2i]) -> Vector2:
 	return Vector2((lo + hi) / 2.0, top)
 
 
-## An engineer finished digging a marked cell: take the tile and its supplies.
+## A tree is coming down, chopped or not: leaves and birds fly, and its logs drop as pieces of wood for the crew
+## to pick up (they count once picked up).
+func _on_felled(cells: Array[Vector2i], found: Supplies) -> void:
+	leaves.burst(cells)
+	birds.from_tree(cells)
+	_dropped = wood.drop(cells, found.logs) if found.logs > 0 else ([] as Array[Wood.Piece])
+	found.logs = 0
+
+
+## An engineer finished digging a marked cell: take the tile and its supplies. The engineer that felled a tree
+## picks up its wood.
 func _on_dig_finished(cell: Vector2i) -> void:
 	var here := terrain.type_at(cell)
+	var feller := crew.finisher_of(cell)
+	_dropped = []
 	var got := terrain.dig(cell)
 	if got == null:
 		return
+	if feller:
+		crew.gather(feller, _dropped)
 	gain(got, Vector2(cell) + Vector2(0.5, 0), GAIN_COLOR if here.dig_action == TerrainType.DigAction.FELL else here.debris_color)
+
+
+## A piece of wood picked up: its log goes into the supplies.
+func _on_picked_up(piece: Wood.Piece, _by: Crew.Engineer) -> void:
+	wood.remove(piece)
+	var log := Supplies.new()
+	log.logs = 1
+	gain(log, piece.pos - Vector2(0, 0.5))
 
 
 ## Every living soldier and archer, and every falling block, as a body bridge pieces and falling blocks collide

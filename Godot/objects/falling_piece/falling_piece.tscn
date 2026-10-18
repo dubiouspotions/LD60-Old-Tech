@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://objects/falling_piece/falling_piece.gd" id="1"]
+[ext_resource type="Resource" path="res://data/sounds/fill_land.tres" id="2"]
+
+[node name="FallingPiece" type="Node2D"]
+script = ExtResource("1")
+land_sound = ExtResource("2")
+
+[node name="Tiles" type="TileMapLayer" parent="."]
