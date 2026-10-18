@@ -126,7 +126,7 @@ func _release() -> void:
     var from := _build_from
     _build_from = null
     var mat := tool().bridge_material
-    var ends := _plan_ends(from)
+    var ends := _plan_ends(from, world.bridge.snap_point(_mouse_m, from.node))
     from = ends[0]
     var to: Bridge.Snap = ends[1]
     var check := world.bridge.check_build(from, to, mat, GameState.supplies)
@@ -240,14 +240,16 @@ func _draw_build(mat: BridgeMaterial) -> void:
         var p := bridge.snap_point(_mouse_m)
         _marker(p)
         return
-    var ends := _plan_ends(_build_from)
+    var mouse := bridge.snap_point(_mouse_m, _build_from.node)
+    var ends := _plan_ends(_build_from, mouse)
     var from: Bridge.Snap = ends[0]
     var to: Bridge.Snap = ends[1]
     var check := bridge.check_build(from, to, mat, GameState.supplies)
     var color: Color = mat.color if check.ok else bad_color
     color.a = 0.75
-    var a := from.pos * px
-    var b := to.pos * px
+    # The line follows the drag; the markers show where the ends land (out of the ground).
+    var a := _build_from.pos * px
+    var b := mouse.pos * px
     if mat.draw_as_rope:
         draw_dashed_line(a, b, color, maxf(2.0, mat.thickness * px), 6.0)
     else:
@@ -262,10 +264,9 @@ func _draw_build(mat: BridgeMaterial) -> void:
         draw_string(font, at - Vector2(w / 2, 0), check.msg, HORIZONTAL_ALIGNMENT_LEFT, -1, preview_font_size, joint_color if check.ok else bad_color)
 
 
-## Both ends of the plan being dragged from from to the mouse, each moved out of the ground if buried in it.
-func _plan_ends(from: Bridge.Snap) -> Array[Bridge.Snap]:
+## Both ends of the plan dragged from from to to, each moved out of the ground if buried in it.
+func _plan_ends(from: Bridge.Snap, to: Bridge.Snap) -> Array[Bridge.Snap]:
     var bridge := world.bridge
-    var to := bridge.snap_point(_mouse_m, from.node)
     var a := bridge.fit_to_ground(from, to)
     return [a, bridge.fit_to_ground(to, a)]
 
