@@ -1,7 +1,7 @@
 [gd_resource type="TileSet" format=3 uid="uid://cfpb4dumxglqt"]
 
 [ext_resource type="Resource" uid="uid://ci5mjffwjo0g8" path="res://data/terrain/soil.tres" id="1_01qsn"]
-[ext_resource type="Resource" uid="uid://c04be2d7tcrnh" path="res://data/terrain/fill.tres" id="2_2gid8"]
+[ext_resource type="Resource" uid="uid://c04be2d7tcrnh" path="res://data/terrain/box.tres" id="2_2gid8"]
 [ext_resource type="Resource" uid="uid://6vsc07cm4yld" path="res://data/terrain/water.tres" id="3_gyr0v"]
 [ext_resource type="Resource" uid="uid://bqub5yq1d5lfc" path="res://data/terrain/brick.tres" id="4_xoi5k"]
 [ext_resource type="Resource" uid="uid://c5wv5tvojccyx" path="res://data/terrain/trunk.tres" id="5_jqp3q"]

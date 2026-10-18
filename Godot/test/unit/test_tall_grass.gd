@@ -81,7 +81,7 @@ func test_digging_the_ground_under_it_removes_it() -> void:
 
 func test_filling_its_cell_removes_it() -> void:
 	_paint(Vector2i(2, 1))
-	terrain.set_type(Vector2i(2, 1), WorldFixture.type("fill"))
+	terrain.set_type(Vector2i(2, 1), WorldFixture.type("box"))
 	assert_false(_has(Vector2i(2, 1)))
 
 

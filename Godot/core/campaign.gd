@@ -21,7 +21,7 @@ extends Resource
 ## Plays when the column breaks camp.
 @export var dawn_sound: SoundEffect
 
-var _placed_by: Dictionary = {} # TerrainType -> the Fill tool that places it
+var _placed_by: Dictionary = {} # TerrainType -> the Fill tool that drops it
 
 
 ## What digging up a tile of type gives back when a tool places that type (the Box tool's boxes): the tool's cost

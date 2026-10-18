@@ -35,7 +35,7 @@ func _sfx(name: String, volume: float = 0.0, pitch: float = 0.08, bus: StringNam
 
 
 func _sounds() -> void:
-	for n in ["dig", "fill_land", "log_place", "rope_place", "member_snap", "arrow_shot", "arrow_hit",
+	for n in ["dig", "block_land", "log_place", "rope_place", "member_snap", "arrow_shot", "arrow_hit",
 			"soldier_hurt", "soldier_death", "tree_fell", "crystal", "collapse", "tower_down", "ui_click"]:
 		_sfx(n, -4.0)
 	for n in ["checkpoint", "lost", "victory"]:
@@ -59,7 +59,7 @@ func _terrain() -> void:
 	_t("soil", "Soil", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.4, dig_yield = Supplies.make(1),
 		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), impact_strength = 200.0,
 		debris_color = Color("7b5131")})
-	_t("fill", "Box", {falls = true, dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.3, dig_yield = Supplies.make(0, 2),
+	_t("box", "Box", {falls = true, dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.3,
 		bulk_yield = Supplies.make(0, 2), dig_sound = _snd("dig"), impact_strength = 150.0, debris_color = Color("a0703f")})
 	_t("rock", "Rock", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 2.0, dig_yield = Supplies.make(0, 0, 0, 0, 1),
 		dig_sound = _snd("dig"), impact_strength = 3000.0, debris_color = Color("5b6472")})
@@ -183,8 +183,8 @@ func _tool(file: String, props: Dictionary) -> void:
 func _tools() -> void:
 	_tool("1_dig", {kind = ToolDefinition.Kind.DIG, display_name = "Dig", hint = "earth · trees · undo",
 		action = &"tool_dig", key_label = "1", repeat_interval = 0.06})
-	_tool("2_fill", {kind = ToolDefinition.Kind.FILL, display_name = "Box", hint = "falls where you drop it",
-		action = &"tool_fill", key_label = "5", repeat_interval = 0.11, cost = Supplies.make(0, 5),
+	_tool("2_box", {kind = ToolDefinition.Kind.FILL, display_name = "Box", hint = "falls where you drop it",
+		action = &"tool_box", key_label = "5", repeat_interval = 0.11, cost = Supplies.make(0, 2),
 		no_supply_text = "%s missing. Fell a tree", spawn_scene = load("res://objects/falling_block/falling_block.tscn")})
 	var stone: Array[BridgeMaterial] = [load("res://data/bridge/stone.tres")]
 	_tool("3_log", {kind = ToolDefinition.Kind.BUILD, display_name = "Bridge", action = &"tool_log", key_label = "2",
@@ -207,7 +207,7 @@ func _campaign() -> void:
 	c.checkpoint_supplies = Supplies.make(4, 8, 4, 5)
 	c.army_rules = load("res://data/army_rules.tres")
 	var tools: Array[ToolDefinition] = []
-	for f in ["1_dig", "2_fill", "3_log", "4_support", "5_rope"]:
+	for f in ["1_dig", "2_box", "3_log", "4_support", "5_rope"]:
 		tools.append(load("res://data/tools/%s.tres" % f))
 	c.tools = tools
 	c.level_up_sound = _snd("checkpoint")

@@ -110,7 +110,7 @@ func test_box_spends_its_cost_and_drops_a_box() -> void:
 	assert_eq(GameState.supplies.logs, 2, "its cost in logs")
 	assert_eq(GameState.supplies.earth, earth, "no earth")
 	await wait_physics_frames(60)
-	assert_eq(world.terrain.type_at(Vector2i(10, 5)), WorldFixture.type("fill"), "landed on the ground")
+	assert_eq(world.terrain.type_at(Vector2i(10, 5)), WorldFixture.type("box"), "landed on the ground")
 	assert_eq(world.terrain.type_at(Vector2i(10, 5)).display_name, "Box")
 
 
@@ -487,7 +487,7 @@ func test_dig_on_a_built_rope_takes_it_back_at_once_less_one() -> void:
 func test_digging_up_a_box_gives_back_what_it_cost_less_one() -> void:
 	var box_tool: ToolDefinition = tools.tools.filter(func(t: ToolDefinition) -> bool: return t.kind == ToolDefinition.Kind.FILL)[0]
 	var cell := Vector2i(8, 5)
-	world.terrain.set_type(cell, WorldFixture.type("fill"))
+	world.terrain.set_type(cell, WorldFixture.type("box"))
 	var had := GameState.supplies.logs
 	world._on_dig_finished(cell)
 	assert_null(world.terrain.type_at(cell), "dug up")

@@ -51,5 +51,5 @@ func materials() -> Array[BridgeMaterial]:
 @export var other_materials: Array[BridgeMaterial] = []
 
 @export_group("Spawn")
-## Scene dropped by Fill (falling block).
+## Scene a Fill tool drops (a falling block, such as a box).
 @export var spawn_scene: PackedScene

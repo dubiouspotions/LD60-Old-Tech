@@ -88,20 +88,20 @@ func test_tree_with_ground_stays() -> void:
 	assert_eq(t.type_at(Vector2i(5, 5)), WorldFixture.type("trunk"))
 
 
-func test_unsupported_fill_detaches() -> void:
+func test_unsupported_box_detaches() -> void:
 	var t := WorldFixture.terrain(self, MAP)
 	watch_signals(t)
-	t.set_type(Vector2i(1, 2), WorldFixture.type("fill"))
+	t.set_type(Vector2i(1, 2), WorldFixture.type("box"))
 	t.settle()
 	assert_signal_emit_count(t, "tile_detached", 1)
 	assert_null(t.type_at(Vector2i(1, 2)))
 
 
-func test_supported_fill_stays() -> void:
+func test_supported_box_stays() -> void:
 	var t := WorldFixture.terrain(self, MAP)
-	t.set_type(Vector2i(1, 5), WorldFixture.type("fill"))
+	t.set_type(Vector2i(1, 5), WorldFixture.type("box"))
 	t.settle()
-	assert_eq(t.type_at(Vector2i(1, 5)), WorldFixture.type("fill"))
+	assert_eq(t.type_at(Vector2i(1, 5)), WorldFixture.type("box"))
 
 
 func test_brick_collapses_without_ground() -> void:
@@ -173,13 +173,13 @@ func test_terrain_type_prints_its_name() -> void:
 	assert_eq(str(WorldFixture.type("water")), "Water")
 
 
-## Anything that shows a tile outside the map (falling fill) takes its picture from the TileSet.
+## Anything that shows a tile outside the map (a falling box) takes its picture from the TileSet.
 func test_tile_texture_comes_from_the_tileset() -> void:
 	var t := WorldFixture.terrain(self, MAP)
-	var fill := WorldFixture.type("fill")
-	t.set_type(Vector2i(0, 0), fill)
+	var box := WorldFixture.type("box")
+	t.set_type(Vector2i(0, 0), box)
 	var src := t.tile_set.get_source(t.get_cell_source_id(Vector2i(0, 0))) as TileSetAtlasSource
-	var tex := t.tile_texture(fill) as AtlasTexture
+	var tex := t.tile_texture(box) as AtlasTexture
 	assert_not_null(tex)
 	assert_eq(tex.atlas, src.texture)
 	assert_eq(tex.region, Rect2(src.get_tile_texture_region(t.get_cell_atlas_coords(Vector2i(0, 0)))))

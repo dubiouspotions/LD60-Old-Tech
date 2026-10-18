@@ -21,7 +21,7 @@ const LAYOUT: Dictionary = {
 	Vector2i(3, 0): ["soil", 1], Vector2i(4, 0): ["soil", 1], Vector2i(5, 0): ["soil", 1],
 	Vector2i(6, 0): ["rock", 1], Vector2i(7, 0): ["rock", 1], Vector2i(8, 0): ["rock", 1],
 	Vector2i(9, 0): ["bedrock", 1],
-	Vector2i(0, 1): ["fill", 1],
+	Vector2i(0, 1): ["box", 1],
 	Vector2i(1, 1): ["brick", 1], Vector2i(2, 1): ["brick", 1], Vector2i(3, 1): ["brick", 1],
 	Vector2i(4, 1): ["trunk", 1],
 	Vector2i(5, 1): ["leaves", 1], Vector2i(6, 1): ["leaves", 1], Vector2i(7, 1): ["leaves", 1],
@@ -101,7 +101,7 @@ func _art() -> void:
 		var l := Vector2i(5 + v, 1)
 		_shape(l, LEAVES[v], func(x: float, y: float) -> bool: return Vector2(x - 0.5, y - 0.5).length() < 0.68)
 	_rect(Vector2i(9, 0), 0, 0, 1, 1, Color("262a33"))
-	# fill
+	# box
 	var f := Vector2i(0, 1)
 	_rect(f, 0, 0, 1, 1, Color("a0703f"))
 	var fl := Color("7d5430")

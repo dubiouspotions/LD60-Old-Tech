@@ -16,7 +16,7 @@ extends Resource
 ## Deeper step-downs are warned about (the column still walks off them).
 @export_range(0.0, 20.0, 0.5, "suffix:m") var max_drop: float = 3.0
 @export_range(1.0, 30.0, 0.5, "suffix:m") var fatal_fall: float = 5.5
-## Arcade gravity for soldiers and falling fill.
+## Arcade gravity for soldiers and falling boxes.
 @export_range(1.0, 100.0, 1.0, "suffix:m/s²") var gravity: float = 30.0
 @export_range(1.0, 50.0, 1.0, "suffix:m/s") var max_fall_speed: float = 20.0
 @export_range(1, 10) var hit_points: int = 2

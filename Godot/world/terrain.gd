@@ -8,7 +8,7 @@ extends TileMapLayer
 ## With the v2 look on, dirt, rock, water and spikes are drawn with v2 tiles (each tagged with its material) and
 ## the tile of every cell around a change is re-picked if it no longer fits its neighbours (see TerrainLook).
 
-## A fill-type tile fell loose; the level spawns a falling block for it.
+## A tile that falls (a box) lost what held it; the level spawns a falling block for it.
 signal tile_detached(cell: Vector2i, type: TerrainType)
 ## A structure or tree broke up (razed, fell too far, landed on spikes): what it gave and its cells.
 signal collapsed(found: Supplies, cells: Array[Vector2i])
@@ -586,7 +586,7 @@ func atlas_tile(type: TerrainType) -> Array:
     return _tile_for.get(type, [])
 
 
-## Picture of the first tile in the TileSet with this terrain type, for showing it off the map (falling fill).
+## Picture of the first tile in the TileSet with this terrain type, for showing it off the map (a falling box).
 func tile_texture(type: TerrainType) -> Texture2D:
     if _tile_for.is_empty():
         _index_tileset()
