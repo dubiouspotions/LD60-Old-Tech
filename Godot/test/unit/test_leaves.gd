@@ -93,3 +93,20 @@ func test_they_flutter_down_and_go_when_they_touch_the_ground() -> void:
 			break
 	assert_eq(leaves.count(), 0, "all gone")
 	assert_gt(lowest, 5.0, "they got down near the ground first")
+
+
+
+func test_each_chop_shakes_a_few_leaves_loose() -> void:
+	_tree()
+	world.crew.chopped.emit(Vector2i(12, 5))
+	assert_eq(leaves.count(), leaves.per_chop, "a few, not a whole poof")
+	for p in leaves.positions():
+		assert_between(p.x, 10.5, 14.5, "from the crown")
+		assert_between(p.y, 0.5, 3.5)
+	assert_not_null(world.terrain.type_at(Vector2i(12, 1)), "the tree still stands")
+
+
+func test_chopping_a_bare_trunk_shakes_nothing() -> void:
+	_tree(false)
+	world.crew.chopped.emit(Vector2i(12, 5))
+	assert_eq(leaves.count(), 0)

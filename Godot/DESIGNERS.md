@@ -50,7 +50,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Night colours, fade time | **DayNight** node in `game/main.tscn` |
 | Night lights: cursor lantern, engineers' lamps (strength: **Night Energy**), camp fire (its **Flicker** animation) | **Lantern** node in `game/main.tscn`, **Lamp** node in `objects/engineer/engineer.tscn`, **FireLight** in `objects/camp/camp.tscn`. They use the **Mix** blend mode, so where lights overlap the brighter one wins instead of the two adding up. With Mix, energy 1 in white light shows things at their day colour, so night energies sit above 1 and lights fade from daylight, not from 0. Give any new light the Mix blend mode too. |
 | Pollen and seed fluff on the wind by day: how many around the view (**Max Count**, 0 turns it off), **Wind** (left to right), flutter height and pace, how far down the view, colour, share of fluffy seeds | **Pollen** node in `game/world.tscn` (under AmbientLayer). It fades out at night. |
-| Leaves bursting from a felled tree: leaves per leaf cell, most at once, outward **Poof** speed, gravity, air **Drag** (how slowly they settle), sideways **Sway**, colours, longest life. Each is gone when it touches the ground. | **Leaves** node in `game/world.tscn`. **Leaf Types** says which terrain cells shed leaves. |
+| Leaves bursting from a felled tree: leaves per leaf cell, leaves shaken loose by each swing of the axe while felling (**Per Chop**, on the beat of the crew's work sound), most at once, outward **Poof** speed, gravity, air **Drag** (how slowly they settle), sideways **Sway**, colours, longest life. Each is gone when it touches the ground. | **Leaves** node in `game/world.tscn`. **Leaf Types** says which terrain cells shed leaves. |
 | Fireflies under the trees at night: how many, how often, how long they live, how far they roam, speed, how often they change direction (**Wander**), blink pace, how bright between flashes (**Dim**), colour and glow; **Max Count** 0 turns them off | **Fireflies** node in `game/world.tscn` (under AmbientLayer, drawn above the night grade so they keep their colour). Trees are found by **Tree Types** (the trunk): a trunk cell on solid ground is where they gather. |
 | Night colour grade: which LUT the night fades into, how much of each light's reach keeps the day colours (**Reach**), how hard the edge is (**Falloff**), and the light energy that keeps them fully (**Full Light Energy**) | **Grade** node in `post/night_grade.tscn`. Every visible light in the game counts (camp fire, engineers' lamps, cursor lantern, any light you add). LUTs live in `post/lut/` as 17-slice strips imported as 3D textures; `low_17.png` changes nothing. |
 | Stars: how many, colour, how far down the sky, share of bigger cross stars, twinkle depth and speed, shooting-star interval, length, speed and trail | **Stars** node in `world/background/background.tscn`. They fade in with the night and keep their own colour under the night tint. **Star Seed** picks a different sky. |
@@ -108,6 +108,9 @@ drawn in front of the soldiers, engineers and objects. Select **Grass**, pick th
 paint it in the air cells right on top of the ground. Scatter it in small patches rather than everywhere.
 
 - Grass on ground that is dug away, or in a cell that gets filled, disappears while playing.
+- `godot --headless res://dev/scatter_grass.tscn` scatters a first coverage (runs of 2–4 cells on flat soil, 6–14 m
+  apart, clear of flags and objects) over every level that has no grass yet, to paint over by hand. Add `force` to
+  redo levels that already have grass (this replaces what you painted), and `gap=`, `width=` or `seed=` to vary it.
 - `test_levels` checks that every grass cell is in the air with ground under it.
 - **The animation** plays the frames of `world/grass_anim.png` (8 px each, left to right, drawn at 4x like the rest
   of the art) from `world/tall_grass_material.tres`. Each column of the world starts one frame later than the column
@@ -118,8 +121,8 @@ paint it in the air cells right on top of the ground. Scatter it in small patche
 - **Birds** hide in the grass. When a soldier or engineer comes within **Flush Distance** of a patch (joined grass
   cells), the patch's birds burst out once, flying up and away from whoever came. Tune it on the **Birds** node in
   `game/world.tscn`: **Chance** a patch hides birds (0.3: most patches are empty), how many (**Per Patch**), and the
-  **Colors** they come in. The same node sends **Tree Birds** off the top of every tree that comes down (chopped, or
-  its ground gone), both ways, and now and then by day one bird across the view (**Cross Interval** seconds apart,
+  **Colors** they come in. The same node sends **Tree Birds** (1–2) off the top of every tree that comes down
+  (chopped, or its ground gone), both ways, and **First Chop Birds** (0–1) at the first swing of the axe at a tree, and now and then by day one bird across the view (**Cross Interval** seconds apart,
   in the top **Cross Height** of the view; none during the night camp). The flight (speed, climb, lift, flap speed,
   life) is on `objects/bird/bird.tscn`; each bird starts its flap on a random frame.
 - **Bird art** is `world/bird.png`: nine 32 px frames facing right, white on black. White is the bird and black is

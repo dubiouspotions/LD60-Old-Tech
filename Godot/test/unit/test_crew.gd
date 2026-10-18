@@ -160,6 +160,29 @@ func test_crew_fells_marked_tree() -> void:
 	assert_gt(GameState.supplies.logs, logs)
 
 
+## Each swing of the axe while felling: on the beat of the work sound, at the cell being felled.
+func test_felling_chops_on_the_work_beat() -> void:
+	var trunk := WorldFixture.type("trunk")
+	world.terrain.set_type(Vector2i(2, 5), trunk)
+	world.terrain.set_type(Vector2i(2, 4), trunk)
+	var chops: Array[Vector2i] = []
+	world.crew.chopped.connect(func(cell: Vector2i) -> void: chops.append(cell))
+	world.terrain.mark(Vector2i(2, 5))
+	_run(15.0, func() -> bool: return world.terrain.type_at(Vector2i(2, 5)) == null)
+	var work := trunk.dig_time / world.crew.rules.dig_speed
+	assert_between(chops.size(), 1, int(work / world.crew.rules.work_sound_interval) + 2, "about one per beat")
+	for c in chops:
+		assert_eq(c, Vector2i(2, 5))
+
+
+func test_digging_earth_is_not_chopping() -> void:
+	var chops := []
+	world.crew.chopped.connect(func(cell: Vector2i) -> void: chops.append(cell))
+	world.terrain.mark(Vector2i(2, 6))
+	_run(15.0, func() -> bool: return world.terrain.type_at(Vector2i(2, 6)) == null)
+	assert_eq(chops.size(), 0)
+
+
 func test_crew_fells_tree_marked_at_the_top() -> void:
 	var trunk := WorldFixture.type("trunk")
 	var leaves := WorldFixture.type("leaves")

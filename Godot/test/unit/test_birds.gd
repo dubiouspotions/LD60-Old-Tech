@@ -154,6 +154,7 @@ func _tree() -> void:
 
 func test_felling_a_tree_sends_birds_off_its_top_both_ways() -> void:
 	_tree()
+	birds.tree_birds = Vector2i(2, 2)
 	world.terrain.fell(Vector2i(22, 3))
 	var out := _flying()
 	assert_between(out.size(), birds.tree_birds.x, birds.tree_birds.y)
@@ -196,3 +197,25 @@ func test_none_fly_across_during_the_night_camp() -> void:
 	for i in int(birds.cross_interval.y * 60) + 2:
 		birds.advance_crossing(1.0 / 60.0, Rect2(0, 0, 40, 22))
 	assert_eq(_flying().size(), 0)
+
+
+func test_a_tree_sends_one_or_two_off_when_felled_and_maybe_one_at_the_first_chop() -> void:
+	var fresh: Birds = (load("res://game/world.tscn") as PackedScene).instantiate().get_node("Birds")
+	assert_eq(fresh.tree_birds, Vector2i(1, 2))
+	assert_eq(fresh.first_chop_birds, Vector2i(0, 1))
+	fresh.free()
+
+
+func test_only_the_first_chop_startles_a_bird() -> void:
+	_tree()
+	birds.first_chop_birds = Vector2i(1, 1)
+	world.crew.chopped.emit(Vector2i(22, 3))
+	assert_eq(_flying().size(), 1, "the first swing")
+	var b: Bird = _flying()[0]
+	assert_between(Grid.to_m(b.position).y, -0.5, 1.5, "off the top of the tree")
+	world.crew.chopped.emit(Vector2i(22, 3))
+	world.crew.chopped.emit(Vector2i(22, 3))
+	assert_eq(_flying().size(), 1, "later swings do not")
+	birds.tree_birds = Vector2i(1, 1)
+	world.terrain.fell(Vector2i(22, 3))
+	assert_eq(_flying().size(), 2, "and the fall sends its own")
