@@ -6,6 +6,7 @@ extends Resource
 @export var display_name: String = "Log"
 ## Small hint on the tool button while this material is chosen.
 @export var hint: String = ""
+## What each started metre costs: a 3.2 m piece costs four times this.
 @export var cost: Supplies
 ## Shown when the player can not afford it.
 @export var no_supply_text: String = "No logs. Fell a tree"

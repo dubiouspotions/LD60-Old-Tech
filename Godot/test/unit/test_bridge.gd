@@ -278,7 +278,7 @@ func test_cancel_plan_removes_it_and_returns_its_cost() -> void:
 	b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 0)), ROPE, true)
 	var plan: Array = b.plans().filter(func(p: Array) -> bool: return not kept in p)[0]
 	var refund := b.cancel_plan(plan)
-	assert_eq([refund.logs, refund.rope], [1, 1])
+	assert_eq([refund.logs, refund.rope], [2, 2], "a 2 m log and a 2 m rope, per started metre")
 	assert_eq(b.members, [kept] as Array[Bridge.Member])
 
 
@@ -508,3 +508,22 @@ func test_ropes_do_not_flex() -> void:
 	var rope := b.build(b.snap_point(Vector2(1, 3)), b.snap_point(Vector2(5, 3)), ROPE)
 	_run(b, 1.0, [[rope, 0.5, 80.0]])
 	assert_eq(rope.sag, 0.0)
+
+
+func test_a_plan_dragged_through_both_cliffs_fits_a_gap_its_own_length() -> void:
+	var t := WorldFixture.terrain(self, [
+		"............",
+		"............",
+		"###.....####",
+		"###.....####",
+		"BBBBBBBBBBBB",
+	])
+	var b := WorldFixture.bridge(self, t)
+	# Dragged from inside the left cliff to inside the right one, across a 5 m gap (faces at x 3 and 8).
+	var from := b.snap_point(Vector2(1.5, 2.5))
+	var to := b.snap_point(Vector2(9.5, 2.5))
+	var a := b.fit_to_ground(from, to)
+	var z := b.fit_to_ground(to, a)
+	assert_eq(a.pos, Vector2(3, 2.5), "on the left face")
+	assert_eq(z.pos, Vector2(8, 2.5), "on the right face")
+	assert_true(b.check_build(a, z, LOG, Supplies.make(9, 9, 9, 9)).ok, "a 5 m log fits a 5 m gap")

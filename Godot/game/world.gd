@@ -9,6 +9,8 @@ extends Node2D
 ## breaks camp, then marches.
 
 signal army_lost
+## The last engineer died: the level is lost.
+signal crew_lost
 ## The column starts marching: ordered by the player, or by the king when his patience runs out.
 signal march_ordered(by_player: bool)
 ## The column reached level index and made camp. joined soldiers arrived with the supplies.
@@ -22,6 +24,8 @@ signal level_streamed(index: int)
 ## A body (soldier or archer) for bridge hits: a circle this high above the feet with this radius, metres.
 const BODY_MID: float = 0.9
 const BODY_RADIUS: float = 0.6
+## Colour of the "+N ..." text when supplies are gained.
+const GAIN_COLOR: Color = Color("ece4d2")
 
 enum Phase { DAY, DUSK, NIGHT, MORNING }
 
@@ -106,11 +110,12 @@ func _ready() -> void:
 	terrain.felled.connect(func(cells: Array[Vector2i]) -> void:
 		leaves.burst(cells)
 		birds.from_tree(cells))
-	terrain.collapsed.connect(func(found: Supplies, _cells: Array[Vector2i]) -> void: GameState.gain(found))
+	terrain.collapsed.connect(func(found: Supplies, cells: Array[Vector2i]) -> void: gain(found, _top_of(cells)))
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
 	crew.dig_finished.connect(_on_dig_finished)
 	army.count_changed.connect(_on_army_count)
+	crew.count_changed.connect(_on_crew_count)
 
 
 func chunk(index: int) -> Chunk:
@@ -232,7 +237,8 @@ func _physics_process(dt: float) -> void:
 		return
 	_advance_phase(dt)
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
-	var blocks := objects.get_children().filter(func(o: Node) -> bool: return o is FallingBlock)
+	# A block that landed or broke is freed only at the end of the frame; it must not fall on meanwhile.
+	var blocks := objects.get_children().filter(func(o: Node) -> bool: return o is FallingBlock and not o.is_queued_for_deletion())
 	var bodies := _bodies(blocks)
 	_step_bridge(dt, bodies, blocks)
 	for b: FallingBlock in blocks:
@@ -273,6 +279,7 @@ func _arrive(index: int) -> void:
 	c.start_flag.reached = true
 	var drop := c.level.supply_drop if c.level.supply_drop else GameState.campaign.checkpoint_supplies
 	var joined := GameState.arrive(index, c.level.reinforcements, drop)
+	_show_gain(drop, c.start_flag.metres() - Vector2(0, 2.0))
 	army.reinforce(joined)
 	army.stop_x = c.exit_flag.metres().x
 	_make_camp(c.start_flag.metres().x, c.level.march_delay)
@@ -482,6 +489,13 @@ func _on_army_count(count: int) -> void:
 		army_lost.emit()
 
 
+## The level is lost when the last engineer dies, as when the last soldier does.
+func _on_crew_count(count: int) -> void:
+	if count == 0 and not _done:
+		_done = true
+		crew_lost.emit()
+
+
 func _on_tile_detached(cell: Vector2i, type: TerrainType) -> void:
 	if falling_block_scene == null:
 		return
@@ -491,18 +505,39 @@ func _on_tile_detached(cell: Vector2i, type: TerrainType) -> void:
 	objects.add_child(block)
 
 
+## Adds found to the supplies and shows "+N ..." at at (metres). Every gain of supplies goes through here (or, for
+## the camp's supply drop, which GameState adds itself, through _show_gain), so none goes unseen.
+func gain(found: Supplies, at: Vector2, color: Color = GAIN_COLOR) -> void:
+	if found == null or found.is_empty():
+		return
+	GameState.gain(found)
+	_show_gain(found, at, color)
+
+
+func _show_gain(found: Supplies, at: Vector2, color: Color = GAIN_COLOR) -> void:
+	if found and not found.is_empty():
+		Effects.say(Grid.to_px(at), found.describe(), color)
+
+
+## Top centre of a group of cells, metres.
+static func _top_of(cells: Array[Vector2i]) -> Vector2:
+	var lo := INF
+	var hi := -INF
+	var top := INF
+	for c in cells:
+		lo = minf(lo, c.x)
+		hi = maxf(hi, c.x + 1)
+		top = minf(top, c.y)
+	return Vector2((lo + hi) / 2.0, top)
+
+
 ## An engineer finished digging a marked cell: take the tile and its supplies.
 func _on_dig_finished(cell: Vector2i) -> void:
 	var here := terrain.type_at(cell)
 	var got := terrain.dig(cell)
 	if got == null:
 		return
-	GameState.gain(got)
-	var at := Grid.to_px(Vector2(cell) + Vector2(0.5, 0))
-	if here.dig_action == TerrainType.DigAction.FELL:
-		Effects.say(at, got.describe(), Color("ece4d2"))
-	else:
-		Effects.say(at, here.dig_text, here.debris_color)
+	gain(got, Vector2(cell) + Vector2(0.5, 0), GAIN_COLOR if here.dig_action == TerrainType.DigAction.FELL else here.debris_color)
 
 
 ## Every living soldier and archer, and every falling block, as a body bridge pieces and falling blocks collide

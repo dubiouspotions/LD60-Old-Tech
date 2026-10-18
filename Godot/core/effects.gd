@@ -3,6 +3,8 @@ extends Node2D
 ## Positions are in pixels.
 
 signal shake_requested(amount: float)
+## A floating text was shown (for tests and anything that follows the texts).
+signal said(text: String, at_px: Vector2)
 
 ## CPUParticles2D scene used for debris. Its look is edited in the scene; colour and count are set per call.
 @export var debris_scene: PackedScene
@@ -37,6 +39,7 @@ func say(at_px: Vector2, text: String, color: Color = Color("ece4d2")) -> void:
 	label.position = at_px
 	add_child(label)
 	label.call(&"show_text", text, color)
+	said.emit(text, at_px)
 
 
 func shake(amount: float) -> void:

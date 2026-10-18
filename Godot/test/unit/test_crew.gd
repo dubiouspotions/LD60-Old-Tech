@@ -791,3 +791,114 @@ func test_instant_work_cheat_digs_marks_and_fells_trees_at_once() -> void:
 	assert_null(world.terrain.type_at(Vector2i(3, 6)), "dug")
 	assert_null(world.terrain.type_at(Vector2i(2, 5)), "tree felled")
 	assert_gt(GameState.supplies.logs, logs, "and its logs gained")
+
+
+func test_crew_builds_from_a_loose_end_by_the_cliff_when_the_bolted_end_is_across_the_gap() -> void:
+	# A plan from just off the left cliff's face (not touching it) to the right cliff's face. Its only bolted end is
+	# across the pit, out of the crew's reach; the loose end is within reach of the left cliff's top.
+	var m := _plan(Vector2(6.5, 6.5), Vector2(10, 6.5))
+	assert_false(m.a.pinned, "loose end")
+	assert_true(m.b.pinned, "bolted across the pit")
+	world.bridge.order_blueprints()
+	_run(20.0, func() -> bool: return not m.blueprint)
+	assert_false(m.blueprint, "built out from the loose end")
+
+
+func test_an_engineer_falling_on_spikes_dies() -> void:
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(7.5, 2.0)
+	var crew := world.crew.engineers.size()
+	_run(3.0)
+	assert_eq(world.crew.engineers.size(), crew - 1, "spiked")
+	assert_false(e in world.crew.engineers)
+
+
+func test_the_level_is_lost_when_the_last_engineer_dies() -> void:
+	watch_signals(world)
+	for e: Crew.Engineer in world.crew.engineers:
+		e.pos = Vector2(7.5, 2.0)
+	for i in 180:
+		world._physics_process(1.0 / 60.0)
+	assert_eq(world.crew.engineers.size(), 0)
+	assert_signal_emitted(world, "crew_lost", "no crew left: game over")
+
+
+func test_an_engineer_left_idle_on_a_cliff_face_joint_climbs_back_up() -> void:
+	# The plan's end is bolted to the left cliff's face, half a metre below its top. Another engineer took the
+	# job, so this one is left at the joint with nothing to do.
+	var m := _plan(Vector2(6, 6.5), Vector2(10, 6.5))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.at = m.a
+	e.pos = m.a.pos
+	e.route.clear()
+	var inside := [false]
+	_run(6.0, func() -> bool:
+		inside[0] = inside[0] or world.terrain.is_solid(Grid.cell_of(e.pos - Vector2(0, 0.3)))
+		return false)
+	assert_false(inside[0], "never inside the cliff")
+	assert_almost_eq(e.pos.y, 6.0, 0.05, "back up on the cliff top")
+	assert_lt(e.pos.x, 6.0)
+
+
+func test_a_lone_engineer_climbs_down_to_a_face_joint_and_builds_from_it() -> void:
+	# Only one engineer, so nobody else can take the job over if it is given up on the way.
+	while world.crew.engineers.size() > 1:
+		var extra: Crew.Engineer = world.crew.engineers.pop_back()
+		extra.node.queue_free()
+	var m := _plan(Vector2(6, 7), Vector2(10, 7))
+	world.bridge.order_blueprints()
+	var gave_up := [false]
+	var e: Crew.Engineer = world.crew.engineers[0]
+	var had := [false]
+	_run(20.0, func() -> bool:
+		had[0] = had[0] or e.job == m
+		gave_up[0] = gave_up[0] or (had[0] and e.job != m and m.blueprint)
+		return not m.blueprint)
+	assert_false(gave_up[0], "kept the job on the way down the face")
+	assert_false(m.blueprint, "built it")
+
+
+func test_an_engineer_comes_down_off_a_structure_bolted_to_a_tower_wall_without_bobbing() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var rows := [
+		"..................",
+		"..................",
+		"..................",
+		"..........KKK.....",
+		"..........KKK.....",
+		"..........KKK.....",
+		"..........KKK.....",
+		"..........KKK.....",
+		"##################",
+		"BBBBBBBBBBBBBBBBBB",
+	]
+	for y in rows.size():
+		for x in rows[y].length():
+			var key: String = WorldFixture.LEGEND[rows[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 3.5)
+	world.army.hold = true
+	world.crew.spawn(3.5)
+	var up := _plan(Vector2(10, 4.5), Vector2(8.5, 1.5))
+	var low := _plan(Vector2(10, 6), Vector2(8.5, 1.5))
+	world.bridge.order_blueprints()
+	var turns := [0]
+	var last := {}
+	for i in 60 * 30:
+		var before := world.crew.engineers.map(func(e: Crew.Engineer) -> float: return e.pos.y)
+		world._physics_process(1.0 / 60.0)
+		if up.blueprint or low.blueprint:
+			continue
+		for k in world.crew.engineers.size():
+			var dir := signi(roundi((world.crew.engineers[k].pos.y - before[k]) * 1000))
+			if dir != 0 and last.get(k, 0) != 0 and dir != last[k]:
+				turns[0] += 1
+			if dir != 0:
+				last[k] = dir
+	assert_false(up.blueprint or low.blueprint, "built")
+	assert_lt(turns[0], 6, "came down without bobbing up and down")
+	for e: Crew.Engineer in world.crew.engineers:
+		assert_almost_eq(e.pos.y, 8.0, 0.05, "back on the ground")
+		assert_lt(e.pos.x, 10.0, "on the column's side of the tower")

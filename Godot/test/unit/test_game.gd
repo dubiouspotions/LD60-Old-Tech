@@ -119,3 +119,51 @@ func test_picking_stone_in_the_picker_switches_bridge_to_stone() -> void:
 	assert_eq(tools.build_material().display_name, "Stone")
 	assert_true((row.get_child(1) as Button).button_pressed, "the pick shows")
 	assert_engine_error_count(0, "no button freed while it was being pressed")
+
+
+func test_cancelling_a_plan_says_what_came_back() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	var b := world.bridge
+	var lead := world.army.lead().pos
+	b.build(b.snap_point(lead + Vector2(2, 0)), b.snap_point(lead + Vector2(4, 0)), preload("res://data/bridge/log.tres"), true)
+	game._show_plans()
+	watch_signals(Effects)
+	game._on_cancel_pressed(0)
+	assert_signal_emitted(Effects, "said")
+	assert_eq(get_signal_parameters(Effects, "said")[0], "+2 logs", "the 2 m plan's price")
+
+
+func test_the_cheat_top_up_says_what_it_gave() -> void:
+	game._begin()
+	var rules: CrewRules = game.get_node("%World").crew.rules
+	rules.instant_work = false
+	GameState.supplies = Supplies.new()
+	watch_signals(Effects)
+	game._toggle_cheats()
+	rules.instant_work = false
+	var texts := []
+	for i in get_signal_emit_count(Effects, "said"):
+		texts.append(get_signal_parameters(Effects, "said", i)[0])
+	assert_true(texts.any(func(t: String) -> bool: return t.contains("+99 earth")), "the top-up shown")
+
+
+func test_losing_the_last_engineer_says_so_not_the_army() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	for e: Crew.Engineer in world.crew.engineers.duplicate():
+		world.crew._kill(e, "Spiked")
+	await get_tree().process_frame
+	var hud: Node = game.get_node("%HUD")
+	assert_true(hud.get_node("%Lost").visible, "the level is lost")
+	assert_eq(hud.get_node("%LostTitle").text, game.crew_lost_title)
+	assert_string_contains(hud.get_node("%LostText").text, "engineer")
+
+
+func test_losing_the_army_still_says_the_army() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	for s: Soldier in world.army.soldiers.duplicate():
+		world.army.crush(s)
+	await get_tree().process_frame
+	assert_eq(game.get_node("%HUD").get_node("%LostTitle").text, game.lost_title)

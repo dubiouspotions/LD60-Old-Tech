@@ -1,6 +1,7 @@
 class_name FallingBlock
 extends Node2D
-## A tile falling straight down until it lands on the ground, where it becomes that tile again. It comes to rest
+## A tile falling straight down until it lands on the ground, where it becomes that tile again (it breaks on spikes
+## and other tiles with Breaks Falling). It comes to rest
 ## on bridge pieces (loading them) and on soldiers and archers, unless it reaches them at the bridge's Harm Speed:
 ## then it crushes them and falls on. Stepped by the World. The node origin is the top-left of the cell. It shows
 ## the TileSet's picture of its terrain type.
@@ -62,6 +63,10 @@ func step(dt: float, world: World, bodies: Array) -> void:
 	if rest < INF:
 		return
 	var r := floori(position.y / Grid.PX)
+	var inside := t.type_at(Vector2i(x, floori(next - 0.5)))
+	if inside and inside.breaks_falling:
+		_break()
+		return
 	if r + 1 >= t.size.y or t.is_solid(Vector2i(x, r + 1)):
 		while r > 0 and t.is_solid(Vector2i(x, r)):
 			r -= 1
@@ -70,6 +75,14 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		Effects.debris(at, type.debris_color if type else Color.WHITE, 3, 70.0)
 		Audio.play(land_sound, at)
 		queue_free()
+
+
+## Smashed (on spikes): debris, the landing sound, gone.
+func _break() -> void:
+	var at := position + Vector2(0.5, 1.0) * Grid.PX
+	Effects.debris(at, type.debris_color if type else Color.WHITE, 6, 120.0)
+	Audio.play(land_sound, at)
+	queue_free()
 
 
 func cell_x() -> int:

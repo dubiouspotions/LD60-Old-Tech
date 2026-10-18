@@ -9,12 +9,12 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 | Tool | Key | What it does |
 | --- | --- | --- |
 | Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope), rock (+1 stone, slow) and gold ore (+1 gold) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
-| Bridge | 2 | Drag from point to point to plan a bridge deck soldiers walk on. A picker above the button chooses the material: **Log** (push and pull, up to 5 m, 1 log) or **Stone** (half again a log's weight and much stronger, up to 3 m, 1 stone). |
-| Support | 3 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
-| Rope | 4 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
+| Bridge | 2 | Drag from point to point to plan a bridge deck soldiers walk on. A picker above the button chooses the material: **Log** (push and pull, up to 5 m, 1 log per started metre) or **Stone** (half again a log's weight and much stronger, up to 3 m, 1 stone per started metre). |
+| Support | 3 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log per started metre. |
+| Rope | 4 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope per started metre. |
 | Box | 5 | Drops a wooden box that falls until it lands and stays there as a solid block. Costs 5 logs; digging it up gives 2 back. |
 
-- Bridge, Support, Rope and Stone place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
+- Bridge, Support and Rope place a dashed blueprint, and supplies are spent when you place it: one of its material per started metre (a 3.2 m log costs 4 logs). Digging a planned member refunds what it cost.
 - While you plan, idle engineers (orange) walk over and wait beside it. **Build** above a plan hands that plan to them, **×** beside it cancels the plan and refunds it; **Enter** hands over every plan. They build it member by member, starting from the ground or finished parts and climbing along what is already up. With only one thing to build or dig, they all work on it together. Finished parts are held on scaffolding, and the column can already walk on them, and on the part of a piece that is built so far. Each separate structure comes down off its scaffolding once it's finished and no engineer is on it, and your design holds or it doesn't. The column doesn't wait for it: a soldier walking onto an unfinished bridge falls.
 - Build tools work two ways. **Drag** from point to point for one piece. Or **click** to start and keep clicking: each click places a piece and starts the next one from its end. Click the last point again, right-click or press Esc to finish. A click that can't be built (too long, through the ground, out of logs) leaves the chain where it was.
 - Bridge decks flex a little under the soldiers on them, the longer the more, and the soldiers walk on the bend.
@@ -23,6 +23,7 @@ The column marches east on its own, and orders are orders. Once it sets off it w
 - The march is one long road: each level joins the last. At the start of every level the column makes camp and sleeps through the night while your engineers keep working, until the king loses patience (30 s by default). Use the night to build ahead, and press **M** or **March** to break camp early. Archers hold their fire while the column sleeps.
 - **Stone** comes from digging rock and from towers your soldiers raze.
 - **Gold** comes from gold ore, your starting supplies and each camp's supply drop. While the column camps, press **R** or **Recruit** to buy another soldier (5 gold); recruits join the camp.
+- Engineers die in spikes and water. If the last one dies, the level is lost, as when the last soldier dies.
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
 - **Backspace** or **Restart** restarts the level from its checkpoint: the column and supplies you arrived with.
 - **F** toggles 2× speed. **C** or **Follow** makes the camera follow the column (off when a level starts; panning by hand turns it off). **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.

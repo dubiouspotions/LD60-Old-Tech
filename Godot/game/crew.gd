@@ -11,6 +11,8 @@ extends Node2D
 signal scaffolding_struck
 ## An engineer finished digging a marked cell. The level takes the tile and its supplies.
 signal dig_finished(cell: Vector2i)
+## An engineer died; count is how many are left.
+signal count_changed(count: int)
 
 ## Seconds between looks for work by an idle engineer.
 const THINK_INTERVAL: float = 0.2
@@ -54,6 +56,8 @@ class Engineer:
 
 @export var rules: CrewRules
 @export var engineer_scene: PackedScene
+## Debris colours when an engineer dies.
+@export var body_colors: Array[Color] = [Color("8c2f2f"), Color("ece4d2")]
 
 var terrain: Terrain
 var bridge: Bridge
@@ -84,6 +88,10 @@ func spawn(x: float) -> void:
 
 
 func step(dt: float) -> void:
+	for e in engineers.duplicate():
+		var t := _hazard_at(e)
+		if t:
+			_kill(e, t.death_text)
 	if rules.instant_work:
 		for m in bridge.members.duplicate():
 			if m.blueprint and m.ordered:
@@ -95,7 +103,7 @@ func step(dt: float) -> void:
 		var e := engineers[i]
 		e.working = false
 		if e.at and e.at.degree == 0:
-			e.at = null
+			_let_go(e)
 			e.route.clear()
 		if e.at and e.route.is_empty():
 			e.pos = e.at.pos
@@ -126,7 +134,7 @@ func step(dt: float) -> void:
 			if e.route.is_empty():
 				e.route = _route_down(e.at)
 			if e.route.is_empty():
-				e.at = null
+				_let_go(e)
 		elif e.digging:
 			_dig_step(e, dt)
 		else:
@@ -149,15 +157,44 @@ func _update_stranded(e: Engineer, x: float, was: Vector2, dt: float) -> void:
 	e.any_height = e.any_height or e.stranded >= rules.stranded_time
 
 
+## The hazard (spikes, water) the engineer's feet or body are in, else null.
+func _hazard_at(e: Engineer) -> TerrainType:
+	for p: Vector2 in [e.pos + Vector2(0, 0.01), e.pos - Vector2(0, 0.5)]:
+		var t := terrain.type_at(Grid.cell_of(p))
+		if t and t.is_hazard():
+			return t
+	return null
+
+
+func _kill(e: Engineer, text: String) -> void:
+	var at := Grid.to_px(e.pos - Vector2(0, 0.5))
+	for c in body_colors:
+		Effects.debris(at, c, 4, 190.0)
+	Effects.say(Grid.to_px(e.pos - Vector2(0, 1.4)), text, Color("ff6a55"))
+	Audio.play(rules.death_sound, at)
+	e.node.queue_free()
+	engineers.erase(e)
+	count_changed.emit(engineers.size())
+
+
 ## Drops an engineer that nothing holds up (its structure fell away) and that can not simply climb down.
 ## True while it falls; it gives up its job.
+## Can the engineer, not falling, stay where it is: ground it can climb to under it, or beside it (it clings to a
+## cliff face it can climb, like one it was building from).
+func _can_hold_on(e: Engineer) -> bool:
+	for dx: float in [0.0, -ENGINEER_HALF_WIDTH, ENGINEER_HALF_WIDTH]:
+		if not is_nan(_ground_of(e, e.pos.x + dx)):
+			return true
+	return false
+
+
 func _fall(e: Engineer, dt: float) -> bool:
 	if e.at:
 		e.vy = 0.0
 		return false
 	# Either foot on something holds it, like a soldier standing at a cliff edge.
 	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y)
-	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and not is_nan(_ground_of(e, e.pos.x))):
+	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and _can_hold_on(e)):
 		e.vy = 0.0
 		return false
 	_drop(e)
@@ -199,11 +236,15 @@ func _find_job(e: Engineer, any_height: bool) -> void:
 				e.goal = j
 				e.route = route
 	if e.at == null:
-		# Plans with nothing to build from are built from the ground below an end.
+		# A plan's loose end (not bolted, not on anything built) is built from the ground below it, also when the
+		# plan's other end can be built from but is out of reach (across a pit).
 		for m in bridge.members:
-			if not (m.blueprint and m.ordered) or not bridge.work_ends(m).is_empty() or _builder_of(m):
+			if not (m.blueprint and m.ordered) or _builder_of(m):
 				continue
+			var ends := bridge.work_ends(m)
 			for j: Bridge.Joint in [m.a, m.b]:
+				if j in ends:
+					continue
 				var x := _spot_within_reach(e.pos, j.pos, rules.build_reach, true, any_height)
 				var cost := absf(x - e.pos.x)
 				if not is_nan(x) and cost < best_cost and _in_zone(x) and _in_zone(j.pos.x):
@@ -344,6 +385,18 @@ func _work(e: Engineer, dt: float) -> void:
 		e.reach_x = NAN
 
 
+## Takes the engineer off the joint it holds. A joint bolted to a wall lies on the wall's line, which counts as the
+## wall; the engineer steps to its open side, so the ground under it is the ground there and not the wall's top.
+func _let_go(e: Engineer) -> void:
+	e.at = null
+	for side: int in [-1, 1]:
+		var wall := terrain.is_solid(Grid.cell_of(e.pos + Vector2(side * EDGE, -0.3)))
+		var open := not terrain.is_solid(Grid.cell_of(e.pos + Vector2(-side * EDGE, -0.3)))
+		if wall and open:
+			e.pos.x -= side * EDGE * 2.0
+			return
+
+
 ## Climbs from joint to joint. Reaches the first joint over the ground when not on the structure yet.
 func _follow_route(e: Engineer, dt: float) -> void:
 	var target := e.route[0]
@@ -357,7 +410,7 @@ func _follow_route(e: Engineer, dt: float) -> void:
 		e.at = target
 		e.route.pop_front()
 		if e.job == null and target.pinned and e.route.is_empty():
-			e.at = null
+			_let_go(e)
 	else:
 		e.pos += to.normalized() * stepped
 	_show(e, true, signi(roundi(to.x * 100)))

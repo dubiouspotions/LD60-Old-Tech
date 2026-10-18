@@ -24,7 +24,11 @@ signal tool_changed(index: int, material: BridgeMaterial)
 
 var tools: Array[ToolDefinition] = []
 var current: int = 0
-var world: World
+var world: World:
+	set(v):
+		world = v
+		if world and not world.bridge.ordered.is_connected(_on_ordered):
+			world.bridge.ordered.connect(_on_ordered)
 ## Off while an overlay (intro, lost) is up.
 var enabled: bool = false
 
@@ -91,6 +95,19 @@ func commit() -> int:
 
 ## Cancel (Esc or right-click) is seen here, before the camera takes the right button for panning. It is not
 ## consumed, so a right-drag still pans.
+## A chain whose joint is gone (its plan cancelled or dug away) ends.
+func _drop_lost_chain() -> void:
+	if _build_from and _build_from.node and not world.bridge.nodes.has(_build_from.node):
+		cancel()
+
+
+## A chain building onto plans just handed to the crew ends there.
+func _on_ordered(planned: Array[Bridge.Member]) -> void:
+	var at := _build_from.node if _build_from else null
+	if at and planned.any(func(m: Bridge.Member) -> bool: return m.a == at or m.b == at):
+		cancel()
+
+
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"cancel"):
 		cancel()
@@ -145,6 +162,7 @@ func _update_mouse() -> void:
 ## Build tools take a drag (press at the start, release at the end) or a chain of clicks (see _build_waiting).
 func _press() -> void:
 	var t := tool()
+	_drop_lost_chain()
 	if t.kind == ToolDefinition.Kind.BUILD:
 		if _build_from and _build_waiting:
 			var to := world.bridge.snap_point(_mouse_m, _build_from.node)
@@ -183,7 +201,7 @@ func _place_build() -> bool:
 	from = ends[0]
 	var to: Bridge.Snap = ends[1]
 	var check := world.bridge.check_build(from, to, mat, GameState.supplies)
-	if check.ok and GameState.spend(mat.cost):
+	if check.ok and GameState.spend(check.cost):
 		world.bridge.build(from, to, mat, true)
 		Audio.play(tool().use_sound, Grid.to_px((from.pos + to.pos) / 2))
 		return true
@@ -202,7 +220,7 @@ func _use(cell: Vector2i, first: bool) -> void:
 		ToolDefinition.Kind.DIG:
 			var m := world.bridge.member_at(_mouse_m, member_pick_radius)
 			if m:
-				GameState.gain(m.material.cost)
+				world.gain(m.paid, (m.a.pos + m.b.pos) / 2.0 - Vector2(0, 0.6))
 				if m.blueprint:
 					world.bridge.remove_member(m)
 				else:
@@ -246,6 +264,7 @@ func _say(at_m: Vector2, text: String, color: Color) -> void:
 func _draw() -> void:
 	if world == null:
 		return
+	_drop_lost_chain()
 	_draw_marks()
 	if not enabled or not _hover or tool() == null:
 		return

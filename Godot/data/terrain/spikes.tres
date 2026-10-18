@@ -8,6 +8,7 @@ display_name = "Spikes"
 solid = false
 anchor = false
 hazard = 2
+breaks_falling = true
 death_text = "Spiked"
 ahead_text = "Spikes ahead"
 debris_color = Color(0.8117647, 0.83137256, 0.85490197, 1)

@@ -13,6 +13,8 @@ const REFERENCE_LENGTH: float = 5.0
 const MAX_SAG: float = 0.08
 
 signal member_built(member: Member)
+## Blueprints were handed to the crew (order_plan, order_blueprints).
+signal ordered(planned: Array[Member])
 signal member_broken(member: Member, text: String)
 ## Pieces hit the ground in cell at harm_speed or more this tick, doing this much damage in all (J: each hit's
 ## energy times its material's Ram).
@@ -41,6 +43,8 @@ class Member:
 	var b: Joint
 	var length: float
 	var material: BridgeMaterial
+	## What was paid for it (cost_for), given back when the plan is taken back.
+	var paid: Supplies = Supplies.new()
 	var mass: float
 	## Smoothed axial force in N, tension positive.
 	var force: float = 0.0
@@ -136,7 +140,7 @@ class Snap:
 
 @export_group("Impact")
 ## A built piece hitting a soldier or archer at least this fast (m/s) crushes it (slower ones are stopped by
-## it); hitting ground this fast breaks a cell that can be dug, or batters a tower.
+## it). Ground and towers go by the hit's energy instead (see Impact Strength and Siege Per kJ).
 @export var harm_speed: float = 6.0
 ## Weight (kg) resting on a soldier or archer (pieces, what they carry, falling blocks) that crushes them.
 @export var crush_weight: float = 250.0
@@ -173,6 +177,13 @@ class Snap:
 ## Scaffold poles reach down at most this far.
 @export var scaffold_max_depth: float = 24.0
 
+## Slowest a piece can meet the ground (m/s) for it to count as a hit (damage by its energy), not settling.
+const HIT_SPEED: float = 1.0
+## A point is buried in the ground when solid lies this far around it on every side; a plan's buried end moved out
+## lands within twice this of the ground's face, and is put exactly on it.
+const BURIED_MARGIN: float = 0.01
+## A point this close to a solid cell's edge touches it.
+const EDGE_TOUCH: float = 0.005
 ## Spacing (m) of the points along a member that are kept out of the ground.
 const MEMBER_PROBE: float = 0.25
 
@@ -255,15 +266,20 @@ func fit_to_ground(a: Snap, b: Snap) -> Snap:
 	var p := a.pos.lerp(b.pos, hi)
 	# Onto the cell edge it crossed, so the joint sits exactly on the ground's face.
 	for k in 2:
-		if absf(p[k] - roundf(p[k])) < 0.001:
+		if absf(p[k] - roundf(p[k])) <= BURIED_MARGIN * 2.0:
 			p[k] = roundf(p[k])
 	return Snap.new(p, null, anchorable(p))
 
 
-## {ok: bool, msg: String, length: float}
+## What a piece of mat this long costs: its cost for every started metre.
+static func cost_for(mat: BridgeMaterial, length: float) -> Supplies:
+	return mat.cost.times(maxi(1, ceili(length - 0.001))) if mat.cost else Supplies.new()
+
+
+## {ok: bool, msg: String, length: float, cost: Supplies}
 func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> Dictionary:
 	var length := a.pos.distance_to(b.pos)
-	var r := {ok = false, msg = "", length = length}
+	var r := {ok = false, msg = "", length = length, cost = cost_for(mat, length)}
 	if length < min_length:
 		return r
 	if length > mat.max_length + 1e-6:
@@ -278,11 +294,13 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 	if members.size() >= max_members:
 		r.msg = too_many_text
 		return r
-	if supplies and not supplies.can_afford(mat.cost):
+	if supplies and not supplies.can_afford(r.cost):
 		r.msg = mat.no_supply_text
 		return r
 	r.ok = true
 	r.msg = length_text % length
+	if not r.cost.is_empty():
+		r.msg += " · " + r.cost.describe_cost()
 	return r
 
 
@@ -294,6 +312,7 @@ func build(a: Snap, b: Snap, mat: BridgeMaterial, blueprint: bool = false) -> Me
 	m.b = _joint_for(b)
 	m.length = a.pos.distance_to(b.pos)
 	m.material = mat
+	m.paid = cost_for(mat, m.length)
 	m.mass = m.length * mat.kg_per_m
 	m.blueprint = blueprint
 	members.append(m)
@@ -335,9 +354,13 @@ func plans() -> Array[Array]:
 
 ## Hands one plan (from plans()) to the crew.
 func order_plan(plan: Array) -> void:
+	var now: Array[Member] = []
 	for m: Member in plan:
-		if m.blueprint and not m.dead:
+		if m.blueprint and not m.dead and not m.ordered:
 			m.ordered = true
+			now.append(m)
+	if not now.is_empty():
+		ordered.emit(now)
 
 
 ## Removes one plan (from plans()). Returns what it cost, to give back.
@@ -345,19 +368,21 @@ func cancel_plan(plan: Array) -> Supplies:
 	var refund := Supplies.new()
 	for m: Member in plan:
 		if m.blueprint and not m.dead:
-			refund.add(m.material.cost)
+			refund.add(m.paid)
 			remove_member(m)
 	return refund
 
 
 ## Hands every unordered blueprint to the crew. Returns how many.
 func order_blueprints() -> int:
-	var n := 0
+	var now: Array[Member] = []
 	for m in members:
 		if m.blueprint and not m.ordered:
 			m.ordered = true
-			n += 1
-	return n
+			now.append(m)
+	if not now.is_empty():
+		ordered.emit(now)
+	return now.size()
 
 
 ## Ends of an ordered blueprint the crew can work from: bolted down or on a built member.
@@ -480,11 +505,12 @@ func remove_member(m: Member) -> void:
 
 
 ## Breaks a member with debris. quiet skips the message (player removal).
-func break_member(m: Member, quiet: bool = false) -> void:
+## Breaks m with debris. quiet: no sound or message. why: the message (else snapped or buckled, by its force).
+func break_member(m: Member, quiet: bool = false, why: String = "") -> void:
 	var mid := (m.a.pos + m.b.pos) / 2
 	var text := ""
 	if not quiet:
-		text = m.material.snapped_text if m.force > 0 or m.material.buckled_text.is_empty() else m.material.buckled_text
+		text = why if not why.is_empty() else (m.material.snapped_text if m.force > 0 or m.material.buckled_text.is_empty() else m.material.buckled_text)
 		Audio.play(m.material.break_sound, Grid.to_px(mid))
 	Effects.debris(Grid.to_px(mid), m.material.color, 4 if m.material.draw_as_rope else 9, 140.0)
 	remove_member(m)
@@ -583,6 +609,7 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 		for n in nodes:
 			if not n.fixed():
 				_collide(n, h)
+	_break_on_spikes()
 	var structures := _structures()
 	# Whole pieces against the ground, each other and bodies: once per tick, which is plenty against cells and
 	# bodies a metre wide (the joints, which move fastest, collide every substep above).
@@ -764,6 +791,11 @@ func split(m: Member, p: Vector2) -> Joint:
 	m.b = j
 	m.length *= t
 	m.mass = m.length * m.material.kg_per_m
+	# The halves share what was paid, so taking both back gives back no more than that.
+	var first := cost_for(m.material, m.length).up_to(m.paid)
+	rest.paid = m.paid.copy()
+	rest.paid.add(first, -1)
+	m.paid = first
 	members.append(rest)
 	_recompute_mass()
 	return j
@@ -785,8 +817,8 @@ func _joined(a: Joint, b: Joint) -> bool:
 
 ## Inside the ground: solid all around, not on its surface.
 func _buried(p: Vector2) -> bool:
-	for d: Vector2 in [Vector2(-0.01, -0.01), Vector2(0.01, -0.01), Vector2(-0.01, 0.01), Vector2(0.01, 0.01)]:
-		if not terrain.is_solid(Grid.cell_of(p + d)):
+	for d: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		if not terrain.is_solid(Grid.cell_of(p + d * BURIED_MARGIN)):
 			return false
 	return true
 
@@ -808,7 +840,7 @@ func _collide(n: Joint, h: float) -> void:
 	# The joint's mass and load come from its members: each takes its share of the hit.
 	for m in members:
 		if not m.blueprint and (m.a == n or m.b == n):
-			_strike(Grid.cell_of(n.pos), m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
+			_strike(out[2], m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
 	n.pos = out[0]
 	n.prev = n.pos - (v + _contact_dv(v, out[1]))
 
@@ -835,22 +867,29 @@ func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground
 		var va := m.a.pos - m.a.prev
 		var vb := m.b.pos - m.b.prev
 		if ground and not hit:
-			# One hit per piece: its first point in the ground carries the piece's mass and load.
-			hit = true
-			_strike(Grid.cell_of(p), m, m.mass + m.a.load * (1.0 - t) + m.b.load * t, va.lerp(vb, t), out[1], h)
+			# One hit per piece: its first point that hits the ground carries the piece's mass and load.
+			hit = _strike(out[2], m, m.mass + m.a.load * (1.0 - t) + m.b.load * t, va.lerp(vb, t), out[1], h)
 		var push: Vector2 = (out[0] - p) / w
 		m.a.pos += push * wa
 		m.b.pos += push * wb
 		_contact_at(m, t, va, vb, wa, wb, w, out[1])
 
 
-## Where p, if inside solid ground, is pushed out to, and that face's outward normal: [Vector2, Vector2]. [] if p is
-## not in the ground. It leaves through the open face it came in through, going by where it was before (from);
+## Where p, if inside solid ground (or on its edge), is pushed out to, that face's outward normal, and the cell:
+## [Vector2, Vector2, Vector2i]. [] if p is not in the ground. It leaves through the open face it came in through, going by where it was before (from);
 ## if that tells nothing, through the nearest open face.
 func _push_out(p: Vector2, from: Vector2) -> Array:
 	var c := Grid.cell_of(p)
 	if not terrain.is_solid(c):
-		return []
+		# On a cell's edge, the cell beside it counts too: an end landing exactly on a ledge's edge is stopped there.
+		var beside := false
+		for d: Vector2 in [Vector2(-EDGE_TOUCH, 0), Vector2(EDGE_TOUCH, 0), Vector2(0, -EDGE_TOUCH), Vector2(0, EDGE_TOUCH)]:
+			if terrain.is_solid(Grid.cell_of(p + d)):
+				c = Grid.cell_of(p + d)
+				beside = true
+				break
+		if not beside:
+			return []
 	# Just clear of the cell edge. Further would leave the joint falling back every few substeps.
 	var e := 0.001
 	var lo := Vector2(c)
@@ -870,16 +909,16 @@ func _push_out(p: Vector2, from: Vector2) -> Array:
 		if best.is_empty() or f[2] > best[2] or (f[2] == best[2] and f[3] < best[3]):
 			best = f
 	if best.is_empty():
-		return [Vector2(p.x, lo.y - e), Vector2.UP]
-	return [best[1], best[0]]
+		return [Vector2(p.x, lo.y - e), Vector2.UP, c]
+	return [best[1], best[0], c]
 
 
 ## When, as a share of the move from a to b along one axis, the plane at edge was crossed going up the axis;
-## -1 if the move started past it.
+## -1 if the move did not cross it (it started past it, stayed short of it, or barely moved along the axis).
 static func _crossed(a: float, b: float, edge: float) -> float:
-	if a > edge:
+	if a > edge or b <= edge or b - a < 1e-9:
 		return -1.0
-	return (edge - a) / maxf(b - a, 1e-9)
+	return clampf((edge - a) / (b - a), 0.0, 1.0)
 
 
 ## Where p, if inside box body b, is pushed out to (just clear of its nearest side), and that side's normal.
@@ -894,6 +933,23 @@ func _push_out_of_box(p: Vector2, _from: Vector2, b: Body) -> Array:
 		return [Vector2(b.center.x + nx * (b.half.x + e), p.y), Vector2(nx, 0.0)]
 	var ny := 1.0 if d.y >= 0.0 else -1.0
 	return [Vector2(p.x, b.center.y + ny * (b.half.y + e)), Vector2(0.0, ny)]
+
+
+## Breaks every built piece whose loose part (a free end, or its length when an end is free) reaches a tile that
+## breaks what falls on it (TerrainType.breaks_falling, spikes). Pieces with both ends fixed stay.
+func _break_on_spikes() -> void:
+	for m in members.duplicate():
+		if m.blueprint or m.dead or (m.a.fixed() and m.b.fixed()):
+			continue
+		var steps := ceili(m.length / MEMBER_PROBE)
+		for k in steps + 1:
+			var t := float(k) / steps
+			if (k == 0 and m.a.fixed()) or (k == steps and m.b.fixed()):
+				continue
+			var tile := terrain.type_at(Grid.cell_of(m.a.pos.lerp(m.b.pos, t)))
+			if tile and tile.breaks_falling:
+				break_member(m, false, tile.death_text)
+				break
 
 
 ## Built members by connected structure: Member -> id. Members joined through joints share an id.
@@ -989,12 +1045,14 @@ static func _t_along(m: Member, p: Vector2) -> float:
 	return clampf((p - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
 
 
-## Records a hit on cell by member m with mass moving v (per substep h) against a face with this normal, if at
-## harm_speed.
-func _strike(cell: Vector2i, m: Member, mass: float, v: Vector2, normal: Vector2, h: float) -> void:
+## Records a hit on cell by member m with mass moving v (per substep h) against a face with this normal. Slower
+## than HIT_SPEED is a piece settling, not a hit.
+func _strike(cell: Vector2i, m: Member, mass: float, v: Vector2, normal: Vector2, h: float) -> bool:
 	var into := -v.dot(normal) / h
-	if into >= harm_speed:
-		_hits.append([cell, m, 0.5 * mass * into * into])
+	if into < HIT_SPEED:
+		return false
+	_hits.append([cell, m, 0.5 * mass * into * into])
+	return true
 
 
 ## Settles this tick's hits: each cell takes the damage of all its hits (struck); a piece whose hit carried more

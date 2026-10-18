@@ -421,3 +421,153 @@ func test_a_rope_dropped_across_a_tower_does_not_lie_on_it_like_a_rod() -> void:
 	_run(3.0)
 	assert_gt(rope.a.pos.y, 4.0, "its ends fell past the tower top")
 	assert_gt(rope.b.pos.y, 4.0)
+
+
+func test_spikes_destroy_a_box_that_falls_on_them() -> void:
+	_map([
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"######^^^^####",
+		"BBBBBBBBBBBBBB",
+	])
+	var block := _drop_fill(Vector2i(7, 0))
+	_run(2.0)
+	assert_false(is_instance_valid(block) and not block.is_queued_for_deletion(), "the box is gone")
+	assert_eq(world.terrain.type_at(Vector2i(7, 6)), WorldFixture.type("spikes"), "the spikes are still there")
+	assert_null(world.terrain.type_at(Vector2i(7, 5)), "and no box sits on them")
+
+
+func test_a_box_that_landed_stops_falling_before_it_is_freed() -> void:
+	_drop_fill(Vector2i(7, 0))
+	_run(2.0)
+	var boxes := 0
+	for y in range(0, 8):
+		if world.terrain.type_at(Vector2i(7, y)) == WorldFixture.type("fill"):
+			boxes += 1
+	assert_eq(boxes, 1, "one box, landed once")
+	assert_eq(world.terrain.type_at(Vector2i(7, 5)), WorldFixture.type("fill"), "on the ground")
+
+
+func test_spikes_destroy_a_bridge_piece_that_falls_on_them() -> void:
+	_map([
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"######^^^^####",
+		"BBBBBBBBBBBBBB",
+	])
+	_drop_log(6.5, 8.5, 2.0)
+	_run(2.0)
+	assert_eq(world.bridge.members.size(), 0, "the log is gone")
+	assert_eq(world.terrain.type_at(Vector2i(7, 6)), WorldFixture.type("spikes"))
+
+
+func test_a_piece_bolted_down_in_a_spike_pit_stays() -> void:
+	_map([
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"..............",
+		"######^^^^####",
+		"BBBBBBBBBBBBBB",
+	])
+	var b := world.bridge
+	# A support from the pit's floor (under the spikes, bolted to the bedrock) up to the left rim.
+	var m := b.build(b.snap_point(Vector2(7, 7)), b.snap_point(Vector2(6, 6)), preload("res://data/bridge/support.tres"))
+	_run(2.0)
+	assert_false(m.dead, "built into the spikes on purpose, not landed on them")
+
+
+func test_a_stone_beam_dropped_a_little_breaks_soil_and_lies_down() -> void:
+	var b := world.bridge
+	# Tilted, its low end 1.5 m above the soil (top at row 6).
+	var m := b.build(b.snap_point(Vector2(5, 4.5)), b.snap_point(Vector2(7, 2.5)), preload("res://data/bridge/stone.tres"))
+	var cells_before := 0
+	for x in range(3, 10):
+		if world.terrain.type_at(Vector2i(x, 6)) != null:
+			cells_before += 1
+	_run(4.0)
+	var cells_after := 0
+	for x in range(3, 10):
+		if world.terrain.type_at(Vector2i(x, 6)) != null:
+			cells_after += 1
+	assert_lt(cells_after, cells_before, "the stone broke the soil it hit")
+	assert_lt(absf(m.a.pos.y - m.b.pos.y), 0.6, "and lies down instead of standing on end")
+
+
+func test_a_log_set_down_gently_breaks_no_soil() -> void:
+	var b := world.bridge
+	b.build(b.snap_point(Vector2(5, 5)), b.snap_point(Vector2(7, 5)), LOG)
+	_run(3.0)
+	for x in range(3, 10):
+		assert_not_null(world.terrain.type_at(Vector2i(x, 6)), "soil at %d" % x)
+
+
+func test_a_stone_beam_dropped_end_first_a_metre_breaks_the_soil_under_it() -> void:
+	var b := world.bridge
+	var m := b.build(b.snap_point(Vector2(6.0, 2.0)), b.snap_point(Vector2(6.5, 5.0)), preload("res://data/bridge/stone.tres"))
+	_run(0.6)
+	assert_null(world.terrain.type_at(Vector2i(6, 6)), "a 90 kg stone hitting at 4.4 m/s breaks soil")
+
+
+func test_a_piece_landing_with_its_end_on_a_ledge_edge_does_not_catapult() -> void:
+	# A stone beam dropped from 7 m with its right end exactly over the right edge of a raised bump.
+	_map([
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		"..........",
+		".###......",
+		"#.########",
+		"##########",
+		"BBBBBBBBBB",
+	])
+	var b := world.bridge
+	var m := b.build(b.snap_point(Vector2(1.0, 1.0)), b.snap_point(Vector2(4.0, 1.0)), preload("res://data/bridge/stone.tres"))
+	var last := (m.a.pos + m.b.pos) / 2.0
+	var fastest_up := 0.0
+	for i in 60 * 4:
+		world._physics_process(1.0 / 60.0)
+		var c := (m.a.pos + m.b.pos) / 2.0
+		fastest_up = maxf(fastest_up, (last.y - c.y) * 60.0)
+		last = c
+	assert_lt(fastest_up, 1.0, "no bounce: the middle never flies up")
+
+
+func test_a_stone_beam_dropped_onto_a_pillar_breaks_its_top() -> void:
+	for x0: float in [3.5, 3.0, 2.5, 4.0]:
+		before_each()
+		# A soil pillar one tile wide (x 5 to 6) standing 5 m above the ground; the 3 m beam let go 6 m above it.
+		_map([
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			".....#....",
+			".....#....",
+			".....#....",
+			".....#....",
+			".....#....",
+			"##########",
+			"BBBBBBBBBB",
+		])
+		var b := world.bridge
+		b.build(b.snap_point(Vector2(x0 + 0.5, 1.0)), b.snap_point(Vector2(x0 + 3.5, 1.0)), preload("res://data/bridge/stone.tres"))
+		_run(1.4)
+		assert_null(world.terrain.type_at(Vector2i(5, 7)), "the pillar's top broke, beam from x %.1f" % (x0 + 0.5))
