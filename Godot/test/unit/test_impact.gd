@@ -112,3 +112,19 @@ func test_log_laid_gently_on_the_ground_breaks_nothing() -> void:
 	_run(2.0)
 	assert_not_null(world.terrain.type_at(Vector2i(4, 6)))
 	assert_not_null(world.terrain.type_at(Vector2i(5, 6)))
+
+
+func test_a_soldier_freed_after_a_hit_is_forgotten_cleanly() -> void:
+	world.army.spawn(2, 5.5)
+	world.army.hold = true
+	var s: Soldier = world.army.lead()
+	_drop_log(4.5, 6.5, 0.5)
+	for i in 120:
+		world._physics_process(1.0 / 60.0)
+		if s.hp < s.max_hp:
+			break
+	assert_lt(s.hp, s.max_hp, "hit")
+	world.army.soldiers.erase(s)
+	s.free()
+	_run(0.2)
+	assert_engine_error_count(0, "no freed soldier touched")
