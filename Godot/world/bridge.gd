@@ -135,6 +135,9 @@ class Snap:
 ## Scaffold poles reach down at most this far.
 @export var scaffold_max_depth: float = 24.0
 
+## Spacing (m) of the points along a member that are kept out of the ground.
+const MEMBER_PROBE: float = 0.25
+
 var terrain: Terrain
 var nodes: Array[Joint] = []
 var members: Array[Member] = []
@@ -536,6 +539,9 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 		for n in nodes:
 			if not n.fixed():
 				_collide(n, h)
+		for m in members:
+			if not m.blueprint:
+				_collide_member(m, h)
 		for b in bodies:
 			_collide_body(b, h)
 	var broken: Array[Member] = []
@@ -725,38 +731,80 @@ func _through_ground(a: Vector2, b: Vector2) -> bool:
 
 
 func _collide(n: Joint, h: float) -> void:
-	var c := Grid.cell_of(n.pos)
-	if not terrain.is_solid(c):
+	var out := _push_out(n.pos)
+	if out.is_empty():
 		return
-	var f := n.pos - Vector2(c)
+	var v := n.pos - n.prev
+	_strike(Grid.cell_of(n.pos), n.mass + n.load, v, out[1], h)
+	n.pos = out[0]
+	_stop_against(n, v, out[1])
+
+
+## Keeps the length of built member m (between its joints) out of the ground, like joints are.
+func _collide_member(m: Member, h: float) -> void:
+	var steps := ceili(m.length / MEMBER_PROBE)
+	for k in range(1, steps):
+		var t := float(k) / steps
+		var p := m.a.pos.lerp(m.b.pos, t)
+		var out := _push_out(p)
+		if out.is_empty():
+			continue
+		var wa := m.a.inv_mass * (1.0 - t)
+		var wb := m.b.inv_mass * t
+		var w := wa * (1.0 - t) + wb * t
+		if w <= 0.0:
+			continue
+		var va := m.a.pos - m.a.prev
+		var vb := m.b.pos - m.b.prev
+		var mass := (m.a.mass + m.a.load) * (1.0 - t) + (m.b.mass + m.b.load) * t
+		_strike(Grid.cell_of(p), mass, va.lerp(vb, t), out[1], h)
+		var push: Vector2 = (out[0] - p) / w
+		m.a.pos += push * wa
+		m.b.pos += push * wb
+		_stop_against(m.a, va, out[1])
+		_stop_against(m.b, vb, out[1])
+
+
+## Where p, if inside solid ground, is pushed out to (just clear of the nearest open face of its cell), and that
+## face's outward normal: [Vector2, Vector2]. [] if p is not in the ground.
+func _push_out(p: Vector2) -> Array:
+	var c := Grid.cell_of(p)
+	if not terrain.is_solid(c):
+		return []
+	var f := p - Vector2(c)
 	# Pushed out just clear of the cell edge. Further would leave the joint falling back every few substeps.
 	var e := 0.001
-	var best := Vector2(n.pos.x, c.y - e)
+	var best := Vector2(p.x, c.y - e)
 	var normal := Vector2.UP
 	var bd := 9.0
 	if not terrain.is_solid(c + Vector2i.UP) and f.y < bd:
 		bd = f.y
-		best = Vector2(n.pos.x, c.y - e)
+		best = Vector2(p.x, c.y - e)
 	if not terrain.is_solid(c + Vector2i.LEFT) and f.x < bd:
 		bd = f.x
-		best = Vector2(c.x - e, n.pos.y)
+		best = Vector2(c.x - e, p.y)
 		normal = Vector2.LEFT
 	if not terrain.is_solid(c + Vector2i.RIGHT) and 1.0 - f.x < bd:
 		bd = 1.0 - f.x
-		best = Vector2(c.x + 1 + e, n.pos.y)
+		best = Vector2(c.x + 1 + e, p.y)
 		normal = Vector2.RIGHT
 	if not terrain.is_solid(c + Vector2i.DOWN) and 1.0 - f.y < bd:
-		best = Vector2(n.pos.x, c.y + 1 + e)
+		best = Vector2(p.x, c.y + 1 + e)
 		normal = Vector2.DOWN
-	# Contact: no velocity into the ground, sliding slowed by friction. Working the velocity out from the
-	# push-out instead would make every contact a small kick upward, and loose pieces would never rest.
-	var v := n.pos - n.prev
+	return [best, normal]
+
+
+## Records a hit on cell by mass moving v (per substep h) against a face with this normal, if at harm_speed.
+func _strike(cell: Vector2i, mass: float, v: Vector2, normal: Vector2, h: float) -> void:
 	var into := -v.dot(normal) / h
 	if into >= harm_speed:
-		_strikes[c] = _strikes.get(c, 0.0) + 0.5 * (n.mass + n.load) * into * into
-	var slide := v - normal * v.dot(normal)
-	n.pos = best
-	n.prev = n.pos - slide * ground_friction
+		_strikes[cell] = _strikes.get(cell, 0.0) + 0.5 * mass * into * into
+
+
+## Contact with the ground: no velocity into it, sliding slowed by friction. Working the velocity out from the
+## push-out instead would make every contact a small kick upward, and loose pieces would never rest.
+func _stop_against(j: Joint, v: Vector2, normal: Vector2) -> void:
+	j.prev = j.pos - (v - normal * v.dot(normal)) * ground_friction
 
 
 ## Keeps built members out of body b, or marks it crushed by one reaching it at harm_speed or more.

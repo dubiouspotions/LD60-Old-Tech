@@ -226,3 +226,22 @@ func test_heavier_pieces_batter_towers_harder() -> void:
 	assert_gt(by_log, 0.0, "a log dents it")
 	assert_gt(by_stone, by_log * 1.4, "stone does far more")
 	assert_gt(by_stone, 0.5, "a stone beam takes half a tower cell's strength")
+
+
+func test_piece_wider_than_a_tower_lands_on_it_not_through_it() -> void:
+	_map([
+		"....................",
+		"....................",
+		"....................",
+		".....KK.............",
+		".....KK.............",
+		".....KK.............",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	_drop_log(4.0, 8.0, 2.5)
+	_run(3.0)
+	var m: Bridge.Member = world.bridge.members[0]
+	var mid := (m.a.pos + m.b.pos) / 2.0
+	assert_lt(mid.y, 3.2, "resting on top of the tower")
+	assert_not_null(world.terrain.type_at(Vector2i(5, 3)), "tower standing")
