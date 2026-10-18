@@ -12,7 +12,6 @@
 [ext_resource type="Resource" path="res://data/tools/5_rope.tres" id="16_jeutq"]
 [ext_resource type="Resource" path="res://data/sounds/victory.tres" id="19_n15p4"]
 [ext_resource type="Resource" path="res://data/tools/4_support.tres" id="20_s8k2p"]
-[ext_resource type="Resource" path="res://data/tools/6_stone.tres" id="21_stone"]
 [ext_resource type="AudioStream" uid="uid://c3vyy2heixwyf" path="res://audio/music/night_loop.wav" id="30_night"]
 [ext_resource type="Resource" path="res://data/sounds/dawn_bugle.tres" id="31_dawn"]
 
@@ -36,7 +35,7 @@ levels = Array[String](["res://levels/level_01.tscn", "res://levels/level_02.tsc
 start_supplies = SubResource("Resource_kpggy")
 checkpoint_supplies = SubResource("checkpoint_supplies")
 army_rules = ExtResource("1_f5uj3")
-tools = Array[ExtResource("12_aqc2n")]([ExtResource("13_rhlp7"), ExtResource("14_y2rpw"), ExtResource("15_v2pp1"), ExtResource("20_s8k2p"), ExtResource("16_jeutq"), ExtResource("21_stone")])
+tools = Array[ExtResource("12_aqc2n")]([ExtResource("13_rhlp7"), ExtResource("15_v2pp1"), ExtResource("20_s8k2p"), ExtResource("16_jeutq"), ExtResource("14_y2rpw")])
 level_up_sound = ExtResource("2_4757c")
 lost_sound = ExtResource("9_r50rh")
 victory_sound = ExtResource("19_n15p4")

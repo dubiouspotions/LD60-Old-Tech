@@ -39,7 +39,7 @@ func test_lists_the_initial_tweakables() -> void:
 	for n in ["army/start_soldiers", "army/soldier_hit_points", "army/mutiny_time", "army/recruit_cost/gold",
 			"crew/engineers", "enemies/archer_hit_points",
 			"supplies/start/logs", "supplies/checkpoint/logs",
-			"prices/bridge/logs", "prices/box/logs",
+			"prices/log/logs", "prices/box/logs",
 			"yields/soil/dig/earth", "yields/tree_trunk/fell/logs"]:
 		assert_has(names, n)
 
@@ -57,7 +57,7 @@ func test_values_read_and_write_through_to_the_data() -> void:
 	_tweak("supplies/checkpoint/logs", 11)
 	assert_eq(campaign.checkpoint_supplies.logs, 11)
 	var bridge: ToolDefinition = campaign.tools.filter(func(t: ToolDefinition) -> bool: return t.display_name == "Bridge")[0]
-	_tweak("prices/bridge/logs", 3)
+	_tweak("prices/log/logs", 3)
 	assert_eq(bridge.price().logs, 3)
 
 

@@ -7,7 +7,6 @@
 script = ExtResource("2_koevw")
 kind = 2
 display_name = "Rope"
-hint = "≤ 12 m · pull only"
 action = &"tool_rope"
-key_label = "5"
+key_label = "4"
 bridge_material = ExtResource("1_a1eik")

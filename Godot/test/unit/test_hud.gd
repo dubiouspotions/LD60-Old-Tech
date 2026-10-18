@@ -115,3 +115,23 @@ func test_supply_bar_shows_stone() -> void:
 	GameState.supplies.stone = 3
 	hud._refresh_supplies()
 	assert_eq((hud.get_node("%Stone").get_node("%Value") as Label).text, "3")
+
+
+func test_bridge_shows_a_material_picker() -> void:
+	GameState.new_campaign()
+	var tools := GameState.campaign.tools
+	var i := tools.map(func(t: ToolDefinition) -> String: return t.display_name).find("Bridge")
+	var b: ToolButton = hud.get_node("%Tools").get_child(i)
+	var stone: BridgeMaterial = tools[i].materials()[1]
+	var picker: Control = hud.get_node("%MaterialPicker")
+	hud.set_tool(i, tools[i].materials()[0])
+	assert_true(picker.visible, "shown for Bridge")
+	var names := picker.get_node("%Materials").get_children().map(func(c: Button) -> String: return c.text.get_slice(" ", 0))
+	assert_eq(names, ["Log", "Stone"])
+	watch_signals(hud)
+	(picker.get_node("%Materials").get_child(1) as Button).pressed.emit()
+	assert_signal_emitted_with_parameters(hud, "material_picked", [stone])
+	hud.set_tool(i, stone)
+	assert_string_contains(b.tooltip_text, "1 stone", "the button shows what the pick costs")
+	hud.set_tool(0)
+	assert_false(picker.visible, "hidden for tools with one material")

@@ -10,19 +10,24 @@ extends Button
 
 ## False while the player can not afford one use.
 var affordable: bool = true
+## The material a build button builds now (null: its first).
+var build_material: BridgeMaterial
 
 
-## colors: supply key (&"earth", &"logs", ...) -> swatch colour, the same as the supply readouts.
-func setup(def: ToolDefinition, colors: Dictionary = {}) -> void:
+## colors: supply key (&"earth", &"logs", ...) -> swatch colour, the same as the supply readouts. mat: the
+## material a build tool builds now (null: its first).
+func setup(def: ToolDefinition, colors: Dictionary = {}, mat: BridgeMaterial = null) -> void:
+	build_material = mat
+	var hint := def.hint_for(mat)
 	%Key.text = def.key_label
 	%Name.text = def.display_name
-	%Hint.text = def.hint
+	%Hint.text = hint
 	tooltip_text = "%s (%s)" % [def.display_name, def.key_label]
-	var price := def.price()
+	var price := def.price(mat)
 	if not price.is_empty():
 		tooltip_text += "\nCosts " + price.describe_cost()
-	if not def.hint.is_empty():
-		tooltip_text += "\n" + def.hint
+	if not hint.is_empty():
+		tooltip_text += "\n" + hint
 	_fill_cost(price, colors)
 	set_compact(false)
 

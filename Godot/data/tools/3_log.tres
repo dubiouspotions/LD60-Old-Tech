@@ -2,12 +2,14 @@
 
 [ext_resource type="Resource" path="res://data/bridge/log.tres" id="1_lanng"]
 [ext_resource type="Script" path="res://core/tool_definition.gd" id="2_pb6ww"]
+[ext_resource type="Resource" path="res://data/bridge/stone.tres" id="3_stone"]
+[ext_resource type="Script" path="res://core/bridge_material.gd" id="4_bm"]
 
 [resource]
 script = ExtResource("2_pb6ww")
 kind = 2
 display_name = "Bridge"
-hint = "≤ 5 m · push + pull"
 action = &"tool_log"
-key_label = "3"
+key_label = "2"
 bridge_material = ExtResource("1_lanng")
+other_materials = Array[ExtResource("4_bm")]([ExtResource("3_stone")])

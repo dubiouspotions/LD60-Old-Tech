@@ -4,7 +4,8 @@ extends Node2D
 ## Dig marks cells for the engineers (and takes back bridge members at once). Build tools place blueprints; commit
 ## hands them to the engineers. Works while the game is paused so the player can plan before resuming.
 
-signal tool_changed(index: int)
+## The tool or its material (for a build tool with several) changed.
+signal tool_changed(index: int, material: BridgeMaterial)
 
 @export var member_pick_radius: float = 0.3
 @export var ok_color: Color = Color("e9a93b")
@@ -34,10 +35,20 @@ var _hold_left: float = 0.0
 var _build_from: Bridge.Snap
 ## While Dig is held: true marks cells, false clears marks (decided by the first cell clicked).
 var _dig_marking: bool = true
+var _material: Dictionary = {} # tool index -> index into its materials()
 
 
 func tool() -> ToolDefinition:
     return tools[current] if current < tools.size() else null
+
+
+## The material the current build tool builds, or null.
+func build_material() -> BridgeMaterial:
+    var t := tool()
+    if t == null or t.kind != ToolDefinition.Kind.BUILD:
+        return null
+    var all := t.materials()
+    return all[_material.get(current, 0) % all.size()] if not all.is_empty() else null
 
 
 func select(index: int) -> void:
@@ -46,7 +57,18 @@ func select(index: int) -> void:
     current = index
     _build_from = null
     _holding = false
-    tool_changed.emit(index)
+    tool_changed.emit(index, build_material())
+
+
+## Makes the current build tool build mat (one of its materials, picked in the HUD's material picker).
+func pick_material(mat: BridgeMaterial) -> void:
+    var t := tool()
+    var i := t.materials().find(mat) if t else -1
+    if i < 0:
+        return
+    _material[current] = i
+    _build_from = null
+    tool_changed.emit(current, mat)
 
 
 func cancel() -> void:
@@ -125,7 +147,7 @@ func _release() -> void:
         return
     var from := _build_from
     _build_from = null
-    var mat := tool().bridge_material
+    var mat := build_material()
     var ends := _plan_ends(from, world.bridge.snap_point(_mouse_m, from.node))
     from = ends[0]
     var to: Bridge.Snap = ends[1]
@@ -197,7 +219,7 @@ func _draw() -> void:
     var t := tool()
     var px := Grid.PX
     if t.kind == ToolDefinition.Kind.BUILD:
-        _draw_build(t.bridge_material)
+        _draw_build(build_material())
         return
     var cell := Grid.cell_of(_mouse_m)
     var r := Rect2(Vector2(cell) * px, Vector2.ONE * px)

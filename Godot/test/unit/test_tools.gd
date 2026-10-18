@@ -36,12 +36,20 @@ func before_each() -> void:
 	add_child_autofree(tools)
 
 
+## Selects the tool of kind (and, for a build tool, switches it to the material of that name).
 func _select(kind: ToolDefinition.Kind, material_name: String = "") -> void:
 	for i in tools.tools.size():
 		var t := tools.tools[i]
-		if t.kind == kind and (material_name == "" or t.bridge_material.display_name == material_name):
+		if t.kind != kind:
+			continue
+		if material_name == "":
 			tools.select(i)
 			return
+		for m in t.materials():
+			if m.display_name == material_name:
+				tools.select(i)
+				tools.pick_material(m)
+				return
 	fail_test("no such tool")
 
 
@@ -108,7 +116,7 @@ func test_box_without_five_logs_does_nothing() -> void:
 
 
 func test_log_build_spends_a_log() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Bridge")
+	_select(ToolDefinition.Kind.BUILD, "Log")
 	var logs := GameState.supplies.logs
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
@@ -120,7 +128,7 @@ func test_log_build_spends_a_log() -> void:
 
 
 func test_commit_orders_the_plan() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Bridge")
+	_select(ToolDefinition.Kind.BUILD, "Log")
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
 	tools._mouse_m = Vector2(9, 6)
@@ -140,7 +148,7 @@ func test_support_tool_places_support() -> void:
 
 
 func test_dig_member_refunds_it() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Bridge")
+	_select(ToolDefinition.Kind.BUILD, "Log")
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
 	tools._mouse_m = Vector2(9, 6)
@@ -169,3 +177,27 @@ func test_stone_build_spends_stone_and_builds_a_heavy_member() -> void:
 	var stone := world.bridge.members[0].material
 	assert_gt(stone.kg_per_m, preload("res://data/bridge/log.tres").kg_per_m, "heavier than a log")
 	assert_gt(stone.break_force, preload("res://data/bridge/log.tres").break_force, "stronger than a log")
+
+
+func test_tools_in_order_on_keys_one_to_five() -> void:
+	var names := tools.tools.map(func(t: ToolDefinition) -> String: return t.display_name)
+	assert_eq(names, ["Dig/Chop", "Bridge", "Support", "Rope", "Box"])
+	for i in tools.tools.size():
+		var t: ToolDefinition = tools.tools[i]
+		assert_eq(t.key_label, str(i + 1))
+		var key := InputEventKey.new()
+		key.physical_keycode = KEY_1 + i
+		assert_true(InputMap.action_has_event(t.action, key), "%s on key %d" % [t.display_name, i + 1])
+
+
+func test_bridge_builds_the_material_picked() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	var bridge := tools.current
+	assert_eq(tools.tool().display_name, "Bridge")
+	tools.select(bridge)
+	assert_eq(tools.build_material().display_name, "Log", "pressing Bridge again changes nothing")
+	tools.pick_material(tools.tool().materials()[1])
+	assert_eq(tools.build_material().display_name, "Stone", "picked")
+	_select(ToolDefinition.Kind.BUILD, "Rope")
+	tools.select(bridge)
+	assert_eq(tools.build_material().display_name, "Stone", "coming back from another tool keeps the pick")

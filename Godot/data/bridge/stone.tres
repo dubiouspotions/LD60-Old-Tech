@@ -12,6 +12,7 @@ stone = 1
 [resource]
 script = ExtResource("4_stone")
 display_name = "Stone"
+hint = "≤ 3 m · heavy, strong"
 cost = SubResource("Resource_stone")
 no_supply_text = "No stone. Dig rock"
 build_speed = 0.8

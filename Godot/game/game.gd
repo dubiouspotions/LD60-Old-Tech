@@ -48,6 +48,7 @@ func _ready() -> void:
 	_hud.build_tools(campaign.tools)
 	_tools.tool_changed.connect(_on_tool_changed)
 	_hud.tool_pressed.connect(_tools.select)
+	_hud.material_picked.connect(_tools.pick_material)
 	_hud.pause_pressed.connect(_toggle_pause)
 	_hud.speed_pressed.connect(_toggle_speed)
 	_hud.follow_toggled.connect(func(on: bool) -> void:
@@ -198,8 +199,8 @@ func _set_paused(paused: bool) -> void:
 	_hud.set_paused(paused, not _hud.any_card_open())
 
 
-func _on_tool_changed(index: int) -> void:
-	_hud.set_tool(index)
+func _on_tool_changed(index: int, material: BridgeMaterial) -> void:
+	_hud.set_tool(index, material)
 
 
 ## Puts the column at the start of level index with the soldiers and supplies GameState holds.

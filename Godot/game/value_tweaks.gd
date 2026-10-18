@@ -102,9 +102,9 @@ func _entries() -> Dictionary:
 		_supplies(out, "supplies/start", campaign, &"start_supplies", campaign)
 		_supplies(out, "supplies/checkpoint", campaign, &"checkpoint_supplies", campaign)
 		for t: ToolDefinition in campaign.tools:
-			var mat := t.bridge_material if t.kind == ToolDefinition.Kind.BUILD else null
-			if mat:
-				_supplies(out, "prices/" + _slug(t.display_name), mat, &"cost", mat)
+			if t.kind == ToolDefinition.Kind.BUILD:
+				for mat in t.materials():
+					_supplies(out, "prices/" + _slug(mat.display_name), mat, &"cost", mat)
 			elif t.cost:
 				_supplies(out, "prices/" + _slug(t.display_name), t, &"cost", t)
 	for tt: TerrainType in terrain_types:
