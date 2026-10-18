@@ -13,17 +13,8 @@ gold = 5
 
 [resource]
 script = ExtResource("3_16x7n")
-camp_spacing = 0.5
-camp_text = "testasss"
 recruit_cost = SubResource("recruit_cost")
 recruit_sound = ExtResource("6_recruit")
 attack_sound = ExtResource("4_melee")
-mutiny_time = null
-desert_distance = null
-desert_climb_speed = null
-mutiny_text = null
-desert_text = null
-siege_text = null
-gather_text = null
 death_sound = ExtResource("1_nkii1")
 hurt_sound = ExtResource("2_epn7y")

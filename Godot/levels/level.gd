@@ -23,7 +23,7 @@ func terrain() -> Terrain:
 
 ## Tall grass painted for this level (see TallGrass).
 func grass() -> TileMapLayer:
-    return get_node(^"Grass")
+	return get_node(^"Grass")
 
 
 func objects() -> Node2D:

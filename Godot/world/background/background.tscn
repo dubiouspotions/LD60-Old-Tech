@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://cn1magoe01s5s"]
+[gd_scene format=3 uid="uid://kib74rq6nvro"]
 
 [ext_resource type="Script" uid="uid://bjf28quaqwc2i" path="res://world/background/ridge.gd" id="1"]
 [ext_resource type="Script" path="res://world/background/stars.gd" id="2_stars"]

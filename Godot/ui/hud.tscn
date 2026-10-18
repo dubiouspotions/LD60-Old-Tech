@@ -164,6 +164,13 @@ position = Vector2(10, 13)
 scale = Vector2(0.17187501, 0.17187501)
 texture = ExtResource("9_so1yu")
 
+[node name="Stone" parent="Root/Margin/Column/SupplyBar/Supplies" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+alignment = 2
+caption = "Stone"
+swatch = Color(0.6, 0.62, 0.66, 1)
+
 [node name="Gold" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=1920718775 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -195,6 +202,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
+[node name="RestartButton" type="Button" parent="Root/Margin/Column/Rack"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Restart this level from its checkpoint (Backspace)"
+text = "Restart"
+
 [node name="PauseButton" type="Button" parent="Root/Margin/Column/Rack" unique_id=1238625116]
 unique_name_in_owner = true
 layout_mode = 2
@@ -215,7 +229,6 @@ layout_mode = 2
 tooltip_text = "Follow the column (C)"
 focus_mode = 0
 toggle_mode = true
-button_pressed = true
 text = "Follow"
 
 [node name="SoundButton" type="Button" parent="Root/Margin/Column/Rack" unique_id=1668152988]
@@ -225,6 +238,16 @@ tooltip_text = "Music and sound volume"
 focus_mode = 0
 toggle_mode = true
 text = "Sound"
+
+[node name="MaterialPicker" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+
+[node name="Materials" type="HBoxContainer" parent="Root/MaterialPicker"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="SoundPanel" type="PanelContainer" parent="Root" unique_id=477728629]
 unique_name_in_owner = true
@@ -293,7 +316,6 @@ value = 1.0
 
 [node name="WorldButtons" type="Control" parent="Root" unique_id=1598371946]
 unique_name_in_owner = true
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
