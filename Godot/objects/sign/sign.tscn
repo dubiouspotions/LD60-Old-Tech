@@ -17,6 +17,7 @@ fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
 [node name="Sign" type="Node2D"]
+z_index = 6
 script = ExtResource("1_sign")
 text = "Text"
 font = ExtResource("4_font")

@@ -80,6 +80,19 @@ func test_uses_the_games_font() -> void:
 	assert_eq(_sign("x").get_node("%Text").get_theme_font(&"font").resource_path, "res://ui/fonts/alagard.ttf")
 
 
+## Nothing in the world covers a sign: not the ground, the tall grass, falling leaves or birds.
+func test_drawn_in_front_of_the_world() -> void:
+	var s := _sign("x")
+	var grass: Node2D = load("res://world/tall_grass.tscn").instantiate()
+	var bird: Node2D = load("res://objects/bird/bird.tscn").instantiate()
+	var world: World = load("res://game/world.tscn").instantiate()
+	for n: Node2D in [grass, bird, world.get_node("%Leaves"), world.get_node("%Terrain")]:
+		assert_gt(s.z_index, n.z_index, "in front of %s" % n.name)
+	assert_lt(s.z_index, 50, "behind the effects")
+	for n in [grass, bird, world]:
+		n.free()
+
+
 func test_lit_at_night_by_a_mix_lamp() -> void:
 	var lamp: NightLight = _sign("x").get_node("%Lamp")
 	assert_eq(lamp.blend_mode, Light2D.BLEND_MODE_MIX)
