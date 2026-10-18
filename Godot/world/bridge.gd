@@ -510,6 +510,12 @@ func structure_of(m: Member) -> Array[Member]:
 	return out
 
 
+## The structure m is part of is still being built: some of it is on scaffolding, or the crew has started one of
+## its planned pieces. A plan nobody has started does not count.
+func under_construction(m: Member) -> bool:
+	return structure_of(m).any(func(o: Member) -> bool: return o.scaffolded or (o.blueprint and o.progress > 0.0))
+
+
 func _in_structure(m: Member) -> bool:
 	return not m.blueprint or m.ordered
 

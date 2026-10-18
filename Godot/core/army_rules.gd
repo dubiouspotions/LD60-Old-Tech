@@ -72,6 +72,8 @@ extends Resource
 @export var hold_text: String = "Awaiting the king's order"
 ## Status while the front waits at the level's exit for the rest of the column.
 @export var gather_text: String = "Waiting for the column"
+## Shown while the column waits to walk onto a structure the crew is still building (see Bridge.under_construction).
+@export var construction_text: String = "Waiting for the engineers to finish"
 ## Status while the column stands back from a razed tower coming down.
 @export var collapse_text: String = "Stand back, the tower is coming down"
 ## How far ahead the front soldier spots deep drops and hazards. Only a warning in the status bar.

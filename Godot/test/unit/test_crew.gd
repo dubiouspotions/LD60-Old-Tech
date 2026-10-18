@@ -506,7 +506,8 @@ func test_engineers_walk_over_slopes_at_walking_speed_without_shaking() -> void:
 	assert_lt((path.size() - started) * dt, 10.0 / world.crew.rules.walk_speed * 1.2, "about walking speed from x 6 to 16")
 
 
-func test_column_follows_the_engineer_out_onto_a_piece_being_built() -> void:
+## The column does not follow the engineer out onto a piece being built: it waits at the foot of it.
+func test_column_waits_while_the_engineer_builds_a_piece() -> void:
 	world.army.spawn(3, 3.5)
 	var m := _plan(Vector2(6, 6), Vector2(10, 6))
 	world.bridge.order_blueprints()
@@ -515,7 +516,8 @@ func test_column_follows_the_engineer_out_onto_a_piece_being_built() -> void:
 		world._physics_process(1.0 / 60.0)
 		if m.blueprint and world.army.lead():
 			furthest[0] = maxf(furthest[0], world.army.lead().pos.x)
-	assert_gt(furthest[0], 6.5, "out on the built part before the piece is finished")
+	assert_gt(furthest[0], 5.0, "walked up to it")
+	assert_lt(furthest[0], 6.0, "and waited at the foot while it was being built")
 
 
 ## A flat 100 m strip with the column at x 50.5, the crew around it and a camera on it.

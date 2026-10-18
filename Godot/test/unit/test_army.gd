@@ -141,6 +141,50 @@ func test_long_fall_kills() -> void:
 	assert_eq(a.soldiers.size(), 0)
 
 
+## A bridge still on its scaffolding is under construction: the column waits at its foot until it is struck and
+## the bridge stands on its own, then crosses.
+func test_waits_for_a_bridge_under_construction() -> void:
+	var a := _world([
+		"............",
+		"............",
+		"####....####",
+		"####....####",
+		"####....####",
+		"BBBBBBBBBBBB",
+	])
+	var b := a.bridge
+	var m := b.build(b.snap_point(Vector2(4, 2)), b.snap_point(Vector2(8, 2)), preload("res://data/bridge/log.tres"), true)
+	m.ordered = true
+	b.finish(m)
+	assert_true(m.scaffolded, "built, on scaffolding")
+	a.spawn(1, 1.5)
+	_run(a, 6.0)
+	assert_lt(a.lead().pos.x, 4.0, "waits at the foot of it")
+	assert_almost_eq(a.lead().pos.y, 2.0, 0.01, "on the ground, not fallen")
+	assert_eq(a.halt_reason, a.rules.construction_text)
+	b.strike_scaffolding()
+	_run(a, 6.0)
+	assert_gt(a.lead().pos.x, 9.0, "crosses once it stands on its own")
+
+
+## A plan nobody has started building is not waited for: the column walks off the edge as ever.
+func test_does_not_wait_for_a_plan_nobody_started() -> void:
+	var a := _world([
+		"............",
+		"............",
+		"####....####",
+		"####....####",
+		"####....####",
+		"BBBBBBBBBBBB",
+	])
+	var b := a.bridge
+	var m := b.build(b.snap_point(Vector2(4, 2)), b.snap_point(Vector2(8, 2)), preload("res://data/bridge/log.tres"), true)
+	m.ordered = true
+	a.spawn(1, 1.5)
+	_run(a, 4.0)
+	assert_true(a.lead() == null or a.lead().pos.y > 2.5, "walked off into the gap")
+
+
 func test_crosses_log_bridge() -> void:
 	var a := _world([
 		"............",
@@ -314,7 +358,8 @@ func test_walks_through_a_two_metre_tunnel() -> void:
 	assert_gt(a.lead().pos.x, 8.0)
 
 
-func test_walks_onto_the_finished_part_of_a_bridge_being_built() -> void:
+## Not even the finished part of a bridge still being built is walked onto: the column waits at its foot.
+func test_waits_at_the_foot_of_a_bridge_being_built() -> void:
 	var a := _world([
 		"..................",
 		"..................",
@@ -337,7 +382,8 @@ func test_walks_onto_the_finished_part_of_a_bridge_being_built() -> void:
 		a.step(1.0 / 60.0)
 		if a.lead():
 			furthest[0] = maxf(furthest[0], a.lead().pos.x)
-	assert_gt(furthest[0], 7.0, "out on the finished piece")
+	assert_lt(furthest[0], 6.0, "waits at the foot while it is being built")
+	assert_eq(a.halt_reason, a.rules.construction_text)
 
 
 func test_besieges_and_razes_a_tower_in_the_way() -> void:

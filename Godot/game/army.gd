@@ -147,6 +147,10 @@ func step(dt: float) -> void:
 			if i == 0:
 				halt_reason = block
 			continue
+		if _construction_ahead(s, dx):
+			if i == 0:
+				halt_reason = rules.construction_text
+			continue
 		_step_x(s, dx)
 	_remove_dead()
 	for s in soldiers:
@@ -341,6 +345,19 @@ func _blocked_ahead(s: Soldier, dx: float) -> String:
 		if terrain.is_solid(Vector2i(col, floori(sup.y - 0.5) - k)):
 			return rules.low_text
 	return ""
+
+
+## The next dx step would take the soldier onto a structure still under construction (Bridge.under_construction)
+## that it is not already on.
+func _construction_ahead(s: Soldier, dx: float) -> bool:
+	if bridge == null:
+		return false
+	var sup := surface_at(s.pos.x + signf(dx) * rules.foot_half_width + dx, s.pos.y - rules.step_up)
+	var m: Bridge.Member = sup.member
+	if m == null or m == s.on_member:
+		return false
+	var structure := bridge.structure_of(m)
+	return not (s.on_member in structure) and bridge.under_construction(m)
 
 
 ## Warning text for the first deep drop or hazard within warn_distance ahead of the soldier, else "".
