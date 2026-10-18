@@ -12,6 +12,8 @@ extends TileMapLayer
 signal tile_detached(cell: Vector2i, type: TerrainType)
 ## Structures with no ground under them fell apart, or a tree lost the ground it stood on.
 signal collapsed(found: Supplies, cells: Array[Vector2i])
+## A cell's material changed while playing (dug, filled, fell, collapsed).
+signal cell_changed(cell: Vector2i)
 
 const CUSTOM_DATA: String = "terrain"
 ## Stands for "no material" (air tiles such as fillets) in lookups: an empty custom data value and a typed null
@@ -113,6 +115,7 @@ func set_type(cell: Vector2i, type: TerrainType) -> void:
         size = Vector2i(maxi(size.x, cell.x + 1), maxi(size.y, cell.y + 1))
     _dirty_cols[cell.x] = true
     _retile_around([cell])
+    cell_changed.emit(cell)
 
 
 ## The material of the tile painted at cell, read from the tile itself (also right after painting in the editor).

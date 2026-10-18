@@ -96,6 +96,22 @@ v2 sheet; nothing uses it any more.
   tiles: the *Classic look* roles, with grass where soil meets the air. Levels need no repainting either way.
 - Rock touching the air gets the grass edge like dirt, because the sheet has no bare-rock edge pieces.
 
+### Tall grass
+
+Each level has a **Grass** layer (under the level root, after ExitFlag) for patches of tall grass that sway and are
+drawn in front of the soldiers, engineers and objects. Select **Grass**, pick the grass tile in the TileMap panel and
+paint it in the air cells right on top of the ground. Scatter it in small patches rather than everywhere.
+
+- Grass on ground that is dug away, or in a cell that gets filled, disappears while playing.
+- `test_levels` checks that every grass cell is in the air with ground under it.
+- **The animation** plays the frames of `world/grass_anim.png` (8 px each, left to right, drawn at 4x like the rest
+  of the art) from `world/tall_grass_material.tres`. Each column of the world starts one frame later than the column
+  to its left, so the sway rolls along like wind. Open the material to tune it, and it shows in the editor as well:
+  **Frame Time** (seconds per frame) and **Delay Frames** (how far each column lags: 0 sways all in step, negative
+  rolls right to left). To add a frame, just widen the sheet by 8 px. Keep **Use Texture Padding** off on the
+  grass TileSet's atlas, because the frames are read straight from the sheet.
+- How far in front it draws is the **Z Index** of `world/tall_grass.tscn` (4: above soldiers 2 and arrows 3).
+
 **Changing the sheet.** Edit `world/tilemap-terrain.png` (keep the sky transparent), update the roles in
 `data/terrain_look.tres` if tiles moved or were added, then from `Godot/`:
 
