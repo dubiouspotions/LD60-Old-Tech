@@ -12,6 +12,8 @@ extends TileMapLayer
 signal tile_detached(cell: Vector2i, type: TerrainType)
 ## Structures with no ground under them fell apart, or a tree lost the ground it stood on.
 signal collapsed(found: Supplies, cells: Array[Vector2i])
+## A tree is coming down (chopped, or its ground gone): every cell of it, just before they are cleared.
+signal felled(cells: Array[Vector2i])
 ## A cell's material changed while playing (dug, filled, fell, collapsed).
 signal cell_changed(cell: Vector2i)
 
@@ -301,7 +303,9 @@ func dig(cell: Vector2i) -> Supplies:
 ## Removes every connected tile that fells with this one (a whole tree). Returns the bulk yield.
 func fell(cell: Vector2i) -> Supplies:
     var counts := {}
-    for c in _fell_group(cell):
+    var group := _fell_group(cell)
+    felled.emit(group)
+    for c in group:
         var t := type_at(c)
         counts[t] = counts.get(t, 0) + 1
         set_type(c, null)

@@ -69,6 +69,14 @@ class Chunk:
 @onready var objects: Node2D = %Objects
 @onready var flags: Node2D = %Flags
 @onready var grass: TallGrass = %Grass
+## Fireflies under the trees at night (DayNight fades them in).
+@onready var fireflies: Fireflies = %Fireflies
+## Pollen drifting on the wind by day (DayNight fades it out at night).
+@onready var pollen: Pollen = %Pollen
+## Birds hiding in the tall grass.
+@onready var birds: Birds = %Birds
+## Leaves bursting from felled trees.
+@onready var leaves: LeafPoof = %Leaves
 
 ## Campaign index of the level the column is in, -1 before begin().
 var current: int = -1
@@ -99,6 +107,9 @@ func _ready() -> void:
 	crew.bridge = bridge
 	crew.army = army
 	terrain.tile_detached.connect(_on_tile_detached)
+	terrain.felled.connect(func(cells: Array[Vector2i]) -> void:
+		leaves.burst(cells)
+		birds.from_tree(cells))
 	terrain.collapsed.connect(func(found: Supplies, cells: Array[Vector2i]) -> void: gain(found, _top_of(cells)))
 	bridge.member_broken.connect(_on_member_broken)
 	bridge.struck.connect(_on_bridge_struck)
@@ -152,6 +163,7 @@ func rewind(index: int) -> void:
 		_drop(i, i > index)
 	terrain.clear_from(seam)
 	grass.clear_from(seam)
+	birds.forget_from(seam)
 	bridge.remove_outside(-INF, seam)
 	_free_objects(func(x: float) -> bool: return x >= seam)
 	_strike_camp()
@@ -181,6 +193,7 @@ func unload(index: int) -> void:
 	var edge := c.end()
 	terrain.unload_before(edge)
 	grass.unload_before(edge)
+	birds.forget_before(edge)
 	bridge.remove_outside(edge, INF)
 	_free_objects(func(x: float) -> bool: return x < edge)
 	_drop(index, true)
@@ -443,6 +456,7 @@ func _wipe() -> void:
 	terrain.clear()
 	terrain.rebuild()
 	grass.clear()
+	birds.clear()
 	bridge.clear()
 	_free_objects(func(_x: float) -> bool: return true)
 	for f in flags.get_children():

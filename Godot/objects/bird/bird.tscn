@@ -1,0 +1,17 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://objects/bird/bird.gd" id="1"]
+[ext_resource type="Texture2D" path="res://world/bird.png" id="2"]
+[ext_resource type="Shader" path="res://objects/bird/bird_mask.gdshader" id="3"]
+
+[sub_resource type="ShaderMaterial" id="mask"]
+shader = ExtResource("3")
+
+[node name="Bird" type="Node2D"]
+z_index = 5
+script = ExtResource("1")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+material = SubResource("mask")
+texture = ExtResource("2")
+hframes = 9

@@ -10,6 +10,10 @@ extends Node
 @export var stars: Stars
 ## The night colour grade, faded in at night (optional).
 @export var grade: NightGrade
+## Fireflies under the trees, out at night (optional).
+@export var fireflies: Fireflies
+## Pollen on the wind, out by day (optional).
+@export var pollen: Pollen
 @export var day_color: Color = Color.WHITE
 @export var night_world_color: Color = Color(0.3, 0.34, 0.52)
 @export var night_sky_color: Color = Color(0.2, 0.23, 0.4)
@@ -42,6 +46,10 @@ func set_night(on: bool, instant: bool = false, seconds: float = -1.0) -> void:
 		_tween.tween_property(stars, ^"amount", 1.0 if on else 0.0, maxf(t, 0.01))
 	if grade:
 		_tween.tween_property(grade, ^"amount", 1.0 if on else 0.0, maxf(t, 0.01))
+	if fireflies:
+		_tween.tween_property(fireflies, ^"amount", 1.0 if on else 0.0, maxf(t, 0.01))
+	if pollen:
+		_tween.tween_property(pollen, ^"amount", 0.0 if on else 1.0, maxf(t, 0.01))
 	if t == 0.0:
 		_tween.custom_step(1.0)
 	for l: NightLight in get_tree().get_nodes_in_group(NightLight.GROUP):
