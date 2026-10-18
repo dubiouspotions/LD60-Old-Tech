@@ -65,6 +65,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Where stone comes from | Rock tiles (`data/terrain/rock.tres`, **Dig Yield**) and razed towers (`data/terrain/brick.tres`, **Bulk Yield**) |
 | Where gold comes from | Gold ore tiles (`data/terrain/crystal.tres`), the campaign's **Start Supplies**, and each level's **Supply Drop** |
 | Do archers shoot at night | **Rests At Night** on `objects/archer/archer.tscn` |
+| The dashed circle around each archer showing its shooting range (off by default; only the look, the range itself is **Shoot Range**) | **Show Range** and **Range Color** in the **Look** group on `objects/archer/archer.tscn` |
 | How early the next level loads, how far behind levels are removed | **Stream Ahead** / **Unload Behind** on `game/world.tscn` |
 
 ## Tiles and terrain types
