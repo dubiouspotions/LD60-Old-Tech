@@ -984,7 +984,7 @@ func _collide_body(b: Body, h: float) -> void:
 				_collide_member(m, h, _push_out_of_box.bind(b), false)
 		return
 	for m in members:
-		if m.blueprint or m == b.skip:
+		if m.blueprint or m == b.skip or not m.material.solid_to_bodies:
 			continue
 		var d := m.b.pos - m.a.pos
 		var t := clampf((b.center - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)

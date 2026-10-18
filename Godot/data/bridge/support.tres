@@ -17,6 +17,7 @@ kg_per_m = 14.0
 break_force = 13000.0
 blocks_arrows = false
 walkable = false
+solid_to_bodies = false
 snapped_text = "Support pulled apart"
 buckled_text = "Support buckled"
 color = Color(0.54, 0.38, 0.22, 1)

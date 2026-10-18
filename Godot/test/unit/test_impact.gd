@@ -354,3 +354,20 @@ func test_a_fast_piece_landing_with_its_end_on_a_tower_edge_batters_it() -> void
 		hit[0] = maxf(hit[0], world.terrain.siege_progress(Vector2i(x, 7)))
 	assert_gt(hit[0], 0.0, "the hit on the tower's edge counted")
 	assert_lt(m.a.pos.y, 7.1, "and the piece rests on top")
+
+
+func test_soldiers_ignore_supports_and_ropes() -> void:
+	for mat: BridgeMaterial in [preload("res://data/bridge/support.tres"), preload("res://data/bridge/rope.tres")]:
+		before_each()
+		# A free-standing A-frame across the column's path, its apex free at chest height.
+		var b := world.bridge
+		b.build(b.snap_point(Vector2(6, 6)), b.snap_point(Vector2(7.5, 4.5)), mat)
+		b.build(b.snap_point(Vector2(9, 6)), b.snap_point(Vector2(7.5, 4.5)), mat)
+		_run(1.0)
+		var apex: Bridge.Joint = b.members[0].b
+		var start := apex.pos
+		world.army.spawn(3, 3.5)
+		_run(5.0)
+		assert_eq(world.army.soldiers.size(), 3, "%s crushes nobody" % mat.display_name)
+		assert_gt(world.army.lead().pos.x, 9.5, "the column walked through the %s" % mat.display_name)
+		assert_almost_eq(apex.pos, start, Vector2(0.1, 0.1), "the %s was not shoved by them" % mat.display_name)

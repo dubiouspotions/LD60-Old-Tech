@@ -22,6 +22,7 @@ tension_only = true
 attach_along = false
 blocks_arrows = false
 walkable = false
+solid_to_bodies = false
 ram = 0.0
 impact_strength = 0.0
 snapped_text = "Rope snapped"
