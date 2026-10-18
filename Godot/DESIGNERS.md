@@ -106,7 +106,11 @@ v2 sheet; nothing uses it any more.
   and 9) have no art yet and fall back to full rock. The grass tufts tile (0, 0) is not used yet.
 - **Switching off** (**Enabled** on the look, or **art › Terrain V2** on ValueTweaks) draws everything with the old
   tiles: the *Classic look* roles, with grass where soil meets the air. Levels need no repainting either way.
-- Rock touching the air gets the grass edge like dirt, because the sheet has no bare-rock edge pieces.
+- **Rock never gets grass.** Rock and bedrock touching the air (the surface, a tunnel dug into rock) use the **Rock
+  edges** roles on the look: the same places as the grass roles, plus fillets for steps of rock. The sheet has no rock
+  edge art yet, so they are empty: an empty edge role draws the Rock tiles (square edges) and an empty fillet draws
+  nothing. Draw the art, list it there, and run `build_tiles_v2.tscn -- tileset` so each tile gets its rock and bedrock
+  alternatives; no code changes.
 
 ### Tall grass
 

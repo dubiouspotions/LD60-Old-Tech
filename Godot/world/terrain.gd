@@ -352,7 +352,7 @@ func _retile(cell: Vector2i) -> void:
 	var v2 := _v2() or (t != null and look != null and atlas_tile(t).is_empty() and tile_set.has_source(look.source_id))
 	var role := rules().role(cell) if v2 and (t != null or _v2()) else &""
 	if role != &"":
-		if src == look.source_id and look.role_of(get_cell_atlas_coords(cell)) == role and _read_cell(cell) == t:
+		if src == look.source_id and look.fits(role, get_cell_atlas_coords(cell)) and _read_cell(cell) == t:
 			return
 		if src == look.classic_source and _read_cell(cell) == t and not look.is_ground(t):
 			return

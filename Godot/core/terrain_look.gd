@@ -70,6 +70,27 @@ extends Resource
 @export var fillet_l: Array[Vector2i] = []
 @export var fillet_l_low: Array[Vector2i] = []
 
+@export_group("Rock edges (rock with air beside, above or below)")
+## The same places as the grass roles above, for rock and bedrock, which never get grass. An empty list draws the
+## Rock tiles there (square edges); the fillets draw nothing.
+@export var rock_flat_tops: Array[Vector2i] = []
+@export var rock_corner_tl: Array[Vector2i] = []
+@export var rock_corner_tr: Array[Vector2i] = []
+@export var rock_wall_l: Array[Vector2i] = []
+@export var rock_wall_r: Array[Vector2i] = []
+@export var rock_inner_tl: Array[Vector2i] = []
+@export var rock_inner_tr: Array[Vector2i] = []
+@export var rock_inner_bl: Array[Vector2i] = []
+@export var rock_inner_br: Array[Vector2i] = []
+@export var rock_ceiling: Array[Vector2i] = []
+@export var rock_ceiling_l: Array[Vector2i] = []
+@export var rock_ceiling_r: Array[Vector2i] = []
+## Air at the foot of a rock step, or of a step on rock.
+@export var rock_fillet_r: Array[Vector2i] = []
+@export var rock_fillet_r_low: Array[Vector2i] = []
+@export var rock_fillet_l: Array[Vector2i] = []
+@export var rock_fillet_l_low: Array[Vector2i] = []
+
 @export_group("Water and spikes")
 ## Water with air above, and deeper water.
 @export var water_top: Array[Vector2i] = []
@@ -94,10 +115,16 @@ extends Resource
 const GROUND_ROLES: Array[StringName] = [&"flat_tops", &"corner_tl", &"corner_tr", &"wall_l", &"wall_r",
 	&"inner_tl", &"inner_tr", &"inner_bl", &"inner_br", &"ceiling", &"ceiling_l", &"ceiling_r", &"dirt"]
 const FILLET_ROLES: Array[StringName] = [&"fillet_r", &"fillet_r_low", &"fillet_l", &"fillet_l_low"]
+## Rock's own version of each grass role (a rock_ prefix), and of the fillets.
+const ROCK_EDGE_ROLES: Array[StringName] = [&"rock_flat_tops", &"rock_corner_tl", &"rock_corner_tr", &"rock_wall_l",
+	&"rock_wall_r", &"rock_inner_tl", &"rock_inner_tr", &"rock_inner_bl", &"rock_inner_br", &"rock_ceiling",
+	&"rock_ceiling_l", &"rock_ceiling_r"]
+const ROCK_FILLET_ROLES: Array[StringName] = [&"rock_fillet_r", &"rock_fillet_r_low", &"rock_fillet_l",
+	&"rock_fillet_l_low"]
 ## Every cell role: the TileSet source gets one tile per listed coordinate.
 const CELL_ROLES: Array[StringName] = [&"flat_tops", &"corner_tl", &"corner_tr", &"corner_tl_alt", &"corner_tr_alt",
 	&"wall_l", &"wall_r", &"inner_tl", &"inner_tr", &"inner_bl", &"inner_br", &"ceiling", &"ceiling_l", &"ceiling_r",
-	&"dirt", &"rock", &"fillet_r", &"fillet_r_low", &"fillet_l", &"fillet_l_low", &"water_top", &"water", &"spikes"]
+	&"dirt", &"rock", &"fillet_r", &"fillet_r_low", &"fillet_l", &"fillet_l_low", &"water_top", &"water", &"spikes"] 	+ ROCK_EDGE_ROLES + ROCK_FILLET_ROLES
 
 var _role_of: Dictionary = {}
 
@@ -130,9 +157,17 @@ func body_tiles() -> Array[Vector2i]:
 	return out
 
 
-## Tiles a cell of role may be given when it needs a new one.
+## Tiles a cell of role may be given when it needs a new one. A rock edge role with no art gets the Rock tiles.
 func tiles(role: StringName) -> Array[Vector2i]:
-	return get(role)
+	var out: Array[Vector2i] = get(role)
+	if out.is_empty() and role in ROCK_EDGE_ROLES:
+		return rock
+	return out
+
+
+## Whether the tile at coords may stay on a cell of role.
+func fits(role: StringName, coords: Vector2i) -> bool:
+	return role_of(coords) == role or coords in tiles(role)
 
 
 ## The role a v2 tile plays (an *_alt tile plays its base role), or &"" if it is not a cell tile.
@@ -149,7 +184,7 @@ func materials(role: StringName) -> Array:
 	var base := StringName(String(role).trim_suffix("_alt"))
 	if base in GROUND_ROLES:
 		return dirt_types + rock_types
-	if base == &"rock":
+	if base == &"rock" or base in ROCK_EDGE_ROLES:
 		return rock_types.duplicate()
 	if base in [&"water_top", &"water"]:
 		return water_types.duplicate()
