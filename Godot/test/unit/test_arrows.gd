@@ -77,3 +77,60 @@ func test_archer_can_not_shoot_down_through_its_own_tower() -> void:
 	assert_eq(world.army.soldiers.size(), 1, "the tower's own wall is in the way")
 	if world.army.lead():
 		assert_eq(world.army.lead().hp, hp, "not even wounded")
+
+
+## Archer on a tower at column 14 (feet at y = 2); a wall at column 12 hides the ground just in front of it.
+func _tower_and_wall() -> Archer:
+	for y in range(2, 5):
+		for x in range(13, 16):
+			world.terrain.set_type(Vector2i(x, y), WorldFixture.type("brick"))
+	for y in range(3, 5):
+		world.terrain.set_type(Vector2i(12, y), WorldFixture.type("brick"))
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(14.5, 2))
+	world.objects.add_child(archer)
+	return archer
+
+
+## Puts the column's soldiers at these x positions on the ground (row 5).
+func _soldiers_at(xs: Array) -> Array[Soldier]:
+	world.army.spawn(xs.size(), 1.0)
+	for i in xs.size():
+		world.army.soldiers[i].pos = Vector2(xs[i], 5.0)
+	return world.army.soldiers
+
+
+func test_archer_shoots_a_soldier_it_can_see_over_a_nearer_hidden_one() -> void:
+	var archer := _tower_and_wall()
+	var s := _soldiers_at([11.5, 5.5])
+	assert_false(archer.sees(world, s[0]), "behind the wall")
+	assert_true(archer.sees(world, s[1]))
+	assert_eq(archer.pick_target(world), s[1])
+
+
+func test_archer_still_shoots_the_nearest_when_none_can_be_seen() -> void:
+	var archer := _tower_and_wall()
+	var s := _soldiers_at([11.5, 11.2])
+	assert_eq(archer.pick_target(world), s[0], "fires anyway")
+
+
+func test_archer_shoots_the_nearest_of_those_it_can_see() -> void:
+	var archer := _tower_and_wall()
+	var s := _soldiers_at([11.5, 5.5, 7.5])
+	assert_eq(archer.pick_target(world), s[2])
+
+
+func test_a_log_wall_hides_a_soldier_from_the_archer() -> void:
+	var archer := _tower_and_wall()
+	var s := _soldiers_at([9.5, 4.5])
+	var b := world.bridge
+	b.build(b.snap_point(Vector2(10, 5)), b.snap_point(Vector2(10, 3)), preload("res://data/bridge/log.tres"))
+	assert_false(archer.sees(world, s[0]), "behind the logs")
+	assert_eq(archer.pick_target(world), s[1])
+
+
+func test_out_of_range_soldiers_are_not_targets() -> void:
+	var archer := _tower_and_wall()
+	_soldiers_at([0.5])
+	archer.shoot_range = 5.0
+	assert_null(archer.pick_target(world))

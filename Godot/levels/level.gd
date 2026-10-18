@@ -18,7 +18,7 @@ extends Node2D
 
 
 func terrain() -> Terrain:
-    return get_node(^"Terrain")
+	return get_node(^"Terrain")
 
 
 ## Tall grass painted for this level (see TallGrass).
@@ -27,12 +27,12 @@ func grass() -> TileMapLayer:
 
 
 func objects() -> Node2D:
-    return get_node(^"Objects")
+	return get_node(^"Objects")
 
 
 func start_flag() -> CheckpointFlag:
-    return get_node(^"StartFlag")
+	return get_node(^"StartFlag")
 
 
 func exit_flag() -> CheckpointFlag:
-    return get_node(^"ExitFlag")
+	return get_node(^"ExitFlag")

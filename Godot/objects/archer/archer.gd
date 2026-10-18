@@ -1,6 +1,7 @@
 class_name Archer
 extends Node2D
-## An enemy archer on a tower. Shoots at the nearest soldier in range.
+## An enemy archer on a tower. Shoots at the nearest soldier in range that it has a clear shot at (no ground or
+## arrow-blocking bridge member on the arrow's arc), or at the nearest in range if it has a clear shot at none.
 ## Place it with its feet (node origin) on top of a solid tile. It dies when that tile is destroyed,
 ## or when soldiers reach it and cut it down.
 
@@ -71,29 +72,81 @@ func _physics_process(dt: float) -> void:
 		engaging = false
 		return
 	_cooldown -= dt
-	var origin := feet_m() - Vector2(0, bow_height)
-	var target: Soldier = null
-	var best := shoot_range
-	for s in world.army.soldiers:
-		var d := (s.pos - Vector2(0, 0.5)).distance_to(origin)
-		if d < best:
-			best = d
-			target = s
-	engaging = target != null
-	if target == null or _cooldown > 0.0:
+	var origin := _bow()
+	engaging = not _in_range(world).is_empty()
+	if not engaging or _cooldown > 0.0:
 		return
+	var target := pick_target(world)
 	_cooldown = reload_time
-	var to := target.pos - Vector2(0, 0.5) - origin
-	var flight := maxf(0.25, to.length() / arrow_speed)
-	var vel := Vector2(to.x / flight * (1.0 + randf_range(-aim_error, aim_error)), to.y / flight - 0.5 * arrow_gravity * flight)
 	var arrow: Arrow = arrow_scene.instantiate()
-	arrow.velocity = vel
+	arrow.velocity = _shot_velocity(_aim_point(target) - origin, randf_range(-aim_error, aim_error))
 	arrow.gravity = arrow_gravity
 	arrow.shooter_column = floori(feet_m().x)
 	arrow.shooter_feet_y = feet_m().y
 	arrow.position = Grid.to_px(origin)
 	world.objects.add_child(arrow)
 	Audio.play(shoot_sound, position)
+
+
+## The soldier to shoot at: the nearest in range in sight, else the nearest in range, else null.
+func pick_target(world: World) -> Soldier:
+	var near := _in_range(world)
+	for s in near:
+		if sees(world, s):
+			return s
+	return near[0] if not near.is_empty() else null
+
+
+## Soldiers within shoot_range of the bow, nearest first.
+func _in_range(world: World) -> Array[Soldier]:
+	var origin := _bow()
+	var out: Array[Soldier] = []
+	for s in world.army.soldiers:
+		if _aim_point(s).distance_to(origin) < shoot_range:
+			out.append(s)
+	out.sort_custom(func(a: Soldier, b: Soldier) -> bool:
+		return _aim_point(a).distance_squared_to(origin) < _aim_point(b).distance_squared_to(origin))
+	return out
+
+
+## True if an arrow shot at the soldier (aimed true) would reach it: its arc meets no ground and no bridge member
+## that stops arrows on the way (the same rules as the arrow, see Arrow.obstacle).
+func sees(world: World, s: Soldier) -> bool:
+	var a := _bow()
+	var b := _aim_point(s)
+	var vel := _shot_velocity(b - a, 0.0)
+	var p := a
+	var age := 0.0
+	var dt := 1.0 / 60.0
+	var column := floori(feet_m().x)
+	while (b.x - p.x) * signf(vel.x) > 0.0 and age < 4.0:
+		var from := p
+		age += dt
+		p += vel * dt
+		vel.y += arrow_gravity * dt
+		if not Arrow.obstacle(world, from, p, age, column, feet_m().y).is_empty():
+			return false
+	return true
+
+
+## Inside the archer's own crenellations: its column or a neighbour, above its feet. Its arrows pass through them
+## right after the shot.
+static func own_tower(p: Vector2, column: int, feet_y: float) -> bool:
+	return absi(Grid.cell_of(p).x - column) <= 1 and p.y < feet_y
+
+
+## Launch velocity to land an arrow at offset to, its sideways speed off by error (a fraction).
+func _shot_velocity(to: Vector2, error: float) -> Vector2:
+	var flight := maxf(0.25, to.length() / arrow_speed)
+	return Vector2(to.x / flight * (1.0 + error), to.y / flight - 0.5 * arrow_gravity * flight)
+
+
+func _bow() -> Vector2:
+	return feet_m() - Vector2(0, bow_height)
+
+
+func _aim_point(s: Soldier) -> Vector2:
+	return s.pos - Vector2(0, 0.5)
 
 
 func _go_down(text: String) -> void:
