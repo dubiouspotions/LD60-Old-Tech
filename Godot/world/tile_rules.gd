@@ -34,6 +34,12 @@ func role(cell: Vector2i) -> StringName:
 		if left and not right:
 			return &"corner_tr"
 		return &"flat_tops"
+	if not _solid(cell + Vector2i.DOWN):
+		if not left and right:
+			return &"ceiling_l"
+		if left and not right:
+			return &"ceiling_r"
+		return &"ceiling"
 	if not left:
 		return &"wall_l"
 	if not right:
@@ -42,6 +48,10 @@ func role(cell: Vector2i) -> StringName:
 		return &"inner_tl"
 	if not _solid(cell + Vector2i(1, -1)):
 		return &"inner_tr"
+	if not _solid(cell + Vector2i(-1, 1)):
+		return &"inner_bl"
+	if not _solid(cell + Vector2i(1, 1)):
+		return &"inner_br"
 	return &"rock" if t in look.rock_types else &"dirt"
 
 
@@ -56,7 +66,7 @@ func body(corner: Vector2i) -> Vector2i:
 			return Vector2i(-1, -1)
 		if t in look.rock_types:
 			mask |= 1 << i
-	return look.body_tile(mask)
+	return look.body_tile(mask, corner)
 
 
 ## Air at the foot of a step: grass filling the corner, or &"".

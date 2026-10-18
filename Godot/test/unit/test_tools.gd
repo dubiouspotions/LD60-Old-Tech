@@ -115,6 +115,64 @@ func test_box_without_five_logs_does_nothing() -> void:
 	assert_null(world.terrain.type_at(Vector2i(10, 5)))
 
 
+func test_clicks_place_a_chain_of_planks() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	assert_eq(world.bridge.members.size(), 0, "a click only starts the plank")
+	_click(Vector2(9, 6))
+	assert_eq(world.bridge.members.size(), 1, "the second click places the end")
+	assert_eq(world.bridge.members[0].b.pos, Vector2(9, 6))
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 2, "each further click adds the next plank")
+	assert_eq(world.bridge.members[1].a, world.bridge.members[0].b, "joined at the last point")
+	_click(Vector2(11, 5))
+	_click(Vector2(13, 5))
+	assert_eq(world.bridge.members.size(), 2, "clicking the last point again finishes the chain")
+
+
+func test_right_click_or_cancel_finishes_a_chain() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	tools.cancel()
+	_click(Vector2(11, 6))
+	assert_eq(world.bridge.members.size(), 1, "the next click starts a new chain")
+	assert_true(InputMap.action_has_event(&"cancel", _right_click()), "right-click cancels")
+
+
+## Through real input: the camera, which pans on a right-drag, must not swallow the right-click first.
+func test_a_real_right_click_finishes_a_chain_even_with_the_camera() -> void:
+	var cam := CameraRig.new()
+	cam.world = world
+	add_child_autofree(cam)
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	get_viewport().push_input(_right_click())
+	var up := _right_click()
+	up.pressed = false
+	get_viewport().push_input(up)
+	_click(Vector2(11, 6))
+	assert_eq(world.bridge.members.size(), 1, "the chain ended: the next click starts a new one")
+
+
+func test_a_click_that_can_not_build_keeps_the_chain() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(13, 6))
+	assert_eq(world.bridge.members.size(), 0, "too long")
+	_click(Vector2(9, 6))
+	assert_eq(world.bridge.members.size(), 1, "still building from the first point")
+	assert_eq(world.bridge.members[0].a.pos, Vector2(6, 6))
+
+
+func _right_click() -> InputEventMouseButton:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_RIGHT
+	e.pressed = true
+	return e
+
+
 func test_log_build_spends_a_log() -> void:
 	_select(ToolDefinition.Kind.BUILD, "Log")
 	var logs := GameState.supplies.logs

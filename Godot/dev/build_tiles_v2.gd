@@ -28,11 +28,14 @@ func _ready() -> void:
 
 
 func _art() -> void:
-	var sky := Color("64988e")
 	var look := ResourceLoader.load(LOOK_PATH, "", ResourceLoader.CACHE_MODE_IGNORE) as TerrainLook
-	if look:
-		sky = look.sky_key
-	var img := Image.load_from_file(ProjectSettings.globalize_path(SOURCE_PNG))
+	var source := look.source_texture.resource_path if look and look.source_texture else SOURCE_PNG
+	var target := look.texture.resource_path if look and look.texture else KEYED_PNG
+	if source == target:
+		print("build_tiles_v2: %s already has a transparent sky, nothing to key out" % source)
+		return
+	var sky := look.sky_key if look else Color("64988e")
+	var img := Image.load_from_file(ProjectSettings.globalize_path(source))
 	img.convert(Image.FORMAT_RGBA8)
 	var keyed := 0
 	for y in img.get_height():
@@ -40,8 +43,8 @@ func _art() -> void:
 			if img.get_pixel(x, y).is_equal_approx(sky):
 				img.set_pixel(x, y, Color(0, 0, 0, 0))
 				keyed += 1
-	img.save_png(ProjectSettings.globalize_path(KEYED_PNG))
-	print("build_tiles_v2: wrote %s (%d sky pixels made transparent)" % [KEYED_PNG, keyed])
+	img.save_png(ProjectSettings.globalize_path(target))
+	print("build_tiles_v2: wrote %s (%d sky pixels made transparent)" % [target, keyed])
 
 
 func _tileset() -> void:

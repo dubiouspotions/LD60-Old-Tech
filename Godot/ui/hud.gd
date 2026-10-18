@@ -82,8 +82,9 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 	_tool_buttons.clear()
 	_tools = tools
 	_colors = {}
+	# Opaque: a readout may hide its swatch (shown by an icon instead), but the cost swatches need the colour.
 	for k in Supplies.KEYS:
-		_colors[k] = _readout(k).swatch
+		_colors[k] = Color(_readout(k).swatch, 1.0)
 	for i in tools.size():
 		var b: ToolButton = tool_button_scene.instantiate()
 		b.button_group = _group
