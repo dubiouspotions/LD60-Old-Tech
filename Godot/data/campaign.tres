@@ -2,17 +2,17 @@
 
 [ext_resource type="Resource" uid="uid://cogchg1hkuka6" path="res://data/army_rules.tres" id="1_f5uj3"]
 [ext_resource type="Resource" path="res://data/sounds/checkpoint.tres" id="2_4757c"]
+[ext_resource type="AudioStream" uid="uid://bxsf63qite0rm" path="res://audio/music/night_music.ogg" id="2_y1c8u"]
 [ext_resource type="Resource" path="res://data/sounds/lost.tres" id="9_r50rh"]
 [ext_resource type="Script" uid="uid://3vsk1pcbb0to" path="res://core/campaign.gd" id="10_1pfus"]
 [ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="11_0ut44"]
 [ext_resource type="Script" uid="uid://ckdj86qctx6e0" path="res://core/tool_definition.gd" id="12_aqc2n"]
-[ext_resource type="Resource" path="res://data/tools/1_dig.tres" id="13_rhlp7"]
+[ext_resource type="Resource" uid="uid://bsx0j5qqqp22j" path="res://data/tools/1_dig.tres" id="13_rhlp7"]
 [ext_resource type="Resource" uid="uid://bgx0eovxrigvq" path="res://data/tools/2_fill.tres" id="14_y2rpw"]
 [ext_resource type="Resource" path="res://data/tools/3_log.tres" id="15_v2pp1"]
 [ext_resource type="Resource" path="res://data/tools/5_rope.tres" id="16_jeutq"]
 [ext_resource type="Resource" path="res://data/sounds/victory.tres" id="19_n15p4"]
 [ext_resource type="Resource" path="res://data/tools/4_support.tres" id="20_s8k2p"]
-[ext_resource type="AudioStream" uid="uid://c3vyy2heixwyf" path="res://audio/music/night_loop.wav" id="30_night"]
 [ext_resource type="Resource" path="res://data/sounds/dawn_bugle.tres" id="31_dawn"]
 
 [sub_resource type="Resource" id="checkpoint_supplies"]
@@ -39,5 +39,5 @@ tools = Array[ExtResource("12_aqc2n")]([ExtResource("13_rhlp7"), ExtResource("14
 level_up_sound = ExtResource("2_4757c")
 lost_sound = ExtResource("9_r50rh")
 victory_sound = ExtResource("19_n15p4")
-camp_music = ExtResource("30_night")
+camp_music = ExtResource("2_y1c8u")
 dawn_sound = ExtResource("31_dawn")
