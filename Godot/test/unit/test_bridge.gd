@@ -413,3 +413,98 @@ func test_the_built_part_of_a_piece_in_progress_is_walkable() -> void:
 	m.from_joint = m.b
 	assert_true(b.walk_surface(4.0, 0.0).is_empty(), "building from the other end")
 	assert_eq(b.walk_surface(6.0, 0.0).get("member"), m)
+
+
+func test_plan_end_inside_the_ground_moves_to_where_the_plan_leaves_it() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var to := b.snap_point(Vector2(5, 1))
+	var from := b.fit_to_ground(b.snap_point(Vector2(2, 3)), to)
+	assert_almost_eq(from.pos, Vector2(3, 3.0 - 2.0 / 3.0), Vector2(0.01, 0.01), "on the ground's face")
+	assert_true(from.anchor, "bolted there")
+	assert_true(b.check_build(from, to, LOG, Supplies.make(9, 9, 9, 9)).ok)
+	var air := b.snap_point(Vector2(6, 1))
+	assert_eq(b.fit_to_ground(air, to), air, "an end in the air stays")
+
+
+func test_only_natural_ground_bolts_a_joint() -> void:
+	var t := WorldFixture.terrain(self, [
+		"..........",
+		"..........",
+		"..........",
+		".KK.......",
+		".KK.......",
+		".KK.......",
+		"##########",
+		"BBBBBBBBBB",
+	])
+	var b := WorldFixture.bridge(self, t)
+	assert_false(b.anchorable(Vector2(3, 3)), "a tower's corner does not bolt")
+	assert_true(b.anchorable(Vector2(5, 6)), "the ground does")
+	var m := b.build(b.snap_point(Vector2(3, 3)), b.snap_point(Vector2(7, 3)), LOG)
+	_run(b, 3.0)
+	assert_gt(m.b.pos.y, 5.0, "a log held out from a tower's corner tips off it")
+
+
+## A loose 4 m log dropped onto the ledge (top at row 4, ground up to x = 4) with on_ledge metres of it over the ledge.
+func _log_over_ledge(on_ledge: float) -> Bridge.Member:
+	var t := WorldFixture.terrain(self, [
+		"............",
+		"............",
+		"............",
+		"............",
+		"####........",
+		"####........",
+		"####........",
+		"####........",
+		"############",
+		"BBBBBBBBBBBB",
+	])
+	var b := WorldFixture.bridge(self, t)
+	var x0 := 4.0 - on_ledge
+	# Let go half a metre above the ledge, so it rests there instead of being bolted.
+	var m := b.build(b.snap_point(Vector2(x0, 3.5)), b.snap_point(Vector2(x0 + 4.0, 3.5)), LOG)
+	assert_false(m.a.pinned or m.b.pinned, "loose")
+	_run(b, 4.0)
+	return m
+
+
+func test_a_log_mostly_off_a_ledge_tips_off_it() -> void:
+	var m := _log_over_ledge(0.5)
+	assert_gt(m.b.pos.y, 6.0, "the overhanging end went down")
+	assert_gt(m.a.pos.x, 4.0, "and it slid off the ledge")
+
+
+func test_a_log_mostly_on_a_ledge_stays() -> void:
+	var m := _log_over_ledge(3.0)
+	assert_lt(m.a.pos.y, 4.1, "still lying on the ledge")
+	assert_lt(m.b.pos.y, 4.1)
+
+
+func test_loaded_plank_sags_and_soldiers_stand_on_the_bend() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var m := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	var flat: float = b.walk_surface(5.0, 0.0).y
+	_run(b, 2.0, [[m, 0.5, 80.0]])
+	assert_gt(m.sag, 0.02, "the middle sinks under a soldier")
+	assert_almost_eq(b.walk_surface(5.0, 0.0).y, flat + m.sag, 0.01, "walking surface follows the bend")
+	_run(b, 3.0)
+	assert_lt(m.sag, 0.005, "springs back when the soldier leaves")
+
+
+func test_long_planks_flex_much_more_than_short_ones() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var long := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	var short := b.build(b.snap_point(Vector2(1, 2)), b.snap_point(Vector2(2, 2)), LOG)
+	_run(b, 2.0, [[long, 0.5, 80.0], [short, 0.5, 80.0]])
+	assert_gt(long.sag, short.sag * 20.0, "sag grows with length cubed")
+
+
+func test_ropes_do_not_flex() -> void:
+	var t := WorldFixture.terrain(self, CRANE)
+	var b := WorldFixture.bridge(self, t)
+	var rope := b.build(b.snap_point(Vector2(1, 3)), b.snap_point(Vector2(5, 3)), ROPE)
+	_run(b, 1.0, [[rope, 0.5, 80.0]])
+	assert_eq(rope.sag, 0.0)

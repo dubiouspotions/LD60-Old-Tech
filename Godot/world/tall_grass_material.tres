@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://world/tall_grass.gdshader" id="1"]
+
+[resource]
+shader = ExtResource("1")
+shader_parameter/frame_time = 0.15
+shader_parameter/delay_frames = 1.0
+shader_parameter/frame_px = 8.0
+shader_parameter/cell_px = 32.0

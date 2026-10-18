@@ -20,6 +20,7 @@ anchor = false
 dig_action = 2
 dig_time = 1.25
 dig_sound = ExtResource("2_a56ly")
+impact_strength = 1500.0
 bulk_yield = SubResource("Resource_y2kgi")
 bulk_bonus = SubResource("Resource_yncak")
 debris_color = Color(0.35686275, 0.22745098, 0.13333334, 1)

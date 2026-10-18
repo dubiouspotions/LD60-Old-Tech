@@ -44,6 +44,12 @@ class Engineer:
 	var reach_x: float = NAN
 	## Falling speed while nothing holds the engineer up.
 	var vy: float = 0.0
+	## Seconds the idle engineer has been unable to get back to its place.
+	var stranded: float = 0.0
+	## Climbs up or down any height of ground (it was stranded), until it reaches its place.
+	var any_height: bool = false
+	## Walks the ground beneath decks, climbing down past them (to dig a cell only reached from below one).
+	var under_decks: bool = false
 
 
 @export var rules: CrewRules
@@ -78,6 +84,12 @@ func spawn(x: float) -> void:
 
 
 func step(dt: float) -> void:
+	if rules.instant_work:
+		for m in bridge.members.duplicate():
+			if m.blueprint and m.ordered:
+				bridge.finish(m)
+		for cell in terrain.marked_cells():
+			dig_finished.emit(cell)
 	_update_ready_spot(dt)
 	for i in engineers.size():
 		var e := engineers[i]
@@ -93,6 +105,7 @@ func step(dt: float) -> void:
 			_drop(e)
 		if e.digging and not terrain.is_marked(e.dig):
 			e.digging = false
+		e.under_decks = e.under_decks and e.digging
 		if (e.job and e.goal and not _in_zone(e.goal.pos.x)) or (e.digging and not _in_zone(e.dig.x + 0.5)):
 			_drop(e)
 		e.think -= dt
@@ -117,9 +130,23 @@ func step(dt: float) -> void:
 		elif e.digging:
 			_dig_step(e, dt)
 		else:
-			_walk_to(e, _idle_x(i), dt)
+			var x := _idle_x(i)
+			var was := e.pos
+			_walk_to(e, x, dt)
+			_update_stranded(e, x, was, dt)
 	_update_strike(dt)
 	_update_work_sound(dt)
+
+
+## An idle engineer that has made no way toward its place x for stranded_time climbs any height until it is there.
+func _update_stranded(e: Engineer, x: float, was: Vector2, dt: float) -> void:
+	if absf(x - e.pos.x) <= 0.05:
+		e.any_height = false
+	if e.pos != was or absf(x - e.pos.x) <= 0.05 or rules.stranded_time <= 0.0:
+		e.stranded = 0.0
+		return
+	e.stranded += dt
+	e.any_height = e.any_height or e.stranded >= rules.stranded_time
 
 
 ## Drops an engineer that nothing holds up (its structure fell away) and that can not simply climb down.
@@ -129,8 +156,8 @@ func _fall(e: Engineer, dt: float) -> bool:
 		e.vy = 0.0
 		return false
 	# Either foot on something holds it, like a soldier standing at a cliff edge.
-	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y).y)
-	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and not is_nan(_next_y(e.pos.y, e.pos.x))):
+	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y)
+	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and not is_nan(_ground_of(e, e.pos.x))):
 		e.vy = 0.0
 		return false
 	_drop(e)
@@ -141,19 +168,20 @@ func _fall(e: Engineer, dt: float) -> bool:
 
 
 ## Picks the closest job the engineer can reach. A member is reached along the structure from where the
-## engineer stands, or over safe ground to a bolted joint and then along the structure. A marked cell is
-## dug from a spot on safe ground within dig_reach.
+## engineer stands, or over safe ground to a joint it can climb to and then along the structure. A marked cell is
+## dug from a spot on safe ground within dig_reach. Only when nothing can be reached within max_climb and max_drop
+## does it look again climbing any height of ground, and then climbs (any_height) to get there.
 func _take_job(e: Engineer) -> void:
+	for any_height: bool in [false, true]:
+		_find_job(e, any_height)
+		if e.job or e.digging:
+			e.any_height = any_height
+			return
+
+
+func _find_job(e: Engineer, any_height: bool) -> void:
 	e.reach_x = NAN
-	var reachable := {}
-	var starts := func(n: Bridge.Joint) -> bool:
-		if e.at:
-			return n == e.at
-		if not n.pinned:
-			return false
-		if not reachable.has(n):
-			reachable[n] = not is_nan(_walk_y(e.pos, n.pos.x))
-		return reachable[n]
+	var starts := _starts_for(e, any_height)
 	var best_cost := INF
 	for m in bridge.members:
 		if _builder_of(m):
@@ -176,7 +204,7 @@ func _take_job(e: Engineer) -> void:
 			if not (m.blueprint and m.ordered) or not bridge.work_ends(m).is_empty() or _builder_of(m):
 				continue
 			for j: Bridge.Joint in [m.a, m.b]:
-				var x := _spot_within_reach(e.pos, j.pos, rules.build_reach)
+				var x := _spot_within_reach(e.pos, j.pos, rules.build_reach, true, any_height)
 				var cost := absf(x - e.pos.x)
 				if not is_nan(x) and cost < best_cost and _in_zone(x) and _in_zone(j.pos.x):
 					best_cost = cost
@@ -187,7 +215,11 @@ func _take_job(e: Engineer) -> void:
 		for cell in terrain.marked_cells():
 			if _dig_taken(cell) or not _in_zone(cell.x + 0.5):
 				continue
-			var x := _dig_spot(e.pos, cell)
+			var under := false
+			var x := _dig_spot(e.pos, cell, true, any_height)
+			if is_nan(x):
+				under = true
+				x = _dig_spot(e.pos, cell, false, any_height)
 			var cost := absf(x - e.pos.x)
 			if not is_nan(x) and cost < best_cost and _in_zone(x):
 				best_cost = cost
@@ -195,8 +227,22 @@ func _take_job(e: Engineer) -> void:
 				e.digging = true
 				e.dig = cell
 				e.spot_x = x
+				e.under_decks = under
 	if e.job and e.at:
 		e.route.erase(e.at)
+
+
+## Joints the engineer can start a climb from: the one it stands on, or (off the structure) any it can walk
+## below and then climb up to (max_climb) or down to (max_drop), or any height with any_height.
+func _starts_for(e: Engineer, any_height: bool = false) -> Callable:
+	var reachable := {}
+	return func(n: Bridge.Joint) -> bool:
+		if e.at:
+			return n == e.at
+		if not reachable.has(n):
+			var y := _walk_y(e.pos, n.pos.x, true, any_height)
+			reachable[n] = not is_nan(y) and (any_height or (y - n.pos.y <= rules.max_climb and n.pos.y - y <= rules.max_drop))
+		return reachable[n]
 
 
 ## Walking distance to a route's first joint plus the climb along it.
@@ -212,16 +258,17 @@ func _dig_taken(cell: Vector2i) -> bool:
 
 
 ## Closest x to p on safe ground from where the cell (a tree's base for trees) is within dig_reach, or NAN.
-func _dig_spot(p: Vector2, cell: Vector2i) -> float:
-	return _spot_within_reach(p, Vector2(terrain.work_cell(cell)) + Vector2(0.5, 0.5), rules.dig_reach)
+## With decks false the engineer walks beneath decks instead of on them.
+func _dig_spot(p: Vector2, cell: Vector2i, decks: bool = true, any_height: bool = false) -> float:
+	return _spot_within_reach(p, Vector2(terrain.work_cell(cell)) + Vector2(0.5, 0.5), rules.dig_reach, decks, any_height)
 
 
 ## Closest x to p on safe ground from where target is within reach of the engineer's chest, or NAN.
-func _spot_within_reach(p: Vector2, target: Vector2, reach: float) -> float:
+func _spot_within_reach(p: Vector2, target: Vector2, reach: float, decks: bool = true, any_height: bool = false) -> float:
 	var best := NAN
 	for k in range(-4, 5):
 		var x := target.x + k * 0.5
-		var y := _walk_y(p, x)
+		var y := _walk_y(p, x, decks, any_height)
 		if is_nan(y) or Vector2(x, y - 0.5).distance_to(target) > reach:
 			continue
 		if is_nan(best) or absf(x - p.x) < absf(best - p.x):
@@ -248,7 +295,7 @@ func _reach_step(e: Engineer, dt: float) -> bool:
 
 ## Walks to the dig spot, then digs. Gives the job up if the way or the reach is lost.
 func _dig_step(e: Engineer, dt: float) -> void:
-	var ground := _next_y(e.pos.y, e.pos.x)
+	var ground := _ground_of(e, e.pos.x)
 	var arrived := absf(e.spot_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
 	if not arrived:
 		var was := e.pos
@@ -330,14 +377,7 @@ func _route_toward(e: Engineer, x: float) -> Array[Bridge.Joint]:
 	var none: Array[Bridge.Joint] = []
 	if e.at == null and not is_nan(_walk_y(e.pos, x)):
 		return none
-	var reachable := {}
-	var starts := func(n: Bridge.Joint) -> bool:
-		if e.at:
-			return n == e.at
-		if not reachable.has(n):
-			var y := _walk_y(e.pos, n.pos.x)
-			reachable[n] = not is_nan(y) and absf(y - n.pos.y) <= rules.step_up
-		return reachable[n]
+	var starts := _starts_for(e)
 	var best := none
 	var best_cost := INF
 	for n in bridge.nodes:
@@ -364,8 +404,8 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 	var limit := x - signf(dx) * EDGE
 	if signf(dx) * (look - limit) > 0.0:
 		look = limit
-	var ahead := _next_y(e.pos.y, look) if absf(dx) > 0.05 else NAN
-	var ground := _next_y(e.pos.y, e.pos.x)
+	var ahead := _ground_of(e, look) if absf(dx) > 0.05 else NAN
+	var ground := _ground_of(e, e.pos.x)
 	# Climbing the face of a higher ledge ahead: stay up on the face instead of settling back to the ground.
 	var on_face := not is_nan(ahead) and not is_nan(ground) and ahead < ground - 0.02 and e.pos.y < ground
 	if not is_nan(ground) and absf(ground - e.pos.y) > 0.02 and not on_face:
@@ -390,22 +430,29 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 ## Ground surface at x for an engineer standing at height y, or NAN if it can not get there:
 ## a hazard, a wall higher than max_climb or a drop deeper than max_drop. Built decks count as ground.
 ## The engineer's own level (within step_up) wins over climbing.
-func _next_y(y: float, x: float) -> float:
-	var level_y := _surface_y(y, x, rules.step_up)
-	return level_y if not is_nan(level_y) else _surface_y(y, x, rules.max_climb)
+## With decks false the engineer walks beneath decks instead of on them.
+## any_height lifts max_climb and max_drop.
+func _next_y(y: float, x: float, decks: bool = true, any_height: bool = false) -> float:
+	var level_y := _surface_y(y, x, rules.step_up, decks, any_height)
+	return level_y if not is_nan(level_y) else _surface_y(y, x, INF if any_height else rules.max_climb, decks, any_height)
 
 
-## First safe surface at x no more than up above y, or NAN.
-func _surface_y(y: float, x: float, up: float) -> float:
-	var s := army.surface_at(x, y - up)
-	if s.hazard != null or s.y - y > rules.max_drop or terrain.is_solid(Vector2i(floori(x), floori(s.y - 0.5))):
+## _next_y for engineer e where it stands now, by the way it is walking (beneath decks, any height).
+func _ground_of(e: Engineer, x: float) -> float:
+	return _next_y(e.pos.y, x, not e.under_decks, e.any_height)
+
+
+## First safe surface at x no more than up above y and (unless any_drop) max_drop below it, or NAN.
+func _surface_y(y: float, x: float, up: float, decks: bool = true, any_drop: bool = false) -> float:
+	var s := army.surface_at(x, y - up, decks)
+	if s.hazard != null or (s.y - y > rules.max_drop and not any_drop) or terrain.is_solid(Vector2i(floori(x), floori(s.y - 0.5))):
 		return NAN
 	return s.y
 
 
 ## Height an engineer at p stands at after walking over safe ground to x, or NAN if it can not get there.
 ## A spot on a cell edge counts as reached from the side the engineer comes from.
-func _walk_y(p: Vector2, x: float) -> float:
+func _walk_y(p: Vector2, x: float, decks: bool = true, any_height: bool = false) -> float:
 	var y := p.y
 	var at := p.x
 	x = move_toward(x, p.x, EDGE)
@@ -413,7 +460,7 @@ func _walk_y(p: Vector2, x: float) -> float:
 	while first or absf(x - at) > 0.001:
 		first = false
 		at = move_toward(at, x, 0.25)
-		y = _next_y(y, at)
+		y = _next_y(y, at, decks, any_height)
 		if is_nan(y):
 			return NAN
 	return y
@@ -516,8 +563,18 @@ func _update_work_sound(dt: float) -> void:
 			return
 
 
+## Sideways shift that draws an engineer at p clear of a wall face beside it (on a joint bolted to the face,
+## or climbing it): its position stays on the face.
+func _clear_of_rock(p: Vector2) -> Vector2:
+	var out := 0
+	for side: int in [-1, 1]:
+		if terrain.is_solid(Grid.cell_of(p + Vector2(side * ENGINEER_HALF_WIDTH, -0.3))):
+			out -= side
+	return Vector2(out * (ENGINEER_HALF_WIDTH + 0.05), 0.0)
+
+
 func _show(e: Engineer, moving: bool, facing: int) -> void:
-	e.node.pos = e.pos
+	e.node.pos = e.pos + _clear_of_rock(e.pos)
 	e.node.moving = moving
 	e.node.speed = rules.walk_speed if e.at == null else rules.climb_speed
 	if facing != 0:

@@ -2,6 +2,18 @@
 
 [ext_resource type="Script" uid="uid://cv6d17o3vdyex" path="res://objects/soldier/soldier.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://da2uiu4sygq30" path="res://world/engineer_animation.png" id="2_8k416"]
+[ext_resource type="Script" path="res://game/night_light.gd" id="night_light"]
+
+[sub_resource type="Gradient" id="lamp_g"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="lamp_tex"]
+gradient = SubResource("lamp_g")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_clonx"]
 atlas = ExtResource("2_8k416")
@@ -209,6 +221,17 @@ _data = {
 
 [node name="Engineer" type="Node2D" unique_id=837474487]
 script = ExtResource("1")
+
+[node name="Lamp" type="PointLight2D" parent="." unique_id=1907315562]
+unique_name_in_owner = true
+visible = false
+position = Vector2(0, -30)
+color = Color(1, 0.8, 0.5, 1)
+energy = 0.0
+texture = SubResource("lamp_tex")
+texture_scale = 0.9
+script = ExtResource("night_light")
+night_energy = 0.7
 
 [node name="Body" type="Node2D" parent="." unique_id=692712909]
 unique_name_in_owner = true

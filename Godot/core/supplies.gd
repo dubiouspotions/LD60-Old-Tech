@@ -1,23 +1,25 @@
 @tool
 class_name Supplies
 extends Resource
-## A bundle of the four engineering supplies.
+## A bundle of the engineering supplies.
 ## Used for starting stock, checkpoint bonuses, tool and member costs, and dig, fell and collapse yields.
 
 @export var earth: int = 0
 @export var logs: int = 0
 @export var rope: int = 0
 @export var gold: int = 0
+@export var stone: int = 0
 
-const KEYS: Array[StringName] = [&"earth", &"logs", &"rope", &"gold"]
+const KEYS: Array[StringName] = [&"earth", &"logs", &"rope", &"stone", &"gold"]
 
 
-static func make(p_earth: int = 0, p_logs: int = 0, p_rope: int = 0, p_gold: int = 0) -> Supplies:
+static func make(p_earth: int = 0, p_logs: int = 0, p_rope: int = 0, p_gold: int = 0, p_stone: int = 0) -> Supplies:
 	var s := Supplies.new()
 	s.earth = p_earth
 	s.logs = p_logs
 	s.rope = p_rope
 	s.gold = p_gold
+	s.stone = p_stone
 	return s
 
 

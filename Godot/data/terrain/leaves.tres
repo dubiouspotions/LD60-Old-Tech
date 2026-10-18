@@ -20,6 +20,7 @@ fill_replaces = true
 dig_action = 2
 dig_time = 0.4
 dig_sound = ExtResource("2_m3hq1")
+impact_strength = 100.0
 bulk_yield = SubResource("Resource_uh8wy")
 bulk_tiles_per_yield = 2
 bulk_bonus = SubResource("Resource_tv4fw")

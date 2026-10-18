@@ -48,7 +48,7 @@ func test_recruit_button_shows_at_camp_and_reports_clicks() -> void:
 	watch_signals(hud)
 	hud.set_recruit(true, 5, true, Vector2.ZERO)
 	var b: Button = hud.get_node("%RecruitButton")
-	assert_true(b.visible)
+	assert_true(b.is_visible_in_tree(), "on screen, not hidden by a parent")
 	assert_string_contains(b.text, "5")
 	b.pressed.emit()
 	assert_signal_emitted(hud, "recruit_pressed")
@@ -63,6 +63,7 @@ func test_build_and_cancel_buttons_float_above_plans() -> void:
 	hud.set_build_spots([Vector2(100, 200), Vector2(300, 220)], [2, 1])
 	var pairs := hud.get_node("%WorldButtons").get_children().filter(func(n: Node) -> bool: return n is PlanButtons and n.visible)
 	assert_eq(pairs.size(), 2)
+	assert_true((pairs[0] as Control).is_visible_in_tree(), "on screen, not hidden by a parent")
 	var second: PlanButtons = pairs[1]
 	assert_almost_eq(second.position.x + second.size.x / 2, 300.0, 1.0, "centred on its plan")
 	assert_almost_eq(second.position.y + second.size.y, 220.0, 1.0, "sits above it")
@@ -109,3 +110,29 @@ func test_tool_buttons_show_cost_and_grey_out_when_unaffordable() -> void:
 	var dig: ToolButton = hud.get_node("%Tools").get_child(0)
 	assert_false(dig.get_node("%Cost").visible, "free tools show no cost")
 	assert_true(dig.affordable)
+
+
+func test_supply_bar_shows_stone() -> void:
+	GameState.supplies.stone = 3
+	hud._refresh_supplies()
+	assert_eq((hud.get_node("%Stone").get_node("%Value") as Label).text, "3")
+
+
+func test_bridge_shows_a_material_picker() -> void:
+	GameState.new_campaign()
+	var tools := GameState.campaign.tools
+	var i := tools.map(func(t: ToolDefinition) -> String: return t.display_name).find("Bridge")
+	var b: ToolButton = hud.get_node("%Tools").get_child(i)
+	var stone: BridgeMaterial = tools[i].materials()[1]
+	var picker: Control = hud.get_node("%MaterialPicker")
+	hud.set_tool(i, tools[i].materials()[0])
+	assert_true(picker.visible, "shown for Bridge")
+	var names := picker.get_node("%Materials").get_children().map(func(c: Button) -> String: return c.text.get_slice(" ", 0))
+	assert_eq(names, ["Log", "Stone"])
+	watch_signals(hud)
+	(picker.get_node("%Materials").get_child(1) as Button).pressed.emit()
+	assert_signal_emitted_with_parameters(hud, "material_picked", [stone])
+	hud.set_tool(i, stone)
+	assert_string_contains(b.tooltip_text, "1 stone", "the button shows what the pick costs")
+	hud.set_tool(0)
+	assert_false(picker.visible, "hidden for tools with one material")

@@ -53,6 +53,14 @@ func test_levels_stitch_into_one_walkable_world() -> void:
 		assert_false(t.is_solid(Grid.cell_of(c.start_flag.metres() - Vector2(0, 0.5))), "camp %d not buried" % (i + 1))
 
 
+## Tall grass stands in the air on top of the ground.
+func test_tall_grass_stands_on_ground() -> void:
+	for level: Level in _levels():
+		for cell in level.grass().get_used_cells():
+			assert_false(level.terrain().is_solid(cell), "%s grass at %s not buried" % [level.name, cell])
+			assert_true(level.terrain().is_solid(cell + Vector2i.DOWN), "%s grass at %s on ground" % [level.name, cell])
+
+
 ## The game finds archers (to fight, and for the "under fire" status) only under Objects.
 func test_archers_are_under_objects() -> void:
 	for level: Level in _levels():
@@ -61,10 +69,10 @@ func test_archers_are_under_objects() -> void:
 				assert_eq(o.get_parent(), level.objects(), "%s %s belongs under Objects" % [level.name, o.name])
 
 
-## The campaign levels are painted with the v2 tiles wherever the v2 sheet has art for the material.
+## The campaign ground (dirt and rock) is painted with the v2 tiles. Water and spikes may use either art.
 func test_levels_use_the_v2_tiles() -> void:
 	var look: TerrainLook = load("res://data/terrain_look.tres")
-	var drawn := look.dirt_types + look.rock_types + look.water_types + look.spike_types
+	var drawn := look.dirt_types + look.rock_types
 	for path: String in GameState.campaign.levels:
 		var lv: Level = load(path).instantiate()
 		var t: Terrain = lv.get_node("Terrain")

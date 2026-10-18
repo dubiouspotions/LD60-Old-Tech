@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="BridgeMaterial" format=3]
+
+[ext_resource type="Resource" path="res://data/sounds/member_snap.tres" id="1_stone"]
+[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="2_stone"]
+[ext_resource type="Resource" path="res://data/sounds/log_place.tres" id="3_stone"]
+[ext_resource type="Script" uid="uid://dihsek0i6d5w5" path="res://core/bridge_material.gd" id="4_stone"]
+
+[sub_resource type="Resource" id="Resource_stone"]
+script = ExtResource("2_stone")
+stone = 1
+
+[resource]
+script = ExtResource("4_stone")
+display_name = "Stone"
+hint = "≤ 3 m · heavy, strong"
+cost = SubResource("Resource_stone")
+no_supply_text = "No stone. Dig rock"
+build_speed = 0.8
+max_length = 3.0
+kg_per_m = 30.0
+compliance = 2e-08
+break_force = 40000.0
+ram = 1.0
+impact_strength = 30000.0
+snapped_text = "Stone cracked apart"
+buckled_text = "Stone buckled"
+color = Color(0.6, 0.62, 0.66, 1)
+edge_color = Color(0.3, 0.31, 0.35, 1)
+thickness = 0.3
+place_sound = ExtResource("3_stone")
+break_sound = ExtResource("1_stone")

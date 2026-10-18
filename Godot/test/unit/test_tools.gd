@@ -36,12 +36,20 @@ func before_each() -> void:
 	add_child_autofree(tools)
 
 
+## Selects the tool of kind (and, for a build tool, switches it to the material of that name).
 func _select(kind: ToolDefinition.Kind, material_name: String = "") -> void:
 	for i in tools.tools.size():
 		var t := tools.tools[i]
-		if t.kind == kind and (material_name == "" or t.bridge_material.display_name == material_name):
+		if t.kind != kind:
+			continue
+		if material_name == "":
 			tools.select(i)
 			return
+		for m in t.materials():
+			if m.display_name == material_name:
+				tools.select(i)
+				tools.pick_material(m)
+				return
 	fail_test("no such tool")
 
 
@@ -67,10 +75,16 @@ func test_dig_marked_cell_again_unmarks() -> void:
 	assert_false(world.terrain.is_marked(Vector2i(8, 6)))
 
 
-func test_dig_does_not_mark_rock() -> void:
+func test_dig_marks_rock() -> void:
 	_select(ToolDefinition.Kind.DIG)
 	_click(Vector2(5.5, 7.5))
-	assert_false(world.terrain.is_marked(Vector2i(5, 7)))
+	assert_true(world.terrain.is_marked(Vector2i(5, 7)))
+
+
+func test_dig_does_not_mark_bedrock() -> void:
+	_select(ToolDefinition.Kind.DIG)
+	_click(Vector2(5.5, 8.5))
+	assert_false(world.terrain.is_marked(Vector2i(5, 8)))
 
 
 func test_dig_marks_tree() -> void:
@@ -80,25 +94,87 @@ func test_dig_marks_tree() -> void:
 	assert_eq(world.terrain.type_at(Vector2i(3, 5)), WorldFixture.type("trunk"))
 
 
-func test_fill_spends_earth_and_drops_block() -> void:
+func test_box_spends_five_logs_and_drops_a_box() -> void:
 	_select(ToolDefinition.Kind.FILL)
+	assert_eq(tools.tool().display_name, "Box")
+	GameState.supplies.logs = 7
 	var earth := GameState.supplies.earth
 	_click(Vector2(10.5, 1.5))
-	assert_eq(GameState.supplies.earth, earth - 1)
+	assert_eq(GameState.supplies.logs, 2, "five logs")
+	assert_eq(GameState.supplies.earth, earth, "no earth")
 	await wait_physics_frames(60)
 	assert_eq(world.terrain.type_at(Vector2i(10, 5)), WorldFixture.type("fill"), "landed on the ground")
+	assert_eq(world.terrain.type_at(Vector2i(10, 5)).display_name, "Box")
 
 
-func test_fill_without_earth_does_nothing() -> void:
+func test_box_without_five_logs_does_nothing() -> void:
 	_select(ToolDefinition.Kind.FILL)
-	GameState.supplies.earth = 0
+	GameState.supplies.logs = 4
 	_click(Vector2(10.5, 1.5))
 	await wait_physics_frames(60)
 	assert_null(world.terrain.type_at(Vector2i(10, 5)))
 
 
+func test_clicks_place_a_chain_of_planks() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	assert_eq(world.bridge.members.size(), 0, "a click only starts the plank")
+	_click(Vector2(9, 6))
+	assert_eq(world.bridge.members.size(), 1, "the second click places the end")
+	assert_eq(world.bridge.members[0].b.pos, Vector2(9, 6))
+	_click(Vector2(11, 5))
+	assert_eq(world.bridge.members.size(), 2, "each further click adds the next plank")
+	assert_eq(world.bridge.members[1].a, world.bridge.members[0].b, "joined at the last point")
+	_click(Vector2(11, 5))
+	_click(Vector2(13, 5))
+	assert_eq(world.bridge.members.size(), 2, "clicking the last point again finishes the chain")
+
+
+func test_right_click_or_cancel_finishes_a_chain() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	tools.cancel()
+	_click(Vector2(11, 6))
+	assert_eq(world.bridge.members.size(), 1, "the next click starts a new chain")
+	assert_true(InputMap.action_has_event(&"cancel", _right_click()), "right-click cancels")
+
+
+## Through real input: the camera, which pans on a right-drag, must not swallow the right-click first.
+func test_a_real_right_click_finishes_a_chain_even_with_the_camera() -> void:
+	var cam := CameraRig.new()
+	cam.world = world
+	add_child_autofree(cam)
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(9, 6))
+	get_viewport().push_input(_right_click())
+	var up := _right_click()
+	up.pressed = false
+	get_viewport().push_input(up)
+	_click(Vector2(11, 6))
+	assert_eq(world.bridge.members.size(), 1, "the chain ended: the next click starts a new one")
+
+
+func test_a_click_that_can_not_build_keeps_the_chain() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	_click(Vector2(6, 6))
+	_click(Vector2(13, 6))
+	assert_eq(world.bridge.members.size(), 0, "too long")
+	_click(Vector2(9, 6))
+	assert_eq(world.bridge.members.size(), 1, "still building from the first point")
+	assert_eq(world.bridge.members[0].a.pos, Vector2(6, 6))
+
+
+func _right_click() -> InputEventMouseButton:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_RIGHT
+	e.pressed = true
+	return e
+
+
 func test_log_build_spends_a_log() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Bridge")
+	_select(ToolDefinition.Kind.BUILD, "Log")
 	var logs := GameState.supplies.logs
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
@@ -110,7 +186,7 @@ func test_log_build_spends_a_log() -> void:
 
 
 func test_commit_orders_the_plan() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Bridge")
+	_select(ToolDefinition.Kind.BUILD, "Log")
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
 	tools._mouse_m = Vector2(9, 6)
@@ -130,7 +206,7 @@ func test_support_tool_places_support() -> void:
 
 
 func test_dig_member_refunds_it() -> void:
-	_select(ToolDefinition.Kind.BUILD, "Bridge")
+	_select(ToolDefinition.Kind.BUILD, "Log")
 	tools._mouse_m = Vector2(6, 6)
 	tools._press()
 	tools._mouse_m = Vector2(9, 6)
@@ -145,3 +221,41 @@ func test_bridge_tool_is_called_bridge() -> void:
 	var names := tools.tools.map(func(t: ToolDefinition) -> String: return t.display_name)
 	assert_true("Bridge" in names)
 	assert_false("Log" in names)
+
+
+func test_stone_build_spends_stone_and_builds_a_heavy_member() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Stone")
+	GameState.supplies.stone = 2
+	tools._mouse_m = Vector2(6, 6)
+	tools._press()
+	tools._mouse_m = Vector2(8, 6)
+	tools._release()
+	assert_eq(world.bridge.members.size(), 1)
+	assert_eq(GameState.supplies.stone, 1)
+	var stone := world.bridge.members[0].material
+	assert_gt(stone.kg_per_m, preload("res://data/bridge/log.tres").kg_per_m, "heavier than a log")
+	assert_gt(stone.break_force, preload("res://data/bridge/log.tres").break_force, "stronger than a log")
+
+
+func test_tools_in_order_on_keys_one_to_five() -> void:
+	var names := tools.tools.map(func(t: ToolDefinition) -> String: return t.display_name)
+	assert_eq(names, ["Dig/Chop", "Bridge", "Support", "Rope", "Box"])
+	for i in tools.tools.size():
+		var t: ToolDefinition = tools.tools[i]
+		assert_eq(t.key_label, str(i + 1))
+		var key := InputEventKey.new()
+		key.physical_keycode = KEY_1 + i
+		assert_true(InputMap.action_has_event(t.action, key), "%s on key %d" % [t.display_name, i + 1])
+
+
+func test_bridge_builds_the_material_picked() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Log")
+	var bridge := tools.current
+	assert_eq(tools.tool().display_name, "Bridge")
+	tools.select(bridge)
+	assert_eq(tools.build_material().display_name, "Log", "pressing Bridge again changes nothing")
+	tools.pick_material(tools.tool().materials()[1])
+	assert_eq(tools.build_material().display_name, "Stone", "picked")
+	_select(ToolDefinition.Kind.BUILD, "Rope")
+	tools.select(bridge)
+	assert_eq(tools.build_material().display_name, "Stone", "coming back from another tool keeps the pick")

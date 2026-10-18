@@ -1,7 +1,7 @@
 class_name Level
 extends Node2D
 ## Root of every level scene. Make a new level with Scene > New Inherited Scene > levels/level_base.tscn,
-## paint the Terrain, move StartFlag and ExitFlag, and drop objects (archers, ...) under Objects.
+## paint the Terrain and the tall Grass, move StartFlag and ExitFlag, and drop objects (archers, ...) under Objects.
 ## A level is a template: the World stitches it on so its StartFlag meets the previous level's ExitFlag,
 ## copying the ground from the StartFlag column on and moving its objects along.
 
@@ -19,6 +19,11 @@ extends Node2D
 
 func terrain() -> Terrain:
 	return get_node(^"Terrain")
+
+
+## Tall grass painted for this level (see TallGrass).
+func grass() -> TileMapLayer:
+    return get_node(^"Grass")
 
 
 func objects() -> Node2D:

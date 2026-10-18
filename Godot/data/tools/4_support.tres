@@ -7,7 +7,6 @@
 script = ExtResource("2_s8k2p")
 kind = 2
 display_name = "Support"
-hint = "≤ 5 m · not walked on"
 action = &"tool_support"
-key_label = "4"
+key_label = "3"
 bridge_material = ExtResource("1_s8k2p")

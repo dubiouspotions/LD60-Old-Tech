@@ -12,6 +12,8 @@ extends TileMapLayer
 signal tile_detached(cell: Vector2i, type: TerrainType)
 ## Structures with no ground under them fell apart, or a tree lost the ground it stood on.
 signal collapsed(found: Supplies, cells: Array[Vector2i])
+## A cell's material changed while playing (dug, filled, fell, collapsed).
+signal cell_changed(cell: Vector2i)
 
 const CUSTOM_DATA: String = "terrain"
 ## Stands for "no material" (air tiles such as fillets) in lookups: an empty custom data value and a typed null
@@ -113,6 +115,7 @@ func set_type(cell: Vector2i, type: TerrainType) -> void:
         size = Vector2i(maxi(size.x, cell.x + 1), maxi(size.y, cell.y + 1))
     _dirty_cols[cell.x] = true
     _retile_around([cell])
+    cell_changed.emit(cell)
 
 
 ## The material of the tile painted at cell, read from the tile itself (also right after painting in the editor).
@@ -164,15 +167,24 @@ func _retile_columns(xa: int, xb: int) -> void:
             _retile(Vector2i(x, y))
 
 
-## Gives cell the tile its material and neighbours call for, unless its tile already fits.
+## Gives cell the tile its material and neighbours call for, unless its tile already fits. A tile always carries
+## the cell's own material, so drawing never changes what the ground is. Water and spikes painted with any tile of
+## their material are kept (they have no edges to match); dirt and rock always get the v2 tile for their place.
+## A material with no old tile left in the TileSet keeps its v2 tile even with the look off.
 func _retile(cell: Vector2i) -> void:
     if cell.y < 0 or cell.x < min_x or cell.x >= size.x or cell.y >= size.y:
         return
     var t: TerrainType = _types.get(cell)
     var src := get_cell_source_id(cell)
-    var role := rules().role(cell) if _v2() else &""
+    # An old tile with no material painted in the air is a designer's decoration: never touched.
+    if t == null and look != null and src == look.classic_source and _read_cell(cell) == null:
+        return
+    var v2 := _v2() or (t != null and look != null and atlas_tile(t).is_empty() and tile_set.has_source(look.source_id))
+    var role := rules().role(cell) if v2 and (t != null or _v2()) else &""
     if role != &"":
         if src == look.source_id and look.role_of(get_cell_atlas_coords(cell)) == role and _read_cell(cell) == t:
+            return
+        if src == look.classic_source and _read_cell(cell) == t and not look.is_ground(t):
             return
         var coords := TerrainLook.pick(look.tiles(role), cell)
         var alt := _alt_for(coords, t)
@@ -186,7 +198,8 @@ func _retile(cell: Vector2i) -> void:
         return
     var classic: Array[Vector2i] = []
     if look:
-        classic = look.classic_tiles(t, not is_solid(cell + Vector2i.UP), type_at(cell + Vector2i.UP) in look.water_types)
+        var wanted := look.classic_tiles(t, not is_solid(cell + Vector2i.UP), type_at(cell + Vector2i.UP) in look.water_types)
+        classic.assign(wanted.filter(func(c: Vector2i) -> bool: return _old_tile_is(c, t)))
     if not classic.is_empty():
         if src != look.classic_source or not get_cell_atlas_coords(cell) in classic or _read_cell(cell) != t:
             set_cell(cell, look.classic_source, TerrainLook.pick(classic, cell))
@@ -194,6 +207,12 @@ func _retile(cell: Vector2i) -> void:
         var old := atlas_tile(t)
         if not old.is_empty():
             set_cell(cell, old[0], old[1])
+
+
+## Is the classic tile at coords tagged as material t.
+func _old_tile_is(coords: Vector2i, t: TerrainType) -> bool:
+    var src := tile_set.get_source(look.classic_source) as TileSetAtlasSource
+    return src != null and src.has_tile(coords) and src.get_tile_data(coords, 0).get_custom_data(CUSTOM_DATA) == t
 
 
 ## Alternative id of the v2 tile at coords painted as material t, or -1 if there is none.
@@ -554,7 +573,7 @@ func _index_tileset() -> void:
     for i in tile_set.get_source_count():
         var sid := tile_set.get_source_id(i)
         var src := tile_set.get_source(sid) as TileSetAtlasSource
-        if src == null or (look and sid == look.source_id):
+        if src == null or (look and sid != look.classic_source):
             continue
         for t in src.get_tiles_count():
             var coords := src.get_tile_id(t)

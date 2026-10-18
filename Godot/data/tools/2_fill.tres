@@ -6,16 +6,16 @@
 
 [sub_resource type="Resource" id="Resource_bg4tf"]
 script = ExtResource("1_s1dbg")
-earth = 1
+logs = 5
 
 [resource]
 script = ExtResource("2_m0onc")
 kind = 1
-display_name = "Fill"
+display_name = "Box"
 hint = "falls where you drop it"
 action = &"tool_fill"
-key_label = "2"
+key_label = "5"
 repeat_interval = 0.11
 cost = SubResource("Resource_bg4tf")
-no_supply_text = "No earth. Dig some"
+no_supply_text = "A box takes 5 logs. Fell a tree"
 spawn_scene = ExtResource("3_ul00j")

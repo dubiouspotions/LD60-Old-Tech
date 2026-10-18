@@ -78,7 +78,7 @@ func reinforce(count: int) -> void:
 ## Load each soldier puts on the bridge: [[member, t, kg], ...].
 func bridge_loads() -> Array:
 	var out := []
-	for s in soldiers:
+	for s in soldiers + deserters:
 		if s.on_member and not s.on_member.dead:
 			out.append([s.on_member, s.on_t, rules.soldier_mass])
 	return out
@@ -139,12 +139,7 @@ func step(dt: float) -> void:
 			if i == 0:
 				halt_reason = block
 			continue
-		s.pos.x += dx
-		s.moving = true
-		var sup := _support(s, s.pos.y - rules.step_up)
-		if sup.hazard == null and sup.y <= s.pos.y + 0.2:
-			s.pos.y = sup.y
-			s.stand_on(sup)
+		_step_x(s, dx)
 	_remove_dead()
 	for s in soldiers:
 		_settle_down(s, dt)
@@ -152,23 +147,32 @@ func step(dt: float) -> void:
 	_step_deserters(dt)
 
 
-## Walks soldier rank i toward its camp spot, forward or back. Spots squeeze together when the world ends
-## close behind the camp. Unlike the march it never steps off a ledge
-## or into a hazard; a soldier who can not get there lies down where it is.
+## Walks soldier rank i toward its camp spot, forward or back: the front to camp_x, everyone else a gap
+## behind wherever the soldier ahead of it is, so a soldier stuck short of its spot keeps the rest close.
+## Spots squeeze together when the world ends close behind the camp. Unlike the march it never steps off a
+## ledge or into a hazard; a soldier who can not get there lies down where it is.
 func _walk_to_camp(s: Soldier, i: int, dt: float) -> void:
 	var room := camp_x - terrain.min_x - 0.5
 	var gap := minf(rules.camp_spacing, room / maxi(soldiers.size() - 1, 1))
-	var to := camp_x - i * gap - s.pos.x
+	var to := (camp_x if i == 0 else soldiers[i - 1].pos.x - gap) - s.pos.x
 	if absf(to) < 0.05:
+		# Settle exactly on the spot, so small misses do not add up along the camp line.
+		s.pos.x += to
 		s.facing = 1
 		return
 	var dx := clampf(to, -s.speed * dt, s.speed * dt)
 	var edge := surface_at(s.pos.x + signf(dx) * rules.foot_half_width + dx, s.pos.y - rules.step_up)
 	if not _blocked_ahead(s, dx).is_empty() or edge.hazard != null or edge.y > s.pos.y + rules.step_up:
 		return
+	s.facing = signi(roundi(dx * 1000))
+	_step_x(s, dx)
+
+
+## Moves the soldier dx along the ground and onto whatever it now stands on (ground or deck). A step off an
+## edge leaves it to fall (see _settle_vertical).
+func _step_x(s: Soldier, dx: float) -> void:
 	s.pos.x += dx
 	s.moving = true
-	s.facing = signi(roundi(dx * 1000))
 	var sup := _support(s, s.pos.y - rules.step_up)
 	if sup.hazard == null and sup.y <= s.pos.y + 0.2:
 		s.pos.y = sup.y
@@ -214,6 +218,12 @@ func gathered() -> bool:
 		elif soldiers[i - 1].pos.x - s.pos.x > gap or absf(soldiers[i - 1].pos.y - s.pos.y) >= rules.queue_height:
 			return false
 	return true
+
+
+## Kills a soldier crushed by something heavy (a falling bridge piece or block).
+func crush(s: Soldier) -> void:
+	kill(s, rules.crushed_text)
+	_remove_dead()
 
 
 ## Damages one soldier. Returns true if it died.
@@ -340,9 +350,9 @@ func _danger_ahead(s: Soldier) -> String:
 	return ""
 
 
-## Highest surface at x at or below y_from: tile tops, hazards and bridge decks.
+## Highest surface at x at or below y_from: tile tops, hazards and (unless decks is false) bridge decks.
 ## {y, hazard: TerrainType or null, member, t}
-func surface_at(x: float, y_from: float) -> Dictionary:
+func surface_at(x: float, y_from: float, decks: bool = true) -> Dictionary:
 	var col := floori(x)
 	var best := {y = float(terrain.size.y), hazard = null, member = null, t = 0.0}
 	for r in range(maxi(0, ceili(y_from - 1e-6)), terrain.size.y):
@@ -356,7 +366,7 @@ func surface_at(x: float, y_from: float) -> Dictionary:
 			best.y = float(r)
 			best.hazard = t
 			break
-	if bridge:
+	if bridge and decks:
 		var deck := bridge.walk_surface(x, y_from)
 		if not deck.is_empty() and deck.y < best.y:
 			best = {y = deck.y, hazard = null, member = deck.member, t = deck.t}
@@ -408,18 +418,29 @@ func _desert(s: Soldier) -> void:
 	Audio.play(rules.desert_sound, Grid.to_px(s.pos))
 
 
-## Deserters walk west over the top of the ground, climbing any cliff (no armour to carry), and vanish.
+## Deserters walk back west like marching soldiers (falling off edges, standing on decks), except that a wall
+## does not stop them: they climb it (no armour to carry). They vanish after desert_distance, or where a
+## ceiling leaves them nowhere to climb.
 func _step_deserters(dt: float) -> void:
 	for d: Soldier in deserters.duplicate():
-		var top := float(terrain.surface_row(floori(d.pos.x - rules.foot_half_width)))
-		d.moving = true
-		if top < d.pos.y - 0.05:
-			d.pos.y = move_toward(d.pos.y, top, rules.desert_climb_speed * dt)
-		else:
-			var dx := d.speed * dt
-			d.pos.x -= dx
-			d.desert_left -= dx
-			d.pos.y = move_toward(d.pos.y, float(terrain.surface_row(floori(d.pos.x))), rules.desert_climb_speed * dt)
+		d.moving = false
+		if not d.climbing:
+			_settle_vertical(d, dt)
+		if d.dead:
+			deserters.erase(d)
+			d.queue_free()
+			continue
+		if not d.airborne:
+			var dx := -d.speed * dt
+			d.climbing = not _blocked_ahead(d, dx).is_empty()
+			if d.climbing and terrain.is_solid(Grid.cell_of(d.pos - Vector2(0, 2.0))):
+				d.desert_left = 0.0 # nowhere to climb: it slips away here
+			elif d.climbing:
+				d.pos.y -= rules.desert_climb_speed * dt
+				d.moving = true
+			else:
+				_step_x(d, dx)
+				d.desert_left += dx
 		d.sync()
 		if d.desert_left <= 0.0 or d.pos.x < terrain.min_x:
 			deserters.erase(d)

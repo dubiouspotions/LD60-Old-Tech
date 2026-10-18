@@ -19,6 +19,10 @@ signal night_changed(night: bool, seconds: float)
 signal victory
 signal level_streamed(index: int)
 
+## A body (soldier or archer) for bridge hits: a circle this high above the feet with this radius, metres.
+const BODY_MID: float = 0.9
+const BODY_RADIUS: float = 0.6
+
 enum Phase { DAY, DUSK, NIGHT, MORNING }
 
 
@@ -60,6 +64,7 @@ class Chunk:
 ## Falling blocks, arrows, the camp and the levels' objects.
 @onready var objects: Node2D = %Objects
 @onready var flags: Node2D = %Flags
+@onready var grass: TallGrass = %Grass
 
 ## Campaign index of the level the column is in, -1 before begin().
 var current: int = -1
@@ -83,6 +88,7 @@ static func of(node: Node) -> World:
 
 func _ready() -> void:
 	bridge.terrain = terrain
+	grass.terrain = terrain
 	army.terrain = terrain
 	army.bridge = bridge
 	crew.terrain = terrain
@@ -91,6 +97,7 @@ func _ready() -> void:
 	terrain.tile_detached.connect(_on_tile_detached)
 	terrain.collapsed.connect(func(found: Supplies, _cells: Array[Vector2i]) -> void: GameState.gain(found))
 	bridge.member_broken.connect(_on_member_broken)
+	bridge.struck.connect(_on_bridge_struck)
 	crew.dig_finished.connect(_on_dig_finished)
 	army.count_changed.connect(_on_army_count)
 
@@ -139,6 +146,7 @@ func rewind(index: int) -> void:
 	for i: int in later:
 		_drop(i, i > index)
 	terrain.clear_from(seam)
+	grass.clear_from(seam)
 	bridge.remove_outside(-INF, seam)
 	_free_objects(func(x: float) -> bool: return x >= seam)
 	_strike_camp()
@@ -167,6 +175,7 @@ func unload(index: int) -> void:
 		return
 	var edge := c.end()
 	terrain.unload_before(edge)
+	grass.unload_before(edge)
 	bridge.remove_outside(edge, INF)
 	_free_objects(func(x: float) -> bool: return x < edge)
 	_drop(index, true)
@@ -209,8 +218,13 @@ func _physics_process(dt: float) -> void:
 	if _done:
 		return
 	_advance_phase(dt)
-	bridge.step(dt, army.bridge_loads())
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
+	var blocks := objects.get_children().filter(func(o: Node) -> bool: return o is FallingBlock)
+	var bodies := _bodies(blocks)
+	_step_bridge(dt, bodies, blocks)
+	for b: FallingBlock in blocks:
+		b.step(dt, self, bodies)
+	_crush_under_weight(bodies, blocks)
 	army.step(dt)
 	crew.step(dt)
 	_check_exit()
@@ -366,6 +380,7 @@ func _place(index: int, scene: PackedScene) -> Chunk:
 		c.seam = terrain.min_x
 	_placements[index] = [c.offset, c.seam]
 	terrain.stamp(lv.terrain(), c.offset, c.seam)
+	grass.stamp(lv.grass(), c.offset, c.seam)
 	var shift := Grid.to_px(Vector2(c.offset))
 	if prev:
 		c.start_flag = prev.exit_flag
@@ -420,6 +435,7 @@ func _wipe() -> void:
 	_loading = -1
 	terrain.clear()
 	terrain.rebuild()
+	grass.clear()
 	bridge.clear()
 	_free_objects(func(_x: float) -> bool: return true)
 	for f in flags.get_children():
@@ -473,6 +489,75 @@ func _on_dig_finished(cell: Vector2i) -> void:
 		Effects.say(at, got.describe(), Color("ece4d2"))
 	else:
 		Effects.say(at, here.dig_text, here.debris_color)
+
+
+## Every living soldier and archer, and every falling block, as a body bridge pieces and falling blocks collide
+## with: [[who, Bridge.Body], ...].
+func _bodies(blocks: Array) -> Array:
+	var out := []
+	for s: Soldier in army.soldiers + army.deserters:
+		if not s.dead:
+			out.append([s, Bridge.Body.new(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, Vector2(0, s.vy) if s.airborne else Vector2.ZERO, s.on_member)])
+	for a: Archer in army.foes:
+		out.append([a, Bridge.Body.new(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS)])
+	for b: FallingBlock in blocks:
+		out.append([b, Bridge.Body.box(Grid.to_m(b.position) + Vector2(0.5, 0.5), Vector2(0.5, 0.5), b.on_member)])
+	return out
+
+
+## Steps the bridge under the column and the blocks resting on it, colliding with bodies; crushes those it hits
+## too fast.
+func _step_bridge(dt: float, bodies: Array, blocks: Array) -> void:
+	var loads := army.bridge_loads()
+	for b: FallingBlock in blocks:
+		if b.on_member and not b.on_member.dead:
+			loads.append([b.on_member, b.on_t, b.mass])
+	var just: Array[Bridge.Body] = []
+	for pair: Array in bodies:
+		just.append(pair[1])
+	bridge.step(dt, loads, just)
+	for pair: Array in bodies:
+		if (pair[1] as Bridge.Body).crushed:
+			crush(pair[0])
+
+
+## Crushes every soldier and archer carrying more than the bridge's Crush Weight: bridge pieces lying on them
+## (with what those carry) and falling blocks resting on them, through any stack of blocks.
+func _crush_under_weight(bodies: Array, blocks: Array) -> void:
+	var weight := {}
+	for pair: Array in bodies:
+		weight[pair[0]] = (pair[1] as Bridge.Body).load
+	for b: FallingBlock in blocks:
+		var under: Node2D = b.resting_on
+		for depth in blocks.size():
+			if not (under is FallingBlock):
+				break
+			under = (under as FallingBlock).resting_on
+		if under and weight.has(under):
+			weight[under] += b.mass
+	for who: Node2D in weight:
+		if weight[who] > bridge.crush_weight:
+			crush(who)
+
+
+## Kills a soldier or archer crushed by something heavy.
+func crush(who: Node2D) -> void:
+	if who is Soldier and not who.dead:
+		army.crush(who)
+	elif who is Archer and who.alive():
+		who.hit(who.hp)
+
+
+## Bridge pieces hit the ground fast: a tower cell is battered by the damage, other ground breaks if the damage
+## reaches its Impact Strength (nothing gained).
+func _on_bridge_struck(cell: Vector2i, damage: float) -> void:
+	var t := terrain.type_at(cell)
+	if t == null:
+		return
+	if t.raze_time > 0.0:
+		terrain.besiege(cell, bridge.siege_per_kj * damage / 1000.0)
+	elif t.breaks_under(damage):
+		terrain.dig(cell)
 
 
 func _on_member_broken(member: Bridge.Member, text: String) -> void:

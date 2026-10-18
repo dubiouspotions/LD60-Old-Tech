@@ -10,6 +10,7 @@
 [ext_resource type="CompressedTexture3D" uid="uid://bgadupm8eb0qp" path="res://post/lut/low_17.png" id="7_wjctj"]
 [ext_resource type="Script" uid="uid://crrmlhkv6vxe2" path="res://game/day_night.gd" id="8"]
 [ext_resource type="Script" path="res://game/value_tweaks.gd" id="vt_script"]
+[ext_resource type="Script" path="res://game/night_light.gd" id="night_light"]
 [ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="vt_tt"]
 [ext_resource type="Resource" path="res://data/campaign.tres" id="vt_campaign"]
 [ext_resource type="Resource" path="res://data/crew_rules.tres" id="vt_crew"]
@@ -68,13 +69,15 @@ color = Color(1, 0.86, 0.6, 1)
 energy = 0.0
 texture = SubResource("lantern_tex")
 texture_scale = 2.2
+script = ExtResource("night_light")
+night_energy = 0.9
 
-[node name="DayNight" type="Node" parent="." unique_id=1668103146 node_paths=PackedStringArray("world_tint", "sky_tint", "lantern")]
+[node name="DayNight" type="Node" parent="." unique_id=1668103146 node_paths=PackedStringArray("world_tint", "sky_tint", "stars")]
 unique_name_in_owner = true
 script = ExtResource("8")
 world_tint = NodePath("../NightTint")
 sky_tint = NodePath("../Background/SkyTint")
-lantern = NodePath("../Lantern")
+stars = NodePath("../Background/Stars")
 
 [node name="Camera" type="Camera2D" parent="." unique_id=1549734198]
 unique_name_in_owner = true

@@ -129,6 +129,23 @@ func test_crew_digs_down_into_its_own_hole() -> void:
 	assert_null(world.terrain.type_at(Vector2i(3, 7)))
 
 
+func test_crew_does_not_dig_through_soil() -> void:
+	world.terrain.mark(Vector2i(3, 7))
+	_run(8.0)
+	assert_true(world.terrain.is_marked(Vector2i(3, 7)), "the cell above is still there")
+
+
+func test_crew_climbs_under_a_bridge_to_dig_the_floor_of_the_hole() -> void:
+	world.terrain.set_type(Vector2i(3, 6), null)
+	world.bridge.build(world.bridge.snap_point(Vector2(3, 6)), world.bridge.snap_point(Vector2(4, 6)), LOG)
+	world.terrain.mark(Vector2i(3, 7))
+	_run(15.0, func() -> bool: return world.terrain.type_at(Vector2i(3, 7)) == null)
+	assert_null(world.terrain.type_at(Vector2i(3, 7)), "dug from down in the hole")
+	_run(6.0)
+	for e in world.crew.engineers:
+		assert_lt(e.pos.y, 6.05, "climbed back out")
+
+
 func test_crew_fells_marked_tree() -> void:
 	var trunk := WorldFixture.type("trunk")
 	var leaves := WorldFixture.type("leaves")
@@ -603,3 +620,174 @@ func test_crew_on_a_plateau_builds_a_support_off_its_face() -> void:
 	world.bridge.order_blueprints()
 	_run(15.0, func() -> bool: return not prop.blueprint)
 	assert_false(prop.blueprint, "support built")
+
+
+## A 5 m pit from x = 4 to 8 with a 1 m ledge on its right, ground at row 2.
+const PIT: Array = [
+	"............",
+	"............",
+	"####....####",
+	"####....####",
+	"####....####",
+	"####....####",
+	"####...#####",
+	"############",
+	"BBBBBBBBBBBB",
+]
+
+
+## Bridges the pit at ground level with a support hanging from the middle of the deck down to bottom.
+func _bridged_pit(bottom: Vector2 = Vector2(6.4, 6.6)) -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	for y in PIT.size():
+		for x in PIT[y].length():
+			var key: String = WorldFixture.LEGEND[PIT[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	var bridge := world.bridge
+	bridge.build(bridge.snap_point(Vector2(4, 2)), bridge.snap_point(Vector2(8, 2)), LOG)
+	bridge.build(bridge.snap_point(Vector2(6, 2)), bridge.snap_point(bottom), SUPPORT)
+	world.army.spawn(1, 2.5)
+
+
+func _climbs_out_from(p: Vector2, bottom: Vector2 = Vector2(6.4, 6.6)) -> void:
+	_bridged_pit(bottom)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.at = null
+	e.route.clear()
+	e.pos = p
+	_run(15.0)
+	assert_almost_eq(e.pos.y, 2.0, 0.05, "out of the pit from %s" % p)
+
+
+func test_engineer_on_the_pit_floor_climbs_out_up_the_support() -> void:
+	_climbs_out_from(Vector2(6.0, 7.0))
+
+
+func test_engineer_on_a_ledge_in_the_pit_climbs_out_up_the_support() -> void:
+	_climbs_out_from(Vector2(7.5, 6.0))
+
+
+func test_engineer_at_the_far_wall_of_the_pit_climbs_out_up_the_support() -> void:
+	_climbs_out_from(Vector2(4.4, 7.0))
+
+
+func test_engineer_climbs_up_to_a_support_hanging_above_his_head() -> void:
+	_climbs_out_from(Vector2(5.5, 7.0), Vector2(6.4, 5.5))
+
+
+func test_engineer_builds_from_a_support_hanging_above_his_head() -> void:
+	_bridged_pit(Vector2(6.4, 5.5))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(5.5, 7.0)
+	var m := _plan(Vector2(6.4, 5.5), Vector2(7.5, 5.5))
+	world.bridge.order_blueprints()
+	_run(15.0, func() -> bool: return not m.blueprint)
+	assert_false(m.blueprint, "built off the hanging end")
+
+
+func test_stranded_engineer_climbs_down_to_the_column() -> void:
+	_flat_strip()
+	for y in range(1, 6):
+		world.terrain.set_type(Vector2i(40, y), WorldFixture.type("soil"))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(40.6, 1.0)
+	_assert_climbs_back(e, 45.0)
+
+
+func test_stranded_engineer_climbs_out_of_a_deep_pit() -> void:
+	_flat_strip()
+	for x in range(44, 46):
+		for y in range(1, 7):
+			world.terrain.set_type(Vector2i(x, y), null)
+		world.terrain.set_type(Vector2i(x, 6), null)
+	for x in range(44, 46):
+		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("soil"))
+	for x in [43, 46]:
+		for y in range(1, 6):
+			world.terrain.set_type(Vector2i(x, y), WorldFixture.type("soil"))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(44.8, 7.0)
+	_assert_climbs_back(e, 46.5)
+
+
+## The engineer gets back on the column's ground beyond x by moving, never jumping more than a step.
+func _assert_climbs_back(e: Crew.Engineer, x: float) -> void:
+	var jump := [0.0]
+	var last := [e.pos]
+	_run(world.crew.rules.stranded_time + 8.0, func() -> bool:
+		jump[0] = maxf(jump[0], e.pos.distance_to(last[0]))
+		last[0] = e.pos
+		return false)
+	assert_lt(jump[0], 0.3, "moved, not teleported")
+	assert_almost_eq(e.pos.y, 6.0, 0.05, "on the column's ground")
+	assert_gt(e.pos.x, x, "back with the column")
+
+
+func test_crew_builds_from_a_joint_on_a_cliff_face_without_entering_the_rock() -> void:
+	var m := _plan(Vector2(6, 6.5), Vector2(10, 6.5))
+	world.bridge.order_blueprints()
+	var inside := [false]
+	_run(20.0, func() -> bool:
+		for e in world.crew.engineers:
+			for h in [0.3, 1.0, 1.5]:
+				for side in [-0.15, 0.15]:
+					inside[0] = inside[0] or world.terrain.is_solid(Grid.cell_of(e.node.pos + Vector2(side, -h)))
+		return not m.blueprint)
+	assert_false(m.blueprint, "built")
+	assert_false(inside[0], "nobody drawn inside the cliff")
+
+
+func test_crew_climbs_any_height_to_marks_it_can_not_reach_otherwise() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var rows := [
+		"....................",
+		"####....############",
+		"####....############",
+		"####....############",
+		"####....############",
+		"####....############",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	]
+	for y in rows.size():
+		for x in rows[y].length():
+			var key: String = WorldFixture.LEGEND[rows[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 2.5)
+	world.crew.spawn(2.5)
+	world.terrain.mark(Vector2i(10, 1))
+	_run(25.0, func() -> bool: return world.terrain.type_at(Vector2i(10, 1)) == null)
+	assert_null(world.terrain.type_at(Vector2i(10, 1)), "dug across the 5 m pit")
+
+
+func test_instant_work_cheat_finishes_ordered_plans_at_once() -> void:
+	var rules := world.crew.rules
+	rules.instant_work = true
+	var first := _plan(Vector2(6, 6), Vector2(8, 4))
+	var second := _plan(Vector2(8, 4), Vector2(10, 6))
+	var waiting := _plan(Vector2(2, 6), Vector2(3, 5))
+	world.bridge.order_plan([first, second])
+	_run(1.0 / 60.0)
+	rules.instant_work = false
+	assert_false(first.blueprint, "built")
+	assert_false(second.blueprint, "built")
+	assert_true(waiting.blueprint, "a plan not ordered stays a plan")
+
+
+func test_instant_work_cheat_digs_marks_and_fells_trees_at_once() -> void:
+	var rules := world.crew.rules
+	world.terrain.set_type(Vector2i(2, 5), WorldFixture.type("trunk"))
+	world.terrain.set_type(Vector2i(2, 4), WorldFixture.type("trunk"))
+	world.terrain.mark(Vector2i(3, 6))
+	world.terrain.mark(Vector2i(2, 4))
+	var logs := GameState.supplies.logs
+	rules.instant_work = true
+	_run(1.0 / 60.0)
+	rules.instant_work = false
+	assert_null(world.terrain.type_at(Vector2i(3, 6)), "dug")
+	assert_null(world.terrain.type_at(Vector2i(2, 5)), "tree felled")
+	assert_gt(GameState.supplies.logs, logs, "and its logs gained")

@@ -2,26 +2,30 @@
 
 A Ludum Dare 60 game ("Old Tech") made in Godot 4.7.
 
-The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m or a gap lower than 2 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. A brick tower in the way is besieged: the front soldier hacks at it until, after a good while, the whole tower comes down, archer and all. You are the engineers above the field. Dig, fill and bridge a way through before the archers' towers thin the ranks.
+The column marches east on its own, and orders are orders. Once it sets off it walks straight off ravines, into water and spikes, and onto bridges that aren't finished. Only a wall over 1 m or a gap lower than 2 m stops it, or an archer it reaches: soldiers stop to cut him down, then march on. A brick tower in the way is besieged: the front soldier hacks at it until, after a good while, the whole tower comes down, archer and all. You are the engineers above the field. Dig, drop boxes and bridge a way through before the archers' towers thin the ranks.
 
 ## How to play
 
 | Tool | Key | What it does |
 | --- | --- | --- |
-| Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope) and gold ore (+1 gold) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
-| Fill | 2 | Drops a block of earth that falls until it lands. Costs 1 earth. |
-| Bridge | 3 | Drag from point to point to plan a bridge deck (a log soldiers walk on). Takes push and pull, up to 5 m. Costs 1 log. |
-| Support | 4 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
-| Rope | 5 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
+| Dig | 1 | Marks soft earth (+1 earth), trees (trunk gives logs, leaves give rope), rock (+1 stone, slow) and gold ore (+1 gold) for the engineers to dig. Click a mark again to clear it. Mark any part of a tree and it is cut at the base; dig the ground out from under a tree and it falls with the same yield. Digging a bridge member takes it back at once. |
+| Bridge | 2 | Drag from point to point to plan a bridge deck soldiers walk on. A picker above the button chooses the material: **Log** (push and pull, up to 5 m, 1 log) or **Stone** (half again a log's weight and much stronger, up to 3 m, 1 stone). |
+| Support | 3 | Plans a log that holds the structure up but is not walked on. Up to 5 m. Costs 1 log. |
+| Rope | 4 | Drag from point to point to plan a rope. Only pulls, up to 12 m. Costs 1 rope. |
+| Box | 5 | Drops a wooden box that falls until it lands and stays there as a solid block. Costs 5 logs; digging it up gives 2 back. |
 
-- Bridge, Support and Rope place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
+- Bridge, Support, Rope and Stone place a dashed blueprint, and supplies are spent when you place it. Digging a planned member refunds it.
 - While you plan, idle engineers (orange) walk over and wait beside it. **Build** above a plan hands that plan to them, **×** beside it cancels the plan and refunds it; **Enter** hands over every plan. They build it member by member, starting from the ground or finished parts and climbing along what is already up. With only one thing to build or dig, they all work on it together. Finished parts are held on scaffolding, and the column can already walk on them, and on the part of a piece that is built so far. Each separate structure comes down off its scaffolding once it's finished and no engineer is on it, and your design holds or it doesn't. The column doesn't wait for it: a soldier walking onto an unfinished bridge falls.
+- Build tools work two ways. **Drag** from point to point for one piece. Or **click** to start and keep clicking: each click places a piece and starts the next one from its end. Click the last point again, right-click or press Esc to finish. A click that can't be built (too long, through the ground, out of logs) leaves the chain where it was.
+- Bridge decks flex a little under the soldiers on them, the longer the more, and the soldiers walk on the bend.
 - Bridge ends snap to a 0.5 m grid, to existing joints, and to any point along a bridge or support (which is split there into two pieces joined by a hinge). An end touching ground is bolted down. A plan may start anywhere, even in mid-air, but the engineers can only build it once it connects to ground or finished work.
 - Joints are hinges, so build triangles or hang the deck from ropes. Members glow red as they near breaking, and each soldier adds 80 kg.
 - The march is one long road: each level joins the last. At the start of every level the column makes camp and sleeps through the night while your engineers keep working, until the king loses patience (30 s by default). Use the night to build ahead, and press **M** or **March** to break camp early. Archers hold their fire while the column sleeps.
+- **Stone** comes from digging rock and from towers your soldiers raze.
 - **Gold** comes from gold ore, your starting supplies and each camp's supply drop. While the column camps, press **R** or **Recruit** to buy another soldier (5 gold); recruits join the camp.
 - **Space** pauses. Plan and build while paused, then resume to load the bridge.
-- **F** toggles 2× speed. **C** makes the camera follow the column again. **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.
+- **Backspace** or **Restart** restarts the level from its checkpoint: the column and supplies you arrived with.
+- **F** toggles 2× speed. **C** or **Follow** makes the camera follow the column (off when a level starts; panning by hand turns it off). **Sound** (bottom right) sets music and sound volume; it is remembered between sessions.
 - Move the view with **WASD**/arrow keys, right or middle drag, or the mouse wheel.
 - A soldier stuck in front of a wall or a ceiling too low to pass loses heart: after 8 s it deserts, turns round and climbs back the way the army came. Besieging a tower or fighting an archer doesn't count. The status bar counts down.
 - Soldiers who reach a level's exit flag wait there for the rest of the column. Once every living soldier has arrived, it means camp, reinforcements and supplies. If the column falls, you retry from that camp with the army and supplies you had when you got there; work done since is undone.

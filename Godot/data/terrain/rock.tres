@@ -1,9 +1,20 @@
 [gd_resource type="Resource" script_class="TerrainType" format=3 uid="uid://dk5h26prf4ud3"]
 
 [ext_resource type="Script" uid="uid://cpbhybt6w3haw" path="res://core/terrain_type.gd" id="1_vobtq"]
+[ext_resource type="Script" uid="uid://c0k6rhe8fomaa" path="res://core/supplies.gd" id="2_stone"]
+[ext_resource type="Resource" path="res://data/sounds/dig.tres" id="3_stone"]
+
+[sub_resource type="Resource" id="Resource_stone"]
+script = ExtResource("2_stone")
+stone = 1
 
 [resource]
 script = ExtResource("1_vobtq")
 display_name = "Rock"
-too_hard_text = "Too hard to dig"
+dig_action = 1
+dig_time = 2.0
+dig_yield = SubResource("Resource_stone")
+dig_text = "+1 stone"
+dig_sound = ExtResource("3_stone")
+impact_strength = 3000.0
 debris_color = Color(0.35686275, 0.39215687, 0.44705883, 1)

@@ -3,9 +3,12 @@ extends CanvasLayer
 ## Top bar, tool rack, banners and the intro / lost / victory cards. It only shows state and reports clicks.
 
 signal tool_pressed(index: int)
+## A material was picked in the material picker of the chosen build tool.
+signal material_picked(material: BridgeMaterial)
 signal pause_pressed
 signal speed_pressed
-signal follow_pressed
+## The Follow button was switched on or off.
+signal follow_toggled(on: bool)
 ## The player clicked the Build button above plan number index (as last passed to set_build_spots).
 signal build_pressed(index: int)
 ## The player clicked the cancel button beside plan number index.
@@ -14,6 +17,8 @@ signal march_pressed
 signal recruit_pressed
 signal begin_pressed
 signal retry_pressed
+## Restart the current level from its checkpoint (any time, not only when lost).
+signal restart_level_pressed
 signal restart_pressed
 ## The player moved a volume slider (0..1) for bus.
 signal volume_changed(bus: StringName, value: float)
@@ -40,16 +45,21 @@ var _tool_buttons: Array[ToolButton] = []
 var _tools: Array[ToolDefinition] = []
 var _build_buttons: Array[PlanButtons] = []
 var _group := ButtonGroup.new()
+var _picker_tool: int = -1 # tool whose materials the picker shows, -1 if none
+var _colors: Dictionary = {} # supply key -> swatch colour, for the tool buttons' costs
 
 
 func _ready() -> void:
 	%PauseButton.pressed.connect(_emit.bind(pause_pressed))
 	%SpeedButton.pressed.connect(_emit.bind(speed_pressed))
-	%FollowButton.pressed.connect(_emit.bind(follow_pressed))
+	%FollowButton.toggled.connect(func(on: bool) -> void:
+		Audio.play(click_sound)
+		follow_toggled.emit(on))
 	%MarchButton.pressed.connect(_emit.bind(march_pressed))
 	%RecruitButton.pressed.connect(_emit.bind(recruit_pressed))
 	%BeginButton.pressed.connect(_emit.bind(begin_pressed))
 	%RetryButton.pressed.connect(_emit.bind(retry_pressed))
+	%RestartButton.pressed.connect(_emit.bind(restart_level_pressed))
 	%NewWorldButton.pressed.connect(_emit.bind(restart_pressed))
 	%AgainButton.pressed.connect(_emit.bind(restart_pressed))
 	%SoundButton.toggled.connect(func(on: bool) -> void: %SoundPanel.visible = on)
@@ -72,12 +82,16 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 		b.queue_free()
 	_tool_buttons.clear()
 	_tools = tools
-	var colors := {&"earth": %Earth.swatch, &"logs": %Logs.swatch, &"rope": %Rope.swatch, &"gold": %Gold.swatch}
+	_picker_tool = -1
+	_colors = {}
+	# Opaque: a readout may hide its swatch (shown by an icon instead), but the cost swatches need the colour.
+	for k in Supplies.KEYS:
+		_colors[k] = Color(_readout(k).swatch, 1.0)
 	for i in tools.size():
 		var b: ToolButton = tool_button_scene.instantiate()
 		b.button_group = _group
 		%Tools.add_child(b)
-		b.setup(tools[i], colors)
+		b.setup(tools[i], _colors)
 		b.pressed.connect(func() -> void:
 			Audio.play(click_sound)
 			tool_pressed.emit(i))
@@ -86,9 +100,61 @@ func build_tools(tools: Array[ToolDefinition]) -> void:
 	_fit.call_deferred()
 
 
-func set_tool(index: int) -> void:
-	if index < _tool_buttons.size():
-		_tool_buttons[index].button_pressed = true
+## Shows tool index as chosen, building material (for a build tool) if given. A tool with several materials
+## gets the material picker above its button.
+func set_tool(index: int, material: BridgeMaterial = null) -> void:
+	if index >= _tool_buttons.size():
+		return
+	var b := _tool_buttons[index]
+	b.button_pressed = true
+	if material and material != b.build_material:
+		b.setup(_tools[index], _colors, material)
+		_refresh_supplies()
+	_show_picker(index, material)
+
+
+## One button per material of tool index above its button, the one it builds (material) pressed; hidden for tools
+## with a single material.
+func _show_picker(index: int, material: BridgeMaterial) -> void:
+	var picker: Control = %MaterialPicker
+	var all := _tools[index].materials()
+	picker.visible = all.size() > 1
+	if not picker.visible:
+		_picker_tool = -1
+		return
+	var row: HBoxContainer = %Materials
+	var chosen := material if material else all[0]
+	if _picker_tool == index:
+		# Same tool: only the pick moved. The buttons stay (one of them may be emitting this very pick).
+		for i in all.size():
+			(row.get_child(i) as Button).set_pressed_no_signal(all[i] == chosen)
+		return
+	_picker_tool = index
+	for c in row.get_children():
+		c.queue_free()
+		row.remove_child(c)
+	var group := ButtonGroup.new()
+	for m in all:
+		var mb := Button.new()
+		mb.toggle_mode = true
+		mb.button_group = group
+		mb.focus_mode = Control.FOCUS_NONE
+		mb.text = "%s · %s" % [m.display_name, m.cost.describe_cost() if m.cost else ""]
+		mb.tooltip_text = m.hint
+		mb.button_pressed = m == chosen
+		mb.pressed.connect(func() -> void:
+			Audio.play(click_sound)
+			material_picked.emit(m))
+		row.add_child(mb)
+	_place_picker.call_deferred(_tool_buttons[index])
+
+
+## Over the tool button, above the supply bar so it hides no counts.
+func _place_picker(over: Control) -> void:
+	var picker: Control = %MaterialPicker
+	picker.size = picker.get_combined_minimum_size()
+	var top := minf(over.global_position.y, $Root/Margin/Column/SupplyBar.global_position.y)
+	picker.global_position = Vector2(over.global_position.x + (over.size.x - picker.size.x) / 2.0, top - picker.size.y - 6.0)
 
 
 func set_paused(paused: bool, show_tag: bool) -> void:
@@ -155,8 +221,9 @@ func set_volumes(music: float, sound: float) -> void:
 	%SoundSlider.set_value_no_signal(sound)
 
 
+## Shows whether the camera follows, without reporting it back.
 func set_follow(on: bool) -> void:
-	%FollowButton.button_pressed = on
+	%FollowButton.set_pressed_no_signal(on)
 
 
 func set_level(number: int, marched_m: int) -> void:
@@ -226,14 +293,17 @@ func _fit() -> void:
 	fit_to(margin.get_viewport_rect().size.x - sides)
 
 
+## The supply bar readout of supply k (the node named after it: earth -> Earth).
+func _readout(k: StringName) -> Readout:
+	return get_node("%" + String(k).capitalize())
+
+
 func _refresh_supplies() -> void:
 	var s := GameState.supplies
-	%Earth.set_value(str(s.earth), true)
-	%Logs.set_value(str(s.logs), true)
-	%Rope.set_value(str(s.rope), true)
-	%Gold.set_value(str(s.gold), true)
+	for k in Supplies.KEYS:
+		_readout(k).set_value(str(s.get(k)), true)
 	for i in _tool_buttons.size():
-		_tool_buttons[i].set_affordable(s.can_afford(_tools[i].price()))
+		_tool_buttons[i].set_affordable(s.can_afford(_tools[i].price(_tool_buttons[i].build_material)))
 
 
 func _emit_index(sig: Signal, index: int) -> void:

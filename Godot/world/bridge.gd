@@ -6,8 +6,17 @@ extends Node2D
 ## New members start as blueprints: drawn, but not simulated or walkable. Ordered blueprints are built one by one
 ## by the Crew (finish), held on scaffolding, and released to the physics when the crew strikes the scaffolding.
 
+## Flex is given for this load (kg) at the middle of a member this long (m).
+const REFERENCE_LOAD: float = 80.0
+const REFERENCE_LENGTH: float = 5.0
+## A member never sags more than this share of its length.
+const MAX_SAG: float = 0.08
+
 signal member_built(member: Member)
 signal member_broken(member: Member, text: String)
+## Pieces hit the ground in cell at harm_speed or more this tick, doing this much damage in all (J: each hit's
+## energy times its material's Ram).
+signal struck(cell: Vector2i, damage: float)
 
 
 class Joint:
@@ -45,6 +54,12 @@ class Member:
 	var scaffolded: bool = false
 	## Share built so far (0..1), growing from from_joint.
 	var progress: float = 0.0
+	## How far its middle sinks under the soldiers on it, in metres (see BridgeMaterial.flex).
+	var sag: float = 0.0
+
+	## Sag at t along the member (0 at the ends, sag at the middle).
+	func sag_at(t: float) -> float:
+		return sag * 4.0 * t * (1.0 - t)
 	var from_joint: Joint
 
 	func stress() -> float:
@@ -52,6 +67,44 @@ class Member:
 
 
 ## A candidate end point for a new member.
+## A soldier or archer the bridge collides with: a solid circle. A built piece reaching it at harm_speed or more
+## crushes it (crushed) and passes on; a slower one is stopped by it. A box (half > 0, a falling block) only
+## stops pieces.
+class Body:
+	var center: Vector2
+	var radius: float
+	var half: Vector2 = Vector2.ZERO
+	## The body's own velocity (m/s), so pieces falling along with it do not crush it.
+	var vel: Vector2
+	## The member it stands on, which never touches it.
+	var skip: Member
+	var crushed: bool = false
+	## Weight (kg) of bridge pieces, and what they carry, resting on it this tick.
+	var load: float = 0.0
+
+	func _init(p_center: Vector2, p_radius: float, p_vel: Vector2 = Vector2.ZERO, p_skip: Member = null) -> void:
+		center = p_center
+		radius = p_radius
+		vel = p_vel
+		skip = p_skip
+
+	static func box(p_center: Vector2, p_half: Vector2, p_skip: Member = null) -> Body:
+		var b := Body.new(p_center, 0.0, Vector2.ZERO, p_skip)
+		b.half = p_half
+		return b
+
+	func is_box() -> bool:
+		return half != Vector2.ZERO
+
+	## Top of the body (y, metres).
+	func top() -> float:
+		return center.y - (half.y if is_box() else radius)
+
+	## How far either side of center a thing above it rests on it.
+	func half_width() -> float:
+		return half.x if is_box() else radius * 0.5
+
+
 class Snap:
 	var pos: Vector2
 	var node: Joint
@@ -75,8 +128,20 @@ class Snap:
 @export var water_drag: float = 0.97
 ## Smoothing of member force before the break test, per tick. Filters single-substep spikes.
 @export_range(0.01, 1.0) var force_smoothing: float = 0.2
-## Ground friction: fraction of velocity kept when a joint touches ground.
-@export_range(0.0, 1.0) var ground_friction: float = 0.3
+## How fast a plank bends to its load and springs back, per tick.
+@export_range(0.01, 1.0) var sag_smoothing: float = 0.15
+## Friction coefficient of ground and bodies against pieces (Coulomb): sliding is slowed by at most this times
+## the push into the surface, so pieces slide on slopes steeper than about atan(friction).
+@export_range(0.0, 2.0, 0.05) var ground_friction: float = 0.6
+
+@export_group("Impact")
+## A built piece hitting a soldier or archer at least this fast (m/s) crushes it (slower ones are stopped by
+## it); hitting ground this fast breaks a cell that can be dug, or batters a tower.
+@export var harm_speed: float = 6.0
+## Weight (kg) resting on a soldier or archer (pieces, what they carry, falling blocks) that crushes them.
+@export var crush_weight: float = 250.0
+## Seconds of siege a tower cell takes per kJ of impact energy (½·m·v² of the joint and its load).
+@export var siege_per_kj: float = 10.0
 
 @export_group("Building")
 ## Walking surface sits this far above the member line (log radius).
@@ -108,15 +173,22 @@ class Snap:
 ## Scaffold poles reach down at most this far.
 @export var scaffold_max_depth: float = 24.0
 
+## Spacing (m) of the points along a member that are kept out of the ground.
+const MEMBER_PROBE: float = 0.25
+
 var terrain: Terrain
 var nodes: Array[Joint] = []
 var members: Array[Member] = []
+## Length of the last substep, for joint velocities.
+var _h: float = 1.0 / 600.0
+var _hits: Array = [] # [cell, member, energy (J)] of every fast hit on the ground this tick
 
 
 func _process(_delta: float) -> void:
 	queue_redraw()
 
 
+## Does a joint at p bolt down: does it touch natural ground (TerrainType.anchor, not bricks or trees)?
 func anchorable(p: Vector2) -> bool:
 	if terrain == null:
 		return false
@@ -124,7 +196,7 @@ func anchorable(p: Vector2) -> bool:
 	var ys := [roundi(p.y) - 1, roundi(p.y)] if _on_grid(p.y) else [floori(p.y)]
 	for x: int in xs:
 		for y: int in ys:
-			if terrain.is_solid(Vector2i(x, y)):
+			if terrain.is_anchor(Vector2i(x, y)):
 				return true
 	return false
 
@@ -157,6 +229,35 @@ func snap_point(p: Vector2, exclude: Joint = null) -> Snap:
 		return s
 	var g := (p / grid_step).round() * grid_step
 	return Snap.new(g, null, anchorable(g))
+
+
+## A loose plan end buried in the ground (a) moved along the plan toward its other end (b) to where the plan
+## leaves the ground, and bolted there. Any other end comes back as it is.
+func fit_to_ground(a: Snap, b: Snap) -> Snap:
+	if a.node or a.on_member or not _buried(a.pos):
+		return a
+	var steps := 48
+	var lo := 0.0
+	var hi := -1.0
+	for i in range(1, steps + 1):
+		if not _buried(a.pos.lerp(b.pos, float(i) / steps)):
+			hi = float(i) / steps
+			break
+		lo = float(i) / steps
+	if hi < 0.0:
+		return a
+	for i in 24:
+		var mid := (lo + hi) / 2.0
+		if _buried(a.pos.lerp(b.pos, mid)):
+			lo = mid
+		else:
+			hi = mid
+	var p := a.pos.lerp(b.pos, hi)
+	# Onto the cell edge it crossed, so the joint sits exactly on the ground's face.
+	for k in 2:
+		if absf(p[k] - roundf(p[k])) < 0.001:
+			p[k] = roundf(p[k])
+	return Snap.new(p, null, anchorable(p))
 
 
 ## {ok: bool, msg: String, length: float}
@@ -403,13 +504,14 @@ func arrow_block(a: Vector2, b: Vector2) -> Variant:
 
 
 ## Highest walkable deck at x that is at or below y_from. {y, member, t} or {} if none.
-func walk_surface(x: float, y_from: float) -> Dictionary:
+## With walkable_only false, any piece solid along its length (see BridgeMaterial.solid_along) counts.
+func walk_surface(x: float, y_from: float, walkable_only: bool = true) -> Dictionary:
 	var best := {}
 	for m in members:
 		# Finished pieces are walkable even while still on scaffolding; of a piece being built, the part
 		# already built is.
 		var built := 1.0 if not m.blueprint else (m.progress if m.ordered and m.from_joint else 0.0)
-		if built <= 0.0 or not m.material.walkable:
+		if built <= 0.0 or not (m.material.walkable if walkable_only else m.material.solid_along):
 			continue
 		var a := m.a.pos
 		var b := m.b.pos
@@ -421,32 +523,37 @@ func walk_surface(x: float, y_from: float) -> Dictionary:
 		var t := (x - a.x) / run
 		if built < 1.0 and (t > built if m.from_joint == m.a else t < 1.0 - built):
 			continue
-		var y := a.y + (b.y - a.y) * t - deck_offset
+		var y := a.y + (b.y - a.y) * t - deck_offset + m.sag_at(t)
 		if y >= y_from - 1e-6 and (best.is_empty() or y < best.y):
 			best = {y = y, member = m, t = t}
 	return best
 
 
 ## Advances the truss by dt. loads: [[member, t along member, kg], ...] from soldiers standing on it.
-func step(dt: float, loads: Array = []) -> void:
+func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 	if members.is_empty():
 		return
 	for n in nodes:
 		n.load = 0.0
 		if n.pinned and not anchorable(n.pos):
 			n.pinned = false
+	var bending := {}
 	for l: Array in loads:
 		var m: Member = l[0]
 		if m.dead:
 			continue
 		m.a.load += l[2] * (1.0 - l[1])
 		m.b.load += l[2] * l[1]
+		# A load bends a member most at its middle and not at all at a joint.
+		bending[m] = bending.get(m, 0.0) + l[2] * 4.0 * l[1] * (1.0 - l[1])
+	_bend(bending)
 	for n in nodes:
 		n.inv_mass = 0.0 if n.fixed() else 1.0 / (n.mass + n.load)
 	for m in members:
 		m._acc = 0.0
 	var h := dt / substeps
 	var h2 := h * h
+	_h = h
 	for s in substeps:
 		for n in nodes:
 			if n.fixed():
@@ -475,7 +582,16 @@ func step(dt: float, loads: Array = []) -> void:
 			m._acc -= dl / h2
 		for n in nodes:
 			if not n.fixed():
-				_collide(n)
+				_collide(n, h)
+	var structures := _structures()
+	# Whole pieces against the ground, each other and bodies: once per tick, which is plenty against cells and
+	# bodies a metre wide (the joints, which move fastest, collide every substep above).
+	for m in members:
+		if not m.blueprint and m.material.solid_along:
+			_collide_member(m, h)
+	_collide_structures(structures, h)
+	for b in bodies:
+		_collide_body(b, h)
 	var broken: Array[Member] = []
 	for m in members:
 		if m.blueprint:
@@ -489,6 +605,19 @@ func step(dt: float, loads: Array = []) -> void:
 	for m in members.duplicate():
 		if not m.blueprint and m.a.pos.y > bottom or m.b.pos.y > bottom:
 			remove_member(m)
+	_resolve_hits()
+
+
+## Eases each member's sag toward what its loads ({member: kg weighted by where they stand}) call for.
+func _bend(bending: Dictionary) -> void:
+	for m in members:
+		var mat := m.material
+		var target := 0.0
+		if not mat.draw_as_rope and mat.flex > 0.0 and bending.has(m):
+			target = minf(mat.flex * bending[m] / REFERENCE_LOAD * pow(m.length / REFERENCE_LENGTH, 3.0), m.length * MAX_SAG)
+		m.sag += (target - m.sag) * sag_smoothing
+		if m.sag < 0.0005 and target == 0.0:
+			m.sag = 0.0
 
 
 func clear() -> void:
@@ -533,6 +662,19 @@ func _draw() -> void:
 				var t := i / 12.0
 				pts.append(a.lerp(ctrl, t).lerp(ctrl.lerp(b, t), t))
 			draw_polyline(pts, hot if m.stress() > 0.3 else mat.color, maxf(1.5, mat.thickness * px), true)
+		elif m.sag > 0.002:
+			var pts := PackedVector2Array()
+			for i in 13:
+				var t := i / 12.0
+				pts.append(a.lerp(b, t) + Vector2(0, m.sag_at(t) * px))
+			var lit := pts.duplicate()
+			for i in lit.size():
+				lit[i] -= Vector2(0, 0.05 * px)
+			draw_polyline(pts, mat.edge_color, mat.thickness * 1.5 * px, true)
+			draw_polyline(pts, hot, mat.thickness * px, true)
+			draw_polyline(lit, highlight_color, maxf(1.0, 0.04 * px), true)
+			draw_circle(a, mat.thickness * 0.75 * px, mat.edge_color)
+			draw_circle(b, mat.thickness * 0.75 * px, mat.edge_color)
 		else:
 			draw_line(a, b, mat.edge_color, mat.thickness * 1.5 * px)
 			draw_line(a, b, hot, mat.thickness * px)
@@ -641,6 +783,14 @@ func _joined(a: Joint, b: Joint) -> bool:
 	return false
 
 
+## Inside the ground: solid all around, not on its surface.
+func _buried(p: Vector2) -> bool:
+	for d: Vector2 in [Vector2(-0.01, -0.01), Vector2(0.01, -0.01), Vector2(-0.01, 0.01), Vector2(0.01, 0.01)]:
+		if not terrain.is_solid(Grid.cell_of(p + d)):
+			return false
+	return true
+
+
 func _through_ground(a: Vector2, b: Vector2) -> bool:
 	for i in range(1, 12):
 		var p := a.lerp(b, i / 12.0)
@@ -650,36 +800,282 @@ func _through_ground(a: Vector2, b: Vector2) -> bool:
 	return false
 
 
-func _collide(n: Joint) -> void:
-	var c := Grid.cell_of(n.pos)
-	if not terrain.is_solid(c):
+func _collide(n: Joint, h: float) -> void:
+	var out := _push_out(n.pos, n.prev)
+	if out.is_empty():
 		return
-	var f := n.pos - Vector2(c)
-	# Pushed out just clear of the cell edge. Further would leave the joint falling back every few substeps.
-	var e := 0.001
-	var best := Vector2(n.pos.x, c.y - e)
-	var normal := Vector2.UP
-	var bd := 9.0
-	if not terrain.is_solid(c + Vector2i.UP) and f.y < bd:
-		bd = f.y
-		best = Vector2(n.pos.x, c.y - e)
-	if not terrain.is_solid(c + Vector2i.LEFT) and f.x < bd:
-		bd = f.x
-		best = Vector2(c.x - e, n.pos.y)
-		normal = Vector2.LEFT
-	if not terrain.is_solid(c + Vector2i.RIGHT) and 1.0 - f.x < bd:
-		bd = 1.0 - f.x
-		best = Vector2(c.x + 1 + e, n.pos.y)
-		normal = Vector2.RIGHT
-	if not terrain.is_solid(c + Vector2i.DOWN) and 1.0 - f.y < bd:
-		best = Vector2(n.pos.x, c.y + 1 + e)
-		normal = Vector2.DOWN
-	# Contact: no velocity into the ground, sliding slowed by friction. Working the velocity out from the
-	# push-out instead would make every contact a small kick upward, and loose pieces would never rest.
 	var v := n.pos - n.prev
-	var slide := v - normal * v.dot(normal)
-	n.pos = best
-	n.prev = n.pos - slide * ground_friction
+	# The joint's mass and load come from its members: each takes its share of the hit.
+	for m in members:
+		if not m.blueprint and (m.a == n or m.b == n):
+			_strike(Grid.cell_of(n.pos), m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
+	n.pos = out[0]
+	n.prev = n.pos - (v + _contact_dv(v, out[1]))
+
+
+## Keeps built member m out of what push_out (point -> [pushed point, normal] or []) reports: by default the
+## ground, along its length between the joints (the joints collide on their own), with impact damage.
+## For anything else (ground false) its ends count too, and nothing is damaged.
+func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground: bool = true) -> void:
+	if m.a.inv_mass == 0.0 and m.b.inv_mass == 0.0:
+		return
+	var steps := ceili(m.length / MEMBER_PROBE)
+	var hit := false
+	for k in range(1 if ground else 0, steps if ground else steps + 1):
+		var t := float(k) / steps
+		var p := m.a.pos.lerp(m.b.pos, t)
+		var out: Array = push_out.call(p, m.a.prev.lerp(m.b.prev, t))
+		if out.is_empty():
+			continue
+		var wa := m.a.inv_mass * (1.0 - t)
+		var wb := m.b.inv_mass * t
+		var w := wa * (1.0 - t) + wb * t
+		if w <= 0.0:
+			continue
+		var va := m.a.pos - m.a.prev
+		var vb := m.b.pos - m.b.prev
+		if ground and not hit:
+			# One hit per piece: its first point in the ground carries the piece's mass and load.
+			hit = true
+			_strike(Grid.cell_of(p), m, m.mass + m.a.load * (1.0 - t) + m.b.load * t, va.lerp(vb, t), out[1], h)
+		var push: Vector2 = (out[0] - p) / w
+		m.a.pos += push * wa
+		m.b.pos += push * wb
+		_contact_at(m, t, va, vb, wa, wb, w, out[1])
+
+
+## Where p, if inside solid ground, is pushed out to, and that face's outward normal: [Vector2, Vector2]. [] if p is
+## not in the ground. It leaves through the open face it came in through, going by where it was before (from);
+## if that tells nothing, through the nearest open face.
+func _push_out(p: Vector2, from: Vector2) -> Array:
+	var c := Grid.cell_of(p)
+	if not terrain.is_solid(c):
+		return []
+	# Just clear of the cell edge. Further would leave the joint falling back every few substeps.
+	var e := 0.001
+	var lo := Vector2(c)
+	var hi := lo + Vector2.ONE
+	# [normal, pushed point, how far through the move the face was crossed (later = the face it came in by),
+	# distance to the face]
+	var faces := [
+		[Vector2.UP, Vector2(p.x, lo.y - e), _crossed(from.y, p.y, lo.y), p.y - lo.y],
+		[Vector2.DOWN, Vector2(p.x, hi.y + e), _crossed(-from.y, -p.y, -hi.y), hi.y - p.y],
+		[Vector2.LEFT, Vector2(lo.x - e, p.y), _crossed(from.x, p.x, lo.x), p.x - lo.x],
+		[Vector2.RIGHT, Vector2(hi.x + e, p.y), _crossed(-from.x, -p.x, -hi.x), hi.x - p.x],
+	]
+	var best: Array = []
+	for f: Array in faces:
+		if terrain.is_solid(c + Vector2i(f[0])):
+			continue
+		if best.is_empty() or f[2] > best[2] or (f[2] == best[2] and f[3] < best[3]):
+			best = f
+	if best.is_empty():
+		return [Vector2(p.x, lo.y - e), Vector2.UP]
+	return [best[1], best[0]]
+
+
+## When, as a share of the move from a to b along one axis, the plane at edge was crossed going up the axis;
+## -1 if the move started past it.
+static func _crossed(a: float, b: float, edge: float) -> float:
+	if a > edge:
+		return -1.0
+	return (edge - a) / maxf(b - a, 1e-9)
+
+
+## Where p, if inside box body b, is pushed out to (just clear of its nearest side), and that side's normal.
+func _push_out_of_box(p: Vector2, _from: Vector2, b: Body) -> Array:
+	var d := p - b.center
+	var pen := b.half - d.abs()
+	if pen.x <= 0.0 or pen.y <= 0.0:
+		return []
+	var e := 0.001
+	if pen.x < pen.y:
+		var nx := 1.0 if d.x >= 0.0 else -1.0
+		return [Vector2(b.center.x + nx * (b.half.x + e), p.y), Vector2(nx, 0.0)]
+	var ny := 1.0 if d.y >= 0.0 else -1.0
+	return [Vector2(p.x, b.center.y + ny * (b.half.y + e)), Vector2(0.0, ny)]
+
+
+## Built members by connected structure: Member -> id. Members joined through joints share an id.
+func _structures() -> Dictionary:
+	var at := {} # Joint -> Array of built members on it
+	for m in members:
+		if not m.blueprint:
+			for j: Joint in [m.a, m.b]:
+				if not at.has(j):
+					at[j] = []
+				at[j].append(m)
+	var of := {}
+	var id := 0
+	for start in members:
+		if start.blueprint or of.has(start):
+			continue
+		var queue: Array[Member] = [start]
+		of[start] = id
+		while not queue.is_empty():
+			var m: Member = queue.pop_back()
+			for j: Joint in [m.a, m.b]:
+				for o: Member in at[j]:
+					if not of.has(o):
+						of[o] = id
+						queue.append(o)
+		id += 1
+	return of
+
+
+## Keeps pieces of different structures (of: from _structures) from passing through each other, by their
+## thickness. Pieces of one structure may cross (an X brace).
+func _collide_structures(of: Dictionary, h: float) -> void:
+	# Only pieces sharing a 2 m bucket can touch.
+	var buckets := {}
+	for m: Member in of:
+		var box := Rect2(m.a.pos, Vector2.ZERO).expand(m.b.pos).grow(m.material.thickness)
+		for x in range(floori(box.position.x / 2.0), floori(box.end.x / 2.0) + 1):
+			for y in range(floori(box.position.y / 2.0), floori(box.end.y / 2.0) + 1):
+				var key := Vector2i(x, y)
+				if not buckets.has(key):
+					buckets[key] = []
+				buckets[key].append(m)
+	var done := {}
+	for list: Array in buckets.values():
+		for i in list.size():
+			var p: Member = list[i]
+			for k in range(i + 1, list.size()):
+				var q: Member = list[k]
+				if of[p] == of[q] or not (p.material.solid_along and q.material.solid_along):
+					continue
+				var pair := [p, q] if p.get_instance_id() < q.get_instance_id() else [q, p]
+				if done.has(pair):
+					continue
+				done[pair] = true
+				_collide_pair(p, q, h)
+
+
+func _collide_pair(p: Member, q: Member, h: float) -> void:
+	var gap := (p.material.thickness + q.material.thickness) / 2.0
+	var box_p := Rect2(p.a.pos, Vector2.ZERO).expand(p.b.pos).grow(gap)
+	if not box_p.intersects(Rect2(q.a.pos, Vector2.ZERO).expand(q.b.pos)):
+		return
+	var cp := Geometry2D.get_closest_points_between_segments(p.a.pos, p.b.pos, q.a.pos, q.b.pos)
+	var off: Vector2 = cp[1] - cp[0]
+	var dist := off.length()
+	if dist >= gap:
+		return
+	var n := off / dist if dist > 1e-6 else (p.b.pos - p.a.pos).orthogonal().normalized()
+	var tp := _t_along(p, cp[0])
+	var tq := _t_along(q, cp[1])
+	# Each joint's share of the correction: p is pushed back along n, q forward.
+	var js: Array[Joint] = [p.a, p.b, q.a, q.b]
+	var ws: Array[float] = [-p.a.inv_mass * (1.0 - tp), -p.b.inv_mass * tp, q.a.inv_mass * (1.0 - tq), q.b.inv_mass * tq]
+	var arms: Array[float] = [1.0 - tp, tp, 1.0 - tq, tq]
+	var w := 0.0
+	for k in 4:
+		w += absf(ws[k]) * arms[k]
+	if w <= 0.0:
+		return
+	var vs: Array[Vector2] = []
+	for j in js:
+		vs.append(j.pos - j.prev)
+	var closing := (vs[2].lerp(vs[3], tq) - vs[0].lerp(vs[1], tp)).dot(n)
+	var push := (gap - dist) / w
+	var stop := -minf(closing, 0.0) / w
+	for k in 4:
+		js[k].pos += n * push * ws[k]
+		js[k].prev = js[k].pos - (vs[k] + n * stop * ws[k])
+
+
+static func _t_along(m: Member, p: Vector2) -> float:
+	var d := m.b.pos - m.a.pos
+	return clampf((p - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
+
+
+## Records a hit on cell by member m with mass moving v (per substep h) against a face with this normal, if at
+## harm_speed.
+func _strike(cell: Vector2i, m: Member, mass: float, v: Vector2, normal: Vector2, h: float) -> void:
+	var into := -v.dot(normal) / h
+	if into >= harm_speed:
+		_hits.append([cell, m, 0.5 * mass * into * into])
+
+
+## Settles this tick's hits: each cell takes the damage of all its hits (struck); a piece whose hit carried more
+## than its Impact Strength breaks if the cell held.
+func _resolve_hits() -> void:
+	var hits := _hits
+	_hits = []
+	var damage := {}
+	for hit: Array in hits:
+		var m: Member = hit[1]
+		damage[hit[0]] = damage.get(hit[0], 0.0) + hit[2] * m.material.ram
+	for hit: Array in hits:
+		var m: Member = hit[1]
+		var t := terrain.type_at(hit[0])
+		var strength := m.material.impact_strength
+		if not m.dead and t and not t.breaks_under(damage[hit[0]]) and strength > 0.0 and hit[2] > strength:
+			break_member(m)
+	for c: Vector2i in damage:
+		if damage[c] > 0.0:
+			struck.emit(c, damage[c])
+
+
+## Velocity change (per substep) a contact with this outward normal gives a point moving v: no velocity into the
+## surface, and sliding slowed by Coulomb friction (at most ground_friction times that stop). Working velocity out
+## from the push-out instead would make every contact a small kick upward, and loose pieces would never rest.
+func _contact_dv(v: Vector2, normal: Vector2) -> Vector2:
+	var vn := v.dot(normal)
+	if vn >= 0.0:
+		return Vector2.ZERO
+	var vt := v - normal * vn
+	var grip := ground_friction * -vn
+	var dt := -vt if vt.length() <= grip else -vt.normalized() * grip
+	return normal * -vn + dt
+
+
+## Applies a contact at t along member m (its ends moving va, vb before; wa, wb, w: their shares, as for the
+## push) as an impulse at that point only, so the piece turns about it instead of stopping dead.
+## surface_vel: how fast what it touches moves (per substep).
+func _contact_at(m: Member, t: float, va: Vector2, vb: Vector2, wa: float, wb: float, w: float, normal: Vector2,
+		surface_vel: Vector2 = Vector2.ZERO) -> void:
+	var dv := _contact_dv(va.lerp(vb, t) - surface_vel, normal) / w
+	m.a.prev = m.a.pos - (va + dv * wa)
+	m.b.prev = m.b.pos - (vb + dv * wb)
+
+
+## Keeps built members out of body b, or marks it crushed by one reaching it at harm_speed or more.
+func _collide_body(b: Body, h: float) -> void:
+	if b.crushed:
+		return
+	if b.is_box():
+		for m in members:
+			if not m.blueprint and m != b.skip and m.material.solid_along:
+				_collide_member(m, h, _push_out_of_box.bind(b), false)
+		return
+	for m in members:
+		if m.blueprint or m == b.skip or not m.material.solid_to_bodies:
+			continue
+		var d := m.b.pos - m.a.pos
+		var t := clampf((b.center - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
+		var off := m.a.pos.lerp(m.b.pos, t) - b.center
+		var dist := off.length()
+		if dist >= b.radius:
+			continue
+		var n := off / dist if dist > 1e-6 else Vector2.UP
+		var va := m.a.pos - m.a.prev
+		var vb := m.b.pos - m.b.prev
+		if -(va.lerp(vb, t) / h - b.vel).dot(n) >= harm_speed:
+			b.crushed = true
+			return
+		if n.y < -0.5:
+			# Lying on the body: it carries the piece's weight there, and what the piece carries.
+			b.load += (m.a.mass + m.a.load) * (1.0 - t) + (m.b.mass + m.b.load) * t
+		var wa := m.a.inv_mass * (1.0 - t)
+		var wb := m.b.inv_mass * t
+		var w := wa * (1.0 - t) + wb * t
+		if w <= 0.0:
+			continue
+		var push := (b.radius - dist) / w
+		m.a.pos += n * push * wa
+		m.b.pos += n * push * wb
+		_contact_at(m, t, va, vb, wa, wb, w, n, b.vel * h)
 
 
 static func _on_grid(v: float) -> bool:

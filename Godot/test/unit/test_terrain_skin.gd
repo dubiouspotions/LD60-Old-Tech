@@ -86,6 +86,46 @@ func test_grass_surface_corners_and_walls() -> void:
 	assert_has(look.inner_tr, _tile(Vector2i(6, 3)), "inner corner under the step")
 
 
+## A tunnel dug under the ground: its roof gets the ceiling tiles, and the inside corners where it meets the walls.
+func test_tunnel_ceiling_and_its_inner_corners() -> void:
+	terrain.set_type(Vector2i(2, 6), null)
+	terrain.set_type(Vector2i(3, 6), null)
+	assert_has(look.ceiling, _tile(Vector2i(2, 5)), "ceiling")
+	assert_eq(terrain.painted_type(Vector2i(2, 5)), _type("soil"))
+	assert_has(look.inner_br, _tile(Vector2i(1, 5)), "inner corner where the roof meets the left wall")
+	assert_has(look.inner_bl, _tile(Vector2i(4, 5)), "inner corner on the other side")
+	assert_eq(terrain.painted_type(Vector2i(4, 5)), _type("rock"), "rock keeps its material")
+
+
+func test_ceiling_with_air_beside_gets_a_corner() -> void:
+	terrain.set_type(Vector2i(2, 6), null)
+	terrain.set_type(Vector2i(3, 6), null)
+	terrain.set_type(Vector2i(1, 6), null)
+	terrain.set_type(Vector2i(1, 5), null)
+	terrain.set_type(Vector2i(0, 5), _type("soil"))
+	assert_has(look.ceiling_l, _tile(Vector2i(2, 5)), "air below and to the left")
+
+
+## An untagged (no material) old tile painted in the air is a decoration: re-tiling and digging nearby keep it.
+func test_decorations_in_the_air_survive() -> void:
+	var src := terrain.tile_set.get_source(look.classic_source) as TileSetAtlasSource
+	var deco := Vector2i(-1, -1)
+	for i in src.get_tiles_count():
+		var c := src.get_tile_id(i)
+		if src.get_tile_data(c, 0).get_custom_data("terrain") == null:
+			deco = c
+			break
+	if deco.x < 0:
+		pass_test("no decoration tiles in the old atlas")
+		return
+	terrain.set_cell(Vector2i(3, 2), look.classic_source, deco)
+	terrain.retile_all()
+	terrain.set_type(Vector2i(3, 3), null)
+	assert_eq(terrain.get_cell_source_id(Vector2i(3, 2)), look.classic_source, "decoration kept")
+	assert_eq(_tile(Vector2i(3, 2)), deco)
+	assert_null(terrain.type_at(Vector2i(3, 2)), "still air")
+
+
 func test_fillets_are_air_tiles_at_the_foot_of_a_step() -> void:
 	assert_has(look.fillet_r + look.fillet_r_low, _tile(Vector2i(3, 2)), "air cell left of the step")
 	assert_has(look.fillet_l + look.fillet_l_low, _tile(Vector2i(7, 2)), "air cell right of the step")
@@ -109,9 +149,14 @@ func test_materials_without_v2_art_keep_their_old_tile() -> void:
 	assert_eq(_tile(Vector2i(10, 2)), old[1])
 
 
+## The v2 sheet has no water art, so water uses the old tiles: surface and depth.
 func test_water_surface_and_depth() -> void:
-	assert_has(look.water_top, _tile(Vector2i(9, 5)))
-	assert_has(look.water, _tile(Vector2i(9, 6)))
+	if not look.water_top.is_empty():
+		assert_has(look.water_top, _tile(Vector2i(9, 5)))
+		return
+	assert_eq(terrain.get_cell_source_id(Vector2i(9, 5)), look.classic_source)
+	assert_has(look.classic_water_top, _tile(Vector2i(9, 5)))
+	assert_has(look.classic_water, _tile(Vector2i(9, 6)))
 
 
 func test_digging_repicks_the_neighbours() -> void:
@@ -129,27 +174,44 @@ func test_a_painted_variant_is_kept_while_it_still_fits() -> void:
 	assert_has(look.corner_tl, _tile(Vector2i(5, 2)), "re-picked once it no longer fits")
 
 
-func test_retile_turns_old_material_tiles_into_v2() -> void:
-	var old := terrain.atlas_tile(_type("soil"))
-	terrain.set_cell(Vector2i(5, 2), old[0], old[1])
+func test_painted_water_and_spikes_keep_their_old_art() -> void:
+	var old := terrain.atlas_tile(_type("water"))
+	terrain.set_cell(Vector2i(9, 6), old[0], old[1])
 	terrain.retile_all()
-	assert_true(_v2(Vector2i(5, 2)))
-	assert_eq(terrain.painted_type(Vector2i(5, 2)), _type("soil"))
+	assert_eq(terrain.get_cell_source_id(Vector2i(9, 6)), old[0], "designer's water kept")
+	assert_eq(terrain.painted_type(Vector2i(9, 6)), _type("water"))
 
 
-func test_switching_off_draws_the_old_tiles() -> void:
+func test_new_water_gets_a_water_tile() -> void:
+	terrain.set_type(Vector2i(9, 4), _type("water"))
+	assert_eq(terrain.painted_type(Vector2i(9, 4)), _type("water"))
+
+
+func test_switching_off_draws_old_tiles_where_old_art_exists() -> void:
 	look.enabled = false
 	terrain.retile_all()
 	skin.refresh()
-	assert_eq(terrain.get_cell_source_id(Vector2i(5, 2)), look.classic_source)
-	assert_has(look.classic_grass, _tile(Vector2i(5, 2)), "old grass on top")
-	assert_has(look.classic_dirt, _tile(Vector2i(5, 3)), "old dirt below")
-	assert_has(look.classic_rock, _tile(Vector2i(4, 5)))
+	assert_eq(terrain.get_cell_source_id(Vector2i(9, 5)), look.classic_source, "water has old art")
 	assert_has(look.classic_water_top, _tile(Vector2i(9, 5)))
 	assert_has(look.classic_water, _tile(Vector2i(9, 6)))
 	assert_eq(terrain.get_cell_source_id(Vector2i(3, 2)), -1, "no fillets")
-	assert_eq(terrain.painted_type(Vector2i(4, 5)), _type("rock"), "materials unchanged")
 	assert_eq(skin.body_layer().get_used_cells().size(), 0, "no overlay")
+
+
+func test_a_material_without_old_art_keeps_its_v2_tile_when_switched_off() -> void:
+	look.enabled = false
+	terrain.retile_all()
+	if terrain.atlas_tile(_type("soil")).is_empty():
+		assert_true(_v2(Vector2i(5, 2)), "soil has no old art left, so it stays v2")
+
+
+## Whatever the look, a cell's tile always carries the cell's material: drawing never changes what the ground is.
+func test_tiles_always_carry_their_cells_material() -> void:
+	for on in [true, false]:
+		look.enabled = on
+		terrain.retile_all()
+		for cell in terrain.get_used_cells():
+			assert_eq(terrain.painted_type(cell), terrain.type_at(cell), "%s with the look %s" % [cell, "on" if on else "off"])
 
 
 func test_terrain_has_a_retile_button() -> void:

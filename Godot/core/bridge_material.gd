@@ -4,6 +4,8 @@ extends Resource
 ## A bridge member type (log, rope, ...). Physics units are SI: m, kg, N.
 
 @export var display_name: String = "Log"
+## Small hint on the tool button while this material is chosen.
+@export var hint: String = ""
 @export var cost: Supplies
 ## Shown when the player can not afford it.
 @export var no_supply_text: String = "No logs. Fell a tree"
@@ -25,6 +27,22 @@ extends Resource
 @export var blocks_arrows: bool = true
 ## Soldiers can walk on top of it.
 @export var walkable: bool = true
+## How far the middle of a 5 m member sinks with one soldier (80 kg) standing at its middle. It grows with the load
+## and with the length cubed, like a real beam, so short pieces barely move. Only the look and the walking surface
+## bend; the joints and breaking are not affected. 0: rigid. Ropes never flex.
+@export_range(0.0, 1.0, 0.01, "suffix:m") var flex: float = 0.08
+## Soldiers and archers collide with it (and a fast one crushes them). Off: they pass through it, as with
+## supports and ropes.
+@export var solid_to_bodies: bool = true
+## Its whole length (not only its ends) collides with the ground and other pieces, and falling blocks rest on it.
+## Off for ropes: a rope is one straight piece, and would lie across a tower like a stiff rod.
+@export var solid_along: bool = true
+
+@export_group("Impact")
+## Share of a fast hit's energy that does damage (to towers and ground): how hard the material is.
+@export_range(0.0, 2.0, 0.05) var ram: float = 0.3
+## Energy (J) of one fast hit against something that holds (a tower, rock) that breaks the piece. 0: never.
+@export_range(0.0, 100000.0, 10.0, "suffix:J") var impact_strength: float = 1000.0
 
 @export_group("Messages")
 @export var snapped_text: String = "Log pulled apart"

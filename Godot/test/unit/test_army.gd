@@ -382,3 +382,77 @@ func test_fighting_does_not_count_toward_mutiny() -> void:
 	_run(a, a.rules.mutiny_time + 2.0)
 	assert_eq(a.soldiers.size(), 1, "still fighting")
 	assert_eq(a.deserters.size(), 0)
+
+
+## Ground at row 4 with a 2 m dip at x 17-18, just behind a camp at x 20.5.
+const CAMP_DIP: Array = [
+	"..........................",
+	"..........................",
+	"..........................",
+	"..........................",
+	"#################..#######",
+	"#################..#######",
+	"##########################",
+	"BBBBBBBBBBBBBBBBBBBBBBBBBB",
+]
+
+
+func test_soldiers_stuck_in_a_dip_do_not_split_the_camp() -> void:
+	var a := _world(CAMP_DIP)
+	a.spawn(10, 20.5)
+	for i in range(1, 8):
+		a.soldiers[i].pos = Vector2(18.8 - (i - 1) * 0.25, 6.0)
+	a.soldiers[8].pos = Vector2(16.4, 4.0)
+	a.soldiers[9].pos = Vector2(15.8, 4.0)
+	a.camp_x = 20.5
+	a.resting = true
+	_run(a, 10.0)
+	var xs := a.soldiers.map(func(s: Soldier) -> float: return s.pos.x)
+	for i in range(1, xs.size()):
+		assert_lte(xs[i - 1] - xs[i], a.rules.camp_spacing + 0.1, "soldier %d camps close behind %d" % [i, i - 1])
+
+
+func test_deserters_walk_back_down_a_bridge_not_through_it() -> void:
+	var a := _world([
+		"....................",
+		"........############",
+		"........############",
+		"........############",
+		"........############",
+		"........############",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	var b := a.bridge
+	b.build(b.snap_point(Vector2(3, 6)), b.snap_point(Vector2(8, 4)), preload("res://data/bridge/log.tres"))
+	a.spawn(3, 2.5)
+	var sank := [false]
+	for i in int((a.rules.mutiny_time + 6.0) * 60):
+		b.step(1.0 / 60.0, a.bridge_loads())
+		a.step(1.0 / 60.0)
+		for d: Soldier in a.deserters:
+			if d.pos.x > 3.3 and d.pos.x < 7.7 and d.pos.y > a.surface_at(d.pos.x, 0.0).y + 0.1:
+				sank[0] = true
+	assert_gt(a.deserters.size() + (3 - a.soldiers.size()), 0, "somebody deserted")
+	assert_false(sank[0], "nobody sank through the deck")
+
+
+func test_deserter_boxed_in_under_a_ceiling_does_not_climb_into_the_rock() -> void:
+	var a := _world([
+		"....................",
+		"####################",
+		"#####.....##########",
+		"#####.....##########",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	a.spawn(1, 8.5)
+	a.lead().pos.y = 4.0
+	var inside := [false]
+	for i in int((a.rules.mutiny_time + 4.0) * 60):
+		a.step(1.0 / 60.0)
+		for d: Soldier in a.deserters:
+			inside[0] = inside[0] or a.terrain.is_solid(Grid.cell_of(d.pos - Vector2(0, 0.5)))
+	assert_eq(a.soldiers.size(), 0, "deserted")
+	assert_false(inside[0], "never inside the rock")
+	assert_eq(a.deserters.size(), 0, "slipped away")
