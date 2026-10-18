@@ -67,6 +67,8 @@ class Chunk:
 @onready var grass: TallGrass = %Grass
 ## Fireflies under the trees at night (DayNight fades them in).
 @onready var fireflies: Fireflies = %Fireflies
+## Pollen drifting on the wind by day (DayNight fades it out at night).
+@onready var pollen: Pollen = %Pollen
 
 ## Campaign index of the level the column is in, -1 before begin().
 var current: int = -1
