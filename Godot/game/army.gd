@@ -78,7 +78,7 @@ func reinforce(count: int) -> void:
 ## Load each soldier puts on the bridge: [[member, t, kg], ...].
 func bridge_loads() -> Array:
 	var out := []
-	for s in soldiers:
+	for s in soldiers + deserters:
 		if s.on_member and not s.on_member.dead:
 			out.append([s.on_member, s.on_t, rules.soldier_mass])
 	return out
@@ -139,12 +139,7 @@ func step(dt: float) -> void:
 			if i == 0:
 				halt_reason = block
 			continue
-		s.pos.x += dx
-		s.moving = true
-		var sup := _support(s, s.pos.y - rules.step_up)
-		if sup.hazard == null and sup.y <= s.pos.y + 0.2:
-			s.pos.y = sup.y
-			s.stand_on(sup)
+		_step_x(s, dx)
 	_remove_dead()
 	for s in soldiers:
 		_settle_down(s, dt)
@@ -169,9 +164,15 @@ func _walk_to_camp(s: Soldier, i: int, dt: float) -> void:
 	var edge := surface_at(s.pos.x + signf(dx) * rules.foot_half_width + dx, s.pos.y - rules.step_up)
 	if not _blocked_ahead(s, dx).is_empty() or edge.hazard != null or edge.y > s.pos.y + rules.step_up:
 		return
+	s.facing = signi(roundi(dx * 1000))
+	_step_x(s, dx)
+
+
+## Moves the soldier dx along the ground and onto whatever it now stands on (ground or deck). A step off an
+## edge leaves it to fall (see _settle_vertical).
+func _step_x(s: Soldier, dx: float) -> void:
 	s.pos.x += dx
 	s.moving = true
-	s.facing = signi(roundi(dx * 1000))
 	var sup := _support(s, s.pos.y - rules.step_up)
 	if sup.hazard == null and sup.y <= s.pos.y + 0.2:
 		s.pos.y = sup.y
@@ -411,31 +412,35 @@ func _desert(s: Soldier) -> void:
 	Audio.play(rules.desert_sound, Grid.to_px(s.pos))
 
 
-## Deserters walk west over the top of the ground, climbing any cliff (no armour to carry), and vanish.
+## Deserters walk back west like marching soldiers (falling off edges, standing on decks), except that a wall
+## does not stop them: they climb it (no armour to carry). They vanish after desert_distance, or where a
+## ceiling leaves them nowhere to climb.
 func _step_deserters(dt: float) -> void:
 	for d: Soldier in deserters.duplicate():
-		var top := _desert_top(d.pos.x - rules.foot_half_width, d.pos.y)
-		d.moving = true
-		if top < d.pos.y - 0.05:
-			d.pos.y = move_toward(d.pos.y, top, rules.desert_climb_speed * dt)
-		else:
-			var dx := d.speed * dt
-			d.pos.x -= dx
-			d.desert_left -= dx
-			d.pos.y = move_toward(d.pos.y, _desert_top(d.pos.x, d.pos.y), rules.desert_climb_speed * dt)
+		d.moving = false
+		if not d.climbing:
+			_settle_vertical(d, dt)
+		if d.dead:
+			deserters.erase(d)
+			d.queue_free()
+			continue
+		if not d.airborne:
+			var dx := -d.speed * dt
+			d.climbing = not _blocked_ahead(d, dx).is_empty()
+			if d.climbing and terrain.is_solid(Grid.cell_of(d.pos - Vector2(0, 2.0))):
+				d.desert_left = 0.0 # nowhere to climb: it slips away here
+			elif d.climbing:
+				d.pos.y -= rules.desert_climb_speed * dt
+				d.moving = true
+			else:
+				_step_x(d, dx)
+				d.desert_left += dx
 		d.sync()
 		if d.desert_left <= 0.0 or d.pos.x < terrain.min_x:
 			deserters.erase(d)
 			var tw := d.create_tween()
 			tw.tween_property(d, ^"modulate:a", 0.0, 0.5)
 			tw.tween_callback(d.queue_free)
-
-
-## Where a deserter at height y walks at x: the top of the ground, or a deck it is on (within step_up) above it.
-func _desert_top(x: float, y: float) -> float:
-	var top := float(terrain.surface_row(floori(x)))
-	var deck: Dictionary = bridge.walk_surface(x, y - rules.step_up) if bridge else {}
-	return minf(top, deck.y) if not deck.is_empty() else top
 
 
 func _update_leader() -> void:

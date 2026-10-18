@@ -435,3 +435,24 @@ func test_deserters_walk_back_down_a_bridge_not_through_it() -> void:
 				sank[0] = true
 	assert_gt(a.deserters.size() + (3 - a.soldiers.size()), 0, "somebody deserted")
 	assert_false(sank[0], "nobody sank through the deck")
+
+
+func test_deserter_boxed_in_under_a_ceiling_does_not_climb_into_the_rock() -> void:
+	var a := _world([
+		"....................",
+		"####################",
+		"#####.....##########",
+		"#####.....##########",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	a.spawn(1, 8.5)
+	a.lead().pos.y = 4.0
+	var inside := [false]
+	for i in int((a.rules.mutiny_time + 4.0) * 60):
+		a.step(1.0 / 60.0)
+		for d: Soldier in a.deserters:
+			inside[0] = inside[0] or a.terrain.is_solid(Grid.cell_of(d.pos - Vector2(0, 0.5)))
+	assert_eq(a.soldiers.size(), 0, "deserted")
+	assert_false(inside[0], "never inside the rock")
+	assert_eq(a.deserters.size(), 0, "slipped away")

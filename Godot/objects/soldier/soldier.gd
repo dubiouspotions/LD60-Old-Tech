@@ -38,6 +38,8 @@ var blocked_time: float = 0.0
 var deserting: bool = false
 ## Metres a deserter still walks before it vanishes. Owned by Army.
 var desert_left: float = 0.0
+## A deserter climbing a wall face (gravity is off meanwhile). Owned by Army.
+var climbing: bool = false
 
 @onready var _anim: AnimationPlayer = %AnimationPlayer
 @onready var _body: CanvasItem = %Body
