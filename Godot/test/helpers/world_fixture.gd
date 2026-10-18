@@ -37,3 +37,14 @@ static func army(test: GutTest, t: Terrain, b: Bridge) -> Army:
 	a.bridge = b
 	test.add_child_autofree(a)
 	return a
+
+
+## Paints a decoration (an old tile with no material, like battlements) at cell. Returns its atlas coords.
+static func decorate(t: Terrain, cell: Vector2i) -> Vector2i:
+	var src := t.tile_set.get_source(t.look.classic_source) as TileSetAtlasSource
+	for i in src.get_tiles_count():
+		var c := src.get_tile_id(i)
+		if src.get_tile_data(c, 0).get_custom_data(Terrain.CUSTOM_DATA) == null:
+			t.set_cell(cell, t.look.classic_source, c)
+			return c
+	return Vector2i(-1, -1)

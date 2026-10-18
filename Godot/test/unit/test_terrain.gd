@@ -233,6 +233,26 @@ func test_a_hit_on_plain_ground_does_not_ripple() -> void:
 	assert_eq(t.ripple_delay(Vector2i(1, 4)), -1.0)
 
 
+func test_a_razed_tower_takes_its_battlements_with_it() -> void:
+	var t := WorldFixture.terrain(self, TOWER)
+	WorldFixture.decorate(t, Vector2i(4, 0))
+	WorldFixture.decorate(t, Vector2i(6, 0))
+	t.besiege(Vector2i(4, 3), WorldFixture.type("brick").raze_time + 1.0)
+	assert_eq(t.get_cell_source_id(Vector2i(4, 0)), -1, "not left floating")
+	assert_eq(t.get_cell_source_id(Vector2i(6, 0)), -1)
+
+
+func test_a_tower_breaking_up_where_it_stands_takes_its_battlements_with_it() -> void:
+	var t := WorldFixture.terrain(self, TOWER)
+	WorldFixture.decorate(t, Vector2i(5, 0))
+	var cells: Array[Vector2i] = []
+	for x in range(4, 7):
+		for y in range(1, 4):
+			cells.append(Vector2i(x, y))
+	t.break_up(cells)
+	assert_eq(t.get_cell_source_id(Vector2i(5, 0)), -1)
+
+
 func test_rock_can_not_be_besieged() -> void:
 	var t := WorldFixture.terrain(self, MAP)
 	assert_false(t.besiege(Vector2i(8, 6), 1000.0))

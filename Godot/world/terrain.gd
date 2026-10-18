@@ -689,6 +689,8 @@ func _loosen(cells: Array[Vector2i]) -> void:
 ## Breaks a tower or tree apart: a tree is felled, a structure collapses into debris. Either gives its bulk yield
 ## (collapsed).
 func break_up(cells: Array[Vector2i]) -> void:
+    for c in decorations_on(cells):
+        erase_cell(c)
     var first := type_at(cells[0])
     if first.dig_action == TerrainType.DigAction.FELL:
         Audio.play(first.dig_sound, cell_center_px(work_cell(cells[0])))
@@ -709,22 +711,31 @@ func break_up(cells: Array[Vector2i]) -> void:
 ## them (battlements): cell -> {type (null for a decoration), source, coords, alt, mark, siege}. put() sets them back.
 func lift(cells: Array[Vector2i]) -> Dictionary:
     var tiles := {}
-    var todo: Array[Vector2i] = cells.duplicate()
-    while not todo.is_empty():
-        var c: Vector2i = todo.pop_back()
-        if tiles.has(c):
-            continue
+    for c in cells + decorations_on(cells):
         tiles[c] = {type = type_at(c), source = get_cell_source_id(c), coords = get_cell_atlas_coords(c),
             alt = get_cell_alternative_tile(c), mark = _marks.get(c), siege = _siege.get(c)}
-        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
-            if _is_decoration(c + d):
-                todo.append(c + d)
     for c: Vector2i in tiles:
         if tiles[c].type == null:
             erase_cell(c)
         else:
             set_type(c, null)
     return tiles
+
+
+## The decorations (battlements and other tiles painted in the air) joined to cells, directly or through each other.
+func decorations_on(cells: Array[Vector2i]) -> Array[Vector2i]:
+    var out: Array[Vector2i] = []
+    var seen := {}
+    var todo: Array[Vector2i] = cells.duplicate()
+    while not todo.is_empty():
+        var c: Vector2i = todo.pop_back()
+        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
+            var n: Vector2i = c + d
+            if not seen.has(n) and _is_decoration(n):
+                seen[n] = true
+                out.append(n)
+                todo.append(n)
+    return out
 
 
 ## Sets lifted tiles back down rows lower, each with the very tile it had. Returns the ground cells they now fill

@@ -106,15 +106,8 @@ func test_tower_falls_onto_the_ground_below_and_stands_there() -> void:
 func test_decoration_tiles_on_the_tower_fall_with_it() -> void:
 	_build(MAP)
 	var t := world.terrain
-	var src := t.tile_set.get_source(t.look.classic_source) as TileSetAtlasSource
-	var deco := Vector2i(-1, -1)
-	for i in src.get_tiles_count():
-		var c := src.get_tile_id(i)
-		if src.get_tile_data(c, 0).get_custom_data(Terrain.CUSTOM_DATA) == null:
-			deco = c
-			break
+	var deco := WorldFixture.decorate(t, Vector2i(6, 1))
 	assert_ne(deco, Vector2i(-1, -1), "the TileSet has a decoration tile")
-	t.set_cell(Vector2i(6, 1), t.look.classic_source, deco)
 	_clear([Vector2i(6, 5), Vector2i(7, 5)])
 	_run(2.0)
 	assert_eq(t.get_cell_source_id(Vector2i(6, 1)), -1, "not left in the air")
