@@ -28,6 +28,9 @@ extends Resource
 ## Soldiers and archers collide with it (and a fast one crushes them). Off: they pass through it, as with
 ## supports and ropes.
 @export var solid_to_bodies: bool = true
+## Its whole length (not only its ends) collides with the ground and other pieces, and falling blocks rest on it.
+## Off for ropes: a rope is one straight piece, and would lie across a tower like a stiff rod.
+@export var solid_along: bool = true
 
 @export_group("Impact")
 ## Share of a fast hit's energy that does damage (to towers and ground): how hard the material is.

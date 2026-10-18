@@ -371,3 +371,21 @@ func test_soldiers_ignore_supports_and_ropes() -> void:
 		assert_eq(world.army.soldiers.size(), 3, "%s crushes nobody" % mat.display_name)
 		assert_gt(world.army.lead().pos.x, 9.5, "the column walked through the %s" % mat.display_name)
 		assert_almost_eq(apex.pos, start, Vector2(0.1, 0.1), "the %s was not shoved by them" % mat.display_name)
+
+
+func test_a_rope_dropped_across_a_tower_does_not_lie_on_it_like_a_rod() -> void:
+	_map([
+		"....................",
+		"....................",
+		"....................",
+		".....KK.............",
+		".....KK.............",
+		".....KK.............",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	var b := world.bridge
+	var rope := b.build(b.snap_point(Vector2(2, 1)), b.snap_point(Vector2(10, 1)), preload("res://data/bridge/rope.tres"))
+	_run(3.0)
+	assert_gt(rope.a.pos.y, 4.0, "its ends fell past the tower top")
+	assert_gt(rope.b.pos.y, 4.0)

@@ -484,13 +484,14 @@ func arrow_block(a: Vector2, b: Vector2) -> Variant:
 
 
 ## Highest walkable deck at x that is at or below y_from. {y, member, t} or {} if none.
+## With walkable_only false, any piece solid along its length (see BridgeMaterial.solid_along) counts.
 func walk_surface(x: float, y_from: float, walkable_only: bool = true) -> Dictionary:
 	var best := {}
 	for m in members:
 		# Finished pieces are walkable even while still on scaffolding; of a piece being built, the part
 		# already built is.
 		var built := 1.0 if not m.blueprint else (m.progress if m.ordered and m.from_joint else 0.0)
-		if built <= 0.0 or (walkable_only and not m.material.walkable):
+		if built <= 0.0 or not (m.material.walkable if walkable_only else m.material.solid_along):
 			continue
 		var a := m.a.pos
 		var b := m.b.pos
@@ -562,7 +563,7 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 	# Whole pieces against the ground, each other and bodies: once per tick, which is plenty against cells and
 	# bodies a metre wide (the joints, which move fastest, collide every substep above).
 	for m in members:
-		if not m.blueprint:
+		if not m.blueprint and m.material.solid_along:
 			_collide_member(m, h)
 	_collide_structures(structures, h)
 	for b in bodies:
@@ -893,7 +894,7 @@ func _collide_structures(of: Dictionary, h: float) -> void:
 			var p: Member = list[i]
 			for k in range(i + 1, list.size()):
 				var q: Member = list[k]
-				if of[p] == of[q]:
+				if of[p] == of[q] or not (p.material.solid_along and q.material.solid_along):
 					continue
 				var pair := [p, q] if p.get_instance_id() < q.get_instance_id() else [q, p]
 				if done.has(pair):
@@ -980,7 +981,7 @@ func _collide_body(b: Body, h: float) -> void:
 		return
 	if b.is_box():
 		for m in members:
-			if not m.blueprint and m != b.skip:
+			if not m.blueprint and m != b.skip and m.material.solid_along:
 				_collide_member(m, h, _push_out_of_box.bind(b), false)
 		return
 	for m in members:
