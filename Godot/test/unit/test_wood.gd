@@ -170,6 +170,27 @@ func test_a_piece_out_of_reach_does_not_hold_the_feller_forever() -> void:
 	assert_eq(world.wood.count(), 0, "fetched in the end")
 
 
+## Wood that fell under a bridge is fetched from beneath it: the engineer climbs down past the deck, without
+## waiting out Gather Give Up.
+func test_wood_under_a_bridge_is_fetched_from_beneath_it() -> void:
+	for x in range(6, 10):
+		world.terrain.set_type(Vector2i(x, 8), WorldFixture.type("soil"))
+	var bridge := world.bridge
+	bridge.build(bridge.snap_point(Vector2(6, 6)), bridge.snap_point(Vector2(10, 6)), load("res://data/bridge/log.tres"))
+	_tree()
+	world.terrain.mark(Vector2i(2, 5))
+	_run(15.0, _felled)
+	for p in world.wood.pieces:
+		p.pos = Vector2(7.5, 8.0)
+		p.resting = true
+	var took := [0.0]
+	_run(world.crew.rules.gather_give_up + 5.0, func() -> bool:
+		took[0] += 1.0 / 60.0
+		return world.wood.count() == 0)
+	assert_eq(world.wood.count(), 0, "all picked up")
+	assert_lt(took[0], world.crew.rules.gather_give_up * 0.5, "fetched from beneath the deck, not given up on")
+
+
 func test_a_tree_knocked_down_by_a_bridge_piece_drops_its_wood() -> void:
 	_tree()
 	var logs := _yield_logs()

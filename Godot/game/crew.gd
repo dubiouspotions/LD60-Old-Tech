@@ -30,6 +30,8 @@ const THINK_INTERVAL: float = 0.2
 const ENGINEER_HALF_WIDTH: float = 0.2
 ## Joints on a cell edge are reached from the side the engineer comes from.
 const EDGE: float = 0.01
+## A piece of wood is picked up from at most this far above or below the engineer's feet.
+const FETCH_HEIGHT: float = 1.2
 ## Idle engineers wait this far short of a plan's start joint.
 const READY_GAP: float = 0.4
 
@@ -183,7 +185,7 @@ func step(dt: float) -> void:
 			_drop(e)
 		if e.digging and not terrain.is_marked(e.dig):
 			e.digging = false
-		e.under_decks = e.under_decks and e.digging
+		e.under_decks = e.under_decks and (e.digging or e.fetch != null)
 		if (e.job and e.goal and not _in_zone(e.goal.pos.x)) or (e.digging and not _in_zone(e.dig.x + 0.5)):
 			_drop(e)
 		_prune_gather(e)
@@ -692,7 +694,24 @@ func _set_fetch(e: Engineer, p: Wood.Piece) -> void:
 	e.fetch = p
 	e.fetch_time = 0.0
 	e.stoop = 0.0
+	e.path.clear()
 	p.taker = e
+
+
+## Sets e's path to a spot by the piece it fetches, on decks or (if only that way) beneath them. Keeps walking
+## straight at it if there is no such spot (yet: the piece may still be falling).
+func _route_fetch(e: Engineer, p: Wood.Piece) -> void:
+	for decks: bool in [true, false]:
+		var nav := _nav(e, decks, e.any_height)
+		var best := {}
+		for dx: float in [0.0, -0.25, 0.25]:
+			for s in nav.spots_at(p.pos.x + dx):
+				if absf(s.y - p.pos.y) <= FETCH_HEIGHT and (best.is_empty() or s.cost < best.cost):
+					best = s
+		if not best.is_empty():
+			e.path = nav.path(best)
+			e.under_decks = not decks
+			return
 
 
 ## Goes for the next of its own pieces (or the one it is fetching), and picks it up when there.
@@ -712,10 +731,16 @@ func _gather_step(e: Engineer, dt: float) -> void:
 	if e.fetch_time >= rules.gather_give_up:
 		_pick(e, p)
 		return
-	if absf(p.pos.x - e.pos.x) > rules.pickup_reach:
-		_walk_to(e, p.pos.x, dt)
+	_trim_path(e)
+	var there := absf(p.pos.x - e.pos.x) <= rules.pickup_reach and absf(p.pos.y - e.pos.y) <= FETCH_HEIGHT
+	e.think -= dt
+	if not there and e.path.is_empty() and p.resting and e.think <= 0.0:
+		e.think = THINK_INTERVAL
+		_route_fetch(e, p)
+	if not e.path.is_empty() or absf(p.pos.x - e.pos.x) > rules.pickup_reach:
+		_walk_on(e, p.pos.x, dt)
 		return
-	if not p.resting or absf(p.pos.y - e.pos.y) > 1.2:
+	if not p.resting or not there:
 		_show(e, false, 0)
 		return
 	e.stoop += dt
