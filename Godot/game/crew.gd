@@ -122,13 +122,14 @@ var _ground_changes: int = 0
 
 
 ## Places the crew on the ground behind x.
-func spawn(x: float) -> void:
+func spawn(x: float, count: int = 0) -> void:
 	for e in engineers:
 		e.node.queue_free()
 	engineers.clear()
 	throws.clear()
-	for i in rules.crew_size:
+	for i in count if count > 0 else rules.crew_size:
 		_add(maxf(0.5, x - rules.follow_gap - i * rules.spacing))
+	count_changed.emit(engineers.size())
 
 
 ## One more engineer joins the crew, on the ground at x (hired at camp).

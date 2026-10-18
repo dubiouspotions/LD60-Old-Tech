@@ -1,5 +1,5 @@
 extends Node
-## Campaign progress that outlives a level: supplies, column size, current level, checkpoint, best level.
+## Campaign progress that outlives a level: supplies, column and crew size, current level, checkpoint, best level.
 ## Autoload "GameState".
 
 signal supplies_changed
@@ -13,6 +13,8 @@ var save_path: String = "user://sappers.cfg"
 var campaign: Campaign
 var supplies: Supplies = Supplies.new()
 var soldiers: int = 0
+## Engineers in the crew; 0 at the start of a campaign means the crew's own starting size (CrewRules.crew_size).
+var engineers: int = 0
 ## 0-based index into campaign.levels.
 var level_index: int = 0
 ## 1-based, as shown to the player.
@@ -22,6 +24,7 @@ var start_level: String = ""
 
 var _checkpoint_supplies: Supplies = Supplies.new()
 var _checkpoint_soldiers: int = 0
+var _checkpoint_engineers: int = 0
 
 
 func _ready() -> void:
@@ -33,6 +36,7 @@ func _ready() -> void:
 func new_campaign() -> void:
 	level_index = 0
 	soldiers = campaign.start_soldiers
+	engineers = 0
 	supplies = campaign.start_supplies.copy() if campaign.start_supplies else Supplies.new()
 	_checkpoint()
 
@@ -53,10 +57,11 @@ func arrive(index: int, reinforcements: int, supply_drop: Supplies) -> int:
 	return joined
 
 
-## Restores the column and supplies held when the current level began.
+## Restores the column, crew and supplies held when the current level began.
 func retry() -> void:
 	supplies = _checkpoint_supplies.copy()
 	soldiers = _checkpoint_soldiers
+	engineers = _checkpoint_engineers
 	supplies_changed.emit()
 	soldiers_changed.emit(soldiers)
 
@@ -93,6 +98,7 @@ func set_soldiers(count: int) -> void:
 func _checkpoint() -> void:
 	_checkpoint_supplies = supplies.copy()
 	_checkpoint_soldiers = soldiers
+	_checkpoint_engineers = engineers
 	supplies_changed.emit()
 	soldiers_changed.emit(soldiers)
 

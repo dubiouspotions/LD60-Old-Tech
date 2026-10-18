@@ -250,6 +250,27 @@ func test_hire_an_engineer_at_camp() -> void:
 	assert_almost_eq(e.pos.x, world.camp().position.x / Grid.PX, 4.0, "at the camp")
 
 
+## Engineers hired are kept like soldiers: a restart from the checkpoint brings back the crew it had on arrival.
+func test_a_restart_brings_back_the_crew_it_had_at_the_checkpoint() -> void:
+	world.begin(0, 3)
+	var start := world.crew.engineers.size()
+	assert_eq(GameState.engineers, start, "the crew's size is kept")
+	GameState.supplies.gold = world.crew.rules.hire_cost.gold * 3
+	world.hire_engineer()
+	world.hire_engineer()
+	assert_eq(GameState.engineers, start + 2)
+	GameState.arrive(1, 0, Supplies.new())
+	world.hire_engineer()
+	assert_eq(GameState.engineers, start + 3)
+	GameState.retry()
+	assert_eq(GameState.engineers, start + 2, "as it was on arrival")
+	world.begin(1, GameState.soldiers, GameState.engineers)
+	assert_eq(world.crew.engineers.size(), start + 2, "the restart brings them back")
+	GameState.new_campaign()
+	world.begin(0, 3, GameState.engineers)
+	assert_eq(world.crew.engineers.size(), start, "a new campaign starts with the crew's own size")
+
+
 func test_no_hiring_by_day_without_gold_or_past_the_crew_limit() -> void:
 	world.begin(0, 3)
 	var crew := world.crew.engineers.size()

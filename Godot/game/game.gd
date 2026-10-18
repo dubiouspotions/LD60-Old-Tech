@@ -258,7 +258,7 @@ func _on_tool_changed(index: int, material: BridgeMaterial) -> void:
 ## Puts the column at the start of level index with the soldiers and supplies GameState holds.
 func _start_at_level(index: int) -> void:
     _tools.cancel()
-    _world.begin(index, GameState.soldiers)
+    _world.begin(index, GameState.soldiers, GameState.engineers)
     # The view starts on the column; following is the player's choice (Follow / C).
     _camera.follow = false
     _camera.center_on_lead()
