@@ -44,6 +44,8 @@ class Engineer:
 	var reach_x: float = NAN
 	## Falling speed while nothing holds the engineer up.
 	var vy: float = 0.0
+	## Walks the ground beneath decks, climbing down past them (to dig a cell only reached from below one).
+	var under_decks: bool = false
 
 
 @export var rules: CrewRules
@@ -93,6 +95,7 @@ func step(dt: float) -> void:
 			_drop(e)
 		if e.digging and not terrain.is_marked(e.dig):
 			e.digging = false
+		e.under_decks = e.under_decks and e.digging
 		if (e.job and e.goal and not _in_zone(e.goal.pos.x)) or (e.digging and not _in_zone(e.dig.x + 0.5)):
 			_drop(e)
 		e.think -= dt
@@ -129,8 +132,8 @@ func _fall(e: Engineer, dt: float) -> bool:
 		e.vy = 0.0
 		return false
 	# Either foot on something holds it, like a soldier standing at a cliff edge.
-	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y).y)
-	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and not is_nan(_next_y(e.pos.y, e.pos.x))):
+	var below: float = minf(army.surface_at(e.pos.x - ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y, army.surface_at(e.pos.x + ENGINEER_HALF_WIDTH, e.pos.y, not e.under_decks).y)
+	if below - e.pos.y <= 0.02 or (e.vy == 0.0 and not is_nan(_next_y(e.pos.y, e.pos.x, not e.under_decks))):
 		e.vy = 0.0
 		return false
 	_drop(e)
@@ -187,7 +190,11 @@ func _take_job(e: Engineer) -> void:
 		for cell in terrain.marked_cells():
 			if _dig_taken(cell) or not _in_zone(cell.x + 0.5):
 				continue
+			var under := false
 			var x := _dig_spot(e.pos, cell)
+			if is_nan(x):
+				under = true
+				x = _dig_spot(e.pos, cell, false)
 			var cost := absf(x - e.pos.x)
 			if not is_nan(x) and cost < best_cost and _in_zone(x):
 				best_cost = cost
@@ -195,6 +202,7 @@ func _take_job(e: Engineer) -> void:
 				e.digging = true
 				e.dig = cell
 				e.spot_x = x
+				e.under_decks = under
 	if e.job and e.at:
 		e.route.erase(e.at)
 
@@ -212,16 +220,17 @@ func _dig_taken(cell: Vector2i) -> bool:
 
 
 ## Closest x to p on safe ground from where the cell (a tree's base for trees) is within dig_reach, or NAN.
-func _dig_spot(p: Vector2, cell: Vector2i) -> float:
-	return _spot_within_reach(p, Vector2(terrain.work_cell(cell)) + Vector2(0.5, 0.5), rules.dig_reach)
+## With decks false the engineer walks beneath decks instead of on them.
+func _dig_spot(p: Vector2, cell: Vector2i, decks: bool = true) -> float:
+	return _spot_within_reach(p, Vector2(terrain.work_cell(cell)) + Vector2(0.5, 0.5), rules.dig_reach, decks)
 
 
 ## Closest x to p on safe ground from where target is within reach of the engineer's chest, or NAN.
-func _spot_within_reach(p: Vector2, target: Vector2, reach: float) -> float:
+func _spot_within_reach(p: Vector2, target: Vector2, reach: float, decks: bool = true) -> float:
 	var best := NAN
 	for k in range(-4, 5):
 		var x := target.x + k * 0.5
-		var y := _walk_y(p, x)
+		var y := _walk_y(p, x, decks)
 		if is_nan(y) or Vector2(x, y - 0.5).distance_to(target) > reach:
 			continue
 		if is_nan(best) or absf(x - p.x) < absf(best - p.x):
@@ -248,7 +257,7 @@ func _reach_step(e: Engineer, dt: float) -> bool:
 
 ## Walks to the dig spot, then digs. Gives the job up if the way or the reach is lost.
 func _dig_step(e: Engineer, dt: float) -> void:
-	var ground := _next_y(e.pos.y, e.pos.x)
+	var ground := _next_y(e.pos.y, e.pos.x, not e.under_decks)
 	var arrived := absf(e.spot_x - e.pos.x) <= 0.05 and (is_nan(ground) or absf(ground - e.pos.y) <= 0.02)
 	if not arrived:
 		var was := e.pos
@@ -364,8 +373,8 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 	var limit := x - signf(dx) * EDGE
 	if signf(dx) * (look - limit) > 0.0:
 		look = limit
-	var ahead := _next_y(e.pos.y, look) if absf(dx) > 0.05 else NAN
-	var ground := _next_y(e.pos.y, e.pos.x)
+	var ahead := _next_y(e.pos.y, look, not e.under_decks) if absf(dx) > 0.05 else NAN
+	var ground := _next_y(e.pos.y, e.pos.x, not e.under_decks)
 	# Climbing the face of a higher ledge ahead: stay up on the face instead of settling back to the ground.
 	var on_face := not is_nan(ahead) and not is_nan(ground) and ahead < ground - 0.02 and e.pos.y < ground
 	if not is_nan(ground) and absf(ground - e.pos.y) > 0.02 and not on_face:
@@ -390,14 +399,15 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 ## Ground surface at x for an engineer standing at height y, or NAN if it can not get there:
 ## a hazard, a wall higher than max_climb or a drop deeper than max_drop. Built decks count as ground.
 ## The engineer's own level (within step_up) wins over climbing.
-func _next_y(y: float, x: float) -> float:
-	var level_y := _surface_y(y, x, rules.step_up)
-	return level_y if not is_nan(level_y) else _surface_y(y, x, rules.max_climb)
+## With decks false the engineer walks beneath decks instead of on them.
+func _next_y(y: float, x: float, decks: bool = true) -> float:
+	var level_y := _surface_y(y, x, rules.step_up, decks)
+	return level_y if not is_nan(level_y) else _surface_y(y, x, rules.max_climb, decks)
 
 
 ## First safe surface at x no more than up above y, or NAN.
-func _surface_y(y: float, x: float, up: float) -> float:
-	var s := army.surface_at(x, y - up)
+func _surface_y(y: float, x: float, up: float, decks: bool = true) -> float:
+	var s := army.surface_at(x, y - up, decks)
 	if s.hazard != null or s.y - y > rules.max_drop or terrain.is_solid(Vector2i(floori(x), floori(s.y - 0.5))):
 		return NAN
 	return s.y
@@ -405,7 +415,7 @@ func _surface_y(y: float, x: float, up: float) -> float:
 
 ## Height an engineer at p stands at after walking over safe ground to x, or NAN if it can not get there.
 ## A spot on a cell edge counts as reached from the side the engineer comes from.
-func _walk_y(p: Vector2, x: float) -> float:
+func _walk_y(p: Vector2, x: float, decks: bool = true) -> float:
 	var y := p.y
 	var at := p.x
 	x = move_toward(x, p.x, EDGE)
@@ -413,7 +423,7 @@ func _walk_y(p: Vector2, x: float) -> float:
 	while first or absf(x - at) > 0.001:
 		first = false
 		at = move_toward(at, x, 0.25)
-		y = _next_y(y, at)
+		y = _next_y(y, at, decks)
 		if is_nan(y):
 			return NAN
 	return y

@@ -340,9 +340,9 @@ func _danger_ahead(s: Soldier) -> String:
 	return ""
 
 
-## Highest surface at x at or below y_from: tile tops, hazards and bridge decks.
+## Highest surface at x at or below y_from: tile tops, hazards and (unless decks is false) bridge decks.
 ## {y, hazard: TerrainType or null, member, t}
-func surface_at(x: float, y_from: float) -> Dictionary:
+func surface_at(x: float, y_from: float, decks: bool = true) -> Dictionary:
 	var col := floori(x)
 	var best := {y = float(terrain.size.y), hazard = null, member = null, t = 0.0}
 	for r in range(maxi(0, ceili(y_from - 1e-6)), terrain.size.y):
@@ -356,7 +356,7 @@ func surface_at(x: float, y_from: float) -> Dictionary:
 			best.y = float(r)
 			best.hazard = t
 			break
-	if bridge:
+	if bridge and decks:
 		var deck := bridge.walk_surface(x, y_from)
 		if not deck.is_empty() and deck.y < best.y:
 			best = {y = deck.y, hazard = null, member = deck.member, t = deck.t}

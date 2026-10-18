@@ -129,6 +129,23 @@ func test_crew_digs_down_into_its_own_hole() -> void:
 	assert_null(world.terrain.type_at(Vector2i(3, 7)))
 
 
+func test_crew_does_not_dig_through_soil() -> void:
+	world.terrain.mark(Vector2i(3, 7))
+	_run(8.0)
+	assert_true(world.terrain.is_marked(Vector2i(3, 7)), "the cell above is still there")
+
+
+func test_crew_climbs_under_a_bridge_to_dig_the_floor_of_the_hole() -> void:
+	world.terrain.set_type(Vector2i(3, 6), null)
+	world.bridge.build(world.bridge.snap_point(Vector2(3, 6)), world.bridge.snap_point(Vector2(4, 6)), LOG)
+	world.terrain.mark(Vector2i(3, 7))
+	_run(15.0, func() -> bool: return world.terrain.type_at(Vector2i(3, 7)) == null)
+	assert_null(world.terrain.type_at(Vector2i(3, 7)), "dug from down in the hole")
+	_run(6.0)
+	for e in world.crew.engineers:
+		assert_lt(e.pos.y, 6.05, "climbed back out")
+
+
 func test_crew_fells_marked_tree() -> void:
 	var trunk := WorldFixture.type("trunk")
 	var leaves := WorldFixture.type("leaves")
