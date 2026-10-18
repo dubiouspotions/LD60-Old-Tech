@@ -100,6 +100,25 @@ func _soldiers_at(xs: Array) -> Array[Soldier]:
 	return world.army.soldiers
 
 
+## With its own tower in the way of every shot, the archer walks to the edge of the tower top for a clear one.
+func test_archer_walks_to_the_tower_edge_for_a_clear_shot() -> void:
+	for y in range(2, 5):
+		for x in range(9, 13):
+			world.terrain.set_type(Vector2i(x, y), WorldFixture.type("brick"))
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(9.5, 2))
+	archer.first_shot_delay = 0.0
+	world.objects.add_child(archer)
+	var s := _soldiers_at([15.5])
+	assert_false(archer.sees(world, s[0]), "its own tower is in the way from where it stands")
+	await wait_physics_frames(240)
+	assert_gt(archer.feet_m().x, 11.0, "walked over to the near edge")
+	assert_lt(archer.feet_m().x, 13.0, "still on its tower")
+	assert_true(world.terrain.is_solid(Grid.cell_of(archer.feet_m() + Vector2(0, 0.5))), "standing on it")
+	assert_true(archer.sees(world, s[0]), "a clear shot from there")
+	assert_gt(archer.walk_speed, 0.0)
+
+
 func test_archer_shoots_a_soldier_it_can_see_over_a_nearer_hidden_one() -> void:
 	var archer := _tower_and_wall()
 	var s := _soldiers_at([11.5, 5.5])
