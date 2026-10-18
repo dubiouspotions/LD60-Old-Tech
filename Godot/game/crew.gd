@@ -84,10 +84,12 @@ func spawn(x: float) -> void:
 
 
 func step(dt: float) -> void:
-	if rules.instant_build:
+	if rules.instant_work:
 		for m in bridge.members.duplicate():
 			if m.blueprint and m.ordered:
 				bridge.finish(m)
+		for cell in terrain.marked_cells():
+			dig_finished.emit(cell)
 	_update_ready_spot(dt)
 	for i in engineers.size():
 		var e := engineers[i]

@@ -764,15 +764,30 @@ func test_crew_climbs_any_height_to_marks_it_can_not_reach_otherwise() -> void:
 	assert_null(world.terrain.type_at(Vector2i(10, 1)), "dug across the 5 m pit")
 
 
-func test_instant_build_cheat_finishes_ordered_plans_at_once() -> void:
+func test_instant_work_cheat_finishes_ordered_plans_at_once() -> void:
 	var rules := world.crew.rules
-	rules.instant_build = true
+	rules.instant_work = true
 	var first := _plan(Vector2(6, 6), Vector2(8, 4))
 	var second := _plan(Vector2(8, 4), Vector2(10, 6))
 	var waiting := _plan(Vector2(2, 6), Vector2(3, 5))
 	world.bridge.order_plan([first, second])
 	_run(1.0 / 60.0)
-	rules.instant_build = false
+	rules.instant_work = false
 	assert_false(first.blueprint, "built")
 	assert_false(second.blueprint, "built")
 	assert_true(waiting.blueprint, "a plan not ordered stays a plan")
+
+
+func test_instant_work_cheat_digs_marks_and_fells_trees_at_once() -> void:
+	var rules := world.crew.rules
+	world.terrain.set_type(Vector2i(2, 5), WorldFixture.type("trunk"))
+	world.terrain.set_type(Vector2i(2, 4), WorldFixture.type("trunk"))
+	world.terrain.mark(Vector2i(3, 6))
+	world.terrain.mark(Vector2i(2, 4))
+	var logs := GameState.supplies.logs
+	rules.instant_work = true
+	_run(1.0 / 60.0)
+	rules.instant_work = false
+	assert_null(world.terrain.type_at(Vector2i(3, 6)), "dug")
+	assert_null(world.terrain.type_at(Vector2i(2, 5)), "tree felled")
+	assert_gt(GameState.supplies.logs, logs, "and its logs gained")

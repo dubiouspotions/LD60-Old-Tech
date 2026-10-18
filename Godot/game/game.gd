@@ -86,22 +86,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		_march()
 	elif event.is_action_pressed(&"recruit"):
 		_recruit()
-	elif event.is_action_pressed(&"cheat_instant_build"):
+	elif event.is_action_pressed(&"cheat_instant_work"):
 		_toggle_cheats()
 
 
-## For testers: instant build, and (turning on) plenty of every supply.
+## For testers: instant work (building and digging), and (turning on) plenty of every supply.
 func _toggle_cheats() -> void:
 	var rules := _world.crew.rules
-	rules.instant_build = not rules.instant_build
-	if rules.instant_build:
+	rules.instant_work = not rules.instant_work
+	if rules.instant_work:
 		var top_up := Supplies.new()
 		for k in Supplies.KEYS:
 			top_up.set(k, maxi(0, cheat_supplies - GameState.supplies.get(k)))
 		GameState.gain(top_up)
 	var lead := _world.army.lead()
 	if lead:
-		Effects.say(Grid.to_px(lead.pos - Vector2(0, 2.0)), cheats_text % ("on" if rules.instant_build else "off"), Color("e9a93b"))
+		Effects.say(Grid.to_px(lead.pos - Vector2(0, 2.0)), cheats_text % ("on" if rules.instant_work else "off"), Color("e9a93b"))
 
 
 func _process(_delta: float) -> void:
