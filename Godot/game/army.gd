@@ -7,6 +7,8 @@ extends Node2D
 ## How far short of stop_x (and of the queue spacing) still counts as arrived.
 const GATHER_SLACK: float = 0.25
 
+## A soldier landed a blow on the tower cell in its way (once per attack interval while besieging).
+signal struck(cell: Vector2i, by: Soldier)
 signal soldier_died(pos: Vector2, text: String)
 signal count_changed(count: int)
 
@@ -188,6 +190,7 @@ func _besiege(s: Soldier, cell: Vector2i, dt: float) -> bool:
 	if s.attack_cooldown <= 0.0:
 		s.attack_cooldown = rules.attack_interval
 		Audio.play(rules.attack_sound, Grid.to_px(s.pos))
+		struck.emit(cell, s)
 	terrain.besiege(cell, dt)
 	return true
 

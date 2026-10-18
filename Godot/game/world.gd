@@ -114,6 +114,7 @@ func _ready() -> void:
 	crew.army = army
 	crew.wood = wood
 	crew.picked_up.connect(_on_picked_up)
+	army.struck.connect(_on_struck)
 	terrain.tile_detached.connect(_on_tile_detached)
 	crew.chopped.connect(func(cell: Vector2i) -> void:
 		leaves.shake(cell)
@@ -599,6 +600,19 @@ func _on_dig_finished(cell: Vector2i) -> void:
 	if feller:
 		crew.gather(feller, _dropped)
 	gain(got, Vector2(cell) + Vector2(0.5, 0), GAIN_COLOR if here.dig_action == TerrainType.DigAction.FELL else here.debris_color)
+
+
+## A soldier's blow on a tower: the tile shakes and blinks, chips of its stone fly and the blade throws sparks, at
+## the face toward the soldier, at chest height.
+func _on_struck(cell: Vector2i, by: Soldier) -> void:
+	var t := terrain.type_at(cell)
+	if t == null:
+		return
+	terrain.hit(cell)
+	var side := -1.0 if by.pos.x < cell.x + 0.5 else 1.0
+	var at := Vector2(cell.x + (0.0 if side < 0.0 else 1.0), clampf(by.pos.y - 0.6, cell.y + 0.1, cell.y + 0.9))
+	Effects.debris(Grid.to_px(at), t.debris_color, army.rules.hit_chips, 110.0)
+	Effects.sparks(Grid.to_px(at), army.rules.hit_sparks, Vector2(side, -0.6).normalized())
 
 
 ## A piece of wood picked up: its log goes into the supplies.
