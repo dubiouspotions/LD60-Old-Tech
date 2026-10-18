@@ -140,7 +140,7 @@ class Snap:
 
 @export_group("Impact")
 ## A built piece hitting a soldier or archer at least this fast (m/s) crushes it (slower ones are stopped by
-## it); hitting ground this fast breaks a cell that can be dug, or batters a tower.
+## it). Ground and towers go by the hit's energy instead (see Impact Strength and Siege Per kJ).
 @export var harm_speed: float = 6.0
 ## Weight (kg) resting on a soldier or archer (pieces, what they carry, falling blocks) that crushes them.
 @export var crush_weight: float = 250.0
@@ -177,6 +177,8 @@ class Snap:
 ## Scaffold poles reach down at most this far.
 @export var scaffold_max_depth: float = 24.0
 
+## Slowest a piece can meet the ground (m/s) for it to count as a hit (damage by its energy), not settling.
+const HIT_SPEED: float = 1.0
 ## Spacing (m) of the points along a member that are kept out of the ground.
 const MEMBER_PROBE: float = 0.25
 
@@ -1031,11 +1033,11 @@ static func _t_along(m: Member, p: Vector2) -> float:
 	return clampf((p - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
 
 
-## Records a hit on cell by member m with mass moving v (per substep h) against a face with this normal, if at
-## harm_speed.
+## Records a hit on cell by member m with mass moving v (per substep h) against a face with this normal. Slower
+## than HIT_SPEED is a piece settling, not a hit.
 func _strike(cell: Vector2i, m: Member, mass: float, v: Vector2, normal: Vector2, h: float) -> void:
 	var into := -v.dot(normal) / h
-	if into >= harm_speed:
+	if into >= HIT_SPEED:
 		_hits.append([cell, m, 0.5 * mass * into * into])
 
 

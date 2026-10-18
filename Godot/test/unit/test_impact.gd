@@ -485,3 +485,35 @@ func test_a_piece_bolted_down_in_a_spike_pit_stays() -> void:
 	var m := b.build(b.snap_point(Vector2(7, 7)), b.snap_point(Vector2(6, 6)), preload("res://data/bridge/support.tres"))
 	_run(2.0)
 	assert_false(m.dead, "built into the spikes on purpose, not landed on them")
+
+
+func test_a_stone_beam_dropped_a_little_breaks_soil_and_lies_down() -> void:
+	var b := world.bridge
+	# Tilted, its low end 1.5 m above the soil (top at row 6).
+	var m := b.build(b.snap_point(Vector2(5, 4.5)), b.snap_point(Vector2(7, 2.5)), preload("res://data/bridge/stone.tres"))
+	var cells_before := 0
+	for x in range(3, 10):
+		if world.terrain.type_at(Vector2i(x, 6)) != null:
+			cells_before += 1
+	_run(4.0)
+	var cells_after := 0
+	for x in range(3, 10):
+		if world.terrain.type_at(Vector2i(x, 6)) != null:
+			cells_after += 1
+	assert_lt(cells_after, cells_before, "the stone broke the soil it hit")
+	assert_lt(absf(m.a.pos.y - m.b.pos.y), 0.6, "and lies down instead of standing on end")
+
+
+func test_a_log_set_down_gently_breaks_no_soil() -> void:
+	var b := world.bridge
+	b.build(b.snap_point(Vector2(5, 5)), b.snap_point(Vector2(7, 5)), LOG)
+	_run(3.0)
+	for x in range(3, 10):
+		assert_not_null(world.terrain.type_at(Vector2i(x, 6)), "soil at %d" % x)
+
+
+func test_a_stone_beam_dropped_end_first_a_metre_breaks_the_soil_under_it() -> void:
+	var b := world.bridge
+	var m := b.build(b.snap_point(Vector2(6.0, 2.0)), b.snap_point(Vector2(6.5, 5.0)), preload("res://data/bridge/stone.tres"))
+	_run(0.6)
+	assert_null(world.terrain.type_at(Vector2i(6, 6)), "a 90 kg stone hitting at 4.4 m/s breaks soil")
