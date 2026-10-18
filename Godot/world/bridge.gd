@@ -54,6 +54,24 @@ class Member:
 
 
 ## A candidate end point for a new member.
+## A soldier or archer the bridge collides with: a solid circle. A built piece reaching it at harm_speed or more
+## crushes it (crushed) and passes on; a slower one is stopped by it.
+class Body:
+	var center: Vector2
+	var radius: float
+	## The body's own velocity (m/s), so pieces falling along with it do not crush it.
+	var vel: Vector2
+	## The member it stands on, which never touches it.
+	var skip: Member
+	var crushed: bool = false
+
+	func _init(p_center: Vector2, p_radius: float, p_vel: Vector2 = Vector2.ZERO, p_skip: Member = null) -> void:
+		center = p_center
+		radius = p_radius
+		vel = p_vel
+		skip = p_skip
+
+
 class Snap:
 	var pos: Vector2
 	var node: Joint
@@ -81,8 +99,8 @@ class Snap:
 @export_range(0.0, 1.0) var ground_friction: float = 0.3
 
 @export_group("Impact")
-## A built piece moving at least this fast (m/s) crushes soldiers and archers it passes through, breaks ground it
-## hits that can be dug, and batters towers.
+## A built piece hitting a soldier or archer at least this fast (m/s) crushes it (slower ones are stopped by
+## it); hitting ground this fast breaks a cell that can be dug, or batters a tower.
 @export var harm_speed: float = 6.0
 ## Seconds of siege a tower cell takes from one hit.
 @export var strike_siege: float = 4.0
@@ -469,7 +487,7 @@ func walk_surface(x: float, y_from: float) -> Dictionary:
 
 
 ## Advances the truss by dt. loads: [[member, t along member, kg], ...] from soldiers standing on it.
-func step(dt: float, loads: Array = []) -> void:
+func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 	if members.is_empty():
 		return
 	for n in nodes:
@@ -518,6 +536,8 @@ func step(dt: float, loads: Array = []) -> void:
 		for n in nodes:
 			if not n.fixed():
 				_collide(n, h)
+		for b in bodies:
+			_collide_body(b, h)
 	var broken: Array[Member] = []
 	for m in members:
 		if m.blueprint:
@@ -739,24 +759,38 @@ func _collide(n: Joint, h: float) -> void:
 	n.prev = n.pos - slide * ground_friction
 
 
-## Velocity (m/s) of joint n over the last substep.
-func velocity(n: Joint) -> Vector2:
-	return Vector2.ZERO if n.fixed() else (n.pos - n.prev) / _h
-
-
-## Fastest speed, relative to vel, at which a built member other than skip passes within radius of p, if at least
-## harm_speed; else 0.
-func harm_at(p: Vector2, radius: float, vel: Vector2, skip: Member = null) -> float:
-	var worst := 0.0
+## Keeps built members out of body b, or marks it crushed by one reaching it at harm_speed or more.
+func _collide_body(b: Body, h: float) -> void:
+	if b.crushed:
+		return
 	for m in members:
-		if m.blueprint or m == skip or _seg_dist(p, m.a.pos, m.b.pos) > radius:
+		if m.blueprint or m == b.skip:
 			continue
 		var d := m.b.pos - m.a.pos
-		var t := clampf((p - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
-		var speed := (velocity(m.a).lerp(velocity(m.b), t) - vel).length()
-		if speed >= harm_speed:
-			worst = maxf(worst, speed)
-	return worst
+		var t := clampf((b.center - m.a.pos).dot(d) / maxf(d.length_squared(), 1e-6), 0.0, 1.0)
+		var off := m.a.pos.lerp(m.b.pos, t) - b.center
+		var dist := off.length()
+		if dist >= b.radius:
+			continue
+		var n := off / dist if dist > 1e-6 else Vector2.UP
+		var va := m.a.pos - m.a.prev
+		var vb := m.b.pos - m.b.prev
+		if -(va.lerp(vb, t) / h - b.vel).dot(n) >= harm_speed:
+			b.crushed = true
+			return
+		var wa := m.a.inv_mass * (1.0 - t)
+		var wb := m.b.inv_mass * t
+		var w := wa * (1.0 - t) + wb * t
+		if w <= 0.0:
+			continue
+		var push := (b.radius - dist) / w
+		m.a.pos += n * push * wa
+		m.b.pos += n * push * wb
+		# Contact: no velocity into the body.
+		for jv: Array in [[m.a, va], [m.b, vb]]:
+			var j: Joint = jv[0]
+			var v: Vector2 = jv[1]
+			j.prev = j.pos - (v - n * minf(v.dot(n), 0.0))
 
 
 static func _on_grid(v: float) -> bool:

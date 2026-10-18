@@ -214,10 +214,9 @@ func _physics_process(dt: float) -> void:
 	if _done:
 		return
 	_advance_phase(dt)
-	bridge.step(dt, army.bridge_loads())
 	army.foes = objects.get_children().filter(func(o: Node) -> bool: return o is Archer and o.alive())
+	_step_bridge(dt)
 	army.step(dt)
-	_crush_under_bridge()
 	crew.step(dt)
 	_check_exit()
 
@@ -481,15 +480,25 @@ func _on_dig_finished(cell: Vector2i) -> void:
 		Effects.say(at, here.dig_text, here.debris_color)
 
 
-## Crushes every soldier and archer a fast-moving bridge piece passes through (see Bridge.harm_speed).
-func _crush_under_bridge() -> void:
+## Steps the bridge with every soldier and archer as a body it collides with, and kills those it crushes.
+func _step_bridge(dt: float) -> void:
+	var who: Array[Node2D] = []
+	var bodies: Array[Bridge.Body] = []
 	for s: Soldier in army.soldiers + army.deserters:
-		var vel := Vector2(0, s.vy) if s.airborne else Vector2.ZERO
-		if not s.dead and bridge.harm_at(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, vel, s.on_member) > 0.0:
-			army.crush(s)
+		if not s.dead:
+			who.append(s)
+			bodies.append(Bridge.Body.new(s.pos - Vector2(0, BODY_MID), BODY_RADIUS, Vector2(0, s.vy) if s.airborne else Vector2.ZERO, s.on_member))
 	for a: Archer in army.foes:
-		if a.alive() and bridge.harm_at(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS, Vector2.ZERO) > 0.0:
-			a.hit(a.hp)
+		who.append(a)
+		bodies.append(Bridge.Body.new(a.feet_m() - Vector2(0, BODY_MID), BODY_RADIUS))
+	bridge.step(dt, army.bridge_loads(), bodies)
+	for i in bodies.size():
+		if not bodies[i].crushed:
+			continue
+		if who[i] is Soldier:
+			army.crush(who[i])
+		else:
+			(who[i] as Archer).hit((who[i] as Archer).hp)
 
 
 ## A bridge piece hit the ground fast: a tower cell is battered, ground that can be dug breaks (nothing gained).

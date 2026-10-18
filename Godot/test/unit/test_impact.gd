@@ -125,3 +125,27 @@ func test_an_archer_freed_after_a_hit_is_forgotten_cleanly() -> void:
 	archer.free()
 	_run(0.2)
 	assert_engine_error_count(0, "no freed archer touched")
+
+
+func test_slow_log_comes_to_rest_on_a_soldier() -> void:
+	world.army.spawn(1, 5.5)
+	world.army.hold = true
+	var s: Soldier = world.army.lead()
+	_drop_log(4.5, 6.5, 6.0 - 1.8 - 0.3)
+	_run(3.0)
+	assert_false(s.dead, "not crushed")
+	var b := world.bridge
+	var m: Bridge.Member = b.members[0]
+	var head := Geometry2D.get_closest_point_to_segment(s.pos - Vector2(0, 0.9), m.a.pos, m.b.pos)
+	assert_lt(head.y, s.pos.y - 1.3, "the log lies on the soldier, above the body")
+
+
+func test_slow_log_comes_to_rest_on_an_archer() -> void:
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(5.5, 6))
+	world.objects.add_child(archer)
+	_drop_log(4.5, 6.5, 6.0 - 1.8 - 0.3)
+	_run(3.0)
+	assert_true(archer.alive(), "not crushed")
+	var m: Bridge.Member = world.bridge.members[0]
+	assert_lt((m.a.pos.y + m.b.pos.y) / 2.0, 6.0 - 1.3, "resting on the archer")
