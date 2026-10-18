@@ -17,17 +17,9 @@
 
 [sub_resource type="Resource" id="checkpoint_supplies"]
 script = ExtResource("11_0ut44")
-earth = 4
-logs = 8
-rope = 4
-gold = 5
 
 [sub_resource type="Resource" id="Resource_kpggy"]
 script = ExtResource("11_0ut44")
-earth = 8
-logs = 12
-rope = 6
-gold = 10
 
 [resource]
 script = ExtResource("10_1pfus")
