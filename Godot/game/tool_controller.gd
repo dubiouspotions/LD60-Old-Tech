@@ -280,7 +280,7 @@ func _use(cell: Vector2i, first: bool) -> void:
 				return
 			if not GameState.spend(t.cost):
 				if first:
-					_say(center - Vector2(0, 0.5), t.no_supply_text, ok_color)
+					_say(center - Vector2(0, 0.5), GameState.supplies.missing_text(t.cost, t.no_supply_text), ok_color)
 				return
 			if here:
 				terrain.set_type(cell, null)

@@ -99,7 +99,7 @@ func _bridge() -> void:
 	rope.ram = 0.0
 	rope.impact_strength = 0.0
 	rope.cost = Supplies.make(0, 0, 1)
-	rope.no_supply_text = "No rope. Cut leaves"
+	rope.no_supply_text = "%s missing. Cut leaves"
 	rope.max_length = 12.0
 	rope.kg_per_m = 0.5
 	rope.compliance = 2e-6
@@ -136,7 +136,7 @@ func _bridge() -> void:
 	stone.display_name = "Stone"
 	stone.hint = "≤ 3 m · heavy, strong"
 	stone.cost = Supplies.make(0, 0, 0, 0, 1)
-	stone.no_supply_text = "No stone. Dig rock"
+	stone.no_supply_text = "%s missing. Dig rock"
 	stone.build_speed = 0.8
 	stone.max_length = 3.0
 	stone.kg_per_m = 30.0
@@ -185,7 +185,7 @@ func _tools() -> void:
 		action = &"tool_dig", key_label = "1", repeat_interval = 0.06})
 	_tool("2_fill", {kind = ToolDefinition.Kind.FILL, display_name = "Box", hint = "falls where you drop it",
 		action = &"tool_fill", key_label = "5", repeat_interval = 0.11, cost = Supplies.make(0, 5),
-		no_supply_text = "A box takes 5 logs. Fell a tree", spawn_scene = load("res://objects/falling_block/falling_block.tscn")})
+		no_supply_text = "%s missing. Fell a tree", spawn_scene = load("res://objects/falling_block/falling_block.tscn")})
 	var stone: Array[BridgeMaterial] = [load("res://data/bridge/stone.tres")]
 	_tool("3_log", {kind = ToolDefinition.Kind.BUILD, display_name = "Bridge", action = &"tool_log", key_label = "2",
 		bridge_material = load("res://data/bridge/log.tres"), other_materials = stone})

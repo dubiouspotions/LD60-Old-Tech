@@ -18,5 +18,5 @@ action = &"tool_fill"
 key_label = "5"
 repeat_interval = 0.11
 cost = SubResource("Resource_bg4tf")
-no_supply_text = "A box takes 5 logs. Fell a tree"
+no_supply_text = "%s missing. Fell a tree"
 spawn_scene = ExtResource("3_ul00j")

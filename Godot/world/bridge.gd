@@ -301,7 +301,7 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 		r.msg = too_many_text
 		return r
 	if supplies and not supplies.can_afford(r.cost):
-		r.msg = mat.no_supply_text
+		r.msg = supplies.missing_text(r.cost, mat.no_supply_text)
 		return r
 	r.ok = true
 	r.msg = length_text % length

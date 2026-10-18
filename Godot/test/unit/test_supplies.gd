@@ -37,3 +37,11 @@ func test_stone_is_a_supply() -> void:
 func test_reclaimed_gives_one_less_of_each_but_at_least_one() -> void:
 	var r := Supplies.make(0, 3, 1, 0, 2).reclaimed()
 	assert_eq([r.earth, r.logs, r.rope, r.gold, r.stone], [0, 2, 1, 0, 1])
+
+
+func test_short_of_is_what_is_missing_for_a_cost() -> void:
+	var have := Supplies.make(0, 2, 5)
+	var missing := have.short_of(Supplies.make(1, 5, 3))
+	assert_eq([missing.earth, missing.logs, missing.rope], [1, 3, 0])
+	assert_eq(have.missing_text(Supplies.make(0, 5), "%s missing. Fell a tree"), "3 logs missing. Fell a tree")
+	assert_eq(have.missing_text(Supplies.make(0, 3), "%s missing"), "1 log missing")

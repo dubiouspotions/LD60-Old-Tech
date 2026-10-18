@@ -115,9 +115,12 @@ func test_box_spends_five_logs_and_drops_a_box() -> void:
 func test_box_without_five_logs_does_nothing() -> void:
 	_select(ToolDefinition.Kind.FILL)
 	GameState.supplies.logs = 4
+	watch_signals(Effects)
 	_click(Vector2(10.5, 1.5))
 	await wait_physics_frames(60)
 	assert_null(world.terrain.type_at(Vector2i(10, 5)))
+	var said: String = get_signal_parameters(Effects, "said")[0]
+	assert_string_starts_with(said, "1 log missing", "says how many are missing")
 
 
 func test_two_clicks_place_one_plank_and_stop() -> void:

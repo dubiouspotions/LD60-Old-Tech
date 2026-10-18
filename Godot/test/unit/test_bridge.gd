@@ -38,6 +38,14 @@ func test_anchorable_only_touching_ground() -> void:
 	assert_false(b.anchorable(Vector2(5, 1)), "mid air")
 
 
+func test_check_build_says_how_much_is_missing() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var check := b.check_build(b.snap_point(Vector2(2, 2)), b.snap_point(Vector2(5, 2)), LOG, Supplies.make(0, 1))
+	assert_false(check.ok)
+	assert_string_starts_with(check.msg, "2 logs missing", "3 m of log, 1 log in hand")
+
+
 func test_check_build_rejects() -> void:
 	var t := WorldFixture.terrain(self, CHASM)
 	var b := WorldFixture.bridge(self, t)

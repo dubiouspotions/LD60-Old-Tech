@@ -74,6 +74,19 @@ func describe_cost() -> String:
 	return " · ".join(parts)
 
 
+## What this bundle lacks to pay cost: of each supply, how many more it would need.
+func short_of(cost: Supplies) -> Supplies:
+	var s := Supplies.new()
+	for k in KEYS:
+		s.set(k, maxi(cost.get(k) - get(k), 0))
+	return s
+
+
+## fmt with %s replaced by what this bundle lacks to pay cost ("3 logs"), or fmt as it is if it has no %s.
+func missing_text(cost: Supplies, fmt: String) -> String:
+	return fmt % short_of(cost).describe_cost() if fmt.contains("%s") else fmt
+
+
 ## This bundle n times over.
 func times(n: int) -> Supplies:
 	var s := Supplies.new()
