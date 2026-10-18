@@ -121,6 +121,15 @@ func body_tile(mask: int, corner: Vector2i = Vector2i.ZERO) -> Vector2i:
 	return t if t.x >= 0 else body_tile(15, corner)
 
 
+## Every tile body_tile() can give: the body tiles and the rock tiles solid rock varies over.
+func body_tiles() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for c: Vector2i in body + rock:
+		if c.x >= 0 and not c in out:
+			out.append(c)
+	return out
+
+
 ## Tiles a cell of role may be given when it needs a new one.
 func tiles(role: StringName) -> Array[Vector2i]:
 	return get(role)

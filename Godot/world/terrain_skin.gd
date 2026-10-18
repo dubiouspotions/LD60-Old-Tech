@@ -77,9 +77,8 @@ func _use_texture(look: TerrainLook) -> void:
     src.texture = look.texture
     src.texture_region_size = Vector2i.ONE * look.tile_size
     ts.add_source(src, 0)
-    for c: Vector2i in look.body:
-        if c.x >= 0 and not src.has_tile(c):
-            src.create_tile(c)
+    for c: Vector2i in look.body_tiles():
+        src.create_tile(c)
     _body.tile_set = ts
 
 

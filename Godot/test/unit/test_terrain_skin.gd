@@ -143,6 +143,18 @@ func test_rock_pocket_overlay_on_the_dual_grid() -> void:
 	assert_eq(skin.body_layer().get_cell_source_id(Vector2i(4, 1)), -1, "no overlay touching the sky")
 
 
+## Solid rock varies over the Rock tiles; the overlay must hold every one of them, or most corners draw nothing.
+func test_overlay_has_every_tile_it_draws() -> void:
+	for y in range(4, 7):
+		for x in range(1, 4):
+			terrain.set_type(Vector2i(x, y), _type("rock"))
+	skin.refresh()
+	var body := skin.body_layer()
+	assert_gt(body.get_used_cells().size(), 0)
+	for c in body.get_used_cells():
+		assert_not_null(body.get_cell_tile_data(c), "overlay tile at %s exists" % c)
+
+
 func test_materials_without_v2_art_keep_their_old_tile() -> void:
 	var old := terrain.atlas_tile(_type("brick"))
 	assert_eq(terrain.get_cell_source_id(Vector2i(10, 2)), old[0])
