@@ -16,12 +16,44 @@ func test_shows_its_text() -> void:
 	assert_eq(s.get_node("%Text").text, "Build with 2.", "changes show at once")
 
 
-func test_board_stands_on_its_post_above_the_foot() -> void:
+## The sign's origin is the bottom of the board, centred on the post.
+func test_board_sits_on_its_origin() -> void:
 	var s := _sign("A longer text that has to wrap over a few lines on the board.")
 	await wait_process_frames(2)
 	var board: Control = s.get_node("%Board")
-	assert_lt(board.position.y + board.size.y, 0.0, "board above the ground")
+	assert_almost_eq(board.position.y + board.size.y, 0.0, 1.0, "board bottom at the origin")
 	assert_almost_eq(board.position.x + board.size.x / 2.0, 0.0, 1.0, "centred on the post")
+
+
+func test_no_post_unless_asked_for() -> void:
+	var s := _sign("x")
+	assert_false(s.post, "off by default")
+	assert_false(s.get_node("%Post").visible)
+	s.post = true
+	assert_true(s.get_node("%Post").visible)
+
+
+## In a level, the post runs down from the board to the first solid ground below, and follows it.
+func test_post_reaches_the_ground() -> void:
+	var level: Level = load("res://levels/level_base.tscn").instantiate()
+	add_child_autofree(level)
+	var t := level.terrain()
+	for x in 10:
+		t.set_type(Vector2i(x, 20), WorldFixture.type("soil"))
+		t.set_type(Vector2i(x, 21), WorldFixture.type("soil"))
+	var s: Sign = load("res://objects/sign/sign.tscn").instantiate()
+	s.text = "x"
+	s.post = true
+	s.position = Vector2(5.5, 17.25) * Grid.PX
+	level.objects().add_child(s)
+	var post: Control = s.get_node("%Post")
+	assert_almost_eq(post.position.y, 0.0, 0.5, "from the board")
+	assert_almost_eq(post.size.y, 2.75 * Grid.PX, 0.5, "down to the ground")
+	t.set_type(Vector2i(5, 20), null)
+	assert_almost_eq(post.size.y, 3.75 * Grid.PX, 0.5, "follows the ground dug away")
+	s.position.y -= Grid.PX
+	await wait_process_frames(1)
+	assert_almost_eq(post.size.y, 4.75 * Grid.PX, 0.5, "follows the sign moved")
 
 
 ## The board is as big as its text plus the padding, and wraps past max_width.
