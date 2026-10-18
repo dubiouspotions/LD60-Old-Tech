@@ -151,3 +151,17 @@ func test_bridge_tool_is_called_bridge() -> void:
 	var names := tools.tools.map(func(t: ToolDefinition) -> String: return t.display_name)
 	assert_true("Bridge" in names)
 	assert_false("Log" in names)
+
+
+func test_stone_build_spends_stone_and_builds_a_heavy_member() -> void:
+	_select(ToolDefinition.Kind.BUILD, "Stone")
+	GameState.supplies.stone = 2
+	tools._mouse_m = Vector2(6, 6)
+	tools._press()
+	tools._mouse_m = Vector2(8, 6)
+	tools._release()
+	assert_eq(world.bridge.members.size(), 1)
+	assert_eq(GameState.supplies.stone, 1)
+	var stone := world.bridge.members[0].material
+	assert_gt(stone.kg_per_m, preload("res://data/bridge/log.tres").kg_per_m, "heavier than a log")
+	assert_gt(stone.break_force, preload("res://data/bridge/log.tres").break_force, "stronger than a log")

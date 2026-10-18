@@ -13,7 +13,7 @@ func _levels() -> Array:
 
 func test_campaign_has_levels_and_tools() -> void:
 	assert_gt(GameState.campaign.levels.size(), 0)
-	assert_eq(GameState.campaign.tools.size(), 5)
+	assert_eq(GameState.campaign.tools.size(), 6)
 
 
 func test_flags_stand_on_ground() -> void:
