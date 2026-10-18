@@ -43,7 +43,20 @@ func test_check_build_says_how_much_is_missing() -> void:
 	var b := WorldFixture.bridge(self, t)
 	var check := b.check_build(b.snap_point(Vector2(2, 2)), b.snap_point(Vector2(5, 2)), LOG, Supplies.make(0, 1))
 	assert_false(check.ok)
-	assert_string_starts_with(check.msg, "2 logs missing", "3 m of log, 1 log in hand")
+	assert_string_starts_with(check.msg, "3.0 m · 2 logs missing", "3 m of log, 1 log in hand")
+
+
+## "Too long" only when a shorter piece could be built: with nothing to build even the shortest, it says what is missing.
+func test_too_long_without_supplies_says_what_is_missing() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var a := b.snap_point(Vector2(1, 2))
+	var far := b.snap_point(Vector2(8, 2))
+	var broke := b.check_build(a, far, LOG, Supplies.new())
+	assert_false(broke.ok)
+	assert_string_starts_with(broke.msg, "7.0 m · 7 logs missing", "not even the shortest piece can be paid for")
+	var some := b.check_build(a, far, LOG, Supplies.make(0, 2))
+	assert_eq(some.msg, b.too_long_text % [some.length, LOG.max_length], "a shorter one can be built")
 
 
 func test_check_build_rejects() -> void:

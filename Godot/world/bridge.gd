@@ -288,14 +288,18 @@ static func cost_for(mat: BridgeMaterial, length: float) -> Supplies:
 	return mat.cost.times(maxi(1, ceili(length - 0.001))) if mat.cost else Supplies.new()
 
 
-## {ok: bool, msg: String, length: float, cost: Supplies}
+## {ok: bool, msg: String, length: float, cost: Supplies}. Too long is only said when a shorter piece could be
+## paid for; without even that, it says what is missing.
 func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> Dictionary:
 	var length := a.pos.distance_to(b.pos)
 	var r := {ok = false, msg = "", length = length, cost = cost_for(mat, length)}
 	if length < min_length:
 		return r
 	if length > mat.max_length + 1e-6:
-		r.msg = too_long_text % [length, mat.max_length]
+		if supplies and not supplies.can_afford(cost_for(mat, min_length)):
+			r.msg = _missing_text(r, mat, supplies)
+		else:
+			r.msg = too_long_text % [length, mat.max_length]
 		return r
 	if (a.node and b.node and _joined(a.node, b.node)) or _same_member(a, b) or _same_member(b, a):
 		r.msg = already_joined_text
@@ -307,13 +311,18 @@ func check_build(a: Snap, b: Snap, mat: BridgeMaterial, supplies: Supplies) -> D
 		r.msg = too_many_text
 		return r
 	if supplies and not supplies.can_afford(r.cost):
-		r.msg = supplies.missing_text(r.cost, mat.no_supply_text)
+		r.msg = _missing_text(r, mat, supplies)
 		return r
 	r.ok = true
 	r.msg = length_text % length
 	if not r.cost.is_empty():
 		r.msg += " · " + r.cost.describe_cost()
 	return r
+
+
+## The length tried and what it is short of, for a check_build result r.
+func _missing_text(r: Dictionary, mat: BridgeMaterial, supplies: Supplies) -> String:
+	return length_text % r.length + " · " + supplies.missing_text(r.cost, mat.no_supply_text)
 
 
 ## Adds the member without any cost or validity check (see check_build).
