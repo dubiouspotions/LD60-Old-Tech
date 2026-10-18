@@ -41,3 +41,17 @@ func test_engineers_carry_a_small_light_at_night() -> void:
 	day_night.set_night(false, true)
 	for e in crew.engineers:
 		assert_false(e.node.get_node("%Lamp").visible, "out by day")
+
+
+func test_lamps_freed_while_fading_cause_no_errors() -> void:
+	get_tree().paused = false
+	var crew: Crew = game.get_node("%World").crew
+	crew.spawn(5.0)
+	var day_night: DayNight = game.get_node("%DayNight")
+	day_night.set_night(true, false, 0.2)
+	crew.spawn(5.0)
+	await wait_seconds(0.4)
+	day_night.set_night(false, false, 0.2)
+	crew.spawn(5.0)
+	await wait_seconds(0.4)
+	assert_engine_error_count(0, "no lamp touched after it was freed")

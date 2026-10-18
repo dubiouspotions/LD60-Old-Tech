@@ -18,7 +18,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().node_added.connect(func(n: Node) -> void:
 		if n is NightLight:
-			_light(n, null, 0.0))
+			(n as NightLight).fade(night, 0.0))
 	set_night(false, true)
 
 
@@ -33,17 +33,5 @@ func set_night(on: bool, instant: bool = false, seconds: float = -1.0) -> void:
 		_tween.tween_property(world_tint, ^"color", night_world_color if on else day_color, maxf(t, 0.01))
 	if sky_tint:
 		_tween.tween_property(sky_tint, ^"color", night_sky_color if on else day_color, maxf(t, 0.01))
-	for l in get_tree().get_nodes_in_group(NightLight.GROUP):
-		_light(l, null if instant else _tween, t)
-
-
-## Turns light l to the current time of day, over seconds on tween (at once without one).
-func _light(l: NightLight, tween: Tween, seconds: float) -> void:
-	if night:
-		l.visible = true
-	if tween == null:
-		l.energy = l.night_energy if night else 0.0
-		l.visible = night
-		return
-	tween.tween_property(l, ^"energy", l.night_energy if night else 0.0, maxf(seconds, 0.01))
-	tween.chain().tween_callback(func() -> void: l.visible = night)
+	for l: NightLight in get_tree().get_nodes_in_group(NightLight.GROUP):
+		l.fade(on, t)
