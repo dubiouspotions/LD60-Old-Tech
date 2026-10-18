@@ -15,6 +15,8 @@ signal march_pressed
 signal recruit_pressed
 signal begin_pressed
 signal retry_pressed
+## Restart the current level from its checkpoint (any time, not only when lost).
+signal restart_level_pressed
 signal restart_pressed
 ## The player moved a volume slider (0..1) for bus.
 signal volume_changed(bus: StringName, value: float)
@@ -53,6 +55,7 @@ func _ready() -> void:
 	%RecruitButton.pressed.connect(_emit.bind(recruit_pressed))
 	%BeginButton.pressed.connect(_emit.bind(begin_pressed))
 	%RetryButton.pressed.connect(_emit.bind(retry_pressed))
+	%RestartButton.pressed.connect(_emit.bind(restart_level_pressed))
 	%NewWorldButton.pressed.connect(_emit.bind(restart_pressed))
 	%AgainButton.pressed.connect(_emit.bind(restart_pressed))
 	%SoundButton.toggled.connect(func(on: bool) -> void: %SoundPanel.visible = on)

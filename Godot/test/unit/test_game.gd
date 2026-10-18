@@ -80,3 +80,21 @@ func _key(code: Key) -> InputEventKey:
 	var k := InputEventKey.new()
 	k.physical_keycode = code
 	return k
+
+
+func test_restart_button_restarts_the_level_from_its_checkpoint() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	var earth := GameState.supplies.earth
+	var soldiers := world.army.soldiers.size()
+	var b := world.bridge
+	var lead := world.army.lead().pos
+	b.build(b.snap_point(lead + Vector2(2, 0)), b.snap_point(lead + Vector2(4, 0)), preload("res://data/bridge/log.tres"))
+	GameState.supplies.earth = earth + 7
+	world.army.crush(world.army.lead())
+	(game.get_node("%HUD").get_node("%RestartButton") as Button).pressed.emit()
+	assert_eq(b.members.size(), 0, "the level's bridge is gone")
+	assert_eq(GameState.supplies.earth, earth, "supplies as at the checkpoint")
+	assert_eq(world.army.soldiers.size(), soldiers, "the column as at the checkpoint")
+	assert_false(get_tree().paused, "playing")
+	assert_true(InputMap.action_has_event(&"restart_level", _key(KEY_BACKSPACE)), "also on Backspace")

@@ -61,6 +61,7 @@ func _ready() -> void:
 	_hud.recruit_pressed.connect(_recruit)
 	_hud.begin_pressed.connect(_begin)
 	_hud.retry_pressed.connect(_retry)
+	_hud.restart_level_pressed.connect(_retry)
 	_hud.restart_pressed.connect(_restart)
 	_camera.follow_changed.connect(_hud.set_follow)
 	_hud.set_volumes(Audio.volume(_hud.music_bus), Audio.volume(_hud.sound_bus))
@@ -86,6 +87,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_march()
 	elif event.is_action_pressed(&"recruit"):
 		_recruit()
+	elif event.is_action_pressed(&"restart_level"):
+		_retry()
 	elif event.is_action_pressed(&"cheat_instant_work"):
 		_toggle_cheats()
 
@@ -234,6 +237,7 @@ func _on_army_lost() -> void:
 	Audio.play(GameState.campaign.lost_sound)
 
 
+## Restarts the current level from its checkpoint: column, supplies and the level as they were.
 func _retry() -> void:
 	_hud.hide_cards()
 	GameState.retry()
