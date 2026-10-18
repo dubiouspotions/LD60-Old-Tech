@@ -186,6 +186,11 @@ func _hazard_at(e: Engineer) -> TerrainType:
 	return null
 
 
+## Kills an engineer crushed by something heavy (a falling tower or tree).
+func crush(e: Engineer) -> void:
+	_kill(e, rules.crushed_text)
+
+
 func _kill(e: Engineer, text: String) -> void:
 	var at := Grid.to_px(e.pos - Vector2(0, 0.5))
 	for c in body_colors:

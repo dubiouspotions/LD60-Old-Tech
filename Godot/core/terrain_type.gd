@@ -14,8 +14,11 @@ enum DigAction { NONE, REMOVE, FELL }
 @export var solid: bool = true
 ## Natural ground: holds structures (bricks, towers) up. Bridge joints bolt to any solid tile, this or not.
 @export var anchor: bool = true
-## Collapses when no chain of structure tiles connects it to anchor ground (bricks, towers).
+## Falls when no chain of structure tiles connects it to anchor ground (bricks, towers).
 @export var structure: bool = false
+## A tower or tree whose ground is taken away falls as one piece, carrying what stands on it, and stands where it
+## lands. Falling further than this breaks it up (a tower collapses, a tree is felled). The lowest in a piece counts.
+@export_range(0.0, 50.0, 0.5, "suffix:m") var survives_fall: float = 3.0
 ## Falls when the tile below is not solid (dumped fill).
 @export var falls: bool = false
 ## Fill can be dropped into this tile, replacing it.

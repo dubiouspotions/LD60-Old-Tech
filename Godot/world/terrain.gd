@@ -16,6 +16,8 @@ signal collapsed(found: Supplies, cells: Array[Vector2i])
 signal felled(cells: Array[Vector2i])
 ## A cell's material changed while playing (dug, filled, fell, collapsed).
 signal cell_changed(cell: Vector2i)
+## A tower or tree lost the ground under it and came out as one piece (see lift()), when drops_loose is on.
+signal came_loose(tiles: Dictionary)
 
 const CUSTOM_DATA: String = "terrain"
 ## Stands for "no material" (air tiles such as fillets) in lookups: an empty custom data value and a typed null
@@ -36,6 +38,9 @@ const AIR_KEY: StringName = &"air"
 var size: Vector2i = Vector2i.ZERO
 ## Left edge: columns before it are out of bounds.
 var min_x: int = 0
+## Set by the World, which drops towers and trees that lose their ground as FallingPieces (came_loose). Off, they
+## break up where they are.
+var drops_loose: bool = false
 
 var _types: Dictionary = {} # Vector2i -> TerrainType
 var _tile_for: Dictionary = {} # TerrainType -> [source_id, atlas_coords]
@@ -191,8 +196,7 @@ func _retile(cell: Vector2i) -> void:
         return
     var t: TerrainType = _types.get(cell)
     var src := get_cell_source_id(cell)
-    # An old tile with no material painted in the air is a designer's decoration: never touched.
-    if t == null and look != null and src == look.classic_source and _read_cell(cell) == null:
+    if _is_decoration(cell):
         return
     var v2 := _v2() or (t != null and look != null and atlas_tile(t).is_empty() and tile_set.has_source(look.source_id))
     var role := rules().role(cell) if v2 and (t != null or _v2()) else &""
@@ -347,16 +351,7 @@ func besiege(cell: Vector2i, seconds: float) -> bool:
     _siege[cell] = _siege.get(cell, 0.0) + seconds
     if _siege[cell] < t.raze_time:
         return false
-    var counts := {}
-    var razed := _group(cell, func(c: TerrainType) -> bool: return c.structure or c == t)
-    for c in razed:
-        var ct := type_at(c)
-        counts[ct] = counts.get(ct, 0) + 1
-        set_type(c, null)
-        Effects.debris(cell_center_px(c), ct.debris_color, 3, 110.0)
-    Audio.play(collapse_sound, cell_center_px(cell))
-    Effects.shake(0.25)
-    collapsed.emit(TerrainType.bulk_total(counts), razed)
+    break_up(_group(cell, func(c: TerrainType) -> bool: return c.structure or c == t))
     return true
 
 
@@ -533,8 +528,7 @@ func _fell_unstanding(xs: Array) -> void:
                     seen[c] = true
                 if group.any(func(c: Vector2i) -> bool: return is_solid(c + Vector2i.DOWN)):
                     continue
-                Audio.play(t.dig_sound, cell_center_px(work_cell(cell)))
-                collapsed.emit(fell(cell), group)
+                _loosen(group)
 
 
 func _collapse_unsupported(xa: int, xb: int, ca: int, cb: int) -> void:
@@ -558,21 +552,99 @@ func _collapse_unsupported(xa: int, xb: int, ca: int, cb: int) -> void:
             if t and t.structure:
                 supported[n] = true
                 queue.append(n)
-    var counts := {}
-    var fallen: Array[Vector2i] = []
-    for cell: Vector2i in _types.keys():
-        var t: TerrainType = _types[cell]
-        if cell.x < ca or cell.x > cb or not t.structure or supported.has(cell):
+    var loose := {}
+    for cell: Vector2i in _types:
+        if cell.x >= ca and cell.x <= cb and _types[cell].structure and not supported.has(cell):
+            loose[cell] = true
+    for cell: Vector2i in loose.keys():
+        if not loose.has(cell):
             continue
+        var group := _group(cell, func(t: TerrainType) -> bool: return t.structure).filter(
+            func(c: Vector2i) -> bool: return loose.has(c))
+        for c: Vector2i in group:
+            loose.erase(c)
+        var piece: Array[Vector2i] = []
+        piece.assign(group)
+        _loosen(piece)
+
+
+## Lets a tower or tree that lost its ground fall as one piece (came_loose). One resting on something solid that
+## does not hold it, or with nobody to drop it (drops_loose off), breaks up where it is.
+func _loosen(cells: Array[Vector2i]) -> void:
+    if cells.is_empty():
+        return
+    var resting := cells.any(func(c: Vector2i) -> bool: return is_solid(c + Vector2i.DOWN) and not c + Vector2i.DOWN in cells)
+    if resting or not drops_loose:
+        break_up(cells)
+    else:
+        came_loose.emit(lift(cells))
+
+
+## Breaks a tower or tree apart: a tree is felled, a structure collapses into debris. Either gives its bulk yield
+## (collapsed).
+func break_up(cells: Array[Vector2i]) -> void:
+    var first := type_at(cells[0])
+    if first.dig_action == TerrainType.DigAction.FELL:
+        Audio.play(first.dig_sound, cell_center_px(work_cell(cells[0])))
+        collapsed.emit(fell(cells[0]), cells)
+        return
+    var counts := {}
+    for cell in cells:
+        var t := type_at(cell)
         counts[t] = counts.get(t, 0) + 1
-        fallen.append(cell)
         set_type(cell, null)
         Effects.debris(cell_center_px(cell), t.debris_color, 3, 110.0)
-    if fallen.is_empty():
-        return
-    Audio.play(collapse_sound, cell_center_px(fallen[0]))
+    Audio.play(collapse_sound, cell_center_px(cells[0]))
     Effects.shake(0.25)
-    collapsed.emit(TerrainType.bulk_total(counts), fallen)
+    collapsed.emit(TerrainType.bulk_total(counts), cells)
+
+
+## Takes cells out of the ground with their tiles, dig marks and siege, and the decorations painted on and around
+## them (battlements): cell -> {type (null for a decoration), source, coords, alt, mark, siege}. put() sets them back.
+func lift(cells: Array[Vector2i]) -> Dictionary:
+    var tiles := {}
+    var todo: Array[Vector2i] = cells.duplicate()
+    while not todo.is_empty():
+        var c: Vector2i = todo.pop_back()
+        if tiles.has(c):
+            continue
+        tiles[c] = {type = type_at(c), source = get_cell_source_id(c), coords = get_cell_atlas_coords(c),
+            alt = get_cell_alternative_tile(c), mark = _marks.get(c), siege = _siege.get(c)}
+        for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.UP]:
+            if _is_decoration(c + d):
+                todo.append(c + d)
+    for c: Vector2i in tiles:
+        if tiles[c].type == null:
+            erase_cell(c)
+        else:
+            set_type(c, null)
+    return tiles
+
+
+## Sets lifted tiles back down rows lower, each with the very tile it had. Returns the ground cells they now fill
+## (not the decorations).
+func put(tiles: Dictionary, rows: int) -> Array[Vector2i]:
+    var out: Array[Vector2i] = []
+    for c: Vector2i in tiles:
+        var tile: Dictionary = tiles[c]
+        var at := c + Vector2i(0, rows)
+        if tile.type == null:
+            set_cell(at, tile.source, tile.coords, tile.alt)
+            continue
+        set_type(at, tile.type)
+        if tile.source != -1:
+            set_cell(at, tile.source, tile.coords, tile.alt)
+        if tile.mark != null:
+            _marks[at] = tile.mark
+        if tile.siege != null:
+            _siege[at] = tile.siege
+        out.append(at)
+    return out
+
+
+## An old tile with no material painted in the air: a designer's decoration, never re-picked.
+func _is_decoration(cell: Vector2i) -> bool:
+    return type_at(cell) == null and look != null and get_cell_source_id(cell) == look.classic_source and _read_cell(cell) == null
 
 
 func _inside(cell: Vector2i) -> bool:

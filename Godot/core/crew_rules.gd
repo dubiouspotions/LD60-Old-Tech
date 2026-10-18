@@ -44,6 +44,9 @@ extends Resource
 ## Pause after the last engineer is back on the ground before the scaffolding comes down.
 @export_range(0.0, 5.0, 0.1, "suffix:s") var strike_delay: float = 0.6
 
+## Shown when a falling tower or tree crushes an engineer.
+@export var crushed_text: String = "Crushed"
+
 @export_group("Sound")
 ## Played while an engineer works, every work_sound_interval.
 @export var work_sound: SoundEffect

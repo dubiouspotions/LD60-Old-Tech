@@ -50,6 +50,8 @@ class Chunk:
 
 
 @export var falling_block_scene: PackedScene
+## Drops a tower or tree whose ground was taken away.
+@export var falling_piece_scene: PackedScene
 ## Pitched at the camp flag while the column sleeps. Needs a strike() method that removes it.
 @export var camp_scene: PackedScene
 ## Load the next level when the view's right edge comes this close to the end of the ground.
@@ -114,6 +116,8 @@ func _ready() -> void:
 	crew.chopped.connect(func(cell: Vector2i) -> void:
 		leaves.shake(cell)
 		birds.chop(cell))
+	terrain.drops_loose = falling_piece_scene != null
+	terrain.came_loose.connect(_on_came_loose)
 	terrain.felled.connect(func(cells: Array[Vector2i]) -> void:
 		leaves.burst(cells)
 		birds.from_tree(cells))
@@ -253,6 +257,8 @@ func _physics_process(dt: float) -> void:
 	for b: FallingBlock in blocks:
 		b.step(dt, self, bodies)
 	_crush_under_weight(bodies, blocks)
+	for p: FallingPiece in objects.get_children().filter(func(o: Node) -> bool: return o is FallingPiece and not o.is_queued_for_deletion()):
+		p.step(dt, self)
 	army.step(dt)
 	crew.step(dt)
 	_check_exit()
@@ -513,6 +519,37 @@ func _on_tile_detached(cell: Vector2i, type: TerrainType) -> void:
 	block.type = type
 	block.position = Grid.to_px(Vector2(cell))
 	objects.add_child(block)
+
+
+func _on_came_loose(tiles: Dictionary) -> void:
+	var piece: FallingPiece = falling_piece_scene.instantiate()
+	piece.setup(tiles, terrain)
+	for o: Node in objects.get_children() + flags.get_children():
+		if o is Node2D and not (o is FallingBlock or o is FallingPiece or o is Arrow or carries(o)):
+			var feet := Grid.to_m(o.position)
+			if tiles.has(Grid.cell_of(feet)) or tiles.has(Grid.cell_of(feet + Vector2(0, 0.5))):
+				piece.riders.append(o)
+	objects.add_child(piece)
+
+
+## Is node riding down on a falling tower or tree.
+func carries(node: Node) -> bool:
+	return objects.get_children().any(func(o: Node) -> bool: return o is FallingPiece and node in o.riders)
+
+
+## Crushes every soldier, engineer, archer and box the falling piece now covers, except what it carries.
+func crush_under(piece: FallingPiece) -> void:
+	for s: Soldier in army.soldiers + army.deserters:
+		if not s.dead and piece.covers(s.pos - Vector2(0, 0.3)):
+			army.crush(s)
+	for e: Crew.Engineer in crew.engineers.duplicate():
+		if piece.covers(e.pos - Vector2(0, 0.3)):
+			crew.crush(e)
+	for o: Node in objects.get_children():
+		if o is Archer and o.alive() and not o in piece.riders and piece.covers(o.feet_m() - Vector2(0, 0.3)):
+			crush(o)
+		elif o is FallingBlock and not o.is_queued_for_deletion() and piece.covers(Grid.to_m(o.position) + Vector2(0.5, 0.5)):
+			o.smash()
 
 
 ## Adds found to the supplies and shows "+N ..." at at (metres). Every gain of supplies goes through here (or, for
