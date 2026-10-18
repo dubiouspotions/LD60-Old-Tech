@@ -57,28 +57,34 @@ func _t(file: String, name: String, props: Dictionary) -> void:
 func _terrain() -> void:
 	var too_hard := "Too hard to dig"
 	_t("soil", "Soil", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.4, dig_yield = Supplies.make(1),
-		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), debris_color = Color("7b5131")})
-	_t("fill", "Fill", {falls = true, dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.3, dig_yield = Supplies.make(1),
-		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), debris_color = Color("a0703f")})
-	_t("rock", "Rock", {too_hard_text = too_hard, debris_color = Color("5b6472")})
+		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 2, dig_sound = _snd("dig"), impact_strength = 200.0,
+		debris_color = Color("7b5131")})
+	_t("fill", "Box", {falls = true, dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.3, dig_yield = Supplies.make(0, 2),
+		bulk_yield = Supplies.make(0, 2), dig_sound = _snd("dig"), impact_strength = 150.0, debris_color = Color("a0703f")})
+	_t("rock", "Rock", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 2.0, dig_yield = Supplies.make(0, 0, 0, 0, 1),
+		dig_text = "+1 stone", dig_sound = _snd("dig"), impact_strength = 3000.0, debris_color = Color("5b6472")})
 	_t("bedrock", "Bedrock", {debris_color = Color("262a33")})
 	_t("crystal", "Gold ore", {dig_action = TerrainType.DigAction.REMOVE, dig_time = 0.8, dig_yield = Supplies.make(0, 0, 0, 1),
-		dig_text = "+1 gold", bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), debris_color = Color("8ff0e0")})
+		dig_text = "+1 gold", bulk_yield = Supplies.make(0, 0, 0, 1), dig_sound = _snd("crystal"), impact_strength = 1000.0,
+		debris_color = Color("8ff0e0")})
 	_t("brick", "Brick", {anchor = false, structure = true, raze_time = 15.0, too_hard_text = too_hard,
-		bulk_yield = Supplies.make(1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})
+		bulk_yield = Supplies.make(0, 0, 0, 0, 1), bulk_tiles_per_yield = 3, debris_color = Color("94463a")})
 	_t("water", "Water", {solid = false, anchor = false, fill_replaces = true, buoyant = true,
 		hazard = TerrainType.Hazard.WATER, death_text = "Drowned", ahead_text = "Water ahead", debris_color = Color("3480b6")})
 	_t("spikes", "Spikes", {solid = false, anchor = false, hazard = TerrainType.Hazard.SPIKES,
 		death_text = "Spiked", ahead_text = "Spikes ahead", debris_color = Color("cfd4da")})
 	_t("trunk", "Tree trunk", {solid = false, anchor = false, dig_action = TerrainType.DigAction.FELL, dig_time = 1.25,
-		bulk_yield = Supplies.make(0, 1), bulk_bonus = Supplies.make(0, 2), dig_sound = _snd("tree_fell"), debris_color = Color("5b3a22")})
+		bulk_yield = Supplies.make(0, 1), bulk_bonus = Supplies.make(0, 2), dig_sound = _snd("tree_fell"), impact_strength = 1500.0,
+		debris_color = Color("5b3a22")})
 	_t("leaves", "Leaves", {solid = false, anchor = false, fill_replaces = true, dig_action = TerrainType.DigAction.FELL, dig_time = 0.4,
-		bulk_yield = Supplies.make(0, 0, 1), bulk_tiles_per_yield = 2, dig_sound = _snd("tree_fell"), debris_color = Color("3f6e34")})
+		bulk_yield = Supplies.make(0, 0, 1), bulk_tiles_per_yield = 2, dig_sound = _snd("tree_fell"), impact_strength = 100.0,
+		debris_color = Color("3f6e34")})
 
 
 func _bridge() -> void:
 	var log_m := BridgeMaterial.new()
-	log_m.display_name = "Bridge"
+	log_m.display_name = "Log"
+	log_m.hint = "≤ 5 m · push + pull"
 	log_m.snapped_text = "Bridge pulled apart"
 	log_m.buckled_text = "Bridge buckled"
 	log_m.cost = Supplies.make(0, 1)
@@ -87,6 +93,11 @@ func _bridge() -> void:
 	_save(log_m, "res://data/bridge/log.tres")
 	var rope := BridgeMaterial.new()
 	rope.display_name = "Rope"
+	rope.hint = "≤ 12 m · pull only"
+	rope.solid_to_bodies = false
+	rope.solid_along = false
+	rope.ram = 0.0
+	rope.impact_strength = 0.0
 	rope.cost = Supplies.make(0, 0, 1)
 	rope.no_supply_text = "No rope. Cut leaves"
 	rope.max_length = 12.0
@@ -106,6 +117,8 @@ func _bridge() -> void:
 	_save(rope, "res://data/bridge/rope.tres")
 	var support := BridgeMaterial.new()
 	support.display_name = "Support"
+	support.hint = "≤ 5 m · not walked on"
+	support.solid_to_bodies = false
 	support.cost = Supplies.make(0, 1)
 	support.kg_per_m = 14.0
 	support.break_force = 13000.0
@@ -119,6 +132,26 @@ func _bridge() -> void:
 	support.place_sound = _snd("log_place")
 	support.break_sound = _snd("member_snap")
 	_save(support, "res://data/bridge/support.tres")
+	var stone := BridgeMaterial.new()
+	stone.display_name = "Stone"
+	stone.hint = "≤ 3 m · heavy, strong"
+	stone.cost = Supplies.make(0, 0, 0, 0, 1)
+	stone.no_supply_text = "No stone. Dig rock"
+	stone.build_speed = 0.8
+	stone.max_length = 3.0
+	stone.kg_per_m = 30.0
+	stone.compliance = 2e-8
+	stone.break_force = 40000.0
+	stone.ram = 1.0
+	stone.impact_strength = 30000.0
+	stone.snapped_text = "Stone cracked apart"
+	stone.buckled_text = "Stone buckled"
+	stone.color = Color(0.6, 0.62, 0.66)
+	stone.edge_color = Color(0.3, 0.31, 0.35)
+	stone.thickness = 0.3
+	stone.place_sound = _snd("log_place")
+	stone.break_sound = _snd("member_snap")
+	_save(stone, "res://data/bridge/stone.tres")
 
 
 func _army() -> void:
@@ -150,15 +183,16 @@ func _tool(file: String, props: Dictionary) -> void:
 func _tools() -> void:
 	_tool("1_dig", {kind = ToolDefinition.Kind.DIG, display_name = "Dig", hint = "earth · trees · undo",
 		action = &"tool_dig", key_label = "1", repeat_interval = 0.06})
-	_tool("2_fill", {kind = ToolDefinition.Kind.FILL, display_name = "Fill", hint = "falls where you drop it",
-		action = &"tool_fill", key_label = "2", repeat_interval = 0.11, cost = Supplies.make(1),
-		no_supply_text = "No earth. Dig some", spawn_scene = load("res://objects/falling_block/falling_block.tscn")})
-	_tool("3_log", {kind = ToolDefinition.Kind.BUILD, display_name = "Bridge", hint = "≤ 5 m · push + pull",
-		action = &"tool_log", key_label = "3", bridge_material = load("res://data/bridge/log.tres")})
-	_tool("4_support", {kind = ToolDefinition.Kind.BUILD, display_name = "Support", hint = "≤ 5 m · not walked on",
-		action = &"tool_support", key_label = "4", bridge_material = load("res://data/bridge/support.tres")})
-	_tool("5_rope", {kind = ToolDefinition.Kind.BUILD, display_name = "Rope", hint = "≤ 12 m · pull only",
-		action = &"tool_rope", key_label = "5", bridge_material = load("res://data/bridge/rope.tres")})
+	_tool("2_fill", {kind = ToolDefinition.Kind.FILL, display_name = "Box", hint = "falls where you drop it",
+		action = &"tool_fill", key_label = "5", repeat_interval = 0.11, cost = Supplies.make(0, 5),
+		no_supply_text = "A box takes 5 logs. Fell a tree", spawn_scene = load("res://objects/falling_block/falling_block.tscn")})
+	var stone: Array[BridgeMaterial] = [load("res://data/bridge/stone.tres")]
+	_tool("3_log", {kind = ToolDefinition.Kind.BUILD, display_name = "Bridge", action = &"tool_log", key_label = "2",
+		bridge_material = load("res://data/bridge/log.tres"), other_materials = stone})
+	_tool("4_support", {kind = ToolDefinition.Kind.BUILD, display_name = "Support", action = &"tool_support",
+		key_label = "3", bridge_material = load("res://data/bridge/support.tres")})
+	_tool("5_rope", {kind = ToolDefinition.Kind.BUILD, display_name = "Rope", action = &"tool_rope", key_label = "4",
+		bridge_material = load("res://data/bridge/rope.tres")})
 
 
 func _campaign() -> void:
