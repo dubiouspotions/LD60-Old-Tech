@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://dev/convert_levels_v2.gd" id="1"]
+
+[node name="ConvertLevelsV2" type="Node"]
+script = ExtResource("1")

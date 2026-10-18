@@ -16,6 +16,8 @@ $GD --headless -s res://addons/gut/gut_cmdln.gd      # all GUT tests (must stay 
 $GD res://dev/screenshot.tscn -- out=<png> seconds=5 level=1   # play and grab a frame
 $GD --headless res://dev/generate_levels.tscn -- [count=N] [seed=S] [force]
 $GD --headless res://dev/bootstrap_data.tscn         # recreate missing data/*.tres only
+$GD --headless res://dev/build_tiles_v2.tscn -- art      # then --import, then: -- tileset (v2 tiles into tileset.tres)
+$GD --headless res://dev/convert_levels_v2.tscn      # retile the campaign levels with the v2 rules
 ```
 
 ## Core rule: designers edit, code reads
@@ -36,7 +38,7 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 | Autoloads | `GameState` (campaign progress, supplies, checkpoint, best level in `user://`), `Audio`, `Effects` (`core/effects.tscn`: debris, floating text, shake) | |
 | World | `game/world.gd`, `world.tscn` | One continuous world: Terrain, Bridge, Army, Crew, Objects, Flags. Levels are stitched on (`Terrain.stamp`), streamed in with `ResourceLoader.load_threaded_request`, unloaded behind (`Terrain.unload_before`, `min_x`), and rewound for retries. Owns the camp/night cycle (`army.hold`). `World.of(node)` finds it. |
 | Level | `levels/level.gd`, `level_base.tscn` | Templates only, never in the tree while playing: Terrain, Objects, StartFlag, ExitFlag plus settings. Every level inherits `level_base.tscn`. `campaign.levels` holds their paths. |
-| Terrain look | `world/terrain_skin.gd`, `core/terrain_look.gd`, `data/terrain_look.tres` | With the look enabled (default), the Terrain's own tiles are hidden and its `Skin` child draws `world/tiles_v2.png` by neighbour rules: a cell layer for grass edges and fillets, and a half-cell dual-grid layer for rock pockets. It redraws around the cells `Terrain.take_changes()` reports, so any new code that changes cells must go through `set_type` or record the change. |
+| Terrain look | `core/terrain_look.gd`, `data/terrain_look.tres`, `world/tile_rules.gd`, `world/terrain_skin.gd` | v2 tiles are source 1 of `world/tileset.tres`, each tagged with its material (grass/dirt tiles have one alternative per dirt or rock type). `Terrain` re-picks the tile of every cell around a change with `TileRules`, keeping tiles that still fit, so painted variants survive. Change cells through `set_type` (or retile what you touched) so this happens. `TerrainSkin` draws only the rock overlay (half-cell dual grid), also in the editor. With the look off, the classic old tiles are used. |
 | Terrain | `world/terrain.gd` (TileMapLayer) | Behaviour comes from the "terrain" custom data (a `TerrainType`). It caches cells. `settle()` detaches falling tiles and collapses unsupported structures. |
 | Bridge | `world/bridge.gd` | XPBD truss in SI units (m, kg, N). It only advances when `World._physics_process` steps it. |
 | Army | `game/army.gd`, `objects/soldier/` | Column logic ported from the original `updateUnits`. Soldier nodes only display state. |
@@ -47,6 +49,8 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 **Pausing.** `LevelHolder` (holding the World) is pausable. The Game, ToolController, Camera, Terrain (`settle`), Bridge drawing, Audio and Effects keep running while paused, so the player can build during a pause. Speed is `Engine.time_scale`.
 
 ## Gotchas found the hard way
+
+- Saving a resource from a headless script (`ResourceSaver.save`) drops every `uid=`. `dev/build_tiles_v2.gd` puts them back from each referenced file's header or `.import`, so the file matches what the editor writes. Do the same in any new tool that saves data.
 
 - Scripts that reference autoloads (`GameState`, `Audio`, `Effects`) **fail to compile under `godot -s script.gd`**. Run such tools as a scene (see `dev/*.tscn`). Only pure-Resource scripts can run via `-s`.
 - Godot has no script API that saves *inherited* scenes, so `dev/generate_levels.gd` writes the `.tscn` text itself (`instance=ExtResource(base)`, then overrides). Keep levels inherited so changes to `level_base.tscn` reach every level.
