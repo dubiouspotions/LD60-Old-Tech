@@ -49,6 +49,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Sleeping soldier pose and the "z" | **Asleep** node and the "sleep" animation in `objects/soldier/soldier.tscn` |
 | Night colours, fade time | **DayNight** node in `game/main.tscn` |
 | Night lights: cursor lantern, engineers' lamps (strength: **Night Energy**) | **Lantern** node in `game/main.tscn`, **Lamp** node in `objects/engineer/engineer.tscn` |
+| Night colour grade: which LUT the night fades into, how much of each light's reach keeps the day colours (**Reach**), how hard the edge is (**Falloff**), and the light energy that keeps them fully (**Full Light Energy**) | **Grade** node in `post/night_grade.tscn`. Every visible light in the game counts (camp fire, engineers' lamps, cursor lantern, any light you add). LUTs live in `post/lut/` as 17-slice strips imported as 3D textures; `low_17.png` changes nothing. |
 | Stars: how many, colour, how far down the sky, share of bigger cross stars, twinkle depth and speed, shooting-star interval, length, speed and trail | **Stars** node in `world/background/background.tscn`. They fade in with the night and keep their own colour under the night tint. **Star Seed** picks a different sky. |
 | Camp music, dawn bugle | `data/campaign.tres` → Camp group |
 | Recruit button text and where it floats | **Recruit Text** on the **HUD** node in `ui/hud.tscn`; the button floats at the **ButtonSpot** marker in `objects/camp/camp.tscn` |
