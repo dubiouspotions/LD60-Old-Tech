@@ -18,7 +18,7 @@ $GD --headless res://dev/generate_levels.tscn -- [count=N] [seed=S] [force]
 $GD --headless res://dev/bootstrap_data.tscn         # recreate missing data/*.tres only
 $GD --headless res://dev/build_tiles_v2.tscn -- art      # then --import, then: -- tileset (v2 tiles into tileset.tres)
 $GD --headless res://dev/convert_levels_v2.tscn      # retile the campaign levels with the v2 rules
-$GD --headless res://dev/scatter_grass.tscn -- [force]   # first tall-grass coverage on levels without any
+$GD --headless res://dev/scatter_grass.tscn            # regrow every level's tall grass by its Scatter and save
 ```
 
 ## Core rule: designers edit, code reads

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="GrassScatter" format=3]
+
+[ext_resource type="Script" path="res://core/grass_scatter.gd" id="1_scatter"]
+[ext_resource type="Script" path="res://core/terrain_type.gd" id="2_tt"]
+[ext_resource type="Resource" path="res://data/terrain/soil.tres" id="3_soil"]
+
+[resource]
+script = ExtResource("1_scatter")
+grows_on = Array[ExtResource("2_tt")]([ExtResource("3_soil")])

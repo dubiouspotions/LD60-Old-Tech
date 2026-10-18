@@ -116,14 +116,21 @@ v2 sheet; nothing uses it any more.
 ### Tall grass
 
 Each level has a **Grass** layer (under the level root, after ExitFlag) for patches of tall grass that sway and are
-drawn in front of the soldiers, engineers and objects. Select **Grass**, pick the grass tile in the TileMap panel and
-paint it in the air cells right on top of the ground. Scatter it in small patches rather than everywhere.
+drawn in front of the soldiers, engineers and objects. It grows by itself in the editor: whenever you paint the
+Terrain, open the level or change a setting, the grass is regrown in patches on open soil, clear of the flags and
+objects. Moved a flag or an object? Press **Regrow Grass** on the level root.
 
+- **The settings** are the **Scatter** on the Grass node, `data/grass_scatter.tres` for every level: what ground it
+  grows on, metres between patches (least, most), cells per patch (least, most), metres kept clear of flags, objects
+  and the level's ends, and a seed for other places. Each level gets its own pattern from its file name. For one
+  level that should differ, give its Grass node its own Scatter (*Make Unique*).
+- **To paint grass by hand,** clear the Scatter on that level's Grass node, then pick the grass tile in the TileMap
+  panel and paint it in the air cells right on top of the ground.
+- Painting the ground in one spot never moves the grass elsewhere: where patches go depends only on the seed.
 - Grass on ground that is dug away, or in a cell that gets filled, disappears while playing, and in the editor
   as soon as you paint ground over it or erase the ground under it.
-- `godot --headless res://dev/scatter_grass.tscn` scatters a first coverage (runs of 2–4 cells on flat soil, 6–14 m
-  apart, clear of flags and objects) over every level that has no grass yet, to paint over by hand. Add `force` to
-  redo levels that already have grass (this replaces what you painted), and `gap=`, `width=` or `seed=` to vary it.
+- `godot --headless res://dev/scatter_grass.tscn` regrows and saves the grass of every level at once (after
+  changing the settings, so levels you have not opened match).
 - `test_levels` checks that every grass cell is in the air with ground under it.
 - **The animation** plays the frames of `world/grass_anim.png` (8 px each, left to right, drawn at 4x like the rest
   of the art) from `world/tall_grass_material.tres`. Each column of the world starts one frame later than the column

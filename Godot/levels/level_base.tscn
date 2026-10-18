@@ -5,6 +5,7 @@
 [ext_resource type="AudioStream" uid="uid://rsqcbf1000s0" path="res://audio/music/march_music.ogg" id="2_da5si"]
 [ext_resource type="PackedScene" path="res://objects/checkpoint_flag/checkpoint_flag.tscn" id="5"]
 [ext_resource type="PackedScene" path="res://world/tall_grass.tscn" id="6_grass"]
+[ext_resource type="Resource" path="res://data/grass_scatter.tres" id="7_scatter"]
 
 [node name="Level" type="Node2D" unique_id=1546824629]
 script = ExtResource("1")
@@ -32,3 +33,4 @@ label = "L2"
 
 [node name="Grass" parent="." node_paths=PackedStringArray("terrain") unique_id=1873402215 instance=ExtResource("6_grass")]
 terrain = NodePath("../Terrain")
+scatter = ExtResource("7_scatter")
