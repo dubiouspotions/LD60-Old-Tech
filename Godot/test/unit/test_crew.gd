@@ -687,12 +687,39 @@ func test_engineer_builds_from_a_support_hanging_above_his_head() -> void:
 	assert_false(m.blueprint, "built off the hanging end")
 
 
-func test_stranded_engineer_rejoins_the_column() -> void:
+func test_stranded_engineer_climbs_down_to_the_column() -> void:
 	_flat_strip()
 	for y in range(1, 6):
 		world.terrain.set_type(Vector2i(40, y), WorldFixture.type("soil"))
 	var e: Crew.Engineer = world.crew.engineers[0]
 	e.pos = Vector2(40.6, 1.0)
-	_run(world.crew.rules.regroup_time + 2.0)
-	assert_almost_eq(e.pos.y, 6.0, 0.05, "off the pillar")
-	assert_gt(e.pos.x, 45.0, "back with the column")
+	_assert_climbs_back(e, 45.0)
+
+
+func test_stranded_engineer_climbs_out_of_a_deep_pit() -> void:
+	_flat_strip()
+	for x in range(44, 46):
+		for y in range(1, 7):
+			world.terrain.set_type(Vector2i(x, y), null)
+		world.terrain.set_type(Vector2i(x, 6), null)
+	for x in range(44, 46):
+		world.terrain.set_type(Vector2i(x, 7), WorldFixture.type("soil"))
+	for x in [43, 46]:
+		for y in range(1, 6):
+			world.terrain.set_type(Vector2i(x, y), WorldFixture.type("soil"))
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(44.8, 7.0)
+	_assert_climbs_back(e, 46.5)
+
+
+## The engineer gets back on the column's ground beyond x by moving, never jumping more than a step.
+func _assert_climbs_back(e: Crew.Engineer, x: float) -> void:
+	var jump := [0.0]
+	var last := [e.pos]
+	_run(world.crew.rules.stranded_time + 8.0, func() -> bool:
+		jump[0] = maxf(jump[0], e.pos.distance_to(last[0]))
+		last[0] = e.pos
+		return false)
+	assert_lt(jump[0], 0.3, "moved, not teleported")
+	assert_almost_eq(e.pos.y, 6.0, 0.05, "on the column's ground")
+	assert_gt(e.pos.x, x, "back with the column")

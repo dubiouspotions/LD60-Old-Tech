@@ -18,9 +18,9 @@ extends Resource
 ## An engineer left with nothing to stand on (its structure collapsed) falls with this gravity, up to max_fall_speed.
 @export_range(1.0, 100.0, 1.0, "suffix:m/s²") var fall_gravity: float = 30.0
 @export_range(1.0, 50.0, 1.0, "suffix:m/s") var max_fall_speed: float = 20.0
-## An idle engineer that can not get back to the column this long (stranded on a ledge or in a pit) rejoins it:
-## it fades in at its place behind the column. 0: never.
-@export_range(0.0, 30.0, 0.5, "suffix:s") var regroup_time: float = 3.0
+## An idle engineer that makes no way back to the column this long (stranded on a ledge or in a pit) climbs
+## up or down any height of ground to get there (Max Climb and Max Drop no longer hold it). 0: never.
+@export_range(0.0, 30.0, 0.5, "suffix:s") var stranded_time: float = 3.0
 ## Engineers dig a marked cell whose centre is within this distance of their chest.
 ## How long the digging takes is set per terrain type (Dig Time).
 @export_range(0.5, 5.0, 0.1, "suffix:m") var dig_reach: float = 1.6
