@@ -753,7 +753,7 @@ func _through_ground(a: Vector2, b: Vector2) -> bool:
 
 
 func _collide(n: Joint, h: float) -> void:
-	var out := _push_out(n.pos)
+	var out := _push_out(n.pos, n.prev)
 	if out.is_empty():
 		return
 	var v := n.pos - n.prev
@@ -772,7 +772,7 @@ func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground
 	for k in range(1 if ground else 0, steps if ground else steps + 1):
 		var t := float(k) / steps
 		var p := m.a.pos.lerp(m.b.pos, t)
-		var out: Array = push_out.call(p)
+		var out: Array = push_out.call(p, m.a.prev.lerp(m.b.prev, t))
 		if out.is_empty():
 			continue
 		var wa := m.a.inv_mass * (1.0 - t)
@@ -792,37 +792,46 @@ func _collide_member(m: Member, h: float, push_out: Callable = _push_out, ground
 		_stop_against(m.b, vb, out[1])
 
 
-## Where p, if inside solid ground, is pushed out to (just clear of the nearest open face of its cell), and that
-## face's outward normal: [Vector2, Vector2]. [] if p is not in the ground.
-func _push_out(p: Vector2) -> Array:
+## Where p, if inside solid ground, is pushed out to, and that face's outward normal: [Vector2, Vector2]. [] if p is
+## not in the ground. It leaves through the open face it came in through, going by where it was before (from);
+## if that tells nothing, through the nearest open face.
+func _push_out(p: Vector2, from: Vector2) -> Array:
 	var c := Grid.cell_of(p)
 	if not terrain.is_solid(c):
 		return []
-	var f := p - Vector2(c)
-	# Pushed out just clear of the cell edge. Further would leave the joint falling back every few substeps.
+	# Just clear of the cell edge. Further would leave the joint falling back every few substeps.
 	var e := 0.001
-	var best := Vector2(p.x, c.y - e)
-	var normal := Vector2.UP
-	var bd := 9.0
-	if not terrain.is_solid(c + Vector2i.UP) and f.y < bd:
-		bd = f.y
-		best = Vector2(p.x, c.y - e)
-	if not terrain.is_solid(c + Vector2i.LEFT) and f.x < bd:
-		bd = f.x
-		best = Vector2(c.x - e, p.y)
-		normal = Vector2.LEFT
-	if not terrain.is_solid(c + Vector2i.RIGHT) and 1.0 - f.x < bd:
-		bd = 1.0 - f.x
-		best = Vector2(c.x + 1 + e, p.y)
-		normal = Vector2.RIGHT
-	if not terrain.is_solid(c + Vector2i.DOWN) and 1.0 - f.y < bd:
-		best = Vector2(p.x, c.y + 1 + e)
-		normal = Vector2.DOWN
-	return [best, normal]
+	var lo := Vector2(c)
+	var hi := lo + Vector2.ONE
+	# [normal, pushed point, how far through the move the face was crossed (later = the face it came in by),
+	# distance to the face]
+	var faces := [
+		[Vector2.UP, Vector2(p.x, lo.y - e), _crossed(from.y, p.y, lo.y), p.y - lo.y],
+		[Vector2.DOWN, Vector2(p.x, hi.y + e), _crossed(-from.y, -p.y, -hi.y), hi.y - p.y],
+		[Vector2.LEFT, Vector2(lo.x - e, p.y), _crossed(from.x, p.x, lo.x), p.x - lo.x],
+		[Vector2.RIGHT, Vector2(hi.x + e, p.y), _crossed(-from.x, -p.x, -hi.x), hi.x - p.x],
+	]
+	var best: Array = []
+	for f: Array in faces:
+		if terrain.is_solid(c + Vector2i(f[0])):
+			continue
+		if best.is_empty() or f[2] > best[2] or (f[2] == best[2] and f[3] < best[3]):
+			best = f
+	if best.is_empty():
+		return [Vector2(p.x, lo.y - e), Vector2.UP]
+	return [best[1], best[0]]
+
+
+## When, as a share of the move from a to b along one axis, the plane at edge was crossed going up the axis;
+## -1 if the move started past it.
+static func _crossed(a: float, b: float, edge: float) -> float:
+	if a > edge:
+		return -1.0
+	return (edge - a) / maxf(b - a, 1e-9)
 
 
 ## Where p, if inside box body b, is pushed out to (just clear of its nearest side), and that side's normal.
-func _push_out_of_box(p: Vector2, b: Body) -> Array:
+func _push_out_of_box(p: Vector2, _from: Vector2, b: Body) -> Array:
 	var d := p - b.center
 	var pen := b.half - d.abs()
 	if pen.x <= 0.0 or pen.y <= 0.0:

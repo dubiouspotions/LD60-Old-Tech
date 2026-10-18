@@ -289,3 +289,28 @@ func test_a_loose_piece_lands_on_a_block_resting_on_a_deck() -> void:
 	var loose: Bridge.Member = world.bridge.members[1]
 	assert_true(is_instance_valid(block), "block still on the deck")
 	assert_lt((loose.a.pos.y + loose.b.pos.y) / 2.0, block.position.y / Grid.PX + 0.1, "resting on the block")
+
+
+func test_a_fast_piece_landing_with_its_end_on_a_tower_edge_batters_it() -> void:
+	_map([
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....KKK.............",
+		"....KKK.............",
+		"....KKK.............",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	var b := world.bridge
+	var m := b.build(b.snap_point(Vector2(4, 1)), b.snap_point(Vector2(7, 1)), LOG)
+	var hit := [0.0]
+	_run(2.0)
+	for x in range(4, 7):
+		hit[0] = maxf(hit[0], world.terrain.siege_progress(Vector2i(x, 7)))
+	assert_gt(hit[0], 0.0, "the hit on the tower's edge counted")
+	assert_lt(m.a.pos.y, 7.1, "and the piece rests on top")
