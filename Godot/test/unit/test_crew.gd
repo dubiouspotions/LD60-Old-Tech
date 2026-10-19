@@ -210,6 +210,7 @@ func test_the_builder_moves_about_near_the_growing_end() -> void:
 	var builder := [null]
 	var hops := [0]
 	var moves := [0]
+	var backs := [0]
 	var last := [Vector2.INF]
 	_run(30.0, func() -> bool:
 		for e: Crew.Engineer in world.crew.engineers:
@@ -237,12 +238,15 @@ func test_the_builder_moves_about_near_the_growing_end() -> void:
 					moves[0] += 1
 					if drawn.distance_to(last[0]) > rules.climb_speed / 60.0 + 0.01:
 						hops[0] += 1
+						if (drawn - last[0]).dot(far - from) < 0.0:
+							backs[0] += 1
 				last[0] = drawn
 		return not m.blueprint)
 	assert_false(m.blueprint, "built")
 	assert_not_null(builder[0], "built from a joint")
 	assert_gt(spots.size(), 3, "moved about while building")
 	assert_gt(hops[0], 3, "popping from spot to spot in one frame")
+	assert_gt(backs[0], 0, "now and then back along the piece, not only following its end")
 	assert_lte(moves[0], ceili(m.length / m.material.build_speed / rules.build_wander_interval) + 2,
 			"only on hops: no sliding along with the growing end in between")
 	_run(1.0 / 60.0)

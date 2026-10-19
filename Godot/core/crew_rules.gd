@@ -52,9 +52,10 @@ extends Resource
 ## An engineer that has not picked up the piece it went for in this long (it can not get there) fetches it anyway.
 @export_range(0.5, 60.0, 0.5, "suffix:s") var gather_give_up: float = 6.0
 ## Building (or taking apart) a piece out from a joint, the builder is drawn hopping about the built part of it, at
-## most build_wander back from where it grows: it pops to a new spot every build_wander_interval, without walking.
-## Only the look: it still works from its joint.
-@export_range(0.0, 5.0, 0.05, "suffix:m") var build_wander: float = 0.6
+## most build_wander back from where it grows: it pops to a new spot every build_wander_interval, without walking,
+## at least build_hop apart from the last where the built part allows. Only the look: it still works from its joint.
+@export_range(0.0, 5.0, 0.05, "suffix:m") var build_wander: float = 1.5
+@export_range(0.0, 3.0, 0.05, "suffix:m") var build_hop: float = 0.5
 @export_range(0.05, 5.0, 0.05, "suffix:s") var build_wander_interval: float = 0.3
 ## Meanwhile it faces where the piece grows and tilts towards it, by at most this much.
 @export_range(0.0, 90.0, 1.0, "suffix:°") var build_lean_max: float = 30.0

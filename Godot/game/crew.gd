@@ -857,9 +857,17 @@ func _wander(e: Engineer, dt: float) -> void:
 	e.wander_left -= dt
 	if e.wander_job != m or e.wander_left <= 0.0:
 		# Hops to a new spot and stays there until the next hop (it does not slide along as the piece grows).
-		e.wander_job = m
 		e.wander_left = rules.build_wander_interval
-		e.wander_along = maxf(built - _rng.randf_range(0.0, rules.build_wander), 0.0)
+		var lo := maxf(built - rules.build_wander, 0.0)
+		var was := e.wander_along if e.wander_job == m else -INF
+		# A clear jump away from the last spot, back or forth, where the built part leaves room for one.
+		var spot := _rng.randf_range(lo, built)
+		for k in 8:
+			if absf(spot - was) >= rules.build_hop:
+				break
+			spot = _rng.randf_range(lo, built)
+		e.wander_along = spot
+		e.wander_job = m
 	# Taken apart below it meanwhile: it stands on what is left.
 	e.wander_along = minf(e.wander_along, built)
 	var from := e.at if e.at else e.goal
