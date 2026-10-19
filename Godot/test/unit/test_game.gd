@@ -159,6 +159,21 @@ func test_the_status_line_warns_of_a_stuck_engineer() -> void:
 	assert_true(status.text.contains(game.stuck_many_text % 2), "counted: %s" % status.text)
 
 
+## The arrival banner tells only what came: no "+0 soldiers", and the supplies dropped by name.
+func test_the_arrival_banner_tells_only_what_came() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	var c := world.place_now(1)
+	var sub: Label = game.get_node("%HUD").get_node("%BannerSub")
+	c.level.supply_drop = Supplies.new()
+	game._on_camp_made(1, 0)
+	assert_eq(sub.text, game.arrival_text, "nothing came: no count, no supplies")
+	c.level.supply_drop = Supplies.make(0, 0, 0, 5)
+	game._on_camp_made(1, 2)
+	assert_true(sub.text.contains(game.arrival_soldiers_text % 2), sub.text)
+	assert_true(sub.text.contains("5 gold"), "the drop by name: %s" % sub.text)
+
+
 func _key(code: Key) -> InputEventKey:
 	var k := InputEventKey.new()
 	k.physical_keycode = code

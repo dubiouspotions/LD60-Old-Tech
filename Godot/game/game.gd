@@ -18,7 +18,10 @@ extends Node
 @export var victory_text: String = "All %d levels crossed with %d soldiers standing."
 ## Banner title when the level has no display name.
 @export var arrival_title: String = "Level %d"
-@export var arrival_text: String = "Camp for the night · +%d soldiers · supplies"
+## Under it: arrival_text, then (only for what came) the soldiers who joined (%d) and the supplies dropped (%s).
+@export var arrival_text: String = "Camp for the night"
+@export var arrival_soldiers_text: String = "+%d soldiers"
+@export var arrival_supplies_text: String = "+%s"
 ## Shown when a tester toggles the cheats (F2); %s = on / off.
 @export var cheats_text: String = "Cheats %s"
 ## Turning the cheats on tops every supply up to at least this.
@@ -288,7 +291,13 @@ func _start_at_level(index: int) -> void:
 func _on_camp_made(index: int, joined: int) -> void:
     var c := _world.chunk(index)
     var title := c.level.display_name if not c.level.display_name.is_empty() else arrival_title % (index + 1)
-    _hud.banner(title, arrival_text % joined)
+    var parts: PackedStringArray = [arrival_text]
+    if joined > 0:
+        parts.append(arrival_soldiers_text % joined)
+    var drop := c.level.drop()
+    if not drop.is_empty():
+        parts.append(arrival_supplies_text % drop.describe_cost())
+    _hud.banner(title, " · ".join(parts))
     Audio.play(GameState.campaign.level_up_sound)
 
 

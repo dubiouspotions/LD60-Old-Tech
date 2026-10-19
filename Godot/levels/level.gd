@@ -40,6 +40,12 @@ func _ready() -> void:
         get_tree().change_scene_to_file.call_deferred(ProjectSettings.get_setting("application/run/main_scene"))
 
 
+## Supplies dropped when the column arrives here: Supply Drop, or the campaign's Checkpoint Supplies.
+func drop() -> Supplies:
+    var d: Supplies = supply_drop if supply_drop else GameState.campaign.checkpoint_supplies
+    return d if d else Supplies.new()
+
+
 ## Soldiers that join when the column arrives here: Reinforcements, or the campaign's Checkpoint Reinforcements.
 func joining() -> int:
     return reinforcements if reinforcements >= 0 else GameState.campaign.checkpoint_reinforcements
