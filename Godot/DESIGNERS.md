@@ -38,6 +38,21 @@ type, add it to the node's **Terrain Types**.
 
 Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with buried or floating flags, archers standing on nothing, signs with the board in the ground, seams the column can't walk over, and similar mistakes.
 
+## Main menu
+
+The game opens on `menu/main_menu.tscn`: the title, **New Game**, **Settings** and **Quit** (hidden in the web build, where a tab can't be quit) over a looping show played on the real world. The **Menu** button in the game's toolbar comes back here.
+
+| Task | How |
+| --- | --- |
+| Title, tagline, button texts | The labels and buttons under **UI** in `menu/main_menu.tscn` |
+| Menu music | **Music** on the root of `menu/main_menu.tscn` (`audio/music/menu_music.ogg`, loops). The game's own music takes over once a game starts. Which scene New Game opens: **Game Scene** there; where the game's Menu button goes: **Menu Scene** on the **Game** node in `game/main.tscn` |
+| Settings card | `ui/settings_menu.tscn`: Music and Sound volume, Full screen. Every change takes effect and is saved at once in `user://settings.cfg`; Back or Escape closes it. The web build always starts in the page (a browser only goes full screen on a click) |
+| The ravine | `menu/menu_level.tscn` is an ordinary level (inherits `level_base.tscn`): paint its ground and move its flags as in any level. The crew and the column come in at the **StartFlag** and those who cross walk off toward the **ExitFlag**, so keep both out of view. Keep the ravine open to the bottom of the map: soldiers who fall that far are gone. Trees are painted trunk and leaves tiles, as in any level (soldiers walk through them). It is not in the campaign. |
+| Birds | Patches of the menu level's tall grass hide birds that burst out when a soldier or engineer comes near: how many is **Birds** on the root of `menu/menu_level.tscn` (**Chance** a patch hides any, 0.75; **Per Patch**). How often one flies across the sky: **Cross Interval** on **World › Birds** in `menu/menu_show.tscn` (every 5 to 12 s; the game's own is on `game/world.tscn`) |
+| What the show looks at | Move the **Camera** in `menu/menu_show.tscn` (its top-left corner is the view's). **Depths** darkens the ravine as it goes down, **Sun** on the root sets where the sun stands |
+| The acts | **Acts** on the root of `menu/menu_show.tscn`, played in order and looped. Each act (a MenuAct) has the **Engineers** who walk in and build, the **Soldiers** who walk in with them (and wait at the edge until the bridge stands), and the bridge's **Pieces**: each a **From** and **To** in metres of the menu level (one tile is one metre, y down; read cells off the TileMap) and a **Material** (`data/bridge/log.tres` for the deck, `support.tres` for struts). Ends snap to the half metre and join where they meet; an end touching ground is bolted down. When **Give Way At** soldiers are on the finished bridge and the front one is **Give Way Past** of the way across (0.5 is the middle), the pieces listed in **Breaks** (counted from 0 in Pieces) snap one after another, **Break Stagger** seconds apart. Break different pieces in each act so it fails a different way |
+| Show timing | On the root of `menu/menu_show.tscn`: **Wait Short** (how far short of the bridge the column waits while it goes up), **Linger** (from the last soldier falling or crossing until the rest of the bridge drops after them), **Rest** (the empty ravine before the next crew), **Act Timeout** (an act stuck that long is cut short) |
+
 ## Night camp
 
 At the start of every level the column makes camp. **Dusk**: night falls while every soldier walks to their spot behind the camp flag (back or forward) and lies down. **Night**: the soldiers sleep and the engineers keep digging and building. **Morning**: when the player presses **March** (M) or the king loses patience, day breaks, everyone gets up and the camp is struck, then the column marches.
@@ -211,9 +226,9 @@ A sheet whose sky is a solid colour instead: set it as **Source Texture**, the c
 ## Sound and music
 
 - `data/sounds/*.tres` are SoundEffect resources. Each has a list of streams (one is picked at random each play), a volume, and a pitch spread. Point any sound slot in the Inspector at one.
-- Music is set per level, on the level root's **Music**; it starts when the column breaks camp. The campaign's **Camp Music** plays during the night. Any stream loops.
+- Music is set per level, on the level root's **Music**; it starts when the column breaks camp. The campaign's **Camp Music** plays during the night. The main menu has its own (see Main menu). Any stream loops.
 - `audio/` holds synthesized placeholder WAVs. Drop in real files and re-point the resources.
-- Buses: Master, Music, SFX (`audio/default_bus_layout.tres`). The bus volumes there are the full-volume mix; the player's **Sound** panel (Music and Sound sliders) scales them and remembers the setting in `user://settings.cfg`. Which buses the sliders drive: **Music Bus** / **Sound Bus** on the **HUD** node in `ui/hud.tscn`.
+- Buses: Master, Music, SFX (`audio/default_bus_layout.tres`). The bus volumes there are the full-volume mix; the player's **Sound** panel (Music and Sound sliders) and the main menu's Settings card scale them and remember the setting in `user://settings.cfg`. Which buses the sliders drive: **Music Bus** / **Sound Bus** on the **HUD** node in `ui/hud.tscn`.
 
 ## Dev scripts (`dev/`, not exported)
 

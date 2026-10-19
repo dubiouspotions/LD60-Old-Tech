@@ -1,0 +1,153 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://menu/menu_show.gd" id="1_show"]
+[ext_resource type="Script" path="res://core/menu_act.gd" id="2_act"]
+[ext_resource type="Script" path="res://core/menu_piece.gd" id="3_piece"]
+[ext_resource type="Resource" path="res://data/bridge/log.tres" id="log"]
+[ext_resource type="Resource" path="res://data/bridge/support.tres" id="support"]
+[ext_resource type="PackedScene" path="res://world/background/background.tscn" id="4_background"]
+[ext_resource type="PackedScene" path="res://game/world.tscn" id="5_world"]
+
+[sub_resource type="Resource" id="act_left_0"]
+script = ExtResource("3_piece")
+from = Vector2(46, 20)
+to = Vector2(50, 20)
+material = ExtResource("log")
+
+[sub_resource type="Resource" id="act_left_1"]
+script = ExtResource("3_piece")
+from = Vector2(50, 20)
+to = Vector2(54, 20)
+material = ExtResource("log")
+
+[sub_resource type="Resource" id="act_left_2"]
+script = ExtResource("3_piece")
+from = Vector2(46, 23)
+to = Vector2(50, 20)
+material = ExtResource("support")
+
+[sub_resource type="Resource" id="act_left_3"]
+script = ExtResource("3_piece")
+from = Vector2(54, 23)
+to = Vector2(50, 20)
+material = ExtResource("support")
+
+[sub_resource type="Resource" id="act_left"]
+script = ExtResource("2_act")
+engineers = 3
+soldiers = 14
+pieces = Array[ExtResource("3_piece")]([SubResource("act_left_0"), SubResource("act_left_1"), SubResource("act_left_2"), SubResource("act_left_3")])
+give_way_at = 5
+give_way_past = 0.65
+breaks = PackedInt32Array(2, 0)
+break_stagger = 0.35
+
+[sub_resource type="Resource" id="act_middle_0"]
+script = ExtResource("3_piece")
+from = Vector2(46, 20)
+to = Vector2(48.5, 20)
+material = ExtResource("log")
+
+[sub_resource type="Resource" id="act_middle_1"]
+script = ExtResource("3_piece")
+from = Vector2(48.5, 20)
+to = Vector2(51.5, 20)
+material = ExtResource("log")
+
+[sub_resource type="Resource" id="act_middle_2"]
+script = ExtResource("3_piece")
+from = Vector2(51.5, 20)
+to = Vector2(54, 20)
+material = ExtResource("log")
+
+[sub_resource type="Resource" id="act_middle_3"]
+script = ExtResource("3_piece")
+from = Vector2(46, 23.5)
+to = Vector2(48.5, 20)
+material = ExtResource("support")
+
+[sub_resource type="Resource" id="act_middle_4"]
+script = ExtResource("3_piece")
+from = Vector2(54, 23.5)
+to = Vector2(51.5, 20)
+material = ExtResource("support")
+
+[sub_resource type="Resource" id="act_middle"]
+script = ExtResource("2_act")
+engineers = 2
+soldiers = 16
+pieces = Array[ExtResource("3_piece")]([SubResource("act_middle_0"), SubResource("act_middle_1"), SubResource("act_middle_2"), SubResource("act_middle_3"), SubResource("act_middle_4")])
+give_way_at = 4
+give_way_past = 0.75
+breaks = PackedInt32Array(1)
+break_stagger = 0.3
+
+[sub_resource type="Resource" id="act_right_0"]
+script = ExtResource("3_piece")
+from = Vector2(46, 20)
+to = Vector2(50, 20)
+material = ExtResource("log")
+
+[sub_resource type="Resource" id="act_right_1"]
+script = ExtResource("3_piece")
+from = Vector2(50, 20)
+to = Vector2(54, 20)
+material = ExtResource("log")
+
+[sub_resource type="Resource" id="act_right_2"]
+script = ExtResource("3_piece")
+from = Vector2(46, 23)
+to = Vector2(50, 20)
+material = ExtResource("support")
+
+[sub_resource type="Resource" id="act_right_3"]
+script = ExtResource("3_piece")
+from = Vector2(54, 23)
+to = Vector2(50, 20)
+material = ExtResource("support")
+
+[sub_resource type="Resource" id="act_right"]
+script = ExtResource("2_act")
+engineers = 4
+soldiers = 12
+pieces = Array[ExtResource("3_piece")]([SubResource("act_right_0"), SubResource("act_right_1"), SubResource("act_right_2"), SubResource("act_right_3")])
+give_way_at = 8
+give_way_past = 0.8
+breaks = PackedInt32Array(3, 1)
+break_stagger = 0.6
+
+[sub_resource type="Gradient" id="depths"]
+offsets = PackedFloat32Array(0, 0.35, 1)
+colors = PackedColorArray(0.0588, 0.0824, 0.1137, 0, 0.0588, 0.0824, 0.1137, 1, 0.0588, 0.0824, 0.1137, 1)
+
+[sub_resource type="GradientTexture2D" id="depths_tex"]
+gradient = SubResource("depths")
+width = 1
+height = 64
+fill_to = Vector2(0, 1)
+
+[node name="MenuShow" type="Node2D"]
+script = ExtResource("1_show")
+sun = 0.12
+acts = Array[ExtResource("2_act")]([SubResource("act_left"), SubResource("act_middle"), SubResource("act_right")])
+
+[node name="Background" parent="." instance=ExtResource("4_background")]
+
+[node name="Depths" type="Sprite2D" parent="."]
+position = Vector2(1408, 640)
+scale = Vector2(384, 10)
+texture = SubResource("depths_tex")
+centered = false
+
+[node name="World" parent="." instance=ExtResource("5_world")]
+unique_name_in_owner = true
+
+[node name="Birds" parent="World"]
+cross_interval = Vector2(5, 12)
+
+[node name="Camera" type="Camera2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(768, 176)
+anchor_mode = 0
+
+[editable path="World"]

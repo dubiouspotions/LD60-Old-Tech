@@ -7,6 +7,9 @@ extends Node2D
 ## A level is a template: the World stitches it on so its StartFlag meets the previous level's ExitFlag,
 ## copying the ground from the StartFlag column on and moving its objects along.
 
+## The game a level run on its own (Run Current Scene) starts.
+const GAME_SCENE: String = "res://game/main.tscn"
+
 @export var display_name: String = ""
 @export var music: AudioStream
 ## Soldiers that join when the column arrives here (not on the first level). -1 uses the campaign's
@@ -40,7 +43,7 @@ func _ready() -> void:
     # Run on its own (Run Current Scene in the editor): play the game from this level.
     if get_tree().current_scene == self:
         GameState.start_level = scene_file_path
-        get_tree().change_scene_to_file.call_deferred(ProjectSettings.get_setting("application/run/main_scene"))
+        get_tree().change_scene_to_file.call_deferred(GAME_SCENE)
 
 
 ## Supplies dropped when the column arrives here: Supply Drop, or the campaign's Checkpoint Supplies.
