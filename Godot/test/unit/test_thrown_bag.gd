@@ -182,13 +182,29 @@ func test_with_no_room_to_step_up_it_breaks_on_the_soldier() -> void:
 	bag.free()
 
 
-func test_a_soldier_in_the_air_does_not_get_it_under_them() -> void:
+## Marching soldiers hop up and down steps: one in the air still gets it on the ground under them.
+func test_a_soldier_in_the_air_gets_it_on_the_ground_under_them() -> void:
 	world.army.spawn(1, 12.5)
 	var s := world.army.soldiers[0]
 	s.airborne = true
+	s.pos.y = 7.6
 	var bag: FallingBlock = _sandbag_tool().spawn_scene.instantiate()
-	assert_false(bag.land_under(world, s))
+	assert_true(bag.land_under(world, s))
 	bag.free()
+	assert_eq(world.terrain.type_at(Vector2i(12, 7)), WorldFixture.type("sandbag"), "on the ground under them")
+	assert_almost_eq(s.pos.y, 7.0, 0.01, "their feet were in that cell: lifted onto it")
+
+
+func test_one_high_in_the_air_is_not_lifted() -> void:
+	world.army.spawn(1, 12.5)
+	var s := world.army.soldiers[0]
+	s.airborne = true
+	s.pos.y = 5.0
+	var bag: FallingBlock = _sandbag_tool().spawn_scene.instantiate()
+	assert_true(bag.land_under(world, s))
+	bag.free()
+	assert_eq(world.terrain.type_at(Vector2i(12, 7)), WorldFixture.type("sandbag"))
+	assert_almost_eq(s.pos.y, 5.0, 0.01, "left to come down onto it")
 
 
 func test_everyone_standing_in_the_cell_steps_up() -> void:
@@ -227,11 +243,14 @@ func test_a_sandbag_falling_on_an_engineer_lands_under_them_and_they_step_up() -
 	assert_almost_eq(e.pos.y, 7.0, 0.01, "standing on it")
 
 
-func test_an_engineer_on_the_bridge_does_not_get_it_under_them() -> void:
+func test_an_engineer_up_on_the_bridge_gets_it_on_the_ground_under_them() -> void:
 	_crew(1, 14.0)
 	var e := world.crew.engineers[0]
 	e.at = Bridge.Joint.new()
+	e.pos = Vector2(14.5, 5.0)
 	var bag: FallingBlock = _sandbag_tool().spawn_scene.instantiate()
-	assert_false(bag.land_under(world, e))
+	assert_true(bag.land_under(world, e))
 	bag.free()
 	e.at = null
+	assert_eq(world.terrain.type_at(Vector2i(14, 7)), WorldFixture.type("sandbag"))
+	assert_almost_eq(e.pos.y, 5.0, 0.01, "still up there")
