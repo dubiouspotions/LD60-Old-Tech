@@ -20,6 +20,9 @@ extends Node2D
 @export_range(0.0, 300.0, 1.0, "suffix:s") var march_delay: float = 30.0
 ## The Camp Shoppe (soldiers and engineers for gold) opens at this level's camp.
 @export var camp_shoppe: bool = true
+## How many birds hide in this level's grass and trees. Empty uses the World's default (data/bird_settings.tres),
+## so set it only for a level that should be different.
+@export var birds: BirdSettings
 ## Regrows the tall grass now, for example after moving a flag or an object.
 @export_tool_button("Regrow Grass", "Reload") var regrow: Callable = regrow_grass
 

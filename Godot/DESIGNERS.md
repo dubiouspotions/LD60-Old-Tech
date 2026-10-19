@@ -144,8 +144,10 @@ objects. Moved a flag or an object? Press **Regrow Grass** on the level root.
   grass TileSet's atlas, because the frames are read straight from the sheet.
 - **Birds** hide in the grass. When a soldier or engineer comes within **Flush Distance** of a patch (joined grass
   cells), the patch's birds burst out once, flying up and away from whoever came. Tune it on the **Birds** node in
-  `game/world.tscn`: **Chance** a patch hides birds (0.3: most patches are empty), how many (**Per Patch**), and the
-  **Colors** they come in. The same node sends **Tree Birds** (1–2) off the top of every tree that comes down
+  `game/world.tscn`: its **Settings** (`data/bird_settings.tres`) hold the **Chance** a patch hides birds (0.3: most
+  patches are empty), how many (**Per Patch**), **Tree Birds** and **First Chop Birds**; the node has the **Colors** they
+  come in. A level can hide more or fewer: give its root node its own **Birds** settings (empty uses the default). The
+  node sends **Tree Birds** (1–2) off the top of every tree that comes down
   (chopped, or its ground gone), both ways, and **First Chop Birds** (0–1) at the first swing of the axe at a tree, and now and then by day one bird across the view (**Cross Interval** seconds apart,
   in the top **Cross Height** of the view; none during the night camp). The flight (speed, climb, lift, flap speed,
   life) is on `objects/bird/bird.tscn`; each bird starts its flap on a random frame.

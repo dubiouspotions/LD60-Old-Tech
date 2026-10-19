@@ -162,6 +162,15 @@ func sun_progress() -> float:
 	return clampf((lead.pos.x - start) / maxf(c.exit_flag.metres().x - start, 0.01), 0.0, 1.0)
 
 
+## The level that owns world column x (the last one whose seam is at or left of it), or null.
+func chunk_at(x: float) -> Chunk:
+	var best: Chunk = null
+	for c: Chunk in _chunks.values():
+		if c.seam <= x and (best == null or c.seam > best.seam):
+			best = c
+	return best
+
+
 func current_chunk() -> Chunk:
 	return chunk(current)
 
