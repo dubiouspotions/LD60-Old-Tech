@@ -37,13 +37,9 @@ layer = -10
 
 [node name="SkyTint" type="CanvasModulate" parent="." unique_id=791415413]
 
-[node name="BakgrPixel2" type="Sprite2D" parent="." unique_id=1313363246]
-position = Vector2(986.5024, 182.50003)
-scale = Vector2(0.45616117, 0.45616117)
-texture = ExtResource("1_7yj74")
-
-[node name="BakgrPixel" type="Sprite2D" parent="BakgrPixel2" unique_id=291553377]
-position = Vector2(-1502.2788, 0)
+[node name="BakgrPixel" type="Sprite2D" parent="." unique_id=291553377]
+position = Vector2(630, 187.70143)
+scale = Vector2(5.946831, 5.946831)
 texture = ExtResource("1_7yj74")
 
 [node name="Sky" type="TextureRect" parent="." unique_id=489870164]
@@ -59,6 +55,7 @@ expand_mode = 1
 
 [node name="Stars" type="Node2D" parent="." unique_id=1075721722 node_paths=PackedStringArray("tint")]
 script = ExtResource("2_stars")
+parallax = null
 tint = NodePath("../SkyTint")
 
 [node name="SunPixel2" type="Sprite2D" parent="." unique_id=263115126]
