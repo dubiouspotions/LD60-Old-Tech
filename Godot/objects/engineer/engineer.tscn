@@ -3,17 +3,18 @@
 [ext_resource type="Script" uid="uid://cv6d17o3vdyex" path="res://objects/soldier/soldier.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://da2uiu4sygq30" path="res://world/engineer_animation.png" id="2_8k416"]
 [ext_resource type="Script" path="res://game/night_light.gd" id="night_light"]
+[ext_resource type="Script" path="res://post/dithered_light_texture.gd" id="dithered_light"]
+[ext_resource type="Resource" path="res://data/light_dither.tres" id="light_dither"]
 
 [sub_resource type="Gradient" id="lamp_g"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
 
-[sub_resource type="GradientTexture2D" id="lamp_tex"]
+[sub_resource type="ImageTexture" id="lamp_tex"]
+resource_local_to_scene = true
+script = ExtResource("dithered_light")
+dither = ExtResource("light_dither")
 gradient = SubResource("lamp_g")
-width = 128
-height = 128
-fill = 1
-fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(1, 0.5)
+size = 116
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_clonx"]
 atlas = ExtResource("2_8k416")
@@ -230,7 +231,6 @@ color = Color(1, 0.8, 0.5, 1)
 energy = 0.0
 blend_mode = 2
 texture = SubResource("lamp_tex")
-texture_scale = 0.9
 script = ExtResource("night_light")
 night_energy = 1.0
 

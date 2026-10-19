@@ -26,6 +26,11 @@ extends Node
 	set(v):
 		terrain_look = v
 		notify_property_list_changed()
+## How the night lights' fade is dithered.
+@export var light_dither: LightDither:
+	set(v):
+		light_dither = v
+		notify_property_list_changed()
 ## Terrain types whose dig and fell yields are listed.
 @export var terrain_types: Array[TerrainType] = []:
 	set(v):
@@ -40,12 +45,16 @@ class Entry:
 	## Resource saved after an edit in the editor (the target, or the resource that holds it).
 	var owner: Resource
 	var hint: String
+	## PROPERTY_HINT_RANGE (with a hint) or PROPERTY_HINT_ENUM (hint lists the names).
+	var hint_type: int
 
-	func _init(p_target: Object, p_property: StringName, p_owner: Resource, p_hint: String) -> void:
+	func _init(p_target: Object, p_property: StringName, p_owner: Resource, p_hint: String,
+			p_hint_type: int = PROPERTY_HINT_RANGE) -> void:
 		target = p_target
 		property = p_property
 		owner = p_owner
 		hint = p_hint
+		hint_type = p_hint_type
 
 
 const COUNT_HINT: String = "0,999,1,or_greater"
@@ -60,7 +69,7 @@ func _get_property_list() -> Array[Dictionary]:
 		out.append({
 			name = n,
 			type = typeof(value),
-			hint = PROPERTY_HINT_RANGE if not e.hint.is_empty() else PROPERTY_HINT_NONE,
+			hint = e.hint_type if not e.hint.is_empty() else PROPERTY_HINT_NONE,
 			hint_string = e.hint,
 			usage = PROPERTY_USAGE_EDITOR,
 		})
@@ -87,6 +96,18 @@ func _entries() -> Dictionary:
 	var out := {}
 	if terrain_look:
 		out["art/terrain_v2"] = Entry.new(terrain_look, &"enabled", terrain_look, "")
+	if light_dither:
+		var d := light_dither
+		out["art/light_dither/enabled"] = Entry.new(d, &"enabled", d, "")
+		out["art/light_dither/pixel_size"] = Entry.new(d, &"pixel_size", d, "1,16,1,suffix:px")
+		out["art/light_dither/steps"] = Entry.new(d, &"steps", d, "1,16,1")
+		out["art/light_dither/pattern"] = Entry.new(d, &"pattern", d, ",".join(
+				LightDither.Pattern.keys().map(func(k: String) -> String: return k.capitalize())), PROPERTY_HINT_ENUM)
+		out["art/light_dither/spread"] = Entry.new(d, &"spread", d, "0,1,0.01")
+		out["art/light_dither/world_space"] = Entry.new(d, &"world_space", d, "")
+		out["art/light_dither/animated"] = Entry.new(d, &"animated", d, "")
+		out["art/light_dither/frames_per_second"] = Entry.new(d, &"frames_per_second", d, "0.5,30,0.5,suffix:fps")
+		out["art/light_dither/frames"] = Entry.new(d, &"frames", d, "2,16,1")
 	if campaign:
 		var army := campaign.army_rules
 		out["army/start_soldiers"] = Entry.new(campaign, &"start_soldiers", campaign, "1,200,1")
