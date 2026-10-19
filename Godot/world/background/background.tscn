@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://c73lcp72kblab" path="res://world/background/paralax_back.png" id="5_back"]
 [ext_resource type="Texture2D" uid="uid://c2g1qcu0g83x2" path="res://world/background/paralax_far.png" id="6_d8gkv"]
 [ext_resource type="Texture2D" uid="uid://dwqvyfgwaj0ro" path="res://world/background/paralax_front.png" id="6_front"]
+[ext_resource type="Texture2D" uid="uid://p7tklrx7tjmi" path="res://world/background/paralax_fade.png" id="9_jf2at"]
 
 [sub_resource type="Gradient" id="sky"]
 offsets = PackedFloat32Array(0, 0.55, 1)
@@ -36,9 +37,13 @@ layer = -10
 
 [node name="SkyTint" type="CanvasModulate" parent="." unique_id=791415413]
 
-[node name="BakgrPixel" type="Sprite2D" parent="." unique_id=291553377]
-position = Vector2(781.1399, 432.00003)
-scale = Vector2(1.0394976, 1.028436)
+[node name="BakgrPixel2" type="Sprite2D" parent="." unique_id=1313363246]
+position = Vector2(986.5024, 182.50003)
+scale = Vector2(0.45616117, 0.45616117)
+texture = ExtResource("1_7yj74")
+
+[node name="BakgrPixel" type="Sprite2D" parent="BakgrPixel2" unique_id=291553377]
+position = Vector2(-1502.2788, 0)
 texture = ExtResource("1_7yj74")
 
 [node name="Sky" type="TextureRect" parent="." unique_id=489870164]
@@ -58,7 +63,7 @@ tint = NodePath("../SkyTint")
 
 [node name="SunPixel2" type="Sprite2D" parent="." unique_id=263115126]
 position = Vector2(895.5, 171.72)
-scale = Vector2(0.4129388, 0.41293874)
+scale = Vector2(0.293, 0.293)
 texture = ExtResource("3_7yj74")
 script = ExtResource("4_sun")
 
@@ -83,11 +88,24 @@ repeat_size = Vector2(892.8, 0)
 repeat_times = 4
 follow_viewport = false
 
-[node name="Art" type="Sprite2D" parent="Mountains"]
+[node name="Art" type="Sprite2D" parent="Mountains" unique_id=1579004190]
 position = Vector2(0, 273.6)
 scale = Vector2(1.74375, 1.74375)
 texture = ExtResource("6_d8gkv")
 centered = false
+
+[node name="Fog2" type="Parallax2D" parent="." unique_id=1781191939]
+scroll_scale = Vector2(0.13, 0.052)
+repeat_size = Vector2(1612.8, 0)
+repeat_times = 4
+follow_viewport = false
+
+[node name="Art" type="Sprite2D" parent="Fog2" unique_id=1828170569]
+position = Vector2(0, 316.8)
+scale = Vector2(3.15, 3.15)
+texture = ExtResource("9_jf2at")
+centered = false
+offset = Vector2(0, -13.18)
 
 [node name="RidgeFar" type="Parallax2D" parent="." unique_id=1408284584]
 scroll_scale = Vector2(0.25, 0.1)
@@ -95,11 +113,24 @@ repeat_size = Vector2(1612.8, 0)
 repeat_times = 4
 follow_viewport = false
 
-[node name="Art" type="Sprite2D" parent="RidgeFar"]
+[node name="Art" type="Sprite2D" parent="RidgeFar" unique_id=990096453]
 position = Vector2(0, 316.8)
 scale = Vector2(3.15, 3.15)
 texture = ExtResource("5_back")
 centered = false
+
+[node name="Fog" type="Parallax2D" parent="." unique_id=1393696054]
+scroll_scale = Vector2(0.25, 0.1)
+repeat_size = Vector2(1612.8, 0)
+repeat_times = 4
+follow_viewport = false
+
+[node name="Art" type="Sprite2D" parent="Fog" unique_id=1636145011]
+position = Vector2(0, 316.8)
+scale = Vector2(3.15, 3.15)
+texture = ExtResource("9_jf2at")
+centered = false
+offset = Vector2(0, 14.565)
 
 [node name="RidgeNear" type="Parallax2D" parent="." unique_id=151638868]
 scroll_scale = Vector2(0.5, 0.2)
@@ -107,13 +138,13 @@ repeat_size = Vector2(1440, 0)
 repeat_times = 4
 follow_viewport = false
 
-[node name="Art" type="Sprite2D" parent="RidgeNear"]
+[node name="Art" type="Sprite2D" parent="RidgeNear" unique_id=2144635621]
 position = Vector2(0, 360)
 scale = Vector2(2.8125, 2.8125)
 texture = ExtResource("6_front")
 centered = false
 
-[node name="Fill" type="ColorRect" parent="RidgeNear"]
+[node name="Fill" type="ColorRect" parent="RidgeNear" unique_id=842673564]
 offset_top = 719.0
 offset_right = 1440.0
 offset_bottom = 1439.0
