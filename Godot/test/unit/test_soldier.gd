@@ -84,3 +84,32 @@ func test_a_moment_standing_does_not_reset_the_walk_cycle() -> void:
 	engineer.sync()
 	await wait_process_frames(1)
 	assert_true(art.is_playing())
+
+
+
+## Offset (pixels) of the engineer's node from where its feet are.
+func _offset(engineer: Soldier) -> Vector2:
+	engineer.sync()
+	return engineer.position - Grid.to_px(engineer.pos)
+
+
+## Each blow at work (digging or chopping) jolts the engineer work_shake_px towards the work for work_shake_time,
+## then it stands still again until the next blow.
+func test_each_blow_jolts_an_engineer_a_pixel_towards_its_work() -> void:
+	var engineer: Soldier = load("res://objects/engineer/engineer.tscn").instantiate()
+	add_child_autofree(engineer)
+	assert_eq(engineer.work_shake_px, 1.0)
+	assert_gt(engineer.work_shake_time, 0.0)
+	engineer.pos = Vector2(5.0, 5.0)
+	assert_eq(_offset(engineer), Vector2.ZERO, "still before any blow")
+	for case: Array in [[Vector2(3.0, -0.4), Vector2(1, 0)], [Vector2(-2.0, 0.1), Vector2(-1, 0)],
+			[Vector2(0.1, 2.0), Vector2(0, 1)], [Vector2(1.0, 1.0), Vector2(1, 1)]]:
+		engineer.facing = -1
+		engineer.work_blow(case[0])
+		assert_eq(_offset(engineer), case[1], "towards the work %s" % case[0])
+		engineer._process(engineer.work_shake_time * 0.5)
+		assert_eq(_offset(engineer), case[1], "for a moment")
+		engineer._process(engineer.work_shake_time)
+		assert_eq(_offset(engineer), Vector2.ZERO, "then back, with no shaking until the next blow")
+		engineer._process(1.0)
+		assert_eq(_offset(engineer), Vector2.ZERO, "still")

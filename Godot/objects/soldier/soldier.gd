@@ -8,6 +8,11 @@ extends Node2D
 @export_range(0.0, 2.0, 0.05, "suffix:s") var hurt_flash_time: float = 0.3
 ## Seconds standing still before the idle animation starts, so brief stops do not restart the walk cycle.
 @export_range(0.0, 2.0, 0.05, "suffix:s") var idle_delay: float = 0.25
+## On each blow at work (an engineer digging or chopping, on the beat of the work sound), it jolts this many
+## pixels towards the work...
+@export_range(0.0, 8.0, 1.0, "suffix:px") var work_shake_px: float = 1.0
+## ...for this long, then stands still until the next blow.
+@export_range(0.01, 1.0, 0.01, "suffix:s") var work_shake_time: float = 0.08
 
 ## Simulation state, in metres. Owned by Army.
 var pos: Vector2
@@ -46,6 +51,9 @@ var deserting: bool = false
 var desert_left: float = 0.0
 ## A deserter climbing a wall face (gravity is off meanwhile). Owned by Army.
 var climbing: bool = false
+## The way to the work of the last blow, and the seconds its jolt still lasts.
+var _blow_dir: Vector2 = Vector2.ZERO
+var _blow_left: float = 0.0
 
 @onready var _anim: AnimationPlayer = %AnimationPlayer
 @onready var _body: CanvasItem = %Body
@@ -70,7 +78,7 @@ func stand_on(surface: Dictionary) -> void:
 
 ## Copies sim state to the node. Called by Army after each step.
 func sync() -> void:
-	position = Grid.to_px(pos)
+	position = Grid.to_px(pos) + work_shake()
 	scale.x = facing
 	%Wounded.visible = hp < max_hp
 	var lying := sleeping and _asleep != null
@@ -98,6 +106,25 @@ func tent_bottom() -> float:
 
 func _process(delta: float) -> void:
 	_stood = 0.0 if moving else _stood + delta
+	_blow_left = maxf(_blow_left - delta, 0.0)
+
+
+## A blow at the work that lies the way dir (from its chest): it jolts towards it for work_shake_time.
+func work_blow(dir: Vector2) -> void:
+	_blow_dir = dir
+	_blow_left = work_shake_time
+	sync()
+
+
+## Where the jolt of the last blow puts it (pixels from its feet): work_shake_px towards the work, one of eight
+## ways, while it lasts, else nothing.
+func work_shake() -> Vector2:
+	if _blow_left <= 0.0 or _blow_dir == Vector2.ZERO:
+		return Vector2.ZERO
+	var d := _blow_dir.normalized()
+	# Within 22.5 degrees of an axis, straight along it; otherwise diagonal.
+	var way := Vector2(signf(d.x) if absf(d.x) > 0.38 else 0.0, signf(d.y) if absf(d.y) > 0.38 else 0.0)
+	return (way * work_shake_px).round()
 
 
 func flash_hurt() -> void:

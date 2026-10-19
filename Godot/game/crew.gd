@@ -54,6 +54,9 @@ class Engineer:
 	var spot_x: float
 	## Working this tick (building or digging).
 	var working: bool = false
+	## The way from its chest to what it digs, chops, builds or takes apart this tick, else zero: it jolts that way
+	## on each blow.
+	var blow_dir: Vector2 = Vector2.ZERO
 	## Seconds to the next swing of the axe while felling.
 	var chop_wait: float = 0.0
 	## Builds the job from the ground standing at this x (a plan not connected to anything), else NAN.
@@ -176,6 +179,7 @@ func step(dt: float) -> void:
 	for i in engineers.size():
 		var e := engineers[i]
 		e.working = false
+		e.blow_dir = Vector2.ZERO
 		if e.at and e.at.degree == 0:
 			_let_go(e)
 			e.route.clear()
@@ -566,6 +570,7 @@ func _dig_step(e: Engineer, dt: float) -> void:
 		e.digging = false
 		return
 	e.working = true
+	e.blow_dir = target - (e.pos - Vector2(0, 0.5))
 	var t := terrain.type_at(e.dig)
 	var done := terrain.dig_progress(e.dig) + dt * rules.dig_speed / t.dig_time
 	terrain.set_dig_progress(e.dig, done)
@@ -576,6 +581,7 @@ func _dig_step(e: Engineer, dt: float) -> void:
 			chopped.emit(e.dig)
 	_show(e, false, signi(roundi((target.x - e.pos.x) * 100)))
 	if done >= 1.0:
+		_final_blow(e)
 		e.digging = false
 		_finisher = e
 		dig_finished.emit(e.dig)
@@ -807,8 +813,12 @@ func _work(e: Engineer, dt: float) -> void:
 		m.progress = maxf(0.0, m.progress - step)
 	else:
 		m.progress = minf(1.0, m.progress + step)
+	# It works at the end of what is built so far.
+	var far := m.b if m.from_joint == m.a else m.a
+	e.blow_dir = m.from_joint.pos.lerp(far.pos, m.progress) - (e.pos - Vector2(0, 0.5))
 	if m.progress > 0.0 and m.progress < 1.0:
 		return
+	_final_blow(e)
 	e.job = null
 	e.goal = null
 	e.reach_x = NAN
@@ -816,6 +826,12 @@ func _work(e: Engineer, dt: float) -> void:
 		dismantled.emit(m)
 	else:
 		bridge.finish(m)
+
+
+## The blow that finishes a job (the cell breaks, the piece is put in place): a jolt with the sound of it.
+func _final_blow(e: Engineer) -> void:
+	if e.blow_dir != Vector2.ZERO:
+		e.node.work_blow(e.blow_dir)
 
 
 ## Takes the engineer off the joint it holds. A joint bolted to a wall lies on the wall's line, which counts as the
@@ -1060,6 +1076,10 @@ func _update_work_sound(dt: float) -> void:
 	for e in engineers:
 		if e.working:
 			_work_sound_left = rules.work_sound_interval
+			# Everyone at work strikes on the blow you hear.
+			for d in engineers:
+				if d.blow_dir != Vector2.ZERO:
+					d.node.work_blow(d.blow_dir)
 			Audio.play(rules.work_sound, Grid.to_px(e.pos))
 			return
 

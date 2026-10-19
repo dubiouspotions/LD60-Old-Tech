@@ -144,6 +144,58 @@ func test_crew_digs_marked_soil() -> void:
 	assert_eq(GameState.supplies.earth, earth + 1)
 
 
+## Steps the world until done(), counting the work sound's blows and each engineer's jolts (with the point of each
+## jolt checked against where(e)). Returns [blows heard, {engineer: jolts}].
+func _count_jolts(seconds: float, done: Callable, where: Callable) -> Array:
+	var blows := [0]
+	var listen := func(sfx: SoundEffect) -> void:
+		if sfx == world.crew.rules.work_sound:
+			blows[0] += 1
+	Audio.played.connect(listen)
+	var jolts := {}
+	var was := {}
+	_run(seconds, func() -> bool:
+		for e: Crew.Engineer in world.crew.engineers:
+			e.node._process(1.0 / 60.0) # the frame that passes with each step here
+			var now: bool = e.node.work_shake() != Vector2.ZERO
+			if now and not was.get(e, false):
+				jolts[e] = jolts.get(e, 0) + 1
+				var to: Vector2 = where.call(e) - (e.pos - Vector2(0, 0.5))
+				assert_gt(e.node.work_shake().dot(to), 0.0, "towards the work")
+			was[e] = now
+		return done.call())
+	Audio.played.disconnect(listen)
+	return [blows[0], jolts]
+
+
+## The engineer digging (or chopping) jolts towards its work once on every blow you hear, the last being the one
+## that breaks the cell (soil breaks with the same sound), and not in between; the others stay still.
+func test_the_digger_jolts_once_per_audible_blow() -> void:
+	var cell := Vector2i(3, 6)
+	world.terrain.mark(cell)
+	var counted := _count_jolts(12.0, func() -> bool: return world.terrain.type_at(cell) == null,
+			func(_e: Crew.Engineer) -> Vector2: return Vector2(cell) + Vector2(0.5, 0.5))
+	assert_null(world.terrain.type_at(cell), "dug")
+	var jolts: Dictionary = counted[1]
+	assert_eq(jolts.size(), 1, "only the digger jolts")
+	assert_gt(counted[0], 1, "several blows heard")
+	assert_eq(jolts.values()[0], counted[0], "one jolt per blow heard")
+
+
+## Building a bridge piece jolts its builder towards the piece on every blow you hear, and once more as it is put
+## in place (with the material's place sound).
+func test_the_builder_jolts_once_per_audible_blow() -> void:
+	var m := _plan(Vector2(6, 6), Vector2(8, 6))
+	world.bridge.order_blueprints()
+	var counted := _count_jolts(30.0, func() -> bool: return not m.blueprint,
+			func(_e: Crew.Engineer) -> Vector2: return (m.a.pos + m.b.pos) / 2.0)
+	assert_false(m.blueprint, "built")
+	var jolts: Dictionary = counted[1]
+	assert_eq(jolts.size(), 1, "only the builder jolts")
+	assert_gt(counted[0], 1, "several blows heard")
+	assert_eq(jolts.values()[0], counted[0] + 1, "one jolt per blow, and one as it is placed")
+
+
 func test_crew_digs_down_into_its_own_hole() -> void:
 	world.terrain.mark(Vector2i(3, 6))
 	world.terrain.mark(Vector2i(3, 7))
