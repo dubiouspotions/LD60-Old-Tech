@@ -81,20 +81,21 @@ expand_mode = 1
 [node name="Mountains" type="Node2D" parent="." unique_id=788620109]
 script = ExtResource("1")
 color = Color(0.4394159, 0.43560198, 0.49686956, 1)
-parallax = 0.06
+parallax = 0.13
 texture = ExtResource("6_d8gkv")
 texture_height = 0.62
 
 [node name="RidgeFar" type="Node2D" parent="." unique_id=1408284584]
 script = ExtResource("1")
 color = Color(0.4394159, 0.43560198, 0.49686956, 1)
+parallax = 0.25
 texture = ExtResource("5_back")
 texture_height = 0.56
 
 [node name="RidgeNear" type="Node2D" parent="." unique_id=151638868]
 script = ExtResource("1")
 color = Color(0.2745, 0.3137, 0.4157, 1)
-parallax = 0.32
+parallax = 0.5
 base = 0.86
 frequency = 0.08
 seed_salt = 202
