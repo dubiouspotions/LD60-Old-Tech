@@ -43,6 +43,8 @@ extends Node
 @export var march_sound: SoundEffect
 ## How far above a plan its Build button floats.
 @export var plan_button_rise: float = 0.4
+## Where the HUD's Menu button goes.
+@export_file("*.tscn") var menu_scene: String = "res://menu/main_menu.tscn"
 
 @onready var _world: World = %World
 @onready var _tools: ToolController = %ToolController
@@ -87,6 +89,7 @@ func _ready() -> void:
     _hud.retry_pressed.connect(_retry)
     _hud.restart_level_pressed.connect(_retry)
     _hud.restart_pressed.connect(_restart)
+    _hud.menu_pressed.connect(_to_menu)
     _camera.follow_changed.connect(_hud.set_follow)
     _hud.set_volumes(Audio.volume(_hud.music_bus), Audio.volume(_hud.sound_bus))
     _hud.volume_changed.connect(Audio.set_volume)
@@ -344,6 +347,13 @@ func _restart() -> void:
     _start_at_level(0)
     _tools.enabled = true
     _set_paused(false)
+
+
+## Leaves the game for the main menu, unpaused and at normal speed.
+func _to_menu() -> void:
+    get_tree().paused = false
+    Engine.time_scale = 1.0
+    get_tree().change_scene_to_file(menu_scene)
 
 
 func _update_status() -> void:
