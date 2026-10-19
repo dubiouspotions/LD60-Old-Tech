@@ -514,10 +514,17 @@ func _on_ground_changed(_cell: Vector2i) -> void:
 	_ground_changes += 1
 
 
-## Drops the turns of e's path it has reached.
+## Drops the turns of e's path it has reached: at a turn's x, at its height or settled on the ground there (it got
+## down off a deck at the turn itself, a step before the way did).
 func _trim_path(e: Engineer) -> void:
-	while not e.path.is_empty() and absf(e.path[0].x - e.pos.x) <= 0.05 and absf(e.path[0].y - e.pos.y) <= 0.05:
+	while not e.path.is_empty() and absf(e.path[0].x - e.pos.x) <= 0.05 and (absf(e.path[0].y - e.pos.y) <= 0.05 or _settled(e)):
 		e.path.pop_front()
+
+
+## Stands on the ground (or deck) under it, by the way it is walking.
+func _settled(e: Engineer) -> bool:
+	var ground := _ground_of(e, e.pos.x)
+	return not is_nan(ground) and absf(ground - e.pos.y) <= 0.02
 
 
 ## Walks e toward the next turn of its path, or toward x once all of it is behind.
@@ -707,8 +714,9 @@ func _set_fetch(e: Engineer, p: Wood.Piece) -> void:
 	p.taker = e
 
 
-## Sets e's path to a spot by the piece it fetches, on decks or (if only that way) beneath them. Keeps walking
-## straight at it if there is no such spot (yet: the piece may still be falling).
+## Sets e's path to a spot by the piece it fetches, on decks or (if only that way) beneath them: down a deck to
+## where the ground beneath is within reach, then under it. Keeps walking straight at it if there is no such spot
+## (yet: the piece may still be falling).
 func _route_fetch(e: Engineer, p: Wood.Piece) -> void:
 	for decks: bool in [true, false]:
 		var nav := _nav(e, decks, e.any_height)
@@ -919,11 +927,15 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 ## Ground surface at x for an engineer standing at height y, or NAN if it can not get there:
 ## a hazard, a wall higher than max_climb or a drop deeper than max_drop. Built decks count as ground.
 ## The engineer's own level (within step_up) wins over climbing.
-## With decks false the engineer walks beneath decks instead of on them.
+## With decks false the engineer walks beneath decks instead of on them. A deck over ground it can not get to
+## (too far down, or a hazard) it walks along, to get down past it where the ground beneath is within reach.
 ## any_height lifts max_climb and max_drop.
 func _next_y(y: float, x: float, decks: bool = true, any_height: bool = false) -> float:
 	var level_y := _surface_y(y, x, rules.step_up, decks, any_height)
-	return level_y if not is_nan(level_y) else _surface_y(y, x, INF if any_height else rules.max_climb, decks, any_height)
+	var out := level_y if not is_nan(level_y) else _surface_y(y, x, INF if any_height else rules.max_climb, decks, any_height)
+	if is_nan(out) and not decks:
+		return _next_y(y, x, true, any_height)
+	return out
 
 
 ## _next_y for engineer e where it stands now, by the way it is walking (beneath decks, any height).
