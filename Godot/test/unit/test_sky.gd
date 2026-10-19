@@ -5,6 +5,11 @@ extends GutTest
 const VIEW := Vector2(1280, 720)
 
 
+## The main scene pauses the tree for its intro card.
+func after_each() -> void:
+	get_tree().paused = false
+
+
 func _background() -> CanvasLayer:
 	var bg: CanvasLayer = load("res://world/background/background.tscn").instantiate()
 	add_child_autofree(bg)
@@ -87,3 +92,48 @@ func test_the_game_moves_the_sun() -> void:
 	game._process(0.0)
 	var sun: Sun = game.get_node("Background/SunPixel2")
 	assert_eq(sun.progress, game.get_node("%World").sun_progress())
+
+
+## The light follows the sun along a curve we can edit: full day at midday, full night once it is down, and in
+## between at dawn and sunset.
+func test_the_main_scene_darkens_by_the_sun_along_its_curve() -> void:
+	var game: Game = load("res://game/main.tscn").instantiate()
+	add_child_autofree(game)
+	var dn: DayNight = game.get_node("%DayNight")
+	var curve := dn.darkness_by_sun
+	assert_not_null(curve, "a graph to edit")
+	assert_almost_eq(curve.sample(0.5), 0.0, 0.01, "midday: full day")
+	assert_almost_eq(curve.sample(1.0 + game.get_node("%World").sun_below), 1.0, 0.01, "set: full night")
+	assert_between(curve.sample(0.0), 0.05, 0.95, "dawn: in between")
+	assert_between(curve.sample(1.0), 0.05, 0.95, "sunset: in between")
+
+
+func test_darkness_sets_the_tints_stars_and_grade() -> void:
+	var bg := _background()
+	var dn := DayNight.new()
+	dn.sky_tint = bg.get_node("SkyTint")
+	dn.stars = bg.get_node("Stars")
+	dn.world_tint = CanvasModulate.new()
+	add_child_autofree(dn.world_tint)
+	dn.darkness_by_sun = Curve.new()
+	dn.darkness_by_sun.add_point(Vector2(0.0, 0.25))
+	dn.darkness_by_sun.add_point(Vector2(1.0, 0.25))
+	add_child_autofree(dn)
+	dn.set_sun(0.5)
+	assert_almost_eq(dn.darkness, 0.25, 0.01, "from the curve")
+	assert_almost_eq(dn.stars.amount, 0.25, 0.01)
+	assert_eq(dn.world_tint.color, dn.day_color.lerp(dn.night_world_color, 0.25))
+	assert_eq(dn.sky_tint.color, dn.day_color.lerp(dn.night_sky_color, 0.25))
+	dn.set_night(true)
+	await wait_seconds(dn.fade_time + 0.1)
+	assert_almost_eq(dn.darkness, 0.25, 0.01, "while it follows the sun, nightfall does not override it")
+
+
+func test_the_game_lights_the_world_by_the_sun() -> void:
+	var game: Game = load("res://game/main.tscn").instantiate()
+	add_child_autofree(game)
+	game._begin()
+	game._process(0.0)
+	var dn: DayNight = game.get_node("%DayNight")
+	var world: World = game.get_node("%World")
+	assert_almost_eq(dn.darkness, clampf(dn.darkness_by_sun.sample(world.sun_progress()), 0.0, 1.0), 0.001)

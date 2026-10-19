@@ -44,6 +44,12 @@ background_mode = 3
 adjustment_enabled = true
 adjustment_color_correction = ExtResource("7_wjctj")
 
+
+[sub_resource type="Curve" id="darkness_by_sun"]
+min_domain = -0.2
+max_domain = 1.2
+_data = [Vector2(-0.2, 1), 0.0, 0.0, 0, 0, Vector2(0, 0.55), 0.0, 0.0, 0, 0, Vector2(0.2, 0), 0.0, 0.0, 0, 0, Vector2(0.8, 0), 0.0, 0.0, 0, 0, Vector2(1, 0.55), 0.0, 0.0, 0, 0, Vector2(1.2, 1), 0.0, 0.0, 0, 0]
+point_count = 6
 [node name="Game" type="Node" unique_id=904096967]
 script = ExtResource("1")
 march_sound = ExtResource("6")
@@ -83,6 +89,7 @@ stars = NodePath("../Background/Stars")
 grade = NodePath("../NightGrade/Grade")
 fireflies = NodePath("../LevelHolder/World/AmbientLayer/Fireflies")
 pollen = NodePath("../LevelHolder/World/AmbientLayer/Pollen")
+darkness_by_sun = SubResource("darkness_by_sun")
 
 [node name="Camera" type="Camera2D" parent="." unique_id=1549734198]
 unique_name_in_owner = true

@@ -180,6 +180,7 @@ func _process(_delta: float) -> void:
     _update_lead_marker(lead)
     _update_crew_marker()
     _sun.progress = _world.sun_progress()
+    _day_night.set_sun(_sun.progress)
 
 
 func _begin() -> void:
