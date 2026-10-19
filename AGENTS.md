@@ -4,7 +4,7 @@ Guide for coding agents working in this repo. Player and designer docs: [README.
 
 ## Project
 
-- Sappers' March, a Godot **4.7.2** port of a web prototype. 2D, GL Compatibility renderer, GDScript only.
+- Siege Engineers, a Ludum Dare 60 game in Godot **4.7.2**. 2D, GL Compatibility renderer, GDScript only.
 - The Godot project lives in `Godot/`. CI (`.github/workflows/godot.yml`) runs with `working-directory: Godot`, and the export preset names (`Web`, `Windows Desktop`, `MacOS`, `Linux`) must stay as they are.
 - Local editor binary: `C:/Users/Voxar/Work/Godot/Godot_v4.7.2-stable_win64_console.exe` (called `$GD` below).
 
