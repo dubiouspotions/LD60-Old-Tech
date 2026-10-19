@@ -24,9 +24,8 @@ extends Node2D
 	set(v):
 		sky_height = v
 		queue_redraw()
-## How far the stars drift sideways with the camera: 0 = fixed to the screen, 1 = moves with the world. As the
-## sky's (BakgrPixel) by default, so they stay put against it; below the far hills' (RidgeFar) so they look
-## furthest away. They wrap round the screen.
+## How far the stars drift sideways with the camera: 0 = fixed to the screen, 1 = moves with the world. Keep it
+## below the furthest mountains' Scroll Scale so the stars look furthest away. They wrap round the screen.
 @export_range(0.0, 1.0, 0.001) var parallax: float = 0.02
 ## Size of one star pixel on screen (the art is drawn at 4x).
 @export_range(1, 16) var pixel: int = 4
@@ -58,7 +57,7 @@ var _stars: Array[Vector4] = [] # x 0..1, y 0..1, twinkle speed (Hz), phase; big
 var _meteors: Array[Dictionary] = [] # {pos, vel, age, life}
 var _rng := RandomNumberGenerator.new()
 var _next_meteor: float = -1.0
-## The camera's left edge in metres (as Ridge tracks it), for the parallax.
+## The camera's left edge in metres, for the parallax.
 var _cam_x: float = 0.0
 
 

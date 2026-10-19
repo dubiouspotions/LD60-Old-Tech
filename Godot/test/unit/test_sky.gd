@@ -16,36 +16,69 @@ func _background() -> CanvasLayer:
 	return bg
 
 
-func test_the_hills_and_forest_are_the_new_parallax_art() -> void:
+func test_the_mountains_hills_and_forest_are_the_parallax_art() -> void:
 	var bg := _background()
-	var far: Ridge = bg.get_node("RidgeFar")
-	var near: Ridge = bg.get_node("RidgeNear")
-	assert_eq(far.texture.resource_path, "res://world/background/paralax_back.png")
-	assert_eq(near.texture.resource_path, "res://world/background/paralax_front.png")
-	assert_lt(far.parallax, near.parallax, "the far hills move slower")
+	var mountains: Parallax2D = bg.get_node("Mountains")
+	var far: Parallax2D = bg.get_node("RidgeFar")
+	var near: Parallax2D = bg.get_node("RidgeNear")
+	assert_eq(_art(mountains).texture.resource_path, "res://world/background/paralax_far.png")
+	assert_eq(_art(far).texture.resource_path, "res://world/background/paralax_back.png")
+	assert_eq(_art(near).texture.resource_path, "res://world/background/paralax_front.png")
+	assert_lt(mountains.scroll_scale.x, far.scroll_scale.x, "the mountains move slowest")
+	assert_lt(far.scroll_scale.x, near.scroll_scale.x, "the far hills move slower than the forest")
+	assert_lt(mountains.get_index(), far.get_index(), "the hills in front of the mountains")
 	assert_lt(far.get_index(), near.get_index(), "the forest in front of the hills")
-	assert_lt(bg.get_node("SunPixel2").get_index(), far.get_index(), "the sun sets behind the hills")
+	assert_lt(bg.get_node("SunPixel2").get_index(), mountains.get_index(), "the sun sets behind the mountains")
 
 
-## A textured ridge is tiled across the whole screen, standing on its bottom edge at Texture Height of the screen,
-## and scrolls by its parallax share of the camera's travel.
-func test_a_textured_ridge_tiles_the_screen_and_scrolls_with_its_parallax() -> void:
-	var r: Ridge = _background().get_node("RidgeFar")
-	var tiles := r.tiles(VIEW, Vector2.ZERO)
-	assert_gt(tiles.size(), 0)
-	var h := VIEW.y * r.texture_height
-	var lo := INF
-	var hi := -INF
-	for t in tiles:
-		assert_almost_eq(t.size.y, h, 0.5, "as tall as set")
-		assert_almost_eq(t.end.y, VIEW.y, 0.5, "standing on the bottom of the screen")
-		lo = minf(lo, t.position.x)
-		hi = maxf(hi, t.end.x)
-	assert_lte(lo, 0.0, "from the left edge")
-	assert_gte(hi, VIEW.x, "to the right edge")
-	var moved := r.tiles(VIEW, Vector2(1.0, 0.0))
-	var step := fposmod(tiles[0].position.x - moved[0].position.x, tiles[0].size.x)
-	assert_almost_eq(step, Grid.PX * r.parallax, 0.01, "a metre of camera travel moves it by its parallax share")
+## Each layer's art stands on the bottom of the screen and is repeated, edge to edge, across all of it however the
+## camera has scrolled it.
+func test_each_layer_tiles_the_screen_from_the_bottom() -> void:
+	var bg := _background()
+	for layer_name: String in ["Mountains", "RidgeFar", "RidgeNear"]:
+		var layer: Parallax2D = bg.get_node(layer_name)
+		var art := _art(layer)
+		var size := art.texture.get_size() * art.scale
+		assert_false(art.centered, layer_name)
+		assert_almost_eq(art.position.y + size.y, VIEW.y, 0.5, "%s stands on the bottom of the screen" % layer_name)
+		assert_almost_eq(layer.repeat_size.x, size.x, 0.01, "%s repeats edge to edge" % layer_name)
+		assert_eq(layer.repeat_size.y, 0.0, "%s does not repeat upwards" % layer_name)
+		# Copies run from -(times / 2) to times - times / 2 widths, and scrolling moves the layer by up to one width.
+		var right := (layer.repeat_times - layer.repeat_times / 2) * layer.repeat_size.x
+		assert_gte(right, VIEW.x, "%s reaches the right edge" % layer_name)
+
+
+## On the background CanvasLayer the camera does not move the layers, so each scrolls itself by its Scroll Scale
+## share of the camera's travel: sideways, and up and down.
+func test_a_layer_scrolls_by_its_share_of_the_camera_travel() -> void:
+	var layer: Parallax2D = _background().get_node("RidgeFar")
+	assert_false(layer.follow_viewport, "it is drawn on the screen, not in the world")
+	layer.screen_offset = Vector2.ZERO
+	var start := layer.position
+	layer.screen_offset = Vector2(Grid.PX, Grid.PX)
+	var step := fposmod(start.x - layer.position.x, layer.repeat_size.x)
+	assert_almost_eq(step, Grid.PX * layer.scroll_scale.x, 0.01, "a metre right moves it left by its share")
+	assert_almost_eq(start.y - layer.position.y, Grid.PX * layer.scroll_scale.y, 0.01, "a metre down moves it up by its share")
+
+
+## The camera looking down into a pit lifts the layers, so the front one goes on below its art in the art's bottom
+## colour, and no sky shows under the forest.
+func test_the_front_layer_goes_on_below_its_art() -> void:
+	var near: Parallax2D = _background().get_node("RidgeNear")
+	var art := _art(near)
+	var fill: ColorRect = near.get_node("Fill")
+	var image := art.texture.get_image()
+	assert_eq(fill.color.to_html(false), image.get_pixel(0, image.get_height() - 1).to_html(false), "the art's bottom colour")
+	assert_lte(fill.position.y, art.position.y + art.texture.get_height() * art.scale.y, "no gap under the art")
+	assert_gte(fill.size.y, VIEW.y, "deep enough for any pit")
+	assert_almost_eq(fill.position.x, 0.0, 0.01)
+	assert_gte(fill.size.x, near.repeat_size.x, "repeated edge to edge with the art")
+	assert_eq(fill.mouse_filter, Control.MOUSE_FILTER_IGNORE, "clicks go through to the world")
+	assert_gt(fill.get_index(), art.get_index())
+
+
+func _art(layer: Parallax2D) -> Sprite2D:
+	return layer.get_node("Art")
 
 
 func test_the_sun_crosses_the_sky_from_dawn_to_sunset() -> void:

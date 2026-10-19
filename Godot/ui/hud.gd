@@ -23,6 +23,8 @@ signal retry_pressed
 ## Restart the current level from its checkpoint (any time, not only when lost).
 signal restart_level_pressed
 signal restart_pressed
+## Back to the main menu.
+signal menu_pressed
 ## The player moved a volume slider (0..1) for bus.
 signal volume_changed(bus: StringName, value: float)
 
@@ -97,6 +99,7 @@ func _ready() -> void:
 	%RestartButton.pressed.connect(_emit.bind(restart_level_pressed))
 	%NewWorldButton.pressed.connect(_emit.bind(restart_pressed))
 	%AgainButton.pressed.connect(_emit.bind(restart_pressed))
+	%MenuButton.pressed.connect(_emit.bind(menu_pressed))
 	%SoundButton.toggled.connect(func(on: bool) -> void: %SoundPanel.visible = on)
 	%MusicSlider.value_changed.connect(func(v: float) -> void: volume_changed.emit(music_bus, v))
 	%SoundSlider.value_changed.connect(func(v: float) -> void: volume_changed.emit(sound_bus, v))

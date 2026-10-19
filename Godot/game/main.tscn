@@ -42,8 +42,8 @@ size = 564
 
 [sub_resource type="Curve" id="darkness_by_sun"]
 _limits = [0.0, 1.0, -0.2, 1.2]
-_data = [Vector2(-0.2, 1), 0.0, 0.0, 0, 0, Vector2(0, 0.55), 0.0, 0.0, 0, 0, Vector2(0.2, 0), 0.0, 0.0, 0, 0, Vector2(0.8, 0), 0.0, 0.0, 0, 0, Vector2(1, 0.55), 0.0, 0.0, 0, 0, Vector2(1.2, 1), 0.0, 0.0, 0, 0]
-point_count = 6
+_data = [Vector2(-0.2, 1), 0.0, -4.372428, 0, 0, Vector2(0.0669927, 0), 0.0, 0.0, 0, 0, Vector2(0.9261615, 0), 0.0, 0.0, 0, 0, Vector2(1.2, 1), 4.8351398, 0.0, 0, 0]
+point_count = 4
 
 [sub_resource type="Environment" id="Environment_sfb0x"]
 background_mode = 3

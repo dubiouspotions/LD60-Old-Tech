@@ -35,8 +35,8 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 
 | Area | Files | Notes |
 | --- | --- | --- |
-| Data types | `core/supplies.gd`, `terrain_type.gd`, `bridge_material.gd`, `tool_definition.gd`, `army_rules.gd`, `campaign.gd`, `sound_effect.gd` | Resources, all `@tool`. |
-| Autoloads | `GameState` (campaign progress, supplies, checkpoint, best level in `user://`), `Audio`, `Effects` (`core/effects.tscn`: debris, floating text, shake) | |
+| Data types | `core/supplies.gd`, `terrain_type.gd`, `bridge_material.gd`, `tool_definition.gd`, `army_rules.gd`, `campaign.gd`, `sound_effect.gd`, `menu_act.gd`, `menu_piece.gd` | Resources, all `@tool`. |
+| Autoloads | `GameState` (campaign progress, supplies, checkpoint, best level in `user://`), `Audio` (also the saved volumes), `Settings` (full screen, saved beside the volumes), `Effects` (`core/effects.tscn`: debris, floating text, shake) | |
 | World | `game/world.gd`, `world.tscn` | One continuous world: Terrain, Bridge, Army, Crew, Objects, Flags. Levels are stitched on (`Terrain.stamp`), streamed in with `ResourceLoader.load_threaded_request`, unloaded behind (`Terrain.unload_before`, `min_x`), and rewound for retries. Owns the camp/night cycle (`army.hold`). `World.of(node)` finds it. |
 | Level | `levels/level.gd`, `level_base.tscn` | Templates only, never in the tree while playing: Terrain, Objects, StartFlag, ExitFlag plus settings. Every level inherits `level_base.tscn`. `campaign.levels` holds their paths. |
 | Terrain look | `core/terrain_look.gd`, `data/terrain_look.tres`, `world/tile_rules.gd`, `world/terrain_skin.gd` | v2 tiles (`world/tilemap-terrain.png`) are source 2 of `world/tileset.tres`, each tagged with its material (grass/dirt tiles have one alternative per dirt or rock type). `Terrain` re-picks the tile of every cell around a change with `TileRules`, keeping tiles that still fit, so painted variants survive. Change cells through `set_type` (or retile what you touched) so this happens. `TerrainSkin` draws only the rock overlay (half-cell dual grid), also in the editor. With the look off, the classic old tiles are used. |
@@ -45,6 +45,7 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 | Bridge | `world/bridge.gd` | XPBD truss in SI units (m, kg, N). It only advances when `World._physics_process` steps it. |
 | Army | `game/army.gd`, `objects/soldier/` | Column logic ported from the original `updateUnits`. Soldier nodes only display state. |
 | Flow | `game/game.gd`, `tool_controller.gd`, `camera_rig.gd`, `ui/hud.gd` | The HUD only displays state and emits signals; the Game connects them. |
+| Main menu | `menu/main_menu.tscn` (the main scene), `menu/menu_show.gd`, `core/menu_act.gd`, `ui/settings_menu.gd` | The backdrop is a real World playing `menu/menu_level.tscn`: `MenuShow` swaps a one-level copy of the campaign into `GameState` while it is in the tree, orders each MenuAct's bridge, holds the column short of the bridge (`army.stop_x`) until it stands, and breaks the act's pieces under load. Levels run on their own (F6) still go straight to `game/main.tscn` (`Level.GAME_SCENE`). |
 
 **Units.** Simulation is in metres (1 tile = 1 m, y points down). Node positions are pixels. Convert with `Grid.to_px` / `Grid.to_m` / `Grid.cell_of` (`Grid.PX = 32`).
 

@@ -106,8 +106,7 @@ func test_no_shooting_stars_by_day() -> void:
 func test_stars_scroll_with_their_parallax_and_wrap_round() -> void:
 	var size := Vector2(1280, 720)
 	assert_gt(stars.parallax, 0.0, "the stars move a little")
-	assert_lt(stars.parallax, (bg.get_node("RidgeFar") as Ridge).parallax, "less than the far hills")
-	assert_almost_eq(stars.parallax, (bg.get_node("BakgrPixel") as Ridge).parallax, 0.0001, "with the sky behind them")
+	assert_lt(stars.parallax, (bg.get_node("Mountains") as Parallax2D).scroll_scale.x, "less than the furthest mountains")
 	var still := stars.star_position(0, size, 0.0)
 	var moved := stars.star_position(0, size, 100.0)
 	var shift := 100.0 * Grid.PX * stars.parallax
