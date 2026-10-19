@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://game/world.tscn" id="7"]
 [ext_resource type="CompressedTexture3D" uid="uid://bgadupm8eb0qp" path="res://post/lut/low_17.png" id="7_wjctj"]
 [ext_resource type="Script" uid="uid://crrmlhkv6vxe2" path="res://game/day_night.gd" id="8"]
+[ext_resource type="Script" uid="uid://ca75egepikcsf" path="res://post/dithered_light_texture.gd" id="dithered_light"]
+[ext_resource type="Resource" uid="uid://c61m6belumbvm" path="res://data/light_dither.tres" id="light_dither"]
 [ext_resource type="PackedScene" path="res://post/night_grade.tscn" id="night_grade"]
 [ext_resource type="Script" uid="uid://c8r3dftjopu1t" path="res://game/night_light.gd" id="night_light"]
 [ext_resource type="Resource" path="res://data/archer_rules.tres" id="vt_archer"]
@@ -31,25 +33,23 @@
 [sub_resource type="Gradient" id="lantern_g"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
 
-[sub_resource type="GradientTexture2D" id="lantern_tex"]
+[sub_resource type="ImageTexture" id="lantern_tex"]
+resource_local_to_scene = true
+script = ExtResource("dithered_light")
+dither = ExtResource("light_dither")
 gradient = SubResource("lantern_g")
-width = 256
-height = 256
-fill = 1
-fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(1, 0.5)
+size = 564
+
+[sub_resource type="Curve" id="darkness_by_sun"]
+_limits = [0.0, 1.0, -0.2, 1.2]
+_data = [Vector2(-0.2, 1), 0.0, 0.0, 0, 0, Vector2(0, 0.55), 0.0, 0.0, 0, 0, Vector2(0.2, 0), 0.0, 0.0, 0, 0, Vector2(0.8, 0), 0.0, 0.0, 0, 0, Vector2(1, 0.55), 0.0, 0.0, 0, 0, Vector2(1.2, 1), 0.0, 0.0, 0, 0]
+point_count = 6
 
 [sub_resource type="Environment" id="Environment_sfb0x"]
 background_mode = 3
 adjustment_enabled = true
 adjustment_color_correction = ExtResource("7_wjctj")
 
-
-[sub_resource type="Curve" id="darkness_by_sun"]
-min_domain = -0.2
-max_domain = 1.2
-_data = [Vector2(-0.2, 1), 0.0, 0.0, 0, 0, Vector2(0, 0.55), 0.0, 0.0, 0, 0, Vector2(0.2, 0), 0.0, 0.0, 0, 0, Vector2(0.8, 0), 0.0, 0.0, 0, 0, Vector2(1, 0.55), 0.0, 0.0, 0, 0, Vector2(1.2, 1), 0.0, 0.0, 0, 0]
-point_count = 6
 [node name="Game" type="Node" unique_id=904096967]
 script = ExtResource("1")
 march_sound = ExtResource("6")
@@ -76,7 +76,6 @@ color = Color(1, 0.86, 0.6, 1)
 energy = 0.0
 blend_mode = 2
 texture = SubResource("lantern_tex")
-texture_scale = 2.2
 script = ExtResource("night_light")
 night_energy = 1.2
 
@@ -111,4 +110,5 @@ campaign = ExtResource("vt_campaign")
 crew_rules = ExtResource("vt_crew")
 archer_rules = ExtResource("vt_archer")
 terrain_look = ExtResource("vt_look")
+light_dither = ExtResource("light_dither")
 terrain_types = Array[ExtResource("vt_tt")]([ExtResource("vt_t_bedrock"), ExtResource("vt_t_brick"), ExtResource("vt_t_crystal"), ExtResource("vt_t_box"), ExtResource("vt_t_leaves"), ExtResource("vt_t_rock"), ExtResource("vt_t_soil"), ExtResource("vt_t_spikes"), ExtResource("vt_t_trunk"), ExtResource("vt_t_water")])

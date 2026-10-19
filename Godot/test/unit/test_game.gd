@@ -65,10 +65,13 @@ func test_engineers_carry_a_small_light_at_night() -> void:
 	crew.spawn(5.0)
 	var day_night: DayNight = game.get_node("%DayNight")
 	day_night.set_night(true, true)
+	await wait_frames(1)
 	for e in crew.engineers:
 		var lamp: NightLight = e.node.get_node("%Lamp")
 		assert_true(lamp.visible and lamp.energy > 0.0, "lit at night")
-		assert_lt(lamp.texture_scale, (game.get_node("Lantern") as PointLight2D).texture_scale, "smaller than the cursor lantern")
+		var lantern: PointLight2D = game.get_node("Lantern")
+		assert_lt(lamp.texture.get_width() * lamp.texture_scale, lantern.texture.get_width() * lantern.texture_scale,
+				"smaller than the cursor lantern")
 	day_night.set_night(false, true)
 	for e in crew.engineers:
 		assert_false(e.node.get_node("%Lamp").visible, "out by day")

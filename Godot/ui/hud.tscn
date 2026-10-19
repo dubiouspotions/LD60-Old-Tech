@@ -557,7 +557,7 @@ text = "Siege Engineers"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(490, 0)
 layout_mode = 2
-text = "When the kings army starts to march - they refuse to stop for anything!
+text = "When the king's army starts to march - they refuse to stop for anything!
 
 It's your job as the Royal Siege Engineers to get the meatheads safely into battle!"
 autowrap_mode = 3
@@ -570,10 +570,10 @@ theme_override_colors/default_color = Color(0.6039, 0.651, 0.7059, 1)
 theme_override_font_sizes/normal_font_size = 16
 theme_override_font_sizes/bold_font_size = 14
 bbcode_enabled = true
-text = "Choose order in the toolbar or by pressing 1-5 and click the world to give your engineer a task!
+text = "Issue orders from the toolbar (or press 1-5), then click the world to show your engineer where!
 You can only give orders that you have sufficient resources to build!
 
-Pan along the map with moousewheel, arrow keys or by right-click dragging."
+Pan along the map with the mouse wheel, the arrow keys or WASD, or by dragging with the right or middle mouse button."
 fit_content = true
 
 [node name="Buttons" type="HBoxContainer" parent="Root/Intro/Center/Card/Rows" unique_id=1481685949]

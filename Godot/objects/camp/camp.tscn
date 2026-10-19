@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://bli8g6l5ey4dh" path="res://objects/camp/camp.gd" id="1"]
 [ext_resource type="AudioStream" uid="uid://ljhrhpqjicw5" path="res://audio/sfx/campfire_loop.wav" id="2"]
 [ext_resource type="Texture2D" uid="uid://b32kbe6clwtsr" path="res://world/fireplace.png" id="2_slo4c"]
+[ext_resource type="Script" path="res://post/dithered_light_texture.gd" id="dithered_light"]
+[ext_resource type="Resource" path="res://data/light_dither.tres" id="light_dither"]
 
 [sub_resource type="Gradient" id="flame_g"]
 offsets = PackedFloat32Array(0, 0.35, 1)
@@ -14,13 +16,12 @@ colors = PackedColorArray(1, 0.75, 0.3, 1, 1, 0.4, 0.1, 0)
 [sub_resource type="Gradient" id="light_g"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
 
-[sub_resource type="GradientTexture2D" id="light_tex"]
+[sub_resource type="ImageTexture" id="light_tex"]
+resource_local_to_scene = true
+script = ExtResource("dithered_light")
+dither = ExtResource("light_dither")
 gradient = SubResource("light_g")
-width = 256
-height = 256
-fill = 1
-fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(1, 0.5)
+size = 768
 
 [sub_resource type="Animation" id="flicker"]
 resource_name = "flicker"
@@ -98,7 +99,6 @@ color = Color(1, 0.72, 0.42, 1)
 energy = 1.6
 blend_mode = 2
 texture = SubResource("light_tex")
-texture_scale = 3.0
 
 [node name="Fireplace" type="Sprite2D" parent="Fire" unique_id=612338030]
 z_index = -1

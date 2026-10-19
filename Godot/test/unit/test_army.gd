@@ -431,6 +431,30 @@ func test_blocked_soldier_counts_down_then_deserts() -> void:
 	assert_eq(a.deserters[0].facing, -1, "walks back the way it came")
 
 
+## Each blocked soldier shows its own countdown, and it clears once that soldier gets moving again.
+func test_each_blocked_soldier_shows_its_own_mutiny_clock() -> void:
+	var a := _world([
+		"..........#.........",
+		"..........#.........",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	])
+	a.spawn(2, 8.5)
+	_run(a, 2.0)
+	var front: Soldier = a.soldiers[0]
+	var back: Soldier = a.soldiers[1]
+	assert_between(front.mutiny_left, 0.01, 0.99, "the front soldier counts down")
+	assert_eq(back.mutiny_left, 0.0, "queued behind it: not blocked by the wall itself")
+	assert_true(front.get_node(^"%MutinyClock").visible, "its clock is shown")
+	assert_false(back.get_node(^"%MutinyClock").visible)
+	a.terrain.set_type(Vector2i(10, 0), null)
+	a.terrain.set_type(Vector2i(10, 1), null)
+	_run(a, 0.5)
+	assert_gt(front.pos.x, 9.0, "marching again")
+	assert_eq(front.mutiny_left, 0.0, "countdown cleared")
+	assert_false(front.get_node(^"%MutinyClock").visible)
+
+
 func test_deserter_climbs_a_cliff_on_the_way_out() -> void:
 	var a := _world(BOXED_IN)
 	a.spawn(1, 8.5)
