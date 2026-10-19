@@ -3,7 +3,8 @@ extends Node2D
 ## Something an engineer threw (a sandbag): flies in an arc (CrewRules) from its hands to the cell it was thrown at,
 ## spinning about its centre, then becomes the falling block it carries there, which falls on and lands as usual.
 ## If it hits anything on the way (ground, a bridge piece, a soldier, archer, engineer or falling block) it breaks
-## as its block does (FallingBlock.smash), hurting nobody; whoever it leaves the hands inside (the thrower, those beside it) it does
+## as its block does (FallingBlock.smash), hurting nobody, except that a soldier or engineer it hits gets it under
+## their feet when there is room (FallingBlock.land_under); whoever it leaves the hands inside (the thrower, those beside it) it does
 ## not hit. The World makes it (see Crew.threw) and steps it. The node origin is the bag's centre.
 
 ## Turns per second while flying.
@@ -45,8 +46,16 @@ func step(dt: float, world: World, bodies: Array) -> void:
 	position = Grid.to_px(_at)
 	$Sprite.rotation = TAU * spin * _time
 	world.terrain.splash(was, _at, (_at.y - was.y) / dt if dt > 0.0 else 0.0)
-	if hits_ground(world.terrain, world.bridge, was, _at) or bodies.any(func(pair: Array) -> bool: return not pair[0] in _ignored and (pair[1] as Bridge.Body).touches(_at, hit_margin)):
+	if hits_ground(world.terrain, world.bridge, was, _at):
 		_break()
+		return
+	var hit := bodies.filter(func(pair: Array) -> bool: return not pair[0] in _ignored and (pair[1] as Bridge.Body).touches(_at, hit_margin))
+	if not hit.is_empty():
+		if block.land_under(world, hit[0][0]):
+			block.free()
+			queue_free()
+		else:
+			_break()
 		return
 	if s >= 1.0:
 		block.position = Grid.to_px(_to - Vector2(0.5, 0.5))
