@@ -28,6 +28,8 @@ extends Node2D
 @export var hurt_flash_color: Color = Color.WHITE
 ## Height of the bow above the feet.
 @export var bow_height: float = 0.6
+## The archer's own figure, drawn facing west (at the column coming on); mirrored to face east when it aims east.
+@export var figure: AnimatedSprite2D
 ## Holds fire while the column camps for the night.
 @export var rests_at_night: bool = true
 
@@ -122,6 +124,8 @@ func _physics_process(dt: float) -> void:
 			return
 	var origin := _bow()
 	var target := pick_target(world)
+	if figure:
+		figure.flip_h = target.pos.x > feet_m().x
 	_cooldown = reload_time
 	var arrow: Arrow = arrow_scene.instantiate()
 	arrow.velocity = _shot_velocity(_aim_point(target) - origin, randf_range(-aim_error, aim_error))

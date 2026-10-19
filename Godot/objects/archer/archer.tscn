@@ -94,7 +94,7 @@ animations = [{
 "speed": 9.0
 }]
 
-[node name="Archer" type="Node2D" unique_id=822854197]
+[node name="Archer" type="Node2D" unique_id=822854197 node_paths=PackedStringArray("figure")]
 z_index = 2
 script = ExtResource("1")
 arrow_scene = ExtResource("2")
@@ -102,6 +102,7 @@ shoot_sound = ExtResource("3")
 down_sound = ExtResource("4")
 rules = ExtResource("8_rules")
 show_range = false
+figure = NodePath("AnimatedSprite2D2")
 
 [node name="Banner" type="Node2D" parent="." unique_id=387621047]
 

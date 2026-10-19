@@ -119,6 +119,25 @@ func test_archer_walks_to_the_tower_edge_for_a_clear_shot() -> void:
 	assert_gt(archer.walk_speed, 0.0)
 
 
+## The archer's figure (drawn facing west, at the column coming on) is mirrored to face east when it aims east.
+func test_archer_faces_the_way_it_shoots() -> void:
+	for y in range(2, 5):
+		for x in range(7, 10):
+			world.terrain.set_type(Vector2i(x, y), WorldFixture.type("brick"))
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(8.5, 2))
+	archer.first_shot_delay = 0.0
+	world.objects.add_child(archer)
+	assert_not_null(archer.figure, "it knows which sprite is its figure")
+	var s := _soldiers_at([15.5])
+	await wait_physics_frames(3)
+	assert_true(archer.figure.flip_h, "aiming east: faces east")
+	s[0].pos.x = 2.5
+	archer._cooldown = 0.0
+	await wait_physics_frames(3)
+	assert_false(archer.figure.flip_h, "aiming west: faces west again")
+
+
 func test_archer_shoots_a_soldier_it_can_see_over_a_nearer_hidden_one() -> void:
 	var archer := _tower_and_wall()
 	var s := _soldiers_at([11.5, 5.5])
