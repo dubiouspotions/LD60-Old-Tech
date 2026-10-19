@@ -557,3 +557,47 @@ func test_a_plan_dragged_through_both_cliffs_fits_a_gap_its_own_length() -> void
 	assert_eq(a.pos, Vector2(3, 2.5), "on the left face")
 	assert_eq(z.pos, Vector2(8, 2.5), "on the right face")
 	assert_true(b.check_build(a, z, LOG, Supplies.make(9, 9, 9, 9)).ok, "a 5 m log fits a 5 m gap")
+
+
+func test_a_piece_marked_to_take_apart_stays_marked_when_split() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var deck := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG)
+	deck.dismantle = true
+	b.build(b.snap_point(Vector2(5, 2)), b.snap_point(Vector2(5, 5)), SUPPORT)
+	var halves := b.members.filter(func(m: Bridge.Member) -> bool: return m.material == LOG)
+	assert_eq(halves.size(), 2, "the deck split in two")
+	assert_true(halves.all(func(m: Bridge.Member) -> bool: return m.dismantle), "both halves are still marked")
+
+
+## A plan from x 3 to 7, ordered and half built from one end, split at x 6.
+func _half_built_plan_split(b: Bridge, from_a: bool) -> Bridge.Member:
+	var plan := b.build(b.snap_point(Vector2(3, 2)), b.snap_point(Vector2(7, 2)), LOG, true)
+	b.order_blueprints()
+	plan.from_joint = plan.a if from_a else plan.b
+	plan.progress = 0.5
+	var at := b.snap_point(Vector2(6, 2.05))
+	assert_eq(at.on_member, plan, "the new plan lands along it")
+	b.build(at, b.snap_point(Vector2(6, 0.5)), LOG, true)
+	return plan
+
+
+func test_a_plan_built_from_its_start_keeps_its_built_part_when_split() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var plan := _half_built_plan_split(b, true)
+	assert_eq(b.walk_surface(4.0, 0.0).member, plan, "built from x 3 to 5")
+	assert_eq(b.walk_surface(4.9, 0.0).get("member"), plan, "all the way to 5")
+	assert_true(b.walk_surface(5.1, 0.0).is_empty(), "not built from 5")
+	assert_true(b.walk_surface(6.5, 0.0).is_empty(), "nor the other half")
+
+
+func test_a_plan_built_from_its_end_keeps_its_built_part_when_split() -> void:
+	var t := WorldFixture.terrain(self, CHASM)
+	var b := WorldFixture.bridge(self, t)
+	var plan := _half_built_plan_split(b, false)
+	assert_true(b.walk_surface(4.9, 0.0).is_empty(), "not built up to x 5")
+	assert_eq(b.walk_surface(5.1, 0.0).get("member"), plan, "built from x 5")
+	var rest: Dictionary = b.walk_surface(6.5, 0.0)
+	assert_false(rest.is_empty(), "the other half is built all along")
+	assert_ne(rest.get("member"), plan)

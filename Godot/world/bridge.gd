@@ -897,7 +897,20 @@ func split(m: Member, p: Vector2) -> Joint:
 	rest.blueprint = m.blueprint
 	rest.ordered = m.ordered
 	rest.scaffolded = m.scaffolded
-	rest.progress = m.progress
+	rest.dismantle = m.dismantle
+	rest.sag = m.sag
+	# What is built (or still standing, while taken apart) runs from from_joint: each half gets the part on it.
+	var done := m.progress
+	rest.progress = done
+	if m.from_joint == m.b:
+		rest.from_joint = m.b
+		rest.progress = minf(done / maxf(1.0 - t, 1e-6), 1.0)
+		m.from_joint = j
+		m.progress = maxf(done - (1.0 - t), 0.0) / maxf(t, 1e-6)
+	elif m.from_joint == m.a:
+		rest.from_joint = j
+		rest.progress = maxf(done - t, 0.0) / maxf(1.0 - t, 1e-6)
+		m.progress = minf(done / maxf(t, 1e-6), 1.0)
 	m.b = j
 	m.length *= t
 	m.mass = m.length * m.material.kg_per_m

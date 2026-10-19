@@ -207,6 +207,9 @@ func step(dt: float) -> void:
 			continue
 		if e.job and (not bridge.needs_work(e.job) or (e.route.is_empty() and e.at != e.goal and is_nan(e.reach_x))):
 			_drop(e)
+		# Its piece was split and the end it worked from went to the other half: it looks again.
+		if e.job and e.goal and e.goal != e.job.a and e.goal != e.job.b:
+			_drop(e)
 		if e.digging and not terrain.is_marked(e.dig):
 			e.digging = false
 		e.under_decks = e.under_decks and (e.digging or e.fetch != null)
