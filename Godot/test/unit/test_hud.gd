@@ -2,13 +2,21 @@ extends GutTest
 ## The HUD rows fit the window: tool hints fold away first, then the title.
 
 var hud: Hud
+## The window's size before each test: a test that resizes it puts it back, or later scripts (the menu show) see
+## a wider world.
+var _window_size: Vector2i
 
 
 func before_each() -> void:
+	_window_size = get_viewport().size
 	hud = load("res://ui/hud.tscn").instantiate()
 	add_child_autofree(hud)
 	hud.build_tools(GameState.campaign.tools)
 	hud.set_march(true)
+
+
+func after_each() -> void:
+	assert_eq(get_viewport().size, _window_size, "the test left the window the size it found it")
 
 
 func _hints_shown() -> bool:
@@ -309,6 +317,7 @@ func test_stats_stick_above_the_buttons_at_any_window_size() -> void:
 		var rack_right := rack.get_global_rect().end.x
 		assert_almost_eq(right, rack_right, 1.0, "flush with the buttons' right edge at %d wide" % int(width))
 		assert_almost_eq(stats.get_global_rect().end.y, rack.get_global_rect().position.y, 10.0, "just above them")
+	hud.get_viewport().size = _window_size
 
 
 func test_tool_buttons_show_cost_and_grey_out_when_unaffordable() -> void:
