@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://ddwbaotdmjfto" path="res://levels/level_base.tscn" id="1_base"]
 [ext_resource type="PackedScene" uid="uid://e65yrjjqwtsi" path="res://objects/archer/archer.tscn" id="2_archer"]
+[ext_resource type="PackedScene" path="res://objects/fireflies/fireflies.tscn" id="ff_flies"]
 
 [node name="Level06" unique_id=2086862587 instance=ExtResource("1_base")]
 display_name = "Level 6"
@@ -12,6 +13,15 @@ tile_map_data = PackedByteArray("AAAAAB8AAgADAAEAAAAAACAAAgAFAAIAAAAAACEAAgAEAAI
 [node name="Archer1" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="0" unique_id=1301454779 instance=ExtResource("2_archer")]
 position = Vector2(1904, 672)
 reload_time = 1.8400000000000003
+
+[node name="Fireflies1" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="1" unique_id=757434922 instance=ExtResource("ff_flies")]
+position = Vector2(336, 944)
+
+[node name="Fireflies2" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="2" unique_id=1441113584 instance=ExtResource("ff_flies")]
+position = Vector2(2240, 912)
+
+[node name="Fireflies3" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="3" unique_id=1450076773 instance=ExtResource("ff_flies")]
+position = Vector2(2720, 880)
 
 [node name="StartFlag" parent="." index="2" unique_id=1604052212]
 position = Vector2(208, 992)

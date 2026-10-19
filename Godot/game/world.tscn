@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://game/world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://world/terrain.tscn" id="2"]
@@ -8,8 +8,7 @@
 [ext_resource type="PackedScene" path="res://objects/falling_block/falling_block.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://objects/camp/camp.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://world/tall_grass.tscn" id="8"]
-[ext_resource type="Script" path="res://world/fireflies.gd" id="9"]
-[ext_resource type="Resource" path="res://data/terrain/trunk.tres" id="10"]
+[ext_resource type="Script" path="res://world/firefly_layer.gd" id="9"]
 [ext_resource type="Script" path="res://world/pollen.gd" id="11"]
 [ext_resource type="Script" path="res://world/birds.gd" id="12"]
 [ext_resource type="PackedScene" path="res://objects/bird/bird.tscn" id="13"]
@@ -55,7 +54,6 @@ follow_viewport_enabled = true
 [node name="Fireflies" type="Node2D" parent="AmbientLayer"]
 unique_name_in_owner = true
 script = ExtResource("9")
-tree_types = [ExtResource("10")]
 
 [node name="Pollen" type="Node2D" parent="AmbientLayer"]
 unique_name_in_owner = true
