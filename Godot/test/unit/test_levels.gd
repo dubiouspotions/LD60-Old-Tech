@@ -91,3 +91,10 @@ func test_levels_use_the_v2_tiles() -> void:
 		assert_eq(old, 0, "%s cells still painted with old tiles" % path)
 		lv.free()
 
+
+
+func test_fireflies_hover_in_the_air() -> void:
+	for level: Level in _levels():
+		for o in level.objects().get_children():
+			if o is Fireflies:
+				assert_false(level.terrain().is_solid(Grid.cell_of(Grid.to_m(o.position))), "%s %s" % [level.name, o.name])

@@ -77,8 +77,8 @@ class Chunk:
 @onready var objects: Node2D = %Objects
 @onready var flags: Node2D = %Flags
 @onready var grass: TallGrass = %Grass
-## Fireflies under the trees at night (DayNight fades them in).
-@onready var fireflies: Fireflies = %Fireflies
+## Holds the levels' fireflies swarms, above the night grade (DayNight fades them in).
+@onready var fireflies: FireflyLayer = %Fireflies
 ## Pollen drifting on the wind by day (DayNight fades it out at night).
 @onready var pollen: Pollen = %Pollen
 ## Birds hiding in the tall grass.
@@ -160,6 +160,15 @@ func sun_progress() -> float:
 		return 0.5
 	var start := c.start_flag.metres().x
 	return clampf((lead.pos.x - start) / maxf(c.exit_flag.metres().x - start, 0.01), 0.0, 1.0)
+
+
+## The level that owns world column x (the last one whose seam is at or left of it), or null.
+func chunk_at(x: float) -> Chunk:
+	var best: Chunk = null
+	for c: Chunk in _chunks.values():
+		if c.seam <= x and (best == null or c.seam > best.seam):
+			best = c
+	return best
 
 
 func current_chunk() -> Chunk:
@@ -515,7 +524,7 @@ func _place(index: int, scene: PackedScene) -> Chunk:
 	c.exit_flag.label = "L%d" % (index + 2)
 	for o in lv.objects().get_children():
 		if o is Node2D and floori((o.position.x + shift.x) / Grid.PX) >= c.seam:
-			c.owned.append(_adopt(o, shift, objects))
+			c.owned.append(_adopt(o, shift, fireflies if o is Fireflies else objects))
 		else:
 			o.free()
 	_chunks[index] = c

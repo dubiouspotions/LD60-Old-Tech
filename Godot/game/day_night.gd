@@ -12,8 +12,8 @@ extends Node
 @export var stars: Stars
 ## The night colour grade, faded in at night (optional).
 @export var grade: NightGrade
-## Fireflies under the trees, out at night (optional).
-@export var fireflies: Fireflies
+## The layer holding the levels' fireflies, out at night (optional).
+@export var fireflies: FireflyLayer
 ## Pollen on the wind, out by day (optional).
 @export var pollen: Pollen
 @export var day_color: Color = Color.WHITE
@@ -80,6 +80,6 @@ func _apply() -> void:
 	if grade:
 		grade.amount = darkness
 	if fireflies:
-		fireflies.amount = darkness
+		fireflies.night = darkness
 	if pollen:
 		pollen.amount = 1.0 - darkness

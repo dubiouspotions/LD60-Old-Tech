@@ -8,14 +8,8 @@ extends Node
 @export var bird_scene: PackedScene
 ## Metres from a patch of grass at which a soldier or engineer flushes it.
 @export_range(0.5, 10.0, 0.1, "suffix:m") var flush_distance: float = 2.0
-## Chance that a patch hides birds at all.
-@export_range(0.0, 1.0, 0.01) var chance: float = 0.3
-## How many birds a patch hides, at least and at most.
-@export var per_patch: Vector2i = Vector2i(1, 3)
-## How many birds fly off a felled tree, at least and at most.
-@export var tree_birds: Vector2i = Vector2i(1, 2)
-## How many fly off at the first swing of the axe at a tree, at least and at most.
-@export var first_chop_birds: Vector2i = Vector2i(0, 1)
+## How many birds hide in grass and trees, unless a level sets its own (Level.birds).
+@export var settings: BirdSettings
 ## Seconds between birds flying across the view, picked at random in this range. Not during the night camp.
 @export var cross_interval: Vector2 = Vector2(15.0, 40.0)
 ## How far down the view a crossing bird flies, as a fraction of its height from the top.
@@ -66,7 +60,10 @@ func advance_crossing(dt: float, view: Rect2) -> void:
 func from_tree(cells: Array[Vector2i]) -> Array[Bird]:
 	for c in cells:
 		_chopped.erase(c)
-	return _off_tree(cells, _rng.randi_range(tree_birds.x, tree_birds.y))
+	if cells.is_empty():
+		return [] as Array[Bird]
+	var s := settings_at(cells[0].x)
+	return _off_tree(cells, _rng.randi_range(s.tree_birds.x, s.tree_birds.y))
 
 
 ## The first swing of the axe at a tree (cell: the one being felled) may startle a bird off its top.
@@ -75,7 +72,8 @@ func chop(cell: Vector2i) -> Array[Bird]:
 	if world == null or _chopped.has(cell):
 		return [] as Array[Bird]
 	_chopped[cell] = true
-	return _off_tree(world.terrain.tree_cells(cell), _rng.randi_range(first_chop_birds.x, first_chop_birds.y))
+	var s := settings_at(cell.x)
+	return _off_tree(world.terrain.tree_cells(cell), _rng.randi_range(s.first_chop_birds.x, s.first_chop_birds.y))
 
 
 ## count birds off the top of the tree made of cells, alternating directions.
@@ -131,9 +129,10 @@ func flush(cell: Vector2i, from: Vector2) -> Array[Bird]:
 	var patch := _patch(world.grass, cell)
 	for c in patch:
 		_flushed[c] = true
-	if _rng.randf() >= chance or colors.is_empty():
+	var s := settings_at(cell.x)
+	if _rng.randf() >= s.chance or colors.is_empty():
 		return out
-	for i in _rng.randi_range(per_patch.x, per_patch.y):
+	for i in _rng.randi_range(s.per_patch.x, s.per_patch.y):
 		var c: Vector2i = patch[_rng.randi() % patch.size()]
 		var b: Bird = bird_scene.instantiate()
 		b.position = Grid.to_px(Vector2(c) + Vector2(_rng.randf_range(0.2, 0.8), 0.7))
@@ -161,6 +160,13 @@ func forget_before(x: int) -> void:
 func clear() -> void:
 	_flushed.clear()
 	_chopped.clear()
+
+
+## The bird settings for world column x: its level's own Birds, or settings.
+func settings_at(x: float) -> BirdSettings:
+	var world := World.of(self)
+	var c: World.Chunk = world.chunk_at(x) if world else null
+	return c.level.birds if c and c.level.birds else settings
 
 
 func _color() -> Color:

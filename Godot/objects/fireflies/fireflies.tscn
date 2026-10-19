@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://objects/fireflies/fireflies.gd" id="1_flies"]
+[ext_resource type="Resource" path="res://data/terrain/trunk.tres" id="2_trunk"]
+[ext_resource type="Resource" path="res://data/terrain/leaves.tres" id="3_leaves"]
+
+[node name="Fireflies" type="Node2D"]
+script = ExtResource("1_flies")
+plant_types = [ExtResource("2_trunk"), ExtResource("3_leaves")]

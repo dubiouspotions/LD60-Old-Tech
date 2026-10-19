@@ -33,7 +33,9 @@ func before_each() -> void:
 	for x in range(14, 17):
 		world.grass.set_cell(Vector2i(x, 3), 0, Vector2i.ZERO)
 	birds = world.birds
-	birds.chance = 1.0
+	# Its own copy: the default settings are a shared resource.
+	birds.settings = birds.settings.duplicate()
+	birds.settings.chance = 1.0
 	world.army.spawn(1, 2.0)
 
 
@@ -68,7 +70,7 @@ func test_nothing_happens_while_everyone_is_far() -> void:
 func test_a_soldier_coming_close_flushes_the_patch_once() -> void:
 	_soldier_at(14.0 - birds.flush_distance + 0.5)
 	var out := _flying()
-	assert_between(out.size(), birds.per_patch.x, birds.per_patch.y)
+	assert_between(out.size(), birds.settings.per_patch.x, birds.settings.per_patch.y)
 	for b in out:
 		assert_between(Grid.to_m(b.position).x, 14.0, 17.0, "from the patch")
 	_soldier_at(15.0)
@@ -139,7 +141,7 @@ func test_flaps_start_at_random_frames() -> void:
 
 func test_few_patches_hide_birds() -> void:
 	var fresh: Birds = (load("res://game/world.tscn") as PackedScene).instantiate().get_node("Birds")
-	assert_lte(fresh.chance, 0.35, "not every patch")
+	assert_lte(fresh.settings.chance, 0.35, "not every patch")
 	fresh.free()
 
 
@@ -154,10 +156,10 @@ func _tree() -> void:
 
 func test_felling_a_tree_sends_birds_off_its_top_both_ways() -> void:
 	_tree()
-	birds.tree_birds = Vector2i(2, 2)
+	birds.settings.tree_birds = Vector2i(2, 2)
 	world.terrain.fell(Vector2i(22, 3))
 	var out := _flying()
-	assert_between(out.size(), birds.tree_birds.x, birds.tree_birds.y)
+	assert_between(out.size(), birds.settings.tree_birds.x, birds.settings.tree_birds.y)
 	var dirs := {}
 	for b in out:
 		var p := Grid.to_m(b.position)
@@ -201,14 +203,14 @@ func test_none_fly_across_during_the_night_camp() -> void:
 
 func test_a_tree_sends_one_or_two_off_when_felled_and_maybe_one_at_the_first_chop() -> void:
 	var fresh: Birds = (load("res://game/world.tscn") as PackedScene).instantiate().get_node("Birds")
-	assert_eq(fresh.tree_birds, Vector2i(1, 2))
-	assert_eq(fresh.first_chop_birds, Vector2i(0, 1))
+	assert_eq(fresh.settings.tree_birds, Vector2i(1, 2))
+	assert_eq(fresh.settings.first_chop_birds, Vector2i(0, 1))
 	fresh.free()
 
 
 func test_only_the_first_chop_startles_a_bird() -> void:
 	_tree()
-	birds.first_chop_birds = Vector2i(1, 1)
+	birds.settings.first_chop_birds = Vector2i(1, 1)
 	world.crew.chopped.emit(Vector2i(22, 3))
 	assert_eq(_flying().size(), 1, "the first swing")
 	var b: Bird = _flying()[0]
@@ -216,6 +218,48 @@ func test_only_the_first_chop_startles_a_bird() -> void:
 	world.crew.chopped.emit(Vector2i(22, 3))
 	world.crew.chopped.emit(Vector2i(22, 3))
 	assert_eq(_flying().size(), 1, "later swings do not")
-	birds.tree_birds = Vector2i(1, 1)
+	birds.settings.tree_birds = Vector2i(1, 1)
 	world.terrain.fell(Vector2i(22, 3))
 	assert_eq(_flying().size(), 2, "and the fall sends its own")
+
+
+func _level_birds(chance: float, per_patch: Vector2i) -> BirdSettings:
+	var s := BirdSettings.new()
+	s.chance = chance
+	s.per_patch = per_patch
+	return s
+
+
+func test_a_level_can_set_its_own_birds() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	world.grass.clear()
+	var c := world.place_now(0)
+	var cell: Vector2i = world.grass.get_used_cells().filter(func(g: Vector2i) -> bool: return g.x >= c.seam)[0]
+	assert_eq(birds.settings_at(cell.x), birds.settings, "none set: the World's default")
+	c.level.birds = _level_birds(0.0, Vector2i(3, 3))
+	assert_eq(birds.settings_at(cell.x), c.level.birds)
+	assert_eq(birds.flush(cell, Vector2(cell.x - 3, cell.y + 1)).size(), 0, "this level hides none")
+	birds.forget_from(c.seam)
+	c.level.birds = _level_birds(1.0, Vector2i(2, 2))
+	assert_eq(birds.flush(cell, Vector2(cell.x - 3, cell.y + 1)).size(), 2, "every patch hides two here")
+
+
+func test_the_level_that_owns_a_column_decides() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	world.grass.clear()
+	var first := world.place_now(0)
+	var second := world.place_now(1)
+	first.level.birds = _level_birds(0.1, Vector2i(1, 1))
+	second.level.birds = _level_birds(0.9, Vector2i(5, 5))
+	assert_eq(birds.settings_at(second.seam - 1), first.level.birds)
+	assert_eq(birds.settings_at(second.seam), second.level.birds)
+
+
+func test_the_default_keeps_the_old_numbers() -> void:
+	var d: BirdSettings = load("res://data/bird_settings.tres")
+	assert_eq(d.chance, 0.3)
+	assert_eq(d.per_patch, Vector2i(1, 3))
+	assert_eq(d.tree_birds, Vector2i(1, 2))
+	assert_eq(d.first_chop_birds, Vector2i(0, 1))

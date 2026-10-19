@@ -8,8 +8,7 @@
 [ext_resource type="PackedScene" path="res://objects/falling_block/falling_block.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://objects/camp/camp.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://world/tall_grass.tscn" id="8"]
-[ext_resource type="Script" path="res://world/fireflies.gd" id="9"]
-[ext_resource type="Resource" path="res://data/terrain/trunk.tres" id="10"]
+[ext_resource type="Script" path="res://world/firefly_layer.gd" id="9"]
 [ext_resource type="Script" path="res://world/pollen.gd" id="11"]
 [ext_resource type="Script" path="res://world/birds.gd" id="12"]
 [ext_resource type="PackedScene" path="res://objects/bird/bird.tscn" id="13"]
@@ -19,6 +18,7 @@
 [ext_resource type="Texture2D" path="res://world/wood_sprite.png" id="17"]
 [ext_resource type="PackedScene" path="res://objects/falling_piece/falling_piece.tscn" id="18"]
 [ext_resource type="PackedScene" path="res://objects/sandbag/thrown_bag.tscn" id="19_thrown"]
+[ext_resource type="Resource" path="res://data/bird_settings.tres" id="20_birds"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1")
@@ -55,7 +55,6 @@ follow_viewport_enabled = true
 [node name="Fireflies" type="Node2D" parent="AmbientLayer"]
 unique_name_in_owner = true
 script = ExtResource("9")
-tree_types = [ExtResource("10")]
 
 [node name="Pollen" type="Node2D" parent="AmbientLayer"]
 unique_name_in_owner = true
@@ -65,6 +64,7 @@ script = ExtResource("11")
 unique_name_in_owner = true
 script = ExtResource("12")
 bird_scene = ExtResource("13")
+settings = ExtResource("20_birds")
 
 [node name="Leaves" type="Node2D" parent="."]
 unique_name_in_owner = true

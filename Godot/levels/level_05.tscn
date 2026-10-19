@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://ddwbaotdmjfto" path="res://levels/level_base.tscn" id="1_base"]
 [ext_resource type="PackedScene" uid="uid://e65yrjjqwtsi" path="res://objects/archer/archer.tscn" id="2_archer"]
+[ext_resource type="PackedScene" path="res://objects/fireflies/fireflies.tscn" id="ff_flies"]
 
 [node name="Level05" unique_id=1640165367 instance=ExtResource("1_base")]
 display_name = "Level 5"
@@ -12,6 +13,52 @@ tile_map_data = PackedByteArray("AAAAABsAAgABAAEAAAAAABwAAgAGAAIAAAAAAB0AAgAFAAI
 [node name="Archer1" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="0" unique_id=569818000 instance=ExtResource("2_archer")]
 position = Vector2(752, 640)
 reload_time = 1.96
+
+[node name="Fireflies1" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="1" unique_id=937365133 instance=ExtResource("ff_flies")]
+position = Vector2(320, 816)
+
+[node name="Fireflies2" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="2" unique_id=199729040 instance=ExtResource("ff_flies")]
+position = Vector2(480, 816)
+
+[node name="Fireflies3" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="3" unique_id=614170641 instance=ExtResource("ff_flies")]
+position = Vector2(624, 840)
+amount = 2
+radius = 1.2
+
+[node name="Fireflies4" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="4" unique_id=1471963135 instance=ExtResource("ff_flies")]
+position = Vector2(976, 816)
+
+[node name="Fireflies5" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="5" unique_id=1803231100 instance=ExtResource("ff_flies")]
+position = Vector2(1168, 816)
+
+[node name="Fireflies6" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="6" unique_id=2031647545 instance=ExtResource("ff_flies")]
+position = Vector2(1648, 840)
+amount = 2
+radius = 1.2
+
+[node name="Fireflies7" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="7" unique_id=119722724 instance=ExtResource("ff_flies")]
+position = Vector2(1904, 840)
+amount = 2
+radius = 1.2
+
+[node name="Fireflies8" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="8" unique_id=985770593 instance=ExtResource("ff_flies")]
+position = Vector2(2192, 776)
+amount = 2
+radius = 1.2
+
+[node name="Fireflies9" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="9" unique_id=1797688216 instance=ExtResource("ff_flies")]
+position = Vector2(2512, 816)
+
+[node name="Fireflies10" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="10" unique_id=1659530510 instance=ExtResource("ff_flies")]
+position = Vector2(3024, 872)
+amount = 2
+radius = 1.2
+
+[node name="Fireflies11" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="11" unique_id=458149531 instance=ExtResource("ff_flies")]
+position = Vector2(3184, 848)
+
+[node name="Fireflies12" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="12" unique_id=380515500 instance=ExtResource("ff_flies")]
+position = Vector2(3376, 880)
 
 [node name="StartFlag" parent="." index="2" unique_id=1604052212]
 position = Vector2(208, 864)

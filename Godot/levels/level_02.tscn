@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://ddwbaotdmjfto" path="res://levels/level_base.tscn" id="1_base"]
 [ext_resource type="PackedScene" uid="uid://e65yrjjqwtsi" path="res://objects/archer/archer.tscn" id="2_g685p"]
 [ext_resource type="PackedScene" path="res://objects/sign/sign.tscn" id="3_8yqd8"]
+[ext_resource type="PackedScene" path="res://objects/fireflies/fireflies.tscn" id="ff_flies"]
 
 [node name="Level02" unique_id=497883028 instance=ExtResource("1_base")]
 display_name = "Level 2"
@@ -47,6 +48,24 @@ text = "ROPE (4)
 But sometimes you need to stabilize your bridg through other means!"
 font_size = 13
 max_width = 256.0
+
+[node name="Fireflies1" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="5" unique_id=2001087965 instance=ExtResource("ff_flies")]
+position = Vector2(320, 848)
+
+[node name="Fireflies2" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="6" unique_id=814080843 instance=ExtResource("ff_flies")]
+position = Vector2(496, 848)
+
+[node name="Fireflies3" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="7" unique_id=2025761551 instance=ExtResource("ff_flies")]
+position = Vector2(2224, 848)
+
+[node name="Fireflies4" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="8" unique_id=188419757 instance=ExtResource("ff_flies")]
+position = Vector2(2880, 944)
+
+[node name="Fireflies5" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="9" unique_id=1801691789 instance=ExtResource("ff_flies")]
+position = Vector2(3072, 912)
+
+[node name="Fireflies6" parent="Objects" parent_id_path=PackedInt32Array(166688922) index="10" unique_id=2076215415 instance=ExtResource("ff_flies")]
+position = Vector2(3264, 912)
 
 [node name="StartFlag" parent="." index="2" unique_id=1604052212]
 position = Vector2(208, 896)
