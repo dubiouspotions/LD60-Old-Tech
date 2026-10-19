@@ -67,7 +67,7 @@ tint = NodePath("../SkyTint")
 
 [node name="SunPixel2" type="Sprite2D" parent="." unique_id=263115126]
 position = Vector2(895.5, 171.72)
-scale = Vector2(0.293, 0.293)
+scale = Vector2(1.002, 1.002)
 texture = ExtResource("3_7yj74")
 script = ExtResource("4_sun")
 

@@ -9,7 +9,6 @@ extends Node
 ## Re-run both passes after changing the sheet or the roles.
 
 const LOOK_PATH: String = "res://data/terrain_look.tres"
-const SOURCE_PNG: String = "res://world/tiles_v2.png"
 const KEYED_PNG: String = "res://world/tiles_v2_keyed.png"
 const TILESET_PATH: String = "res://world/tileset.tres"
 ## The TileSet custom data layer that holds each tile's TerrainType (see Terrain).
@@ -29,7 +28,7 @@ func _ready() -> void:
 
 func _art() -> void:
 	var look := ResourceLoader.load(LOOK_PATH, "", ResourceLoader.CACHE_MODE_IGNORE) as TerrainLook
-	var source := look.source_texture.resource_path if look and look.source_texture else SOURCE_PNG
+	var source := look.source_texture.resource_path if look and look.source_texture else KEYED_PNG
 	var target := look.texture.resource_path if look and look.texture else KEYED_PNG
 	if source == target:
 		print("build_tiles_v2: %s already has a transparent sky, nothing to key out" % source)

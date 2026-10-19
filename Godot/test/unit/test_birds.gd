@@ -58,7 +58,7 @@ func test_the_sheet_is_a_nine_frame_mask_tinted_by_a_shader() -> void:
 	var sprite: Sprite2D = bird.get_node("Sprite")
 	assert_eq(sprite.texture.resource_path, "res://world/bird.png")
 	assert_eq(sprite.hframes, 9)
-	assert_eq(sprite.texture.get_width() / sprite.hframes, 32, "32 px frames, like the tiles")
+	assert_eq(sprite.texture.get_width() / sprite.hframes * sprite.scale.x, 32.0, "frames drawn 32 px wide, like the tiles")
 	assert_eq(((sprite.material as ShaderMaterial).shader as Shader).resource_path, "res://objects/bird/bird_mask.gdshader")
 
 

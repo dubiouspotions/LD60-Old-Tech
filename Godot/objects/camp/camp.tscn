@@ -103,7 +103,7 @@ texture = SubResource("light_tex")
 [node name="Fireplace" type="Sprite2D" parent="Fire" unique_id=612338030]
 z_index = -1
 position = Vector2(82, -24)
-scale = Vector2(0.5625, 0.5625)
+scale = Vector2(2.25, 2.25)
 texture = ExtResource("2_slo4c")
 
 [node name="Crackle" type="AudioStreamPlayer2D" parent="." unique_id=1717201690]
