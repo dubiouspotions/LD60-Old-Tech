@@ -271,7 +271,7 @@ func recruit() -> bool:
 	var rules := army.rules
 	if not camping() or army.soldiers.size() >= rules.max_soldiers or not GameState.spend(rules.recruit_cost):
 		return false
-	army.reinforce(1)
+	army.reinforce(1, army.camp_x)
 	var at := army.rear().pos
 	Audio.play(rules.recruit_sound, Grid.to_px(at))
 	Effects.say(Grid.to_px(at - Vector2(0, 1.4)), rules.recruit_text, Color("ece4d2"))

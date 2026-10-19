@@ -23,6 +23,9 @@ var on_t: float = 0.0
 var dead: bool = false
 ## Camped for the night. Owned by Army.
 var sleeping: bool = false
+## Joined at the camp flag and walking back to its place at this x, at the end of the camp line; the column counts
+## it there meanwhile. NAN once there. Owned by Army.
+var joining_x: float = NAN
 ## Seconds stood still while the column makes camp. Owned by Army.
 var still_time: float = 0.0
 ## 1 faces east (the march), -1 west.

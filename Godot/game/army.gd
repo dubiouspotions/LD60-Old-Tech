@@ -68,13 +68,18 @@ func spawn(count: int, x: float) -> void:
 	count_changed.emit(soldiers.size())
 
 
-## Adds count soldiers behind the rear (reinforcements). They join asleep if the column is camped.
-func reinforce(count: int) -> void:
+## Adds count soldiers behind the rear (reinforcements). They join asleep if the column is camped. With at (a
+## camp flag's x) they turn up there and walk back to their places at the end of the line (see Soldier.joining_x).
+func reinforce(count: int, at: float = NAN) -> void:
 	if count <= 0:
 		return
 	var back := rear().pos.x if rear() else 0.5
 	for i in count:
-		_add(maxf(0.5, back - (i + 1) * rules.spawn_spacing))
+		var x := maxf(0.5, back - (i + 1) * rules.spawn_spacing)
+		if is_nan(at):
+			_add(x)
+		else:
+			_add(at).joining_x = x
 	_update_leader()
 	count_changed.emit(soldiers.size())
 
@@ -89,7 +94,7 @@ func bridge_loads() -> Array:
 
 
 func step(dt: float) -> void:
-	soldiers.sort_custom(func(a: Soldier, b: Soldier) -> bool: return a.pos.x > b.pos.x)
+	_sort_ranks()
 	halt_reason = ""
 	danger = ""
 	for i in soldiers.size():
@@ -171,6 +176,7 @@ func _walk_to_camp(s: Soldier, i: int, dt: float) -> void:
 		# Settle exactly on the spot, so small misses do not add up along the camp line.
 		s.pos.x += to
 		s.facing = 1
+		s.joining_x = NAN
 		return
 	var dx := clampf(to, -s.speed * dt, s.speed * dt)
 	var edge := surface_at(s.pos.x + signf(dx) * rules.foot_half_width + dx, s.pos.y - rules.step_up)
@@ -219,7 +225,7 @@ func _settle_down(s: Soldier, dt: float) -> void:
 func gathered() -> bool:
 	if is_nan(stop_x) or soldiers.is_empty():
 		return false
-	soldiers.sort_custom(func(a: Soldier, b: Soldier) -> bool: return a.pos.x > b.pos.x)
+	_sort_ranks()
 	var gap := rules.spacing + GATHER_SLACK
 	for i in soldiers.size():
 		var s := soldiers[i]
@@ -492,6 +498,12 @@ func _step_deserters(dt: float) -> void:
 			var tw := d.create_tween()
 			tw.tween_property(d, ^"modulate:a", 0.0, 0.5)
 			tw.tween_callback(d.queue_free)
+
+
+## Orders the soldiers front to back: by x, or for one joining the camp, by the place it is walking back to.
+func _sort_ranks() -> void:
+	var x := func(s: Soldier) -> float: return s.joining_x if not is_nan(s.joining_x) else s.pos.x
+	soldiers.sort_custom(func(a: Soldier, b: Soldier) -> bool: return x.call(a) > x.call(b))
 
 
 func _update_leader() -> void:

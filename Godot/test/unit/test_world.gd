@@ -341,6 +341,26 @@ func test_reinforcements_at_a_checkpoint_come_from_the_campaign_unless_the_level
 	assert_eq(world.army.soldiers.size(), 3 + world.chunk(1).level.joining(), "arrived with them")
 
 
+## A soldier recruited at camp turns up at the camp flag and walks back to the end of the camp line to sleep, without
+## taking the leader's place on the way.
+func test_a_recruit_turns_up_at_the_camp_flag_and_walks_to_the_end_of_the_line() -> void:
+	world.begin(0, 3)
+	_run(world.dusk_time + 2.0)
+	var flag := world.army.camp_x
+	var lead := world.army.lead()
+	var rear_x := world.army.rear().pos.x
+	GameState.supplies.gold = world.army.rules.recruit_cost.gold
+	assert_true(world.recruit())
+	var recruit: Soldier = world.army.soldiers.filter(func(s: Soldier) -> bool: return not s.sleeping)[0]
+	assert_almost_eq(recruit.pos.x, flag, 0.5, "turns up at the flag")
+	_run(0.1)
+	assert_eq(world.army.lead(), lead, "the leader stays the leader")
+	assert_eq(world.army.rear(), recruit, "counted at the end of the line")
+	_run(8.0)
+	assert_lt(recruit.pos.x, rear_x, "walked back past the old end of the line")
+	assert_true(recruit.sleeping, "and lay down there")
+
+
 func test_no_hiring_by_day_without_gold_or_past_the_crew_limit() -> void:
 	world.begin(0, 3)
 	var crew := world.crew.engineers.size()
