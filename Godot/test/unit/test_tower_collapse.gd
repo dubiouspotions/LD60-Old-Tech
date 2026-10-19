@@ -194,3 +194,17 @@ func test_the_fallen_archer_lies_still_then_blinks_twice() -> void:
 		lit = bright
 		_step()
 	assert_eq(blinks, 2, "blinks twice")
+
+
+func test_the_engineers_stand_back_until_it_is_all_over() -> void:
+	var archer := _archer()
+	world.crew.spawn(3.0)
+	_step()
+	_raze()
+	var xs := world.crew.engineers.map(func(e: Crew.Engineer) -> float: return e.pos.x)
+	_run(2.0)
+	for i in xs.size():
+		assert_almost_eq(world.crew.engineers[i].pos.x, xs[i], 0.01, "not one step on")
+	_run(10.0, func() -> bool: return not is_instance_valid(archer))
+	_run(2.0)
+	assert_gt(world.crew.engineers[0].pos.x, xs[0] + 1.0, "walks on once it is over")

@@ -125,6 +125,8 @@ var wood: Wood
 var engineers: Array[Engineer] = []
 ## Throws ordered and not thrown yet.
 var throws: Array[Throw] = []
+## Set while a razed tower comes down: nobody takes a step until it is over. They still fall, and work where they stand.
+var wait: bool = false
 
 ## Where idle engineers wait for a plan to be ordered: a start joint's x, and the side they come from. NAN if none.
 var _ready_x: float = NAN
@@ -250,7 +252,8 @@ func step(dt: float) -> void:
 			var x := _idle_x(i)
 			var was := e.pos
 			_walk_to(e, x, dt)
-			_update_stranded(e, x, was, dt)
+			if not wait:
+				_update_stranded(e, x, was, dt)
 	_update_strike(dt)
 	_update_work_sound(dt)
 
@@ -583,7 +586,7 @@ func _reach_step(e: Engineer, dt: float) -> bool:
 	if not arrived:
 		var was := e.pos
 		_walk_on(e, e.reach_x, dt)
-		if e.pos == was:
+		if e.pos == was and not wait:
 			_drop(e)
 		return false
 	if (e.pos - Vector2(0, 0.5)).distance_to(e.goal.pos) > rules.build_reach:
@@ -600,7 +603,7 @@ func _dig_step(e: Engineer, dt: float) -> void:
 	if not arrived:
 		var was := e.pos
 		_walk_on(e, e.spot_x, dt)
-		if e.pos == was:
+		if e.pos == was and not wait:
 			e.digging = false
 		return
 	var target := Vector2(terrain.work_cell(e.dig)) + Vector2(0.5, 0.5)
@@ -694,7 +697,7 @@ func _throw_step(e: Engineer, dt: float) -> void:
 	if not arrived:
 		var was := e.pos
 		_walk_on(e, e.spot_x, dt)
-		if e.pos == was:
+		if e.pos == was and not wait:
 			_drop(e)
 		return
 	e.working = true
@@ -925,6 +928,9 @@ func _let_go(e: Engineer) -> void:
 ## Climbs from joint to joint. Reaches the first joint over the ground when not on the structure yet.
 func _follow_route(e: Engineer, dt: float) -> void:
 	var target := e.route[0]
+	if wait:
+		_show(e, false, 0)
+		return
 	if e.at == null and absf(target.pos.x - e.pos.x) > 0.05:
 		_walk_to(e, target.pos.x, dt)
 		return
@@ -977,6 +983,9 @@ func _route_toward(e: Engineer, x: float) -> Array[Bridge.Joint]:
 func _walk_to(e: Engineer, x: float, dt: float) -> void:
 	var dx := x - e.pos.x
 	var facing := signi(roundi(dx * 100))
+	if wait:
+		_show(e, false, facing)
+		return
 	var nx := e.pos.x + clampf(dx, -rules.walk_speed * dt, rules.walk_speed * dt)
 	# Look ahead for edges, but never past the target: a joint on a cliff edge is reached from this side.
 	var look := nx + signf(dx) * ENGINEER_HALF_WIDTH
