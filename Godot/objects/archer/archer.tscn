@@ -10,19 +10,19 @@
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xp456"]
 atlas = ExtResource("5_cgja7")
-region = Rect2(0, 0, 128, 128)
+region = Rect2(0, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_m1mvd"]
 atlas = ExtResource("5_cgja7")
-region = Rect2(128, 0, 128, 128)
+region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_patcs"]
 atlas = ExtResource("5_cgja7")
-region = Rect2(256, 0, 128, 128)
+region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1tjo0"]
 atlas = ExtResource("5_cgja7")
-region = Rect2(384, 0, 128, 128)
+region = Rect2(96, 0, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ppky4"]
 animations = [{
@@ -125,7 +125,7 @@ polygon = PackedVector2Array(-4.8, -9.6, 4.8, -9.6, 4.8, 0, -4.8, 0)
 
 [node name="AnimatedSprite2D2" type="AnimatedSprite2D" parent="." unique_id=802048814]
 position = Vector2(2.2500036, -23.749998)
-scale = Vector2(0.3789063, 0.3789063)
+scale = Vector2(1.515625, 1.515625)
 sprite_frames = SubResource("SpriteFrames_ppky4")
 autoplay = "default"
 frame_progress = 0.6631592

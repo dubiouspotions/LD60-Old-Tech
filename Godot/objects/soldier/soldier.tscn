@@ -6,71 +6,71 @@
 [ext_resource type="Texture2D" uid="uid://c78yrurvjdt8p" path="res://world/soilder_walk.png" id="4_yrtfe"]
 [ext_resource type="Texture2D" uid="uid://28j71k80nis2" path="res://world/green_flag_ani.png" id="5_lxyqk"]
 [ext_resource type="Texture2D" uid="uid://ds7nrtiq0f4cv" path="res://world/tent.png" id="6_dsnea"]
-[ext_resource type="Script" path="res://objects/soldier/mutiny_clock.gd" id="7_clock"]
+[ext_resource type="Script" uid="uid://dcmuxtms8w15q" path="res://objects/soldier/mutiny_clock.gd" id="7_clock"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lxyqk"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(1024, 0, 128, 128)
+region = Rect2(256, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_dsnea"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(1152, 0, 128, 128)
+region = Rect2(288, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1h75m"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(1280, 0, 128, 128)
+region = Rect2(320, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hy68d"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(1408, 0, 128, 128)
+region = Rect2(352, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_cdl2c"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(1536, 0, 128, 128)
+region = Rect2(384, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1ok1j"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(1664, 0, 128, 128)
+region = Rect2(416, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_saknv"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(1792, 0, 128, 128)
+region = Rect2(448, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6mu8c"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(1920, 0, 128, 128)
+region = Rect2(480, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7o2qs"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(0, 0, 128, 128)
+region = Rect2(0, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vk71i"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(128, 0, 128, 128)
+region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_o02ed"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(256, 0, 128, 128)
+region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xf3bp"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(384, 0, 128, 128)
+region = Rect2(96, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_o4dtv"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(512, 0, 128, 128)
+region = Rect2(128, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_t3wpa"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(640, 0, 128, 128)
+region = Rect2(160, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7aebk"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(768, 0, 128, 128)
+region = Rect2(192, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3uxvx"]
 atlas = ExtResource("4_yrtfe")
-region = Rect2(896, 0, 128, 128)
+region = Rect2(224, 0, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_4pjgo"]
 animations = [{
@@ -130,27 +130,27 @@ animations = [{
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_r1scb"]
 atlas = ExtResource("5_lxyqk")
-region = Rect2(0, 0, 128, 128)
+region = Rect2(0, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_h6g8s"]
 atlas = ExtResource("5_lxyqk")
-region = Rect2(128, 0, 128, 128)
+region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_e2lph"]
 atlas = ExtResource("5_lxyqk")
-region = Rect2(256, 0, 128, 128)
+region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l5xlm"]
 atlas = ExtResource("5_lxyqk")
-region = Rect2(384, 0, 128, 128)
+region = Rect2(96, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_s31v8"]
 atlas = ExtResource("5_lxyqk")
-region = Rect2(512, 0, 128, 128)
+region = Rect2(128, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rjhu6"]
 atlas = ExtResource("5_lxyqk")
-region = Rect2(640, 0, 128, 128)
+region = Rect2(160, 0, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ppky4"]
 animations = [{
@@ -357,10 +357,9 @@ texture = ExtResource("3_fity6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body" unique_id=1693547775]
 position = Vector2(-2.000002, -25.999998)
-scale = Vector2(0.35937503, 0.40625003)
+scale = Vector2(1.4375, 1.625)
 sprite_frames = SubResource("SpriteFrames_4pjgo")
 animation = &"soilder_walk"
-frame_progress = 0.62080973
 
 [node name="Spear" type="Line2D" parent="Body" unique_id=1391842286]
 unique_name_in_owner = true
@@ -376,7 +375,7 @@ unique_name_in_owner = true
 z_index = 1
 position = Vector2(-15.000001, -58.000004)
 rotation = -0.10471976
-scale = Vector2(0.22265626, 0.22265626)
+scale = Vector2(0.890625, 0.890625)
 sprite_frames = SubResource("SpriteFrames_ppky4")
 animation = &"grön flagga"
 autoplay = "grön flagga"
@@ -425,10 +424,10 @@ text = "z"
 
 [node name="Tent" type="Sprite2D" parent="Asleep" unique_id=1021765552]
 position = Vector2(-20, -18)
-scale = Vector2(0.34374997, 0.34374997)
+scale = Vector2(1.375, 1.375)
 texture = ExtResource("6_dsnea")
 
-[node name="MutinyClock" type="Node2D" parent="."]
+[node name="MutinyClock" type="Node2D" parent="." unique_id=1432010157]
 unique_name_in_owner = true
 visible = false
 z_index = 2
