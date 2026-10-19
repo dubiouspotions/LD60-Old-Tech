@@ -286,8 +286,27 @@ func test_supplies_sit_just_above_the_build_buttons() -> void:
 	var supplies: Control = hud.get_node("%Supplies")
 	var rack: Control = hud.get_node("%Rack")
 	var column := rack.get_parent()
-	assert_eq(supplies.get_parent().get_parent(), column, "in the bottom area, not the top bar")
-	assert_eq(supplies.get_parent().get_index() + 1, rack.get_index(), "right above the rack")
+	var row := supplies.get_parent().get_parent()
+	assert_eq(row.get_parent(), column, "in the bottom area, not the top bar")
+	assert_eq(row.get_index() + 1, rack.get_index(), "right above the rack")
+
+
+## The level, army, marched and best readouts share the supplies' row, at its right end, so they stay just above
+## the Restart and Pause buttons whatever the window's size (they used to sit at fixed pixel offsets).
+func test_stats_stick_above_the_buttons_at_any_window_size() -> void:
+	var stats: Control = hud.get_node("%Best").get_parent()
+	var supplies: Control = hud.get_node("%SupplyBar")
+	var rack: Control = hud.get_node("%Rack")
+	assert_eq(stats.get_parent(), supplies.get_parent(), "in the supplies' row")
+	assert_true(stats is Control and stats.get_parent() is Container, "laid out by a container, not pixel offsets")
+	for width: float in [1280.0, 2560.0]:
+		hud.get_viewport().size = Vector2i(int(width), 720)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var right := stats.get_global_rect().end.x
+		var rack_right := rack.get_global_rect().end.x
+		assert_almost_eq(right, rack_right, 1.0, "flush with the buttons' right edge at %d wide" % int(width))
+		assert_almost_eq(stats.get_global_rect().end.y, rack.get_global_rect().position.y, 10.0, "just above them")
 
 
 func test_tool_buttons_show_cost_and_grey_out_when_unaffordable() -> void:
