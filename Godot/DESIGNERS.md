@@ -70,7 +70,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | Where gold comes from | Gold ore tiles (`data/terrain/crystal.tres`), the campaign's **Start Supplies**, and each level's **Supply Drop** |
 | Do archers shoot at night | **Rests At Night** on `objects/archer/archer.tscn` |
 | The dashed circle around each archer showing its shooting range (off by default; only the look, the range itself is **Shoot Range**) | **Show Range** and **Range Color** in the **Look** group on `objects/archer/archer.tscn` |
-| How early the next level loads, how far behind levels are removed | **Stream Ahead** / **Unload Behind** on `game/world.tscn` |
+| When levels load: the next level loads as the column reaches each checkpoint (the start, a restart, or a level's camp), so the short hitch of stitching it on falls at the camp, not during the march. While camping, panning the view within **Stream Ahead** of the end of the world loads one more; by day nothing loads unless the column reaches an exit flag before its level is in. How far behind levels are removed: **Unload Behind** | **Stream Ahead** / **Unload Behind** on `game/world.tscn` |
 
 ## Tiles and terrain types
 

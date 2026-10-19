@@ -62,6 +62,47 @@ func test_streams_next_level_in_the_background() -> void:
 	assert_not_null(world.chunk(1))
 
 
+## The next level loads as the column reaches a checkpoint (the start, a restart, or a level's camp), so the
+## hitch of stitching it on falls at the camp, not in the middle of the march.
+func test_starting_a_level_loads_the_next_one_at_once() -> void:
+	world.begin(0, 3)
+	assert_true(world.requested(1), "the next level is on its way before the night has begun")
+	world.set_process(true)
+	await wait_until(func() -> bool: return world.chunk(1) != null, 5.0)
+	assert_not_null(world.chunk(1), "stitched on while the column camps")
+	assert_true(world.camping(), "still the first night")
+
+
+func test_arriving_at_a_level_loads_the_one_after() -> void:
+	world.begin(0, 3)
+	world.place_now(1)
+	world._arrive(1)
+	assert_true(world.requested(2), "requested on arrival at the checkpoint, even with a load still running")
+	world.set_process(true)
+	await wait_until(func() -> bool: return world.chunk(2) != null, 5.0)
+	assert_not_null(world.chunk(2), "stitched on once the earlier load is in")
+
+
+## By day nothing new loads because the view nears the end of the world: that waits for the next camp (or for
+## the column itself needing it at the exit flag).
+func test_the_view_nearing_the_end_by_day_loads_nothing() -> void:
+	world.begin(0, 3)
+	world.place_now(1)
+	world.march()
+	_run(world.morning_time + 0.1)
+	assert_false(world.camping())
+	world._loading = -1
+	world._queued = -1
+	var cam := Camera2D.new()
+	world.add_child(cam)
+	cam.make_current()
+	cam.position = Grid.to_px(Vector2(world.terrain.size.x - 5.0, 10.0))
+	world._stream()
+	assert_false(world.requested(2), "no load in the middle of the day")
+	world._arrive(1)
+	assert_true(world.requested(2), "it loads at the next camp")
+
+
 func test_unload_drops_the_level_behind() -> void:
 	world.begin(0, 3)
 	var c1 := world.place_now(1)
