@@ -10,6 +10,15 @@ const VOLUME_BUSES: Array[StringName] = [&"Music", &"SFX"]
 
 ## Where the volumes are kept. Tests point this elsewhere.
 var settings_path: String = "user://settings.cfg"
+## Sounds play as samples (WebAudio, the web build's default; see Project Settings > Audio > General > Default
+## Playback Type): a stream is turned into a sample the first time it plays, which hitches, so preload_folder
+## readies each one ahead.
+var samples: bool = ProjectSettings.get_setting("audio/general/default_playback_type", 0) == 1
+
+## Streams loaded by preload_folder, held so they stay loaded (and readied) all game.
+var _preloaded: Array[AudioStream] = []
+## Streams still to ready as samples, one a frame.
+var _unready: Array[AudioStream] = []
 
 var _pool: Array[AudioStreamPlayer] = []
 var _pool_2d: Array[AudioStreamPlayer2D] = []
@@ -31,6 +40,40 @@ func _ready() -> void:
 	_music.finished.connect(_on_music_finished)
 	add_child(_music)
 	load_volumes()
+
+
+func _process(_delta: float) -> void:
+	if _unready.is_empty():
+		return
+	var stream: AudioStream = _unready.pop_front()
+	if stream.can_be_sampled() and not AudioServer.is_stream_registered_as_sample(stream):
+		AudioServer.register_stream_as_sample(stream)
+
+
+## Loads every sound and music stream under folder (and its subfolders) now, and with sample playback readies
+## each as a sample over the next frames, so none hitches the first time it plays.
+func preload_folder(folder: String) -> void:
+	for f in ResourceLoader.list_directory(folder):
+		var path := folder.path_join(f)
+		if f.ends_with("/"):
+			preload_folder(path)
+			continue
+		var stream := load(path) as AudioStream
+		if stream == null or stream in _preloaded:
+			continue
+		_preloaded.append(stream)
+		if samples:
+			_unready.append(stream)
+
+
+## The streams preload_folder has loaded.
+func preloaded() -> Array[AudioStream]:
+	return _preloaded
+
+
+## How many preloaded streams are still to be readied as samples.
+func to_ready() -> int:
+	return _unready.size()
 
 
 ## Volume of a bus, 0 (silent) to 1 (as mixed).

@@ -55,3 +55,59 @@ func test_hud_sliders_report_volume() -> void:
 	assert_almost_eq(hud.get_node("%MusicSlider").value, 0.4, 0.001)
 	hud.get_node("%SoundSlider").value = 0.2
 	assert_signal_emitted_with_parameters(hud, "volume_changed", [&"SFX", 0.2])
+
+
+## Every stream the game plays, gathered from the sounds, the campaign, the levels' music and the camp's crackle.
+func _streams_in_use() -> Array[AudioStream]:
+	var out: Array[AudioStream] = []
+	for f in ResourceLoader.list_directory("res://data/sounds"):
+		var sfx := load("res://data/sounds/" + f) as SoundEffect
+		if sfx:
+			out.append_array(sfx.streams)
+	var c := GameState.campaign
+	for sfx: SoundEffect in [c.level_up_sound, c.lost_sound, c.victory_sound, c.dawn_sound]:
+		out.append_array(sfx.streams)
+	out.append(c.camp_music)
+	var level: Level = load("res://levels/level_base.tscn").instantiate()
+	out.append(level.music)
+	level.free()
+	var camp: Node = load("res://objects/camp/camp.tscn").instantiate()
+	out.append((camp.get_node("%Crackle") as AudioStreamPlayer2D).stream)
+	camp.free()
+	return out
+
+
+## Everything under the audio folder is loaded at start, so no sound or music loads the first time it plays.
+func test_preloading_the_audio_folder_loads_every_stream_in_use() -> void:
+	Audio.preload_folder("res://audio")
+	var loaded := Audio.preloaded()
+	for s in _streams_in_use():
+		assert_true(s in loaded, "%s loaded ahead" % s.resource_path)
+
+
+## Where sounds play as WebAudio samples (the web build), each stream is registered as one ahead of its first
+## play, one stream a frame so the start does not freeze; elsewhere nothing needs registering.
+func test_with_sample_playback_every_stream_is_readied_a_frame_at_a_time() -> void:
+	var had := Audio.samples
+	Audio.samples = true
+	Audio.preload_folder("res://audio")
+	var waiting := Audio.to_ready()
+	if waiting > 1:
+		await get_tree().process_frame
+		assert_lt(Audio.to_ready(), waiting, "a stream readied a frame")
+	for i in waiting + 2:
+		await get_tree().process_frame
+	assert_eq(Audio.to_ready(), 0, "all readied")
+	Audio.samples = false
+	Audio.preload_folder("res://audio")
+	assert_eq(Audio.to_ready(), 0, "nothing to ready without sample playback")
+	Audio.samples = had
+
+
+## The game preloads its audio folder (Audio Folder on the Game node) as it starts.
+func test_the_game_preloads_its_audio_folder() -> void:
+	var game: Game = load("res://game/main.tscn").instantiate()
+	assert_eq(game.audio_folder, "res://audio")
+	add_child_autofree(game)
+	assert_true(GameState.campaign.camp_music in Audio.preloaded(), "the night music is ready before the first camp")
+	get_tree().paused = false

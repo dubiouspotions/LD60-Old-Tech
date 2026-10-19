@@ -26,6 +26,9 @@ extends Node
 @export var cheats_text: String = "Cheats %s"
 ## Turning the cheats on tops every supply up to at least this.
 @export var cheat_supplies: int = 99
+## Every sound and music file under this folder is loaded as the game starts (and on the web readied to play),
+## so none hitches the first time it plays.
+@export_dir var audio_folder: String = "res://audio"
 @export_group("March")
 ## Status while the column camps (%d = seconds until the king orders the march).
 @export var patience_text: String = "Night camp · %d s"
@@ -62,6 +65,7 @@ var _plans: Array[Array] = []
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
+    Audio.preload_folder(audio_folder)
     %LevelHolder.process_mode = Node.PROCESS_MODE_PAUSABLE
     var campaign := GameState.campaign
     _tools.tools = campaign.tools
