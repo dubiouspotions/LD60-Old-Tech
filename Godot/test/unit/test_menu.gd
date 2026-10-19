@@ -6,10 +6,12 @@ const DT := 1.0 / 60.0
 
 var _campaign: Campaign
 var _volumes: Dictionary = {}
+var _window_size: Vector2i
 
 
 func before_each() -> void:
 	_campaign = GameState.campaign
+	_window_size = get_viewport().size
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SETTINGS))
 	Audio.settings_path = SETTINGS
 	Settings.settings_path = SETTINGS
@@ -18,6 +20,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	get_viewport().size = _window_size
 	for bus: StringName in _volumes:
 		Audio.set_volume(bus, _volumes[bus], false)
 	Audio.play_music(null)
@@ -95,6 +98,23 @@ func test_an_act_builds_a_bridge_the_column_falls_through() -> void:
 	assert_eq(show.stage, MenuShow.Stage.REST)
 	assert_lt(show.world.army.soldiers.size(), soldiers / 2, "most of the column fell")
 	assert_true(show.world.bridge.nodes.all(func(j: Bridge.Joint) -> bool: return not j.pinned), "the rest of the bridge drops after them")
+
+
+## On a window wide enough to show the exit flag (32:9), those who crossed stand at it in view instead of walking
+## off: once they have all gathered there the act ends as if they had gone, rather than waiting for Act Timeout.
+func test_an_act_ends_on_a_window_that_shows_the_exit_flag() -> void:
+	get_viewport().size = Vector2i(2560, 720)
+	var show := _show()
+	var exit_x := show.world.current_chunk().exit_flag.metres().x
+	var right := Grid.to_m(show.camera.get_screen_center_position() + show.get_viewport_rect().size / show.camera.zoom / 2.0).x
+	assert_gt(right, exit_x + 1.0, "the exit flag is in view")
+	# A bridge that holds, so the whole column crosses and gathers at the flag.
+	var act: MenuAct = show.acts[0].duplicate()
+	act.breaks = PackedInt32Array()
+	show.play(act)
+	_run(show, show.act_timeout - 1.0, func() -> bool: return show.stage == MenuShow.Stage.REST)
+	assert_eq(show.stage, MenuShow.Stage.REST, "the act ran to its end, not cut short")
+	assert_eq(show.world.army.soldiers.size(), act.soldiers, "with the column standing at the exit flag")
 
 
 func test_birds_burst_from_the_grass_and_cross_the_sky() -> void:

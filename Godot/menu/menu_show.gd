@@ -125,8 +125,11 @@ func on_bridge() -> int:
 	return world.army.soldiers.reduce(func(n: int, s: Soldier) -> int: return n + int(s.on_member != null and not s.dead), 0)
 
 
-## Every soldier has fallen or marched out of view on the far side.
+## Every soldier has fallen or marched out of view on the far side. On a window wide enough to show the exit flag,
+## those who crossed stop at it in view: once they have all gathered there they count as gone too.
 func army_gone() -> bool:
+	if world.army.gathered():
+		return true
 	var right := Grid.to_m(camera.get_screen_center_position() + get_viewport_rect().size / camera.zoom / 2.0).x
 	return world.army.soldiers.all(func(s: Soldier) -> bool: return s.dead or s.pos.x > right + 1.0)
 

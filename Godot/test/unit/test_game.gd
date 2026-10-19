@@ -135,6 +135,28 @@ func test_f3_skips_the_level_as_if_it_was_won() -> void:
 	assert_true(InputMap.action_has_event(&"cheat_skip_level", _key(KEY_F3)), "on F3")
 
 
+## The cheats are for testers: a release build (what players get) ignores F2 and F3; debug builds (the editor and
+## debug exports) keep them.
+func test_release_builds_have_no_cheats() -> void:
+	assert_eq(game.cheats_allowed, OS.is_debug_build(), "on exactly in debug builds")
+	game._begin()
+	var world: World = game.get_node("%World")
+	var rules: CrewRules = world.crew.rules
+	var was := rules.instant_work
+	rules.instant_work = false
+	GameState.supplies = Supplies.make(1, 0, 0)
+	game.cheats_allowed = false
+	for action: StringName in [&"cheat_instant_work", &"cheat_skip_level"]:
+		var press := InputEventAction.new()
+		press.action = action
+		press.pressed = true
+		game._unhandled_input(press)
+	assert_false(rules.instant_work, "F2 does nothing")
+	assert_eq(GameState.supplies.logs, 0, "no supplies given")
+	assert_eq(world.current, 0, "F3 does nothing")
+	rules.instant_work = was
+
+
 func test_skipping_the_last_level_wins_the_campaign() -> void:
 	game._begin()
 	var world: World = game.get_node("%World")
@@ -205,7 +227,7 @@ func test_restart_button_restarts_the_level_from_its_checkpoint() -> void:
 func test_the_crew_marker_points_at_the_nearest_engineer_off_screen() -> void:
 	game._begin()
 	var world: World = game.get_node("%World")
-	var marker: Label = game.get_node("%HUD").get_node("%CrewMarker")
+	var marker: TextureRect = game.get_node("%HUD").get_node("%CrewMarker")
 	var view := world.get_viewport().get_canvas_transform().affine_inverse()
 	var w := world.get_viewport().get_visible_rect().size.x
 	var mid_m := Grid.to_m(view * Vector2(w / 2.0, 300.0))
@@ -217,7 +239,7 @@ func test_the_crew_marker_points_at_the_nearest_engineer_off_screen() -> void:
 	e.pos.x = Grid.to_m(view * Vector2(w + 200.0, 0.0)).x
 	game._process(0.0)
 	assert_true(marker.visible, "one off screen")
-	assert_eq(marker.text, "▶", "on its side")
+	assert_false(marker.flip_h, "on its side")
 
 
 ## Dragging or wheeling the view past its limit leaves it where it is at once, not only on the next frame, so

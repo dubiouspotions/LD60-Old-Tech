@@ -261,3 +261,48 @@ func test_the_instant_work_cheat_skips_the_gathering() -> void:
 	world.crew.rules.instant_work = false
 	assert_eq(world.wood.count(), 0)
 	assert_eq(GameState.supplies.logs, had + logs)
+
+
+## The engineer up on the high part of a sloping bridge, right over wood on the pit floor too far below to drop to,
+## walks down the deck to where the floor is within Max Drop, drops, and walks back beneath the deck to the piece.
+func test_wood_under_the_high_part_of_a_sloping_bridge_is_fetched_down_the_deck() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var rows := [
+		"..................",
+		"..................",
+		"..................",
+		"............######",
+		"............######",
+		"............######",
+		"######......######",
+		"######......######",
+		"##################",
+		"BBBBBBBBBBBBBBBBBB",
+	]
+	for y in rows.size():
+		for x in rows[y].length():
+			var key: String = WorldFixture.LEGEND[rows[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	var bridge := world.bridge
+	bridge.build(bridge.snap_point(Vector2(6, 6)), bridge.snap_point(Vector2(12, 3)), load("res://data/bridge/log.tres"))
+	world.army.spawn(1, 2.5)
+	world.crew.spawn(2.5)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(10.5, bridge.walk_surface(10.5, 0.0).y)
+	assert_gt(8.0 - e.pos.y, world.crew.rules.max_drop, "the floor is too far below the engineer to drop to")
+	var pieces := world.wood.drop([Vector2i(10, 7)], 2)
+	for p in pieces:
+		p.pos = Vector2(10.5, 8.0)
+		p.resting = true
+	world.crew.gather(e, pieces)
+	var took := [0.0]
+	var lowest := [e.pos.y]
+	_run(world.crew.rules.gather_give_up + 5.0, func() -> bool:
+		took[0] += 1.0 / 60.0
+		lowest[0] = maxf(lowest[0], e.pos.y)
+		return world.wood.count() == 0)
+	assert_eq(world.wood.count(), 0, "picked up")
+	assert_lt(took[0], world.crew.rules.gather_give_up * 0.5, "fetched, not given up on")
+	assert_almost_eq(lowest[0], 8.0, 0.05, "went down to the pit floor for it")

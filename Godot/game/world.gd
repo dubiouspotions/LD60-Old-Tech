@@ -58,7 +58,7 @@ class Chunk:
 @export_range(0.0, 1.0, 0.01, "suffix:s") var collapse_stagger: float = 0.06
 ## Pitched at the camp flag while the column sleeps. Needs a strike() method that removes it.
 @export var camp_scene: PackedScene
-## Load the next level when the view's right edge comes this close to the end of the ground.
+## While camping, load one more level when the view's right edge comes this close to the end of the ground.
 @export_range(5.0, 500.0, 1.0, "suffix:m") var stream_ahead: float = 60.0
 ## Unload a level once its end is this far behind both the rear soldier and the view's left edge.
 @export_range(5.0, 500.0, 1.0, "suffix:m") var unload_behind: float = 40.0
@@ -95,6 +95,8 @@ var _chunks: Dictionary = {} # index -> Chunk
 ## index -> [offset, seam], so a rewound level lands where it was.
 var _placements: Dictionary = {}
 var _loading: int = -1
+## A level asked for while another was loading: requested once that one is in, or -1.
+var _queued: int = -1
 var phase: Phase = Phase.DAY
 var _march_left: float = 0.0
 var _phase_left: float = 0.0
@@ -215,6 +217,7 @@ func begin(index: int, soldiers: int, engineers: int = 0) -> void:
 	c.start_flag.reached = true
 	start_at(c.start_flag.metres().x, soldiers, c.level.march_delay, engineers)
 	army.stop_x = c.exit_flag.metres().x
+	request(index + 1)
 
 
 ## Puts the column and the crew (engineers; 0: the crew's own starting size) at x and camps for march_delay
@@ -250,12 +253,22 @@ func place_now(index: int) -> Chunk:
 	return _place(index, load(GameState.campaign.levels[index]))
 
 
-## Starts loading level index on a background thread. It is stitched on when ready.
+## Starts loading level index on a background thread (on the main thread where there are no threads, as on the
+## web). It is stitched on when ready. Asked for at every checkpoint (see begin and _arrive), so the hitch of
+## loading and stitching falls at the camp rather than in the middle of the march.
 func request(index: int) -> void:
-	if _loading >= 0 or chunk(index) or index >= GameState.campaign.levels.size():
+	if index == _loading or chunk(index) or index >= GameState.campaign.levels.size():
+		return
+	if _loading >= 0:
+		_queued = index
 		return
 	ResourceLoader.load_threaded_request(GameState.campaign.levels[index], "PackedScene")
 	_loading = index
+
+
+## Level index is loading in the background, or waiting to load once the one loading is in.
+func requested(index: int) -> bool:
+	return index >= 0 and (index == _loading or index == _queued)
 
 
 ## Removes level index from the world. Only for the oldest level, behind the column.
@@ -396,6 +409,7 @@ func _arrive(index: int) -> void:
 	army.stop_x = c.exit_flag.metres().x
 	_make_camp(c.start_flag.metres().x, c.level.march_delay)
 	camp_made.emit(index, joined)
+	request(index + 1)
 
 
 ## Pitches camp at x for delay seconds (0 marches on without camping).
@@ -460,13 +474,14 @@ func _strike_camp() -> void:
 	_camp = null
 
 
-## Requests the next level when the view nears the end, unloads levels far behind.
+## Requests the next level when the view nears the end while the column camps (by day that waits for the next
+## camp, or for the column needing it at the exit flag), and unloads levels far behind.
 func _stream() -> void:
 	var view := _view_m()
 	var last := current
 	while chunk(last + 1):
 		last += 1
-	if chunk(last) and view.end.x >= terrain.size.x - stream_ahead:
+	if at_camp() and chunk(last) and view.end.x >= terrain.size.x - stream_ahead:
 		request(last + 1)
 	var rear := army.rear()
 	var behind := minf(view.position.x, rear.pos.x if rear else view.position.x) - unload_behind
@@ -490,6 +505,10 @@ func _poll_loading() -> void:
 	var scene: PackedScene = ResourceLoader.load_threaded_get(path)
 	if chunk(index) == null and (chunk(index - 1) or _placements.has(index)):
 		_place(index, scene)
+	var queued := _queued
+	_queued = -1
+	if queued >= 0:
+		request(queued)
 
 
 ## Stitches a level scene onto the world.

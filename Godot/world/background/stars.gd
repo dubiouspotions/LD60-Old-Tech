@@ -24,6 +24,9 @@ extends Node2D
 	set(v):
 		sky_height = v
 		queue_redraw()
+## How far the stars drift sideways with the camera: 0 = fixed to the screen, 1 = moves with the world. Keep it
+## below the furthest mountains' Scroll Scale so the stars look furthest away. They wrap round the screen.
+@export_range(0.0, 1.0, 0.001) var parallax: float = 0.02
 ## Size of one star pixel on screen (the art is drawn at 4x).
 @export_range(1, 16) var pixel: int = 4
 ## Share of stars drawn as a small cross instead of one pixel.
@@ -54,6 +57,8 @@ var _stars: Array[Vector4] = [] # x 0..1, y 0..1, twinkle speed (Hz), phase; big
 var _meteors: Array[Dictionary] = [] # {pos, vel, age, life}
 var _rng := RandomNumberGenerator.new()
 var _next_meteor: float = -1.0
+## The camera's left edge in metres, for the parallax.
+var _cam_x: float = 0.0
 
 
 func _ready() -> void:
@@ -64,6 +69,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not Engine.is_editor_hint():
 		advance(delta)
+		var cam := get_viewport().get_camera_2d()
+		_cam_x = Grid.to_m(cam.get_screen_center_position() - get_viewport_rect().size / 2).x if cam else 0.0
 	if amount > 0.0:
 		queue_redraw()
 
@@ -106,10 +113,11 @@ func count() -> int:
 	return _stars.size()
 
 
-## Where star i sits on a screen of size, snapped to the pixel grid.
-func star_position(i: int, size: Vector2) -> Vector2:
+## Where star i sits on a screen of size with the camera's left edge at cam_x (metres), snapped to the pixel
+## grid: shifted sideways by the parallax share of the camera's travel, wrapping round the screen.
+func star_position(i: int, size: Vector2, cam_x: float = 0.0) -> Vector2:
 	var s := _stars[i]
-	var p := Vector2(s.x * size.x, s.y * sky_height * size.y)
+	var p := Vector2(fposmod(s.x * size.x - cam_x * Grid.PX * parallax, size.x), s.y * sky_height * size.y)
 	return (p / pixel).floor() * pixel
 
 
@@ -136,7 +144,7 @@ func _draw() -> void:
 	var size := get_viewport_rect().size
 	var t := Time.get_ticks_msec() / 1000.0
 	for i in _stars.size():
-		var p := star_position(i, size)
+		var p := star_position(i, size, _cam_x)
 		var c := draw_color(i, t)
 		draw_rect(Rect2(p, Vector2.ONE * pixel), c)
 		if _stars[i].z < 0.0:

@@ -2,13 +2,21 @@ extends GutTest
 ## The HUD rows fit the window: tool hints fold away first, then the title.
 
 var hud: Hud
+## The window's size before each test: a test that resizes it puts it back, or later scripts (the menu show) see
+## a wider world.
+var _window_size: Vector2i
 
 
 func before_each() -> void:
+	_window_size = get_viewport().size
 	hud = load("res://ui/hud.tscn").instantiate()
 	add_child_autofree(hud)
 	hud.build_tools(GameState.campaign.tools)
 	hud.set_march(true)
+
+
+func after_each() -> void:
+	assert_eq(get_viewport().size, _window_size, "the test left the window the size it found it")
 
 
 func _hints_shown() -> bool:
@@ -87,25 +95,27 @@ func test_camp_shoppe_panel_shows_under_the_camp() -> void:
 
 ## A red arrow at the screen edge points at the nearest engineer off screen, like the blue one at the leader.
 func test_crew_marker_points_at_an_engineer_off_screen() -> void:
-	var m: Label = hud.get_node("%CrewMarker")
-	var lead: Label = hud.get_node("%LeadMarker")
+	var m: TextureRect = hud.get_node("%CrewMarker")
+	var lead: TextureRect = hud.get_node("%LeadMarker")
 	hud.set_crew_marker(0, 0.0)
 	assert_false(m.visible, "nobody off screen")
 	hud.set_crew_marker(-1, 300.0)
 	assert_true(m.visible)
-	assert_eq(m.text, "◀")
+	assert_true(m.flip_h, "pointing left")
 	assert_lt(m.position.x, 50.0, "on the left edge")
 	hud.set_crew_marker(1, 300.0)
-	assert_eq(m.text, "▶")
-	assert_gt(m.get_theme_color(&"font_color").r, 0.8, "red")
-	assert_lt(m.get_theme_color(&"font_color").b, 0.5)
-	assert_eq(m.get_theme_font_size(&"font_size"), lead.get_theme_font_size(&"font_size"), "the same arrow as the leader's")
+	assert_false(m.flip_h, "pointing right")
+	assert_gt(m.modulate.r, 0.8, "red")
+	assert_not_null(m.texture, "an arrow sprite, not a glyph the font may lack")
+	assert_eq(m.texture, lead.texture, "the same arrow as the leader's")
+	assert_lt(m.modulate.b, 0.5)
+	assert_eq(m.size, lead.size, "and the same size")
 
 
 ## The red and the blue arrow never cover each other, whichever is placed first and wherever on the edge.
 func test_crew_and_lead_markers_never_overlap() -> void:
-	var red: Label = hud.get_node("%CrewMarker")
-	var blue: Label = hud.get_node("%LeadMarker")
+	var red: TextureRect = hud.get_node("%CrewMarker")
+	var blue: TextureRect = hud.get_node("%LeadMarker")
 	var bottom := red.get_viewport_rect().size.y
 	for y: float in [300.0, 0.0, bottom]:
 		for crew_first: bool in [true, false]:
@@ -286,8 +296,28 @@ func test_supplies_sit_just_above_the_build_buttons() -> void:
 	var supplies: Control = hud.get_node("%Supplies")
 	var rack: Control = hud.get_node("%Rack")
 	var column := rack.get_parent()
-	assert_eq(supplies.get_parent().get_parent(), column, "in the bottom area, not the top bar")
-	assert_eq(supplies.get_parent().get_index() + 1, rack.get_index(), "right above the rack")
+	var row := supplies.get_parent().get_parent()
+	assert_eq(row.get_parent(), column, "in the bottom area, not the top bar")
+	assert_eq(row.get_index() + 1, rack.get_index(), "right above the rack")
+
+
+## The level, army, marched and best readouts share the supplies' row, at its right end, so they stay just above
+## the Restart and Pause buttons whatever the window's size (they used to sit at fixed pixel offsets).
+func test_stats_stick_above_the_buttons_at_any_window_size() -> void:
+	var stats: Control = hud.get_node("%Best").get_parent()
+	var supplies: Control = hud.get_node("%SupplyBar")
+	var rack: Control = hud.get_node("%Rack")
+	assert_eq(stats.get_parent(), supplies.get_parent(), "in the supplies' row")
+	assert_true(stats is Control and stats.get_parent() is Container, "laid out by a container, not pixel offsets")
+	for width: float in [1280.0, 2560.0]:
+		hud.get_viewport().size = Vector2i(int(width), 720)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var right := stats.get_global_rect().end.x
+		var rack_right := rack.get_global_rect().end.x
+		assert_almost_eq(right, rack_right, 1.0, "flush with the buttons' right edge at %d wide" % int(width))
+		assert_almost_eq(stats.get_global_rect().end.y, rack.get_global_rect().position.y, 10.0, "just above them")
+	hud.get_viewport().size = _window_size
 
 
 func test_tool_buttons_show_cost_and_grey_out_when_unaffordable() -> void:

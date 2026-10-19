@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://data/sounds/ui_click.tres" id="5"]
 [ext_resource type="PackedScene" path="res://ui/world_button.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://ui/plan_buttons.tscn" id="7"]
+[ext_resource type="Texture2D" path="res://ui/elements/edge_arrow.png" id="8_arrow"]
 [ext_resource type="Texture2D" uid="uid://dx3rcjuho1gm5" path="res://world/dirt.png" id="7_m0eg6"]
 [ext_resource type="Texture2D" uid="uid://iqyfiq0vbe12" path="res://world/timber.png" id="8_b00kl"]
 [ext_resource type="Texture2D" uid="uid://c0ypepdtamdmc" path="res://world/rope.png" id="9_so1yu"]
@@ -70,35 +71,6 @@ grow_vertical = 2
 mouse_filter = 2
 theme = ExtResource("3")
 
-[node name="Stats" type="HBoxContainer" parent="Root" unique_id=763296046]
-layout_mode = 0
-offset_left = 1004.0
-offset_top = 637.0
-offset_right = 1266.0
-offset_bottom = 666.0
-mouse_filter = 2
-theme_override_constants/separation = 16
-
-[node name="Level" parent="Root/Stats" unique_id=1132306690 instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Level"
-
-[node name="Army" parent="Root/Stats" unique_id=954870113 instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Army"
-
-[node name="Marched" parent="Root/Stats" unique_id=837735285 instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Marched"
-
-[node name="Best" parent="Root/Stats" unique_id=1693077341 instance=ExtResource("4")]
-unique_name_in_owner = true
-layout_mode = 2
-caption = "Best"
-
 [node name="Margin" type="MarginContainer" parent="Root" unique_id=338993714]
 layout_mode = 1
 anchors_preset = 15
@@ -140,55 +112,59 @@ layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="SupplyBar" type="PanelContainer" parent="Root/Margin/Column" unique_id=278898121]
+[node name="Bottom" type="HBoxContainer" parent="Root/Margin/Column" unique_id=1572093581]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SupplyBar" type="PanelContainer" parent="Root/Margin/Column/Bottom" unique_id=278898121]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 0
 mouse_filter = 2
 
-[node name="Supplies" type="HBoxContainer" parent="Root/Margin/Column/SupplyBar" unique_id=154934408]
+[node name="Supplies" type="HBoxContainer" parent="Root/Margin/Column/Bottom/SupplyBar" unique_id=154934408]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 16
 
-[node name="Earth" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=1139826973 instance=ExtResource("4")]
+[node name="Earth" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies" unique_id=1139826973 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
 alignment = 2
 caption = ""
 swatch = Color(0.627451, 0.4392157, 0.24705882, 0.003921569)
 
-[node name="Dirt" type="Sprite2D" parent="Root/Margin/Column/SupplyBar/Supplies/Earth" unique_id=1389761190]
+[node name="Dirt" type="Sprite2D" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies/Earth" unique_id=1389761190]
 position = Vector2(4.5, 10.5)
 scale = Vector2(0.25781253, 0.25781253)
 texture = ExtResource("7_m0eg6")
 
-[node name="Logs" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=2003694488 instance=ExtResource("4")]
+[node name="Logs" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies" unique_id=2003694488 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
 alignment = 2
 caption = ""
 swatch = Color(0.6901961, 0.47843137, 0.25882354, 0.003921569)
 
-[node name="Timber" type="Sprite2D" parent="Root/Margin/Column/SupplyBar/Supplies/Logs" unique_id=779370810]
+[node name="Timber" type="Sprite2D" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies/Logs" unique_id=779370810]
 position = Vector2(7.5, 9.5)
 scale = Vector2(0.22656244, 0.22656244)
 texture = ExtResource("8_b00kl")
 
-[node name="Rope" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=1228161966 instance=ExtResource("4")]
+[node name="Rope" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies" unique_id=1228161966 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
 alignment = 2
 caption = ""
 swatch = Color(0.8509804, 0.7647059, 0.56078434, 0.003921569)
 
-[node name="Rope2" type="Sprite2D" parent="Root/Margin/Column/SupplyBar/Supplies/Rope" unique_id=456850504]
+[node name="Rope2" type="Sprite2D" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies/Rope" unique_id=456850504]
 position = Vector2(10, 13)
 scale = Vector2(0.17187501, 0.17187501)
 texture = ExtResource("9_so1yu")
 
-[node name="Stone" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=1001004681 instance=ExtResource("4")]
+[node name="Stone" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies" unique_id=1001004681 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
 offset_transform_enabled = true
@@ -197,12 +173,12 @@ alignment = 2
 caption = ""
 swatch = Color(0.6, 0.61960787, 0.65882355, 0)
 
-[node name="Stone2" type="Sprite2D" parent="Root/Margin/Column/SupplyBar/Supplies/Stone" unique_id=983069362]
+[node name="Stone2" type="Sprite2D" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies/Stone" unique_id=983069362]
 position = Vector2(-8, 10)
 scale = Vector2(0.16015619, 0.16015619)
 texture = ExtResource("10_b00kl")
 
-[node name="Gold" parent="Root/Margin/Column/SupplyBar/Supplies" unique_id=1920718775 instance=ExtResource("4")]
+[node name="Gold" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies" unique_id=1920718775 instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
 offset_transform_enabled = true
@@ -211,10 +187,41 @@ alignment = 2
 caption = ""
 swatch = Color(0.9372549, 0.7607843, 0.24313726, 0.003921569)
 
-[node name="Goldbar" type="Sprite2D" parent="Root/Margin/Column/SupplyBar/Supplies/Gold" unique_id=1605417491]
+[node name="Goldbar" type="Sprite2D" parent="Root/Margin/Column/Bottom/SupplyBar/Supplies/Gold" unique_id=1605417491]
 position = Vector2(6, 8)
 scale = Vector2(0.22265637, 0.22265637)
 texture = ExtResource("10_65xic")
+
+[node name="Spacer" type="Control" parent="Root/Margin/Column/Bottom" unique_id=1942078463]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Stats" type="HBoxContainer" parent="Root/Margin/Column/Bottom" unique_id=763296046]
+layout_mode = 2
+size_flags_vertical = 8
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Level" parent="Root/Margin/Column/Bottom/Stats" unique_id=1132306690 instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Level"
+
+[node name="Army" parent="Root/Margin/Column/Bottom/Stats" unique_id=954870113 instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Army"
+
+[node name="Marched" parent="Root/Margin/Column/Bottom/Stats" unique_id=837735285 instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Marched"
+
+[node name="Best" parent="Root/Margin/Column/Bottom/Stats" unique_id=1693077341 instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+caption = "Best"
 
 [node name="Rack" type="HBoxContainer" parent="Root/Margin/Column" unique_id=141231400]
 unique_name_in_owner = true
@@ -509,25 +516,25 @@ theme_override_font_sizes/font_size = 20
 text = "Checkpoint"
 horizontal_alignment = 1
 
-[node name="LeadMarker" type="Label" parent="Root" unique_id=981923255]
+[node name="LeadMarker" type="TextureRect" parent="Root" unique_id=981923255]
 unique_name_in_owner = true
 visible = false
+modulate = Color(0.302, 0.545, 0.941, 1)
 layout_mode = 0
 offset_right = 24.0
-offset_bottom = 30.0
-theme_override_colors/font_color = Color(0.302, 0.545, 0.941, 1)
-theme_override_font_sizes/font_size = 24
-text = "▶"
+offset_bottom = 24.0
+mouse_filter = 2
+texture = ExtResource("8_arrow")
 
-[node name="CrewMarker" type="Label" parent="Root" unique_id=1462093817]
+[node name="CrewMarker" type="TextureRect" parent="Root" unique_id=1462093817]
 unique_name_in_owner = true
 visible = false
+modulate = Color(0.92, 0.3, 0.25, 1)
 layout_mode = 0
 offset_right = 24.0
-offset_bottom = 30.0
-theme_override_colors/font_color = Color(0.92, 0.3, 0.25, 1)
-theme_override_font_sizes/font_size = 24
-text = "▶"
+offset_bottom = 24.0
+mouse_filter = 2
+texture = ExtResource("8_arrow")
 
 [node name="Intro" type="ColorRect" parent="Root" unique_id=1007607496]
 unique_name_in_owner = true

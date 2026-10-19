@@ -144,6 +144,117 @@ func test_crew_digs_marked_soil() -> void:
 	assert_eq(GameState.supplies.earth, earth + 1)
 
 
+## Steps the world until done(), counting the work sound's blows and each engineer's jolts (with the point of each
+## jolt checked against where(e)). Returns [blows heard, {engineer: jolts}].
+func _count_jolts(seconds: float, done: Callable, where: Callable) -> Array:
+	var blows := [0]
+	var listen := func(sfx: SoundEffect) -> void:
+		if sfx == world.crew.rules.work_sound:
+			blows[0] += 1
+	Audio.played.connect(listen)
+	var jolts := {}
+	var was := {}
+	_run(seconds, func() -> bool:
+		for e: Crew.Engineer in world.crew.engineers:
+			e.node._process(1.0 / 60.0) # the frame that passes with each step here
+			var now: bool = e.node.work_shake() != Vector2.ZERO
+			if now and not was.get(e, false):
+				jolts[e] = jolts.get(e, 0) + 1
+				var to: Vector2 = where.call(e) - (e.pos - Vector2(0, 0.5))
+				assert_gt(e.node.work_shake().dot(to), 0.0, "towards the work")
+			was[e] = now
+		return done.call())
+	Audio.played.disconnect(listen)
+	return [blows[0], jolts]
+
+
+## The engineer digging (or chopping) jolts towards its work once on every blow you hear, the last being the one
+## that breaks the cell (soil breaks with the same sound), and not in between; the others stay still.
+func test_the_digger_jolts_once_per_audible_blow() -> void:
+	var cell := Vector2i(3, 6)
+	world.terrain.mark(cell)
+	var counted := _count_jolts(12.0, func() -> bool: return world.terrain.type_at(cell) == null,
+			func(_e: Crew.Engineer) -> Vector2: return Vector2(cell) + Vector2(0.5, 0.5))
+	assert_null(world.terrain.type_at(cell), "dug")
+	var jolts: Dictionary = counted[1]
+	assert_eq(jolts.size(), 1, "only the digger jolts")
+	assert_gt(counted[0], 1, "several blows heard")
+	assert_eq(jolts.values()[0], counted[0], "one jolt per blow heard")
+
+
+## Building a bridge piece jolts its builder towards the piece on every blow you hear, and once more as it is put
+## in place (with the material's place sound).
+func test_the_builder_jolts_once_per_audible_blow() -> void:
+	var m := _plan(Vector2(6, 6), Vector2(8, 6))
+	world.bridge.order_blueprints()
+	var counted := _count_jolts(30.0, func() -> bool: return not m.blueprint,
+			func(_e: Crew.Engineer) -> Vector2: return (m.a.pos + m.b.pos) / 2.0)
+	assert_false(m.blueprint, "built")
+	var jolts: Dictionary = counted[1]
+	assert_eq(jolts.size(), 1, "only the builder jolts")
+	assert_gt(counted[0], 1, "several blows heard")
+	assert_eq(jolts.values()[0], counted[0] + 1, "one jolt per blow, and one as it is placed")
+
+
+## Building out from a joint, the builder is drawn hopping about the built part of the piece near where it grows
+## (Build Wander): it pops from spot to spot (Build Wander Interval) without walking, a cartoon busy look. Only the
+## look moves: the builder itself stays on its joint. It faces the growing end and tilts towards it (at most Build
+## Lean Max). Once the piece is done it pops back where it is, upright.
+func test_the_builder_moves_about_near_the_growing_end() -> void:
+	var rules: CrewRules = world.crew.rules
+	assert_gt(rules.build_wander, 0.0)
+	assert_gt(rules.build_wander_interval, 0.0)
+	var m := _plan(Vector2(6, 6), Vector2(10, 6))
+	world.bridge.order_blueprints()
+	var spots := {}
+	var builder := [null]
+	var hops := [0]
+	var moves := [0]
+	var backs := [0]
+	var last := [Vector2.INF]
+	_run(30.0, func() -> bool:
+		for e: Crew.Engineer in world.crew.engineers:
+			if e.job == m and e.working and is_nan(e.reach_x) and m.progress > 0.0:
+				builder[0] = e
+				assert_eq(e.pos, e.at.pos if e.at else e.pos, "the builder itself stays on its joint")
+				var drawn := e.node.pos
+				var from := m.from_joint.pos
+				var far := m.b.pos if m.from_joint == m.a else m.a.pos
+				var along := (drawn - from).dot((far - from).normalized())
+				var tip := m.progress * m.length
+				assert_lte(along, tip + 0.3, "not past the built part")
+				# A spot stays put till the next hop while the piece grows on past it.
+				var grown := m.material.build_speed * rules.build_wander_interval
+				assert_gte(along, tip - rules.build_wander - grown - 0.05, "near where it grows")
+				assert_almost_eq(absf((drawn - from).cross((far - from).normalized())), 0.0, 0.3, "on the piece")
+				spots[snappedf(along, 0.25)] = true
+				assert_false(e.node.moving, "no walking between spots")
+				var to := from.lerp(far, m.progress) - (drawn - Vector2(0, 0.5))
+				if absf(to.x) > 0.3:
+					assert_eq(e.node.facing, signi(roundi(to.x * 100)), "facing the growing end")
+					var lean := clampf(atan(to.y / to.x), -deg_to_rad(rules.build_lean_max), deg_to_rad(rules.build_lean_max))
+					assert_almost_eq(e.node.lean, lean, 0.25, "tilted towards it")
+				if last[0] != Vector2.INF and drawn.distance_to(last[0]) > 0.01:
+					moves[0] += 1
+					if drawn.distance_to(last[0]) > rules.climb_speed / 60.0 + 0.01:
+						hops[0] += 1
+						if (drawn - last[0]).dot(far - from) < 0.0:
+							backs[0] += 1
+				last[0] = drawn
+		return not m.blueprint)
+	assert_false(m.blueprint, "built")
+	assert_not_null(builder[0], "built from a joint")
+	assert_gt(spots.size(), 3, "moved about while building")
+	assert_gt(hops[0], 3, "popping from spot to spot in one frame")
+	assert_gt(backs[0], 0, "now and then back along the piece, not only following its end")
+	assert_lte(moves[0], ceili(m.length / m.material.build_speed / rules.build_wander_interval) + 2,
+			"only on hops: no sliding along with the growing end in between")
+	_run(1.0 / 60.0)
+	var e: Crew.Engineer = builder[0]
+	assert_almost_eq(e.node.pos.x, e.pos.x, 0.3, "popped back where it is once done")
+	assert_eq(e.node.rotation, 0.0, "and upright")
+
+
 func test_crew_digs_down_into_its_own_hole() -> void:
 	world.terrain.mark(Vector2i(3, 6))
 	world.terrain.mark(Vector2i(3, 7))

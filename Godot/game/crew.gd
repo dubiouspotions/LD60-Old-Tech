@@ -54,6 +54,19 @@ class Engineer:
 	var spot_x: float
 	## Working this tick (building or digging).
 	var working: bool = false
+	## The way from its chest to what it digs, chops, builds or takes apart this tick, else zero: it jolts that way
+	## on each blow.
+	var blow_dir: Vector2 = Vector2.ZERO
+	## Drawn this far from pos (a builder hopping about its piece, see CrewRules.build_wander); the piece it hops
+	## on, the spot it stands at till the next hop (metres along the piece from where it builds from), and seconds
+	## to that hop.
+	var shown: Vector2 = Vector2.ZERO
+	## Tilt towards where its piece grows (see CrewRules.build_lean_max), and the way it faces it (0: as it was).
+	var lean: float = 0.0
+	var lean_face: int = 0
+	var wander_job: Bridge.Member
+	var wander_along: float = 0.0
+	var wander_left: float = 0.0
 	## Seconds to the next swing of the axe while felling.
 	var chop_wait: float = 0.0
 	## Builds the job from the ground standing at this x (a plan not connected to anything), else NAN.
@@ -119,6 +132,7 @@ var _ready_side: float = 1.0
 var _ready_think: float = 0.0
 var _strike_wait: Dictionary = {} # Member -> seconds its structure has been ready to strike
 var _work_sound_left: float = 0.0
+var _rng := RandomNumberGenerator.new()
 ## The engineer that last finished digging, while dig_finished is handled.
 var _finisher: Engineer
 ## Cells of ground changed so far, so the engineers know their CrewNav is out of date.
@@ -176,6 +190,13 @@ func step(dt: float) -> void:
 	for i in engineers.size():
 		var e := engineers[i]
 		e.working = false
+		e.blow_dir = Vector2.ZERO
+		e.lean_face = 0
+		if e.shown != Vector2.ZERO or e.lean != 0.0:
+			# Pops back where it is, upright (a builder hopping about pops to its next spot below, if still at it).
+			e.shown = Vector2.ZERO
+			e.lean = 0.0
+			_show(e, e.node.moving, 0)
 		if e.at and e.at.degree == 0:
 			_let_go(e)
 			e.route.clear()
@@ -206,6 +227,7 @@ func step(dt: float) -> void:
 		if e.job and e.route.is_empty():
 			if is_nan(e.reach_x) or _reach_step(e, dt):
 				e.working = true
+				_wander(e, dt)
 				_work(e, dt)
 				_show(e, false, signi(roundi((e.goal.pos.x - e.pos.x) * 100)) if e.goal else 1)
 		elif not e.route.is_empty():
@@ -514,10 +536,17 @@ func _on_ground_changed(_cell: Vector2i) -> void:
 	_ground_changes += 1
 
 
-## Drops the turns of e's path it has reached.
+## Drops the turns of e's path it has reached: at a turn's x, at its height or settled on the ground there (it got
+## down off a deck at the turn itself, a step before the way did).
 func _trim_path(e: Engineer) -> void:
-	while not e.path.is_empty() and absf(e.path[0].x - e.pos.x) <= 0.05 and absf(e.path[0].y - e.pos.y) <= 0.05:
+	while not e.path.is_empty() and absf(e.path[0].x - e.pos.x) <= 0.05 and (absf(e.path[0].y - e.pos.y) <= 0.05 or _settled(e)):
 		e.path.pop_front()
+
+
+## Stands on the ground (or deck) under it, by the way it is walking.
+func _settled(e: Engineer) -> bool:
+	var ground := _ground_of(e, e.pos.x)
+	return not is_nan(ground) and absf(ground - e.pos.y) <= 0.02
 
 
 ## Walks e toward the next turn of its path, or toward x once all of it is behind.
@@ -559,6 +588,7 @@ func _dig_step(e: Engineer, dt: float) -> void:
 		e.digging = false
 		return
 	e.working = true
+	e.blow_dir = target - (e.pos - Vector2(0, 0.5))
 	var t := terrain.type_at(e.dig)
 	var done := terrain.dig_progress(e.dig) + dt * rules.dig_speed / t.dig_time
 	terrain.set_dig_progress(e.dig, done)
@@ -569,6 +599,7 @@ func _dig_step(e: Engineer, dt: float) -> void:
 			chopped.emit(e.dig)
 	_show(e, false, signi(roundi((target.x - e.pos.x) * 100)))
 	if done >= 1.0:
+		_final_blow(e)
 		e.digging = false
 		_finisher = e
 		dig_finished.emit(e.dig)
@@ -707,8 +738,9 @@ func _set_fetch(e: Engineer, p: Wood.Piece) -> void:
 	p.taker = e
 
 
-## Sets e's path to a spot by the piece it fetches, on decks or (if only that way) beneath them. Keeps walking
-## straight at it if there is no such spot (yet: the piece may still be falling).
+## Sets e's path to a spot by the piece it fetches, on decks or (if only that way) beneath them: down a deck to
+## where the ground beneath is within reach, then under it. Keeps walking straight at it if there is no such spot
+## (yet: the piece may still be falling).
 func _route_fetch(e: Engineer, p: Wood.Piece) -> void:
 	for decks: bool in [true, false]:
 		var nav := _nav(e, decks, e.any_height)
@@ -799,8 +831,12 @@ func _work(e: Engineer, dt: float) -> void:
 		m.progress = maxf(0.0, m.progress - step)
 	else:
 		m.progress = minf(1.0, m.progress + step)
+	# It works at the end of what is built so far.
+	var far := m.b if m.from_joint == m.a else m.a
+	e.blow_dir = m.from_joint.pos.lerp(far.pos, m.progress) - (e.pos + e.shown - Vector2(0, 0.5))
 	if m.progress > 0.0 and m.progress < 1.0:
 		return
+	_final_blow(e)
 	e.job = null
 	e.goal = null
 	e.reach_x = NAN
@@ -808,6 +844,50 @@ func _work(e: Engineer, dt: float) -> void:
 		dismantled.emit(m)
 	else:
 		bridge.finish(m)
+
+
+## Where a builder working out from a joint is drawn: a spot on the built part of its piece, at most build_wander
+## back from where it grows, popping to a new one every build_wander_interval. A builder on the ground (reach_x)
+## stays put.
+func _wander(e: Engineer, dt: float) -> void:
+	var m := e.job
+	if not is_nan(e.reach_x) or m.length <= 0.0:
+		return
+	var built := m.progress * m.length
+	e.wander_left -= dt
+	if e.wander_job != m or e.wander_left <= 0.0:
+		# Hops to a new spot and stays there until the next hop (it does not slide along as the piece grows).
+		e.wander_left = rules.build_wander_interval
+		var lo := maxf(built - rules.build_wander, 0.0)
+		var was := e.wander_along if e.wander_job == m else -INF
+		# A clear jump away from the last spot, back or forth, where the built part leaves room for one.
+		var spot := _rng.randf_range(lo, built)
+		for k in 8:
+			if absf(spot - was) >= rules.build_hop:
+				break
+			spot = _rng.randf_range(lo, built)
+		e.wander_along = spot
+		e.wander_job = m
+	# Taken apart below it meanwhile: it stands on what is left.
+	e.wander_along = minf(e.wander_along, built)
+	var from := e.at if e.at else e.goal
+	var far := m.b if from == m.a else m.a
+	e.shown = from.pos.lerp(far.pos, e.wander_along / m.length) - e.pos
+	# Face where it grows and tilt that way: its front (+x when facing right) points at it, as far as the max lets.
+	# Right over it, there is no way to face: it keeps the last.
+	var to := from.pos.lerp(far.pos, m.progress) - (e.pos + e.shown - Vector2(0, 0.5))
+	if absf(to.x) > 0.05:
+		var most := deg_to_rad(rules.build_lean_max)
+		e.lean = clampf(atan(to.y / to.x), -most, most)
+		e.lean_face = signi(roundi(to.x * 100))
+	else:
+		e.lean = e.node.lean
+
+
+## The blow that finishes a job (the cell breaks, the piece is put in place): a jolt with the sound of it.
+func _final_blow(e: Engineer) -> void:
+	if e.blow_dir != Vector2.ZERO:
+		e.node.work_blow(e.blow_dir)
 
 
 ## Takes the engineer off the joint it holds. A joint bolted to a wall lies on the wall's line, which counts as the
@@ -919,11 +999,15 @@ func _walk_to(e: Engineer, x: float, dt: float) -> void:
 ## Ground surface at x for an engineer standing at height y, or NAN if it can not get there:
 ## a hazard, a wall higher than max_climb or a drop deeper than max_drop. Built decks count as ground.
 ## The engineer's own level (within step_up) wins over climbing.
-## With decks false the engineer walks beneath decks instead of on them.
+## With decks false the engineer walks beneath decks instead of on them. A deck over ground it can not get to
+## (too far down, or a hazard) it walks along, to get down past it where the ground beneath is within reach.
 ## any_height lifts max_climb and max_drop.
 func _next_y(y: float, x: float, decks: bool = true, any_height: bool = false) -> float:
 	var level_y := _surface_y(y, x, rules.step_up, decks, any_height)
-	return level_y if not is_nan(level_y) else _surface_y(y, x, INF if any_height else rules.max_climb, decks, any_height)
+	var out := level_y if not is_nan(level_y) else _surface_y(y, x, INF if any_height else rules.max_climb, decks, any_height)
+	if is_nan(out) and not decks:
+		return _next_y(y, x, true, any_height)
+	return out
 
 
 ## _next_y for engineer e where it stands now, by the way it is walking (beneath decks, any height).
@@ -1048,6 +1132,10 @@ func _update_work_sound(dt: float) -> void:
 	for e in engineers:
 		if e.working:
 			_work_sound_left = rules.work_sound_interval
+			# Everyone at work strikes on the blow you hear.
+			for d in engineers:
+				if d.blow_dir != Vector2.ZERO:
+					d.node.work_blow(d.blow_dir)
 			Audio.play(rules.work_sound, Grid.to_px(e.pos))
 			return
 
@@ -1063,8 +1151,11 @@ func _clear_of_rock(p: Vector2) -> Vector2:
 
 
 func _show(e: Engineer, moving: bool, facing: int) -> void:
-	e.node.pos = e.pos + _clear_of_rock(e.pos)
+	e.node.pos = e.pos + e.shown + _clear_of_rock(e.pos + e.shown)
 	e.node.moving = moving
+	e.node.lean = e.lean
+	if e.lean_face != 0:
+		facing = e.lean_face
 	e.node.speed = rules.walk_speed if e.at == null else rules.climb_speed
 	if facing != 0:
 		e.node.facing = facing
