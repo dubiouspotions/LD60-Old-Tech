@@ -201,7 +201,7 @@ func test_full_screen_is_saved_for_the_next_session() -> void:
 	assert_false(Settings.saved_fullscreen())
 
 
-func test_the_hud_menu_button_asks_for_the_main_menu() -> void:
+func test_the_hud_menu_button_asks_for_the_pause_menu() -> void:
 	var hud: Hud = load("res://ui/hud.tscn").instantiate()
 	add_child_autofree(hud)
 	watch_signals(hud)

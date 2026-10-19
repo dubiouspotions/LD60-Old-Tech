@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://c0ypepdtamdmc" path="res://world/rope.png" id="9_so1yu"]
 [ext_resource type="Texture2D" uid="uid://cvpdohmpv57f5" path="res://world/goldbar.png" id="10_65xic"]
 [ext_resource type="Texture2D" uid="uid://cede0t4wnbtpo" path="res://world/stone.png" id="10_b00kl"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="11_pause"]
 
 [node name="HUD" type="CanvasLayer" unique_id=2064392993]
 script = ExtResource("1")
@@ -709,3 +710,8 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 20
 text = "March again"
+
+[node name="PauseMenu" parent="Root" unique_id=1405519237 instance=ExtResource("11_pause")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1

@@ -48,7 +48,7 @@ var cheats_allowed: bool = OS.is_debug_build()
 @export var march_sound: SoundEffect
 ## How far above a plan its Build button floats.
 @export var plan_button_rise: float = 0.4
-## Where the HUD's Menu button goes.
+## Where the pause menu's Quit to Main Menu goes.
 @export_file("*.tscn") var menu_scene: String = "res://menu/main_menu.tscn"
 
 @onready var _world: World = %World
@@ -63,6 +63,8 @@ var _over: bool = false
 var _over_status: String = ""
 ## Counts losses, so a lost card still waiting is dropped when the level is retried meanwhile.
 var _losses: int = 0
+## Was the game paused when the pause menu opened (so closing it stays paused).
+var _paused_before_menu: bool = false
 ## Plans shown with Build buttons this frame (see _show_plans).
 var _plans: Array[Array] = []
 
@@ -95,7 +97,9 @@ func _ready() -> void:
     _hud.retry_pressed.connect(_retry)
     _hud.restart_level_pressed.connect(_retry)
     _hud.restart_pressed.connect(_restart)
-    _hud.menu_pressed.connect(_to_menu)
+    _hud.menu_pressed.connect(_open_pause_menu)
+    _hud.resume_pressed.connect(_close_pause_menu)
+    _hud.quit_pressed.connect(_to_menu)
     _camera.follow_changed.connect(_hud.set_follow)
     _hud.set_volumes(Audio.volume(_hud.music_bus), Audio.volume(_hud.sound_bus))
     _hud.volume_changed.connect(Audio.set_volume)
@@ -133,7 +137,12 @@ func _take_start_level() -> int:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if event.is_action_pressed(&"pause"):
+    if event.is_action_pressed(&"pause_menu"):
+        if _hud.pause_menu_open():
+            _close_pause_menu()
+        else:
+            _open_pause_menu()
+    elif event.is_action_pressed(&"pause"):
         _toggle_pause()
     elif event.is_action_pressed(&"speed"):
         _toggle_speed()
@@ -269,6 +278,23 @@ func _toggle_pause() -> void:
     if _hud.any_card_open():
         return
     _set_paused(not get_tree().paused)
+
+
+## Pauses the game under the pause menu. Closing it plays on, or stays paused if the player had paused.
+func _open_pause_menu() -> void:
+    if _hud.pause_menu_open():
+        return
+    _tools.cancel()
+    _paused_before_menu = get_tree().paused
+    _hud.show_pause_menu(true)
+    _set_paused(true)
+
+
+func _close_pause_menu() -> void:
+    if not _hud.pause_menu_open():
+        return
+    _hud.show_pause_menu(false)
+    _set_paused(_paused_before_menu)
 
 
 func _toggle_speed() -> void:
