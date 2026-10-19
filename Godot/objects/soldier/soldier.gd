@@ -37,6 +37,9 @@ var _stood: float = INF
 var attack_cooldown: float = 0.0
 ## Seconds stood blocked by a wall. Owned by Army.
 var blocked_time: float = 0.0
+## Fraction of the mutiny countdown left while blocked (1 to 0), shown on MutinyClock; 0 when not blocked.
+## Owned by Army.
+var mutiny_left: float = 0.0
 ## Left the column. Owned by Army.
 var deserting: bool = false
 ## Metres a deserter still walks before it vanishes. Owned by Army.
@@ -47,6 +50,7 @@ var climbing: bool = false
 @onready var _anim: AnimationPlayer = %AnimationPlayer
 @onready var _body: CanvasItem = %Body
 @onready var _asleep: CanvasItem = get_node_or_null(^"%Asleep")
+@onready var _clock: MutinyClock = get_node_or_null(^"%MutinyClock")
 
 
 func _ready() -> void:
@@ -73,6 +77,9 @@ func sync() -> void:
 	if _asleep:
 		_asleep.visible = lying
 	_body.visible = not lying
+	if _clock:
+		_clock.visible = mutiny_left > 0.0 and not deserting
+		_clock.left = mutiny_left
 	var walking := moving or _stood < idle_delay
 	var want := &"sleep" if lying else (&"walk" if walking else &"idle")
 	if _anim.current_animation != want:

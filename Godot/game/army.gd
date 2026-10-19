@@ -160,6 +160,7 @@ func step(dt: float) -> void:
 	_remove_dead()
 	for s in soldiers:
 		_settle_down(s, dt)
+		s.mutiny_left = 1.0 - s.blocked_time / rules.mutiny_time if s.blocked_time > 0.0 else 0.0
 		s.sync()
 	_step_deserters(dt)
 

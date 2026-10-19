@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://c78yrurvjdt8p" path="res://world/soilder_walk.png" id="4_yrtfe"]
 [ext_resource type="Texture2D" uid="uid://28j71k80nis2" path="res://world/green_flag_ani.png" id="5_lxyqk"]
 [ext_resource type="Texture2D" uid="uid://ds7nrtiq0f4cv" path="res://world/tent.png" id="6_dsnea"]
+[ext_resource type="Script" path="res://objects/soldier/mutiny_clock.gd" id="7_clock"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lxyqk"]
 atlas = ExtResource("4_yrtfe")
@@ -426,6 +427,13 @@ text = "z"
 position = Vector2(-20, -18)
 scale = Vector2(0.34374997, 0.34374997)
 texture = ExtResource("6_dsnea")
+
+[node name="MutinyClock" type="Node2D" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+position = Vector2(6, -60)
+script = ExtResource("7_clock")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=28494290]
 unique_name_in_owner = true
