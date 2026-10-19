@@ -40,7 +40,9 @@ Checks: run the GUT panel (or `test/unit/test_levels.gd`). It flags levels with 
 
 ## Main menu
 
-The game opens on `menu/main_menu.tscn`: the title, **New Game**, **Settings** and **Quit** (hidden in the web build, where a tab can't be quit) over a looping show played on the real world. The pause menu's **Quit to Main Menu** comes back here (see Pause menu below).
+The game first opens `menu/boot.tscn`, a loading bar that readies every sound and music file under **Audio Folder** (`res://audio`) and then opens **Next Scene**. On the web each music file is decoded there (about a second each) instead of freezing the game the first time it plays; elsewhere it moves straight on. Its title and "Loading sounds" text are the labels in that scene.
+
+Then comes `menu/main_menu.tscn`: the title, **New Game**, **Settings** and **Quit** (hidden in the web build, where a tab can't be quit) over a looping show played on the real world. The pause menu's **Quit to Main Menu** comes back here (see Pause menu below).
 
 | Task | How |
 | --- | --- |
@@ -238,7 +240,7 @@ A sheet whose sky is a solid colour instead: set it as **Source Texture**, the c
 ## Sound and music
 
 - `data/sounds/*.tres` are SoundEffect resources. Each has a list of streams (one is picked at random each play), a volume, and a pitch spread. Point any sound slot in the Inspector at one.
-- Music is set per level, on the level root's **Music**; it starts when the column breaks camp. The campaign's **Camp Music** plays during the night. The main menu has its own (see Main menu). Any stream loops.
+- Music is set per level, on the level root's **Music**; it starts when the column breaks camp. The campaign's **Camp Music** plays during the night. The main menu has its own (see Main menu). Any stream loops, but turn on **Loop** in a music file's Import tab: on the web, restarting a long track by hand stalls the game for a moment, a looping one never restarts.
 - `audio/` holds synthesized placeholder WAVs. Drop in real files and re-point the resources.
 - Buses: Master, Music, SFX (`audio/default_bus_layout.tres`). The bus volumes there are the full-volume mix; the player's **Sound** panel (Music and Sound sliders) and the Settings card (main menu and pause menu) scale them and remember the setting in `user://settings.cfg`. Which buses the sliders drive: **Music Bus** / **Sound Bus** on the **HUD** node in `ui/hud.tscn`.
 

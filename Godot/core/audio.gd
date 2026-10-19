@@ -11,9 +11,9 @@ const VOLUME_BUSES: Array[StringName] = [&"Music", &"SFX"]
 ## Where the volumes are kept. Tests point this elsewhere.
 var settings_path: String = "user://settings.cfg"
 ## Sounds play as samples (WebAudio, the web build's default; see Project Settings > Audio > General > Default
-## Playback Type): a stream is turned into a sample the first time it plays, which hitches, so preload_folder
-## readies each one ahead.
-var samples: bool = ProjectSettings.get_setting("audio/general/default_playback_type", 0) == 1
+## Playback Type, and its .web override): a stream is decoded into a sample the first time it plays, which freezes
+## the game for about a second per music file, so preload_folder readies each one ahead (see menu/boot.tscn).
+var samples: bool = ProjectSettings.get_setting_with_override("audio/general/default_playback_type") == 1
 
 ## Streams loaded by preload_folder, held so they stay loaded (and readied) all game.
 var _preloaded: Array[AudioStream] = []

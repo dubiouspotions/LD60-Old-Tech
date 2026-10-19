@@ -45,7 +45,7 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 | Bridge | `world/bridge.gd` | XPBD truss in SI units (m, kg, N). It only advances when `World._physics_process` steps it. |
 | Army | `game/army.gd`, `objects/soldier/` | Column logic ported from the original `updateUnits`. Soldier nodes only display state. |
 | Flow | `game/game.gd`, `tool_controller.gd`, `camera_rig.gd`, `ui/hud.gd`, `ui/pause_menu.gd` | The HUD only displays state and emits signals; the Game connects them. Escape (`pause_menu`) opens the pause menu, unless the ToolController consumes it to put down a plank in hand. |
-| Main menu | `menu/main_menu.tscn` (the main scene), `menu/menu_show.gd`, `core/menu_act.gd`, `ui/settings_menu.gd` | The backdrop is a real World playing `menu/menu_level.tscn`: `MenuShow` swaps a one-level copy of the campaign into `GameState` while it is in the tree, orders each MenuAct's bridge, holds the column short of the bridge (`army.stop_x`) until it stands, and breaks the act's pieces under load. Levels run on their own (F6) still go straight to `game/main.tscn` (`Level.GAME_SCENE`). |
+| Main menu | `menu/boot.tscn` (the main scene: readies every sound behind a loading bar, see Audio below), then `menu/main_menu.tscn`, `menu/menu_show.gd`, `core/menu_act.gd`, `ui/settings_menu.gd` | The backdrop is a real World playing `menu/menu_level.tscn`: `MenuShow` swaps a one-level copy of the campaign into `GameState` while it is in the tree, orders each MenuAct's bridge, holds the column short of the bridge (`army.stop_x`) until it stands, and breaks the act's pieces under load. Levels run on their own (F6) still go straight to `game/main.tscn` (`Level.GAME_SCENE`). |
 
 **Units.** Simulation is in metres (1 tile = 1 m, y points down). Node positions are pixels. Convert with `Grid.to_px` / `Grid.to_m` / `Grid.cell_of` (`Grid.PX = 32`).
 
@@ -55,6 +55,7 @@ Non-coders must be able to create and change levels, objects, sounds and music i
 
 ## Gotchas found the hard way
 
+- On the web (no threads) sounds play as WebAudio samples: the first play of a stream decodes all of it (about 1 s per music file) and every play copies the decoded buffer (100 to 300 ms for a music file). `menu/boot.tscn` readies them all up front, and music imports loop so a track is never restarted. Read the playback type with `ProjectSettings.get_setting_with_override`, since `get_setting` ignores the `.web` override. Level loads take only ~10 ms there; stitching a level costs ~50 ms.
 - Saving a resource from a headless script (`ResourceSaver.save`) drops every `uid=`. `dev/build_tiles_v2.gd` puts them back from each referenced file's header or `.import`, so the file matches what the editor writes. Do the same in any new tool that saves data.
 
 - Scripts that reference autoloads (`GameState`, `Audio`, `Effects`) **fail to compile under `godot -s script.gd`**. Run such tools as a scene (see `dev/*.tscn`). Only pure-Resource scripts can run via `-s`.
