@@ -85,35 +85,33 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		_land(t, Vector2i(x, r))
 
 
-## Comes down in the cell who (a soldier or engineer) stands in, rather than breaking on them (a sandbag thrown at
-## them or falling on them): everyone standing in that cell steps up onto it. Returns false, doing nothing, for an
-## archer, for someone not standing on solid ground (in the air, on the bridge), or with no room to step up.
+## Comes down on the ground under who (a soldier or engineer), rather than breaking on them (a sandbag thrown at
+## them or falling on them): in their column, where any falling block there would land. Everyone whose feet are in
+## that cell steps up onto it; anyone higher up (hopping, on the bridge) is left to come down onto it. Returns false,
+## doing nothing, for an archer or a dead soldier, with no ground under them, or with no room above it for those it
+## lifts.
 func land_under(world: World, who: Object) -> bool:
+	if not (who is Soldier and not who.dead) and not who is Crew.Engineer:
+		return false
 	var t := world.terrain
-	var feet: Vector2
-	if who is Soldier and not who.dead and not who.airborne:
-		feet = who.pos
-	elif who is Crew.Engineer and who.at == null and who.vy == 0.0:
-		feet = who.pos
-	else:
-		return false
+	var feet: Vector2 = who.pos
 	var cell := Grid.cell_of(feet - Vector2(0, 0.5))
-	if not t.is_solid(cell + Vector2i.DOWN):
-		return false
-	for k in 3:
-		if t.is_solid(cell + Vector2i(0, -k)):
+	while t.is_solid(cell) and cell.y > 0:
+		cell.y -= 1
+	while not t.is_solid(cell + Vector2i.DOWN):
+		cell.y += 1
+		if cell.y + 1 >= t.size.y:
 			return false
+	var inside := func(p: Vector2) -> bool: return floori(p.x) == cell.x and p.y > cell.y + 0.02 and p.y <= cell.y + 1.02
 	var lift: Array = []
 	for s: Soldier in world.army.soldiers + world.army.deserters:
-		if not s.dead and Grid.cell_of(s.pos - Vector2(0, 0.5)) == cell:
-			if s.airborne:
-				return false
+		if not s.dead and inside.call(s.pos):
 			lift.append(s)
 	for e: Crew.Engineer in world.crew.engineers:
-		if Grid.cell_of(e.pos - Vector2(0, 0.5)) == cell:
-			if e.at != null or e.vy != 0.0:
-				return false
+		if e.at == null and inside.call(e.pos):
 			lift.append(e)
+	if not lift.is_empty() and (t.is_solid(cell + Vector2i.UP) or t.is_solid(cell + Vector2i(0, -2))):
+		return false
 	_land(t, cell)
 	for w: Object in lift:
 		w.pos.y = float(cell.y)
