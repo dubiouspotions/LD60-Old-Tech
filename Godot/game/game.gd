@@ -26,6 +26,8 @@ extends Node
 @export var cheats_text: String = "Cheats %s"
 ## Turning the cheats on tops every supply up to at least this.
 @export var cheat_supplies: int = 99
+## The cheats (F2, F3) work only in debug builds (the editor and debug exports), never in release builds.
+var cheats_allowed: bool = OS.is_debug_build()
 ## Every sound and music file under this folder is loaded as the game starts (and on the web readied to play),
 ## so none hitches the first time it plays.
 @export_dir var audio_folder: String = "res://audio"
@@ -138,9 +140,9 @@ func _unhandled_input(event: InputEvent) -> void:
         _recruit()
     elif event.is_action_pressed(&"restart_level"):
         _retry()
-    elif event.is_action_pressed(&"cheat_instant_work"):
+    elif event.is_action_pressed(&"cheat_instant_work") and cheats_allowed:
         _toggle_cheats()
-    elif event.is_action_pressed(&"cheat_skip_level"):
+    elif event.is_action_pressed(&"cheat_skip_level") and cheats_allowed:
         _skip_level()
 
 

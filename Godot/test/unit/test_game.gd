@@ -135,6 +135,28 @@ func test_f3_skips_the_level_as_if_it_was_won() -> void:
 	assert_true(InputMap.action_has_event(&"cheat_skip_level", _key(KEY_F3)), "on F3")
 
 
+## The cheats are for testers: a release build (what players get) ignores F2 and F3; debug builds (the editor and
+## debug exports) keep them.
+func test_release_builds_have_no_cheats() -> void:
+	assert_eq(game.cheats_allowed, OS.is_debug_build(), "on exactly in debug builds")
+	game._begin()
+	var world: World = game.get_node("%World")
+	var rules: CrewRules = world.crew.rules
+	var was := rules.instant_work
+	rules.instant_work = false
+	GameState.supplies = Supplies.make(1, 0, 0)
+	game.cheats_allowed = false
+	for action: StringName in [&"cheat_instant_work", &"cheat_skip_level"]:
+		var press := InputEventAction.new()
+		press.action = action
+		press.pressed = true
+		game._unhandled_input(press)
+	assert_false(rules.instant_work, "F2 does nothing")
+	assert_eq(GameState.supplies.logs, 0, "no supplies given")
+	assert_eq(world.current, 0, "F3 does nothing")
+	rules.instant_work = was
+
+
 func test_skipping_the_last_level_wins_the_campaign() -> void:
 	game._begin()
 	var world: World = game.get_node("%World")
