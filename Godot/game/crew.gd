@@ -142,6 +142,7 @@ var _ground_changes: int = 0
 ## Places the crew on the ground behind x.
 func spawn(x: float, count: int = 0) -> void:
 	for e in engineers:
+		_release(e)
 		e.node.queue_free()
 	engineers.clear()
 	throws.clear()
@@ -285,9 +286,23 @@ func _kill(e: Engineer, text: String) -> void:
 		Effects.debris(at, c, 4, 190.0)
 	Effects.say(Grid.to_px(e.pos - Vector2(0, 1.4)), text, Color("ff6a55"))
 	Audio.play(rules.death_sound, at)
+	_release(e)
 	e.node.queue_free()
 	engineers.erase(e)
 	count_changed.emit(engineers.size())
+
+
+## Lets go of all e has taken on (it died, or the crew was replaced): its job and throw, the piece of wood it was
+## fetching and the wood it was to gather, so the rest of the crew takes them over.
+func _release(e: Engineer) -> void:
+	_drop(e)
+	if e.fetch:
+		e.fetch.taker = null
+		e.fetch = null
+	for p in e.gather:
+		if p.owner == e:
+			p.owner = null
+	e.gather.clear()
 
 
 ## Drops an engineer that nothing holds up (its structure fell away) and that can not simply climb down.

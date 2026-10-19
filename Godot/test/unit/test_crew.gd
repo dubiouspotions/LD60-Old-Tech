@@ -1504,3 +1504,34 @@ func test_an_engineer_climbs_a_face_with_a_slope_on_top_without_falling_off() ->
 
 func test_an_engineer_climbs_a_face_with_a_slope_on_top_from_the_right_too() -> void:
 	_climb_sloped_tower(true)
+
+
+func test_a_throw_whose_engineer_dies_is_thrown_by_another() -> void:
+	world.crew.spawn(5.5, 2)
+	var order := world.crew.order_throw(Vector2i(7, 5), _sandbag_tool())
+	_run(3.0, func() -> bool: return order.taker != null)
+	assert_not_null(order.taker, "an engineer takes the throw")
+	world.crew.crush(order.taker)
+	_run(15.0, func() -> bool: return not world.crew.throws.has(order))
+	assert_false(world.crew.throws.has(order), "the other engineer throws it")
+
+
+func test_wood_whose_fetcher_dies_is_picked_up_by_another() -> void:
+	world.crew.spawn(5.5, 2)
+	var cells: Array[Vector2i] = [Vector2i(3, 5)]
+	var pieces := world.wood.drop(cells, 1)
+	_run(3.0, func() -> bool: return pieces[0].taker != null)
+	assert_not_null(pieces[0].taker, "an engineer goes for it")
+	world.crew.crush(pieces[0].taker)
+	_run(20.0, func() -> bool: return world.wood.count() == 0)
+	assert_eq(world.wood.count(), 0, "the other engineer picks it up")
+
+
+func test_wood_a_replaced_crew_was_fetching_is_picked_up_by_the_new_one() -> void:
+	var cells: Array[Vector2i] = [Vector2i(3, 5)]
+	var pieces := world.wood.drop(cells, 1)
+	_run(3.0, func() -> bool: return pieces[0].taker != null)
+	assert_not_null(pieces[0].taker, "an engineer goes for it")
+	world.crew.spawn(5.5, 1)
+	_run(20.0, func() -> bool: return world.wood.count() == 0)
+	assert_eq(world.wood.count(), 0, "the new engineer picks it up")
