@@ -2,7 +2,8 @@
 class_name Ridge
 extends Node2D
 ## A distant mountain ridge drawn across the screen. Put it on a background CanvasLayer.
-## It scrolls with the camera at `parallax` of the camera speed.
+## It scrolls with the camera at `parallax` of the camera speed. With a texture it draws that, tiled sideways,
+## instead of its own ridge line.
 
 @export var color: Color = Color("6b6f8a"):
 	set(v):
@@ -29,6 +30,16 @@ extends Node2D
 	set(v):
 		seed_salt = v
 		queue_redraw()
+## Drawn instead of the ridge line: repeated sideways, standing on the bottom of the screen (its sky see-through).
+@export var texture: Texture2D:
+	set(v):
+		texture = v
+		queue_redraw()
+## How tall the texture is drawn, as a share of the screen height.
+@export_range(0.05, 2.0, 0.01) var texture_height: float = 0.5:
+	set(v):
+		texture_height = v
+		queue_redraw()
 
 var _cam_m: Vector2
 
@@ -43,6 +54,10 @@ func _process(_delta: float) -> void:
 
 func _draw() -> void:
 	var size := get_viewport_rect().size
+	if texture:
+		for r in tiles(size, _cam_m):
+			draw_texture_rect(texture, r, false)
+		return
 	var yoff := -_cam_m.y * Grid.PX * parallax * 0.4
 	var pts := PackedVector2Array([Vector2(0, size.y)])
 	var x := 0.0
@@ -53,6 +68,22 @@ func _draw() -> void:
 		x += 8
 	pts.append(Vector2(size.x + 8, size.y))
 	draw_colored_polygon(pts, color)
+
+
+## Where the texture is drawn on a screen of size with the camera's top-left at cam_m (metres): side by side across
+## the screen, texture_height of it tall, standing on its bottom edge, shifted by the parallax share of the camera.
+func tiles(size: Vector2, cam_m: Vector2) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if texture == null:
+		return out
+	var h := size.y * texture_height
+	var w := h * texture.get_width() / texture.get_height()
+	var y := size.y - h - cam_m.y * Grid.PX * parallax * 0.4
+	var x := -fposmod(cam_m.x * Grid.PX * parallax, w)
+	while x < size.x:
+		out.append(Rect2(x, y, w, h))
+		x += w
+	return out
 
 
 static func _hash(x: int, salt: int) -> float:

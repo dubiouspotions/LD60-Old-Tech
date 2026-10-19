@@ -66,6 +66,8 @@ class Chunk:
 @export_range(0.0, 30.0, 0.5, "suffix:s") var dusk_time: float = 4.0
 ## Seconds from the march order to the march: day breaks, the column gets up and breaks camp.
 @export_range(0.0, 30.0, 0.5, "suffix:s") var morning_time: float = 2.5
+## How far the sun is below the horizon at night, in shares of its day (see sun_progress).
+@export_range(0.0, 0.5, 0.01) var sun_below: float = 0.2
 
 @onready var terrain: Terrain = %Terrain
 @onready var bridge: Bridge = %Bridge
@@ -139,6 +141,25 @@ func _ready() -> void:
 
 func chunk(index: int) -> Chunk:
 	return _chunks.get(index)
+
+
+## How far through its day the sun is (Sun.progress): 0 at dawn, 1 at sunset, going by the leader's way from the
+## level's start flag to its exit flag. It rises from sun_below under the horizon while the column breaks camp,
+## sinks back there at dusk, and stays down all night.
+func sun_progress() -> float:
+	match phase:
+		Phase.NIGHT:
+			return 1.0 + sun_below
+		Phase.DUSK:
+			return 1.0 + sun_below * (1.0 - _phase_left / dusk_time if dusk_time > 0.0 else 1.0)
+		Phase.MORNING:
+			return -sun_below * (_phase_left / morning_time if morning_time > 0.0 else 0.0)
+	var c := current_chunk()
+	var lead := army.lead()
+	if c == null or lead == null:
+		return 0.5
+	var start := c.start_flag.metres().x
+	return clampf((lead.pos.x - start) / maxf(c.exit_flag.metres().x - start, 0.01), 0.0, 1.0)
 
 
 func current_chunk() -> Chunk:

@@ -46,6 +46,7 @@ extends Node
 @onready var _camera: CameraRig = %Camera
 @onready var _hud: Hud = %HUD
 @onready var _day_night: DayNight = %DayNight
+@onready var _sun: Sun = $Background/SunPixel2
 
 var _over: bool = false
 ## Status bar text once the game is over (lost or won).
@@ -175,6 +176,7 @@ func _process(_delta: float) -> void:
     _update_status()
     _update_lead_marker(lead)
     _update_crew_marker()
+    _sun.progress = _world.sun_progress()
 
 
 func _begin() -> void:

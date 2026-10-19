@@ -4,6 +4,9 @@
 [ext_resource type="Texture2D" uid="uid://cmoqks8grl6vv" path="res://world/background/bakgr_pixel.png" id="1_7yj74"]
 [ext_resource type="Script" uid="uid://boj0lbhqjxmqv" path="res://world/background/stars.gd" id="2_stars"]
 [ext_resource type="Texture2D" uid="uid://8j2k36u467od" path="res://world/sun_pixel.png" id="3_7yj74"]
+[ext_resource type="Script" path="res://world/background/sun.gd" id="4_sun"]
+[ext_resource type="Texture2D" path="res://world/background/paralax_back.png" id="5_back"]
+[ext_resource type="Texture2D" path="res://world/background/paralax_front.png" id="6_front"]
 
 [sub_resource type="Gradient" id="sky"]
 offsets = PackedFloat32Array(0, 0.55, 1)
@@ -57,6 +60,7 @@ tint = NodePath("../SkyTint")
 position = Vector2(1143, 266)
 scale = Vector2(0.4129388, 0.41293874)
 texture = ExtResource("3_7yj74")
+script = ExtResource("4_sun")
 
 [node name="Sun" type="TextureRect" parent="." unique_id=346631465]
 visible = false
@@ -75,6 +79,8 @@ expand_mode = 1
 
 [node name="RidgeFar" type="Node2D" parent="." unique_id=1408284584]
 script = ExtResource("1")
+texture = ExtResource("5_back")
+texture_height = 0.62
 
 [node name="RidgeNear" type="Node2D" parent="." unique_id=151638868]
 script = ExtResource("1")
@@ -83,3 +89,5 @@ parallax = 0.32
 base = 0.86
 frequency = 0.08
 seed_salt = 202
+texture = ExtResource("6_front")
+texture_height = 0.5
