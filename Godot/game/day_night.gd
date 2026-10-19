@@ -18,8 +18,8 @@ extends Node
 @export var pollen: Pollen
 @export var day_color: Color = Color.WHITE
 @export var night_world_color: Color = Color(0.3, 0.34, 0.52)
-@export var night_sky_color: Color = Color(0.2, 0.23, 0.4)
-@export_range(0.0, 10.0, 0.1, "suffix:s") var fade_time: float = 2.0
+@export var night_sky_color: Color = Color(0.3, 0.35, 0.55, 1.0)
+@export_range(0.0, 10.0, 0.1, "suffix:s") var fade_time: float = 1.0
 ## How dark it is (0 full day, 1 full night) by where the sun is in its day (Sun.progress: 0 dawn, 1 sunset, below
 ## 0 or above 1 under the horizon). Edit the graph to shape dawn, midday and dusk.
 @export var darkness_by_sun: Curve
