@@ -1003,6 +1003,28 @@ func test_crew_finds_a_way_round_to_a_mark_under_its_ledge() -> void:
 	assert_lt(jump[0], 0.3, "walked and climbed there, never teleported")
 
 
+## A crew of 8 with marks nobody can reach and one far off still costs little, walking or waiting.
+func test_a_big_crew_with_unreachable_marks_stays_quick() -> void:
+	_flat_strip()
+	for i in 7:
+		world.crew.hire(world.crew.engineers[0].pos.x - i * 0.5)
+	for x in range(20, 40):
+		world.terrain.set_type(Vector2i(x, 8), WorldFixture.type("soil"))
+		world.terrain.mark(Vector2i(x, 8))
+	world.terrain.mark(Vector2i(80, 6))
+	var worst := 0.0
+	var total := 0.0
+	for i in 240:
+		var t := Time.get_ticks_usec()
+		_run(1.0 / 60.0)
+		var ms := (Time.get_ticks_usec() - t) / 1000.0
+		worst = maxf(worst, ms)
+		total += ms
+	gut.p("crew of 8 step: %.2f ms on average, %.2f ms at worst" % [total / 240.0, worst])
+	assert_lt(total / 240.0, 1.5, "ms per step on average")
+	assert_lt(worst, 16.0, "no step longer than a frame at 60 fps")
+
+
 ## Marks nobody can reach cost little: idle engineers keep looking for a way, without slowing the game down.
 func test_unreachable_marks_do_not_slow_the_crew_down() -> void:
 	_flat_strip()
@@ -1105,16 +1127,17 @@ func test_crew_switches_to_a_more_urgent_job_on_its_way_only_if_nearer() -> void
 	_flat_strip()
 	var e: Crew.Engineer = world.crew.engineers[0]
 	e.pos = Vector2(52.5, 6.0)
-	world.terrain.mark(Vector2i(62, 6))
+	world.terrain.mark(Vector2i(80, 6))
 	_run(0.5)
-	assert_true(e.digging and e.dig == Vector2i(62, 6), "on its way to the only job")
+	assert_true(e.digging and e.dig == Vector2i(80, 6), "on its way to the only job")
 	world.terrain.mark(Vector2i(40, 6))
 	_run(0.5)
-	assert_eq(e.dig, Vector2i(62, 6), "a job behind the leader is less urgent: carries on")
+	assert_eq(e.dig, Vector2i(80, 6), "a job behind the leader is less urgent: carries on")
 	var near := Vector2i(floori(e.pos.x) + 1, 6)
 	world.terrain.mark(near)
-	_run(0.5)
-	assert_eq(e.dig, near, "more urgent and nearer: switches")
+	_run(10.0, func() -> bool: return world.terrain.type_at(near) == null or world.terrain.type_at(Vector2i(80, 6)) == null)
+	assert_null(world.terrain.type_at(near), "more urgent and nearer: switches and digs it first")
+	assert_not_null(world.terrain.type_at(Vector2i(80, 6)), "the far one after")
 
 
 ## An engineer on a bridge over spikes that breaks falls with it and dies on the spikes. (Right at the pit's edge,

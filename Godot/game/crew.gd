@@ -26,6 +26,8 @@ signal count_changed(count: int)
 
 ## Seconds between looks for work by an idle engineer.
 const THINK_INTERVAL: float = 0.2
+## An engineer that found no job looks again this often even when nothing changed (it may have moved).
+const LOOK_AGAIN: float = 3.0
 ## Engineers look this far ahead for edges and walls.
 const ENGINEER_HALF_WIDTH: float = 0.2
 ## Joints on a cell edge are reached from the side the engineer comes from.
@@ -95,6 +97,11 @@ class Engineer:
 	var navs: Dictionary = {}
 	var nav_from: Vector2 = Vector2.INF
 	var nav_ground: Vector3i
+	## The jobs (see _jobs_version) when it last looked for one, and seconds until it looks again anyway.
+	var looked_at: int = -1
+	var look_again: float = 0.0
+	## It had a job last tick: losing or finishing it makes it look again at once.
+	var had_job: bool = false
 
 
 ## Something (a sandbag) ordered onto cell by a thrown Fill tool, waiting for an engineer to throw it there.
@@ -139,6 +146,11 @@ var _rng := RandomNumberGenerator.new()
 var _finisher: Engineer
 ## Cells of ground changed so far, so the engineers know their CrewNav is out of date.
 var _ground_changes: int = 0
+## The jobs and the ground this step (see _jobs_version).
+var _version: int = 0
+## Safe surfaces looked up this step (_surface_y), by x, height looked from and decks; NAN where it is not safe.
+## Searches for a way (CrewNav) look up the same ones again and again.
+var _surfaces: Dictionary = {}
 
 
 ## Places the crew on the ground behind x.
@@ -163,6 +175,8 @@ func hire(x: float) -> Engineer:
 func _add(x: float) -> Engineer:
 	var e := Engineer.new()
 	e.pos = Vector2(x, terrain.surface_row(floori(x)))
+	# Spread out, so a crew does not all look for work on one frame.
+	e.think = randf() * THINK_INTERVAL
 	e.node = engineer_scene.instantiate()
 	add_child(e.node)
 	engineers.append(e)
@@ -189,7 +203,9 @@ func step(dt: float) -> void:
 				picked_up.emit(p, null)
 		for t in throws.duplicate():
 			_throw(t, Vector2(t.cell) + Vector2(0.5, 0.5))
+	_surfaces.clear()
 	_update_ready_spot(dt)
+	_version = _jobs_version()
 	for i in engineers.size():
 		var e := engineers[i]
 		e.working = false
@@ -222,14 +238,22 @@ func step(dt: float) -> void:
 			_gather_step(e, dt)
 			continue
 		e.think -= dt
-		if not _busy(e) and e.route.is_empty() and e.think <= 0.0 and not _gathering(e):
+		e.look_again -= dt
+		# Looking costs a search of the ground: only when the jobs or the ground changed, the engineer lost or
+		# finished its job, or now and then anyway.
+		var fresh := _version != e.looked_at or e.look_again <= 0.0 or (e.had_job and not _busy(e))
+		if not _busy(e) and e.route.is_empty() and e.think <= 0.0 and not _gathering(e) and fresh:
 			e.think = THINK_INTERVAL
+			e.looked_at = _version
+			e.look_again = LOOK_AGAIN
 			_take_job(e)
 			if not _busy(e) and e.at == null:
 				e.route = _route_toward(e, _idle_x(i))
-		elif e.think <= 0.0 and _en_route(e):
+		elif e.think <= 0.0 and _en_route(e) and _version != e.looked_at:
 			e.think = THINK_INTERVAL
+			e.looked_at = _version
 			_rethink(e)
+		e.had_job = _busy(e)
 		if e.job and e.route.is_empty():
 			if is_nan(e.reach_x) or _reach_step(e, dt):
 				e.working = true
@@ -539,9 +563,13 @@ func _spot_within_reach(nav: CrewNav, target: Vector2, reach: float) -> Dictiona
 ## until it moves or the ground or the bridge changes.
 func _nav(e: Engineer, decks: bool, any_height: bool) -> CrewNav:
 	var built := 0
+	var walkable := false
 	for m in bridge.members:
 		if not m.blueprint:
 			built += 1
+			walkable = walkable or m.material.walkable
+	# With no deck to walk on, walking on decks and beneath them are the same walk.
+	decks = decks or not walkable
 	var ground := Vector3i(_ground_changes, bridge.members.size(), built)
 	if e.nav_from.distance_to(e.pos) > 0.01 or e.nav_ground != ground:
 		e.navs.clear()
@@ -555,8 +583,19 @@ func _nav(e: Engineer, decks: bool, any_height: bool) -> CrewNav:
 	return e.navs[key]
 
 
+## Changes whenever a job comes or goes or the ground changes: marks, throws, plans ordered and pieces built.
+func _jobs_version() -> int:
+	var built := 0
+	var ordered := 0
+	for m in bridge.members:
+		built += int(not m.blueprint)
+		ordered += int(m.blueprint and m.ordered)
+	return hash([terrain.marked_cells().size(), throws.size(), bridge.members.size(), built, ordered, _ground_changes])
+
+
 func _on_ground_changed(_cell: Vector2i) -> void:
 	_ground_changes += 1
+	_surfaces.clear()
 
 
 ## Drops the turns of e's path it has reached: at a turn's x, at its height or settled on the ground there (it got
@@ -863,6 +902,7 @@ func _work(e: Engineer, dt: float) -> void:
 	e.job = null
 	e.goal = null
 	e.reach_x = NAN
+	_surfaces.clear()
 	if m.dismantle:
 		dismantled.emit(m)
 	else:
@@ -1047,10 +1087,13 @@ func _ground_of(e: Engineer, x: float) -> float:
 
 ## First safe surface at x no more than up above y and (unless any_drop) max_drop below it, or NAN.
 func _surface_y(y: float, x: float, up: float, decks: bool = true, any_drop: bool = false) -> float:
-	var s := army.surface_at(x, y - up, decks)
-	if s.hazard != null or (s.y - y > rules.max_drop and not any_drop) or terrain.is_solid(Vector2i(floori(x), floori(s.y - 0.5))):
-		return NAN
-	return s.y
+	var key := Vector3(x, y - up, float(decks))
+	if not _surfaces.has(key):
+		var s := army.surface_at(x, y - up, decks)
+		var open := s.hazard == null and not terrain.is_solid(Vector2i(floori(x), floori(s.y - 0.5)))
+		_surfaces[key] = s.y if open else NAN
+	var sy: float = _surfaces[key]
+	return NAN if is_nan(sy) or (sy - y > rules.max_drop and not any_drop) else sy
 
 
 ## Height an engineer at p stands at after walking over safe ground to x, or NAN if it can not get there.
