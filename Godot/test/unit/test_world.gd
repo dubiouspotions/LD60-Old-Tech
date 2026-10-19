@@ -95,13 +95,14 @@ func test_column_arrives_and_camps_at_the_next_level() -> void:
 	world.begin(0, 3)
 	world.march()
 	var c1 := world.place_now(1)
+	c1.level.reinforcements = 2
 	var x := c1.start_flag.metres().x
 	world.army.spawn(3, x + 0.05)
 	watch_signals(world)
 	_run(0.1)
 	assert_signal_emitted(world, "camp_made")
 	var joined: int = get_signal_parameters(world, "camp_made")[1]
-	assert_gt(joined, 0)
+	assert_eq(joined, 2, "the level's own reinforcements")
 	assert_eq(world.current, 1)
 	assert_eq(GameState.level_index, 1)
 	assert_eq(world.army.soldiers.size(), 3 + joined, "reinforcements join the camp")
@@ -324,6 +325,20 @@ func test_a_restart_undoes_the_whole_night_and_day() -> void:
 	assert_false(world.terrain.is_marked(below), "marks gone")
 	assert_eq(bridge.members.filter(func(m: Bridge.Member) -> bool: return maxf(m.a.pos.x, m.b.pos.x) > flag.x).size(), 0, "nothing built past the flag")
 	assert_eq(world.crew.throws.size(), 0, "no throws waiting")
+
+
+## Soldiers joining at a checkpoint: the campaign's Checkpoint Reinforcements (none), unless the level sets its own.
+func test_reinforcements_at_a_checkpoint_come_from_the_campaign_unless_the_level_says() -> void:
+	assert_eq(GameState.campaign.checkpoint_reinforcements, 0, "none by default")
+	var level: Level = load("res://levels/level_base.tscn").instantiate()
+	assert_eq(level.reinforcements, -1, "levels use the campaign's")
+	assert_eq(level.joining(), 0)
+	level.reinforcements = 4
+	assert_eq(level.joining(), 4, "a level's own wins")
+	level.free()
+	world.begin(0, 3)
+	world.skip_level()
+	assert_eq(world.army.soldiers.size(), 3 + world.chunk(1).level.joining(), "arrived with them")
 
 
 func test_no_hiring_by_day_without_gold_or_past_the_crew_limit() -> void:

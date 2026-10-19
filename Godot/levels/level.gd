@@ -9,8 +9,9 @@ extends Node2D
 
 @export var display_name: String = ""
 @export var music: AudioStream
-## Soldiers that join when the column arrives here (not on the first level).
-@export_range(0, 50) var reinforcements: int = 3
+## Soldiers that join when the column arrives here (not on the first level). -1 uses the campaign's
+## Checkpoint Reinforcements, so set it only for a level that should be different.
+@export_range(-1, 50) var reinforcements: int = -1
 ## Supplies dropped when the column arrives here (not on the first level). Empty uses the campaign's
 ## Checkpoint Supplies, so set it only for a level that should drop something different.
 @export var supply_drop: Supplies
@@ -37,6 +38,11 @@ func _ready() -> void:
     if get_tree().current_scene == self:
         GameState.start_level = scene_file_path
         get_tree().change_scene_to_file.call_deferred(ProjectSettings.get_setting("application/run/main_scene"))
+
+
+## Soldiers that join when the column arrives here: Reinforcements, or the campaign's Checkpoint Reinforcements.
+func joining() -> int:
+    return reinforcements if reinforcements >= 0 else GameState.campaign.checkpoint_reinforcements
 
 
 func terrain() -> Terrain:

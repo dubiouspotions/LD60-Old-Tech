@@ -9,6 +9,8 @@ extends Resource
 @export var start_supplies: Supplies
 ## Supplies dropped at each checkpoint (level start, from the second level on). A level's own Supply Drop wins.
 @export var checkpoint_supplies: Supplies
+## Soldiers who join at each checkpoint (from the second level on). A level's own Reinforcements wins.
+@export_range(0, 50) var checkpoint_reinforcements: int = 0
 @export var army_rules: ArmyRules
 ## Tools in rack order.
 @export var tools: Array[ToolDefinition] = []

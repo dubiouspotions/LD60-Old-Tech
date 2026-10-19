@@ -123,7 +123,7 @@ func test_f3_skips_the_level_as_if_it_was_won() -> void:
 	assert_eq(GameState.level_index, 1, "its checkpoint reached")
 	var flag := world.chunk(1).start_flag.metres().x
 	assert_true(world.camping(), "camped there")
-	assert_eq(world.army.soldiers.size(), soldiers + world.chunk(1).level.reinforcements, "with its reinforcements")
+	assert_eq(world.army.soldiers.size(), soldiers + world.chunk(1).level.joining(), "with its reinforcements")
 	assert_eq(world.crew.engineers.size(), engineers, "the whole crew")
 	for s in world.army.soldiers:
 		assert_lt(absf(s.pos.x - flag), 15.0, "the column at its camp")

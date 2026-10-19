@@ -381,7 +381,7 @@ func _arrive(index: int) -> void:
 	current = index
 	c.start_flag.reached = true
 	var drop := c.level.supply_drop if c.level.supply_drop else GameState.campaign.checkpoint_supplies
-	var joined := GameState.arrive(index, c.level.reinforcements, drop)
+	var joined := GameState.arrive(index, c.level.joining(), drop)
 	_show_gain(drop, c.start_flag.metres() - Vector2(0, 2.0))
 	army.reinforce(joined)
 	army.stop_x = c.exit_flag.metres().x
