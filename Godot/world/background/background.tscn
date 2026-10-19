@@ -36,10 +36,11 @@ layer = -10
 
 [node name="SkyTint" type="CanvasModulate" parent="." unique_id=791415413]
 
-[node name="BakgrPixel" type="Sprite2D" parent="." unique_id=291553377]
-position = Vector2(781.1399, 432.00003)
-scale = Vector2(1.0394976, 1.028436)
+[node name="BakgrPixel" type="Node2D" parent="." unique_id=291553377]
+script = ExtResource("1")
+parallax = 0.02
 texture = ExtResource("1_7yj74")
+texture_height = 1.05
 
 [node name="Sky" type="TextureRect" parent="." unique_id=489870164]
 visible = false
