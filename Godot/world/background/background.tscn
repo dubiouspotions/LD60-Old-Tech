@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://kib74rq6nvro"]
 
-[ext_resource type="Script" uid="uid://bjf28quaqwc2i" path="res://world/background/ridge.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://cmoqks8grl6vv" path="res://world/background/bakgr_pixel.png" id="1_7yj74"]
 [ext_resource type="Script" uid="uid://boj0lbhqjxmqv" path="res://world/background/stars.gd" id="2_stars"]
 [ext_resource type="Texture2D" uid="uid://8j2k36u467od" path="res://world/sun_pixel.png" id="3_7yj74"]
@@ -78,25 +77,45 @@ mouse_filter = 2
 texture = SubResource("sun_tex")
 expand_mode = 1
 
-[node name="Mountains" type="Node2D" parent="." unique_id=788620109]
-script = ExtResource("1")
-color = Color(0.4394159, 0.43560198, 0.49686956, 1)
-parallax = 0.13
+[node name="Mountains" type="Parallax2D" parent="." unique_id=788620109]
+scroll_scale = Vector2(0.13, 0.052)
+repeat_size = Vector2(892.8, 0)
+repeat_times = 4
+follow_viewport = false
+
+[node name="Art" type="Sprite2D" parent="Mountains"]
+position = Vector2(0, 273.6)
+scale = Vector2(1.74375, 1.74375)
 texture = ExtResource("6_d8gkv")
-texture_height = 0.62
+centered = false
 
-[node name="RidgeFar" type="Node2D" parent="." unique_id=1408284584]
-script = ExtResource("1")
-color = Color(0.4394159, 0.43560198, 0.49686956, 1)
-parallax = 0.25
+[node name="RidgeFar" type="Parallax2D" parent="." unique_id=1408284584]
+scroll_scale = Vector2(0.25, 0.1)
+repeat_size = Vector2(1612.8, 0)
+repeat_times = 4
+follow_viewport = false
+
+[node name="Art" type="Sprite2D" parent="RidgeFar"]
+position = Vector2(0, 316.8)
+scale = Vector2(3.15, 3.15)
 texture = ExtResource("5_back")
-texture_height = 0.56
+centered = false
 
-[node name="RidgeNear" type="Node2D" parent="." unique_id=151638868]
-script = ExtResource("1")
-color = Color(0.2745, 0.3137, 0.4157, 1)
-parallax = 0.5
-base = 0.86
-frequency = 0.08
-seed_salt = 202
+[node name="RidgeNear" type="Parallax2D" parent="." unique_id=151638868]
+scroll_scale = Vector2(0.5, 0.2)
+repeat_size = Vector2(1440, 0)
+repeat_times = 4
+follow_viewport = false
+
+[node name="Art" type="Sprite2D" parent="RidgeNear"]
+position = Vector2(0, 360)
+scale = Vector2(2.8125, 2.8125)
 texture = ExtResource("6_front")
+centered = false
+
+[node name="Fill" type="ColorRect" parent="RidgeNear"]
+offset_top = 719.0
+offset_right = 1440.0
+offset_bottom = 1439.0
+mouse_filter = 2
+color = Color(0.0627451, 0.19607843, 0.20784314, 1)
