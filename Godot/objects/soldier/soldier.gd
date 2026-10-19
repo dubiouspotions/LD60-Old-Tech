@@ -51,6 +51,9 @@ var deserting: bool = false
 var desert_left: float = 0.0
 ## A deserter climbing a wall face (gravity is off meanwhile). Owned by Army.
 var climbing: bool = false
+## Tilt (radians, about its feet) towards its work, its front turned that way: a builder leaning towards where its
+## piece grows. Owned by Crew.
+var lean: float = 0.0
 ## The way to the work of the last blow, and the seconds its jolt still lasts.
 var _blow_dir: Vector2 = Vector2.ZERO
 var _blow_left: float = 0.0
@@ -80,6 +83,7 @@ func stand_on(surface: Dictionary) -> void:
 func sync() -> void:
 	position = Grid.to_px(pos) + work_shake()
 	scale.x = facing
+	rotation = lean
 	%Wounded.visible = hp < max_hp
 	var lying := sleeping and _asleep != null
 	if _asleep:

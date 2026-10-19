@@ -51,6 +51,13 @@ extends Resource
 @export_range(0.0, 50.0, 0.5, "suffix:m") var help_radius: float = 6.0
 ## An engineer that has not picked up the piece it went for in this long (it can not get there) fetches it anyway.
 @export_range(0.5, 60.0, 0.5, "suffix:s") var gather_give_up: float = 6.0
+## Building (or taking apart) a piece out from a joint, the builder is drawn hopping about the built part of it, at
+## most build_wander back from where it grows: it pops to a new spot every build_wander_interval, without walking.
+## Only the look: it still works from its joint.
+@export_range(0.0, 5.0, 0.05, "suffix:m") var build_wander: float = 0.6
+@export_range(0.05, 5.0, 0.05, "suffix:s") var build_wander_interval: float = 0.3
+## Meanwhile it faces where the piece grows and tilts towards it, by at most this much.
+@export_range(0.0, 90.0, 1.0, "suffix:°") var build_lean_max: float = 30.0
 ## Pause after the last engineer is back on the ground before the scaffolding comes down.
 @export_range(0.0, 5.0, 0.1, "suffix:s") var strike_delay: float = 0.6
 
