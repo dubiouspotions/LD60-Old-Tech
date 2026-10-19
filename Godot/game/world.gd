@@ -350,7 +350,9 @@ func _physics_process(dt: float) -> void:
 	_crush_under_weight(bodies, blocks)
 	for p: FallingPiece in objects.get_children().filter(func(o: Node) -> bool: return o is FallingPiece and not o.is_queued_for_deletion()):
 		p.step(dt, self)
-	army.wait_reason = army.rules.collapse_text if collapsing() else ""
+	var down := collapsing()
+	army.wait_reason = army.rules.collapse_text if down else ""
+	crew.wait = down
 	army.step(dt)
 	crew.step(dt)
 	_check_exit()
@@ -670,7 +672,7 @@ func _drop_piece(tiles: Dictionary, crumble: bool, delay: float = 0.0) -> void:
 	objects.add_child(piece)
 
 
-## A razed tower is still coming down, or one of its archers is: the column stands back.
+## A razed tower is still coming down, or one of its archers is: the column and the crew stand back.
 func collapsing() -> bool:
 	return objects.get_children().any(func(o: Node) -> bool:
 		return (o is FallingPiece and o.crumble and not o.is_queued_for_deletion()) or (o is Archer and o.toppling()))
