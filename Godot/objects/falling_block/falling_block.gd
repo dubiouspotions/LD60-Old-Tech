@@ -12,8 +12,8 @@ extends Node2D
 ## Weight it puts on a bridge piece it rests on.
 @export var mass: float = 600.0
 @export var land_sound: SoundEffect
-## Breaks on any soldier or archer it falls on, hurting nobody (a sandbag), instead of resting on them or crushing
-## them at Harm Speed.
+## Breaks on any archer it falls on, hurting nobody (a sandbag), instead of resting on them or crushing them at
+## Harm Speed. A soldier or engineer gets it under their feet instead (see land_under), or it breaks there too.
 @export var harmless: bool = false
 ## Puffs of dust when it breaks, and its sound then (the landing sound if none).
 @export_range(0, 20) var smash_dust: int = 0
@@ -57,7 +57,8 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		if pair[0] == self or absf(b.center.x - (x + 0.5)) >= 0.5 + b.half_width() or head < bottom - 0.05 or head > next:
 			continue
 		if harmless and not b.is_box():
-			smash()
+			if not land_under(world, pair[0]):
+				smash()
 			return
 		if _vy >= world.bridge.harm_speed and not b.is_box():
 			world.crush(pair[0])
@@ -81,10 +82,52 @@ func step(dt: float, world: World, bodies: Array) -> void:
 	if r + 1 >= t.size.y or t.is_solid(Vector2i(x, r + 1)):
 		while r > 0 and t.is_solid(Vector2i(x, r)):
 			r -= 1
-		t.set_type(Vector2i(x, r), type)
-		var at := Grid.to_px(Vector2(x + 0.5, r + 1))
-		Effects.debris(at, type.debris_color if type else Color.WHITE, 3, 70.0)
-		Audio.play(land_sound, at)
+		_land(t, Vector2i(x, r))
+
+
+## Comes down in the cell who (a soldier or engineer) stands in, rather than breaking on them (a sandbag thrown at
+## them or falling on them): everyone standing in that cell steps up onto it. Returns false, doing nothing, for an
+## archer, for someone not standing on solid ground (in the air, on the bridge), or with no room to step up.
+func land_under(world: World, who: Object) -> bool:
+	var t := world.terrain
+	var feet: Vector2
+	if who is Soldier and not who.dead and not who.airborne:
+		feet = who.pos
+	elif who is Crew.Engineer and who.at == null and who.vy == 0.0:
+		feet = who.pos
+	else:
+		return false
+	var cell := Grid.cell_of(feet - Vector2(0, 0.5))
+	if not t.is_solid(cell + Vector2i.DOWN):
+		return false
+	for k in 3:
+		if t.is_solid(cell + Vector2i(0, -k)):
+			return false
+	var lift: Array = []
+	for s: Soldier in world.army.soldiers + world.army.deserters:
+		if not s.dead and Grid.cell_of(s.pos - Vector2(0, 0.5)) == cell:
+			if s.airborne:
+				return false
+			lift.append(s)
+	for e: Crew.Engineer in world.crew.engineers:
+		if Grid.cell_of(e.pos - Vector2(0, 0.5)) == cell:
+			if e.at != null or e.vy != 0.0:
+				return false
+			lift.append(e)
+	_land(t, cell)
+	for w: Object in lift:
+		w.pos.y = float(cell.y)
+	return true
+
+
+## Becomes its tile at cell, with a puff of debris and its landing sound. Out of the tree (carried by a thrown
+## bag) it is left for its owner to free.
+func _land(t: Terrain, cell: Vector2i) -> void:
+	t.set_type(cell, type)
+	var at := Grid.to_px(Vector2(cell.x + 0.5, cell.y + 1))
+	Effects.debris(at, type.debris_color if type else Color.WHITE, 3, 70.0)
+	Audio.play(land_sound, at)
+	if is_inside_tree():
 		queue_free()
 
 

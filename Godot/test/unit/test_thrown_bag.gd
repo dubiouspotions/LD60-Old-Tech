@@ -1,6 +1,7 @@
 extends GutTest
 ## A thrown sandbag flies its arc and falls where it was thrown, unless it hits anything on the way: then it
-## breaks in a cloud of dust, hurting nobody.
+## breaks in a cloud of dust, hurting nobody. A soldier or engineer it hits gets it under their feet instead: it lands
+## in the cell they stand in and they step up onto it.
 
 ## Flat ground at row 8, a wall at x 6 rows 4..7.
 const MAP: Array = [
@@ -91,25 +92,29 @@ func test_a_throw_into_a_bridge_piece_breaks() -> void:
 	assert_false(_bags_flying())
 
 
-func test_a_throw_into_a_soldier_breaks_without_hurting_them() -> void:
+func test_a_throw_into_a_soldier_lands_under_them_and_they_step_up() -> void:
 	world.army.spawn(1, 11.5)
 	world.army.hold = true
 	var s := world.army.soldiers[0]
 	_throw(Vector2(8.5, 7.0), Vector2i(11, 7))
-	assert_eq(_sandbags(), 0, "nothing landed")
+	assert_eq(_sandbags(), 1, "it landed")
+	assert_eq(world.terrain.type_at(Vector2i(11, 7)), WorldFixture.type("sandbag"), "in the cell the soldier stood in")
 	assert_false(s.dead)
 	assert_eq(s.hp, s.max_hp, "not hurt")
+	assert_almost_eq(s.pos.y, 7.0, 0.01, "standing on it")
 
 
-func test_a_throw_into_another_engineer_breaks_without_hurting_them() -> void:
+func test_a_throw_into_another_engineer_lands_under_them_and_they_step_up() -> void:
 	_crew(2, 8.5)
 	var thrower := world.crew.engineers[0]
 	var other := world.crew.engineers[1]
 	other.pos = Vector2(11.5, 8.0)
+	world.crew.rules.walk_speed = 0.01
 	_throw(thrower.pos - Vector2(0, 1.0), Vector2i(11, 7))
-	assert_eq(_sandbags(), 0, "broke on the other engineer")
+	assert_eq(world.terrain.type_at(Vector2i(11, 7)), WorldFixture.type("sandbag"), "under the other engineer")
 	assert_true(other in world.crew.engineers, "who is fine")
 	assert_true(thrower in world.crew.engineers)
+	assert_almost_eq(other.pos.y, 7.0, 0.01, "standing on it")
 
 
 ## It leaves the hands inside the thrower, and maybe others standing with it: those it does not hit.
@@ -154,16 +159,50 @@ func _dust_count() -> int:
 	return n
 
 
-func test_a_sandbag_falling_on_a_soldier_breaks_in_dust_without_hurting_them() -> void:
+func test_a_sandbag_falling_on_a_soldier_lands_under_them_and_they_step_up() -> void:
 	world.army.spawn(1, 12.5)
 	world.army.hold = true
 	var s := world.army.soldiers[0]
-	watch_signals(Effects)
 	_drop_sandbag(12)
 	assert_false(s.dead, "not crushed")
 	assert_eq(s.hp, s.max_hp, "not hurt")
-	assert_eq(_sandbags(), 0, "it broke")
-	assert_gt(_dust_count(), 0, "in a cloud of dust")
+	assert_eq(world.terrain.type_at(Vector2i(12, 7)), WorldFixture.type("sandbag"), "under their feet")
+	assert_eq(_sandbags(), 1)
+	assert_almost_eq(s.pos.y, 7.0, 0.01, "standing on it")
+
+
+func test_with_no_room_to_step_up_it_breaks_on_the_soldier() -> void:
+	world.army.spawn(1, 12.5)
+	world.army.hold = true
+	var s := world.army.soldiers[0]
+	world.terrain.set_type(Vector2i(12, 5), WorldFixture.type("brick"))
+	var bag: FallingBlock = _sandbag_tool().spawn_scene.instantiate()
+	assert_false(bag.land_under(world, s), "a ceiling right above their head")
+	assert_eq(_sandbags(), 0)
+	bag.free()
+
+
+func test_a_soldier_in_the_air_does_not_get_it_under_them() -> void:
+	world.army.spawn(1, 12.5)
+	var s := world.army.soldiers[0]
+	s.airborne = true
+	var bag: FallingBlock = _sandbag_tool().spawn_scene.instantiate()
+	assert_false(bag.land_under(world, s))
+	bag.free()
+
+
+func test_everyone_standing_in_the_cell_steps_up() -> void:
+	world.army.spawn(1, 12.5)
+	world.army.hold = true
+	var s := world.army.soldiers[0]
+	_crew(1, 12.5)
+	var e := world.crew.engineers[0]
+	e.pos = Vector2(12.4, 8.0)
+	var bag: FallingBlock = _sandbag_tool().spawn_scene.instantiate()
+	assert_true(bag.land_under(world, s))
+	bag.free()
+	assert_almost_eq(s.pos.y, 7.0, 0.01)
+	assert_almost_eq(e.pos.y, 7.0, 0.01, "the engineer beside them too")
 
 
 func test_a_sandbag_falling_on_an_archer_breaks_without_hurting_them() -> void:
@@ -177,11 +216,22 @@ func test_a_sandbag_falling_on_an_archer_breaks_without_hurting_them() -> void:
 	assert_eq(_sandbags(), 0, "it broke")
 
 
-func test_a_sandbag_falling_on_an_engineer_breaks_without_hurting_them() -> void:
+func test_a_sandbag_falling_on_an_engineer_lands_under_them_and_they_step_up() -> void:
 	_crew(1, 14.0)
 	var e := world.crew.engineers[0]
 	world.crew.rules.walk_speed = 0.01
 	var x := floori(e.pos.x)
 	_drop_sandbag(x)
 	assert_true(e in world.crew.engineers, "alive")
-	assert_eq(_sandbags(), 0, "it broke on them, not landed in their place")
+	assert_eq(world.terrain.type_at(Vector2i(x, 7)), WorldFixture.type("sandbag"), "under their feet")
+	assert_almost_eq(e.pos.y, 7.0, 0.01, "standing on it")
+
+
+func test_an_engineer_on_the_bridge_does_not_get_it_under_them() -> void:
+	_crew(1, 14.0)
+	var e := world.crew.engineers[0]
+	e.at = Bridge.Joint.new()
+	var bag: FallingBlock = _sandbag_tool().spawn_scene.instantiate()
+	assert_false(bag.land_under(world, e))
+	bag.free()
+	e.at = null
