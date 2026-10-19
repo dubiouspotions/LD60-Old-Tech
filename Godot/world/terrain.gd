@@ -83,6 +83,7 @@ var _alts: Dictionary = {} # v2 atlas coords -> {TerrainType, or AIR_KEY for air
 var _hits: Dictionary = {} # Vector2i -> seconds since it was hit
 var _ripple: Dictionary = {} # Vector2i -> seconds after the latest tower hit that the ripple reaches it
 var _ripple_age: float = 0.0 # seconds since the latest tower hit
+var _shaken: Dictionary = {} # Vector2i -> true: cells drawn with their hit or ripple look last frame
 var _painted: Dictionary = {} # Vector2i -> true: cells painted in the editor, re-picked around after the paint
 
 
@@ -105,7 +106,6 @@ func hit(cell: Vector2i) -> void:
 	var t := type_at(cell)
 	if t and t.structure:
 		_start_ripple(cell, t)
-	notify_runtime_tile_data_update()
 
 
 ## Seconds after the latest hit on a tower that the ripple reaches cell (0 for the tile hit), or -1 if it does not.
@@ -135,7 +135,7 @@ func _start_ripple(cell: Vector2i, t: TerrainType) -> void:
 
 ## Moves the hit tiles' shake and blink on by delta seconds.
 func advance_hits(delta: float) -> void:
-	if _hits.is_empty() and _ripple.is_empty():
+	if _hits.is_empty() and _ripple.is_empty() and _shaken.is_empty():
 		return
 	for c: Vector2i in _hits.keys():
 		_hits[c] += delta
@@ -144,7 +144,31 @@ func advance_hits(delta: float) -> void:
 	_ripple_age += delta
 	if not _ripple.is_empty() and _ripple_age > _ripple.values().max() + ripple_time:
 		_ripple.clear()
-	notify_runtime_tile_data_update()
+	# Only the tiles shaking or bobbing, and those that just stopped, are drawn anew: a whole-layer update
+	# (notify_runtime_tile_data_update) would ask every cell of the world, every frame.
+	var now := {}
+	for c: Vector2i in _hits:
+		now[c] = true
+	for c: Vector2i in _ripple:
+		now[c] = true
+	for c: Vector2i in _shaken:
+		_redraw_cell(c)
+	for c: Vector2i in now:
+		if not _shaken.has(c):
+			_redraw_cell(c)
+	_shaken = now
+
+
+## Has the layer draw cell again (and ask _use_tile_data_runtime_update about it). Setting a cell to the tile it
+## already has does nothing, so it is taken off and put back.
+func _redraw_cell(cell: Vector2i) -> void:
+	var source := get_cell_source_id(cell)
+	if source == -1:
+		return
+	var coords := get_cell_atlas_coords(cell)
+	var alt := get_cell_alternative_tile(cell)
+	erase_cell(cell)
+	set_cell(cell, source, coords, alt)
 
 
 ## How far the tile at cell is shaken off its place now, in pixels.
