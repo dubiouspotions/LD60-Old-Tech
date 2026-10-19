@@ -72,7 +72,7 @@ At the start of every level the column makes camp. **Dusk**: night falls while e
 | --- | --- |
 | Length of the night | **March Delay** on the level's root node, counted from arrival (dusk included). 0 means no camp. |
 | Length of dusk and morning | **Dusk Time** / **Morning Time** on `game/world.tscn` |
-| Gap between sleepers, how long a soldier stands before lying down | **Camp Spacing** / **Settle Time** in `data/army_rules.tres` (the gap shrinks if the world ends close behind the camp) |
+| The camp spreads around its flag, half the column on either side; soldiers lie down from the front back. Gap between sleepers, how long a soldier stands before lying down | **Camp Spacing** / **Settle Time** in `data/army_rules.tres` (the gap shrinks if the world ends close behind the camp) |
 | Tents, fire, firelight, crackle | `objects/camp/camp.tscn` (its origin is the camp flag; the column sleeps to its left) |
 | Sleeping soldier pose and the "z" | **Asleep** node and the "sleep" animation in `objects/soldier/soldier.tscn` |
 | Night colours, fade time | **DayNight** node in `game/main.tscn` |

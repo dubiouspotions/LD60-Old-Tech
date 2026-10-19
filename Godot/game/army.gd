@@ -158,21 +158,25 @@ func step(dt: float) -> void:
 			continue
 		_step_x(s, dx)
 	_remove_dead()
-	for s in soldiers:
-		_settle_down(s, dt)
+	for i in soldiers.size():
+		var s := soldiers[i]
+		_settle_down(s, soldiers[i - 1] if i > 0 else null, dt)
 		s.mutiny_left = 1.0 - s.blocked_time / rules.mutiny_time if s.blocked_time > 0.0 else 0.0
 		s.sync()
 	_step_deserters(dt)
 
 
-## Walks soldier rank i toward its camp spot, forward or back: the front to camp_x, everyone else a gap
-## behind wherever the soldier ahead of it is, so a soldier stuck short of its spot keeps the rest close.
-## Spots squeeze together when the world ends close behind the camp. Unlike the march it never steps off a
-## ledge or into a hazard; a soldier who can not get there lies down where it is.
+## Walks soldier rank i toward its camp spot, forward or back. The camp spreads around camp_x (the camp flag), half
+## the column on either side: the front half a camp line past it, everyone else a gap behind wherever the soldier
+## ahead of it is, so a soldier stuck short of its spot keeps the rest close. Spots squeeze together when the world
+## ends close behind the camp. Unlike the march it never steps off a ledge or into a hazard; a soldier who can not
+## get there lies down where it is.
 func _walk_to_camp(s: Soldier, i: int, dt: float) -> void:
+	var half := (soldiers.size() - 1) / 2.0
 	var room := camp_x - terrain.min_x - 0.5
-	var gap := minf(rules.camp_spacing, room / maxi(soldiers.size() - 1, 1))
-	var to := (camp_x if i == 0 else soldiers[i - 1].pos.x - gap) - s.pos.x
+	var gap := minf(rules.camp_spacing, room / maxf(half, 1.0))
+	var spot := camp_x + half * gap if i == 0 else soldiers[i - 1].pos.x - gap
+	var to := maxf(spot, terrain.min_x + 0.25) - s.pos.x
 	if absf(to) < 0.05:
 		# Settle exactly on the spot, so small misses do not add up along the camp line.
 		s.pos.x += to
@@ -212,11 +216,14 @@ func _besiege(s: Soldier, cell: Vector2i, dt: float) -> bool:
 	return true
 
 
-## While resting, a soldier who has stood still on the ground for settle_time lies down.
-func _settle_down(s: Soldier, dt: float) -> void:
+## While resting, a soldier who has stood still on the ground for settle_time lies down, once the one ahead (if any)
+## has.
+func _settle_down(s: Soldier, ahead: Soldier, dt: float) -> void:
 	if not resting or s.sleeping:
 		return
-	s.still_time = s.still_time + dt if not s.moving and not s.airborne else 0.0
+	# They lie down from the front back, so nobody settles before the spots ahead of it are taken.
+	var moving := s.moving or s.airborne or (ahead != null and not ahead.sleeping and not ahead.dead)
+	s.still_time = s.still_time + dt if not moving else 0.0
 	if s.still_time >= rules.settle_time:
 		s.sleeping = true
 

@@ -159,7 +159,9 @@ func test_camp_sleeps_while_engineers_work() -> void:
 	var cell := Vector2i(floori(x) + 3, world.terrain.surface_row(floori(x) + 3))
 	world.terrain.mark(cell)
 	_run(15.0)
-	assert_eq(lead.pos.x, x, "the column sleeps")
+	var front := world.army.camp_x + (world.army.soldiers.size() - 1) / 2.0 * world.army.rules.camp_spacing
+	assert_lte(lead.pos.x, front + 0.01, "the column sleeps, no further than its camp spot")
+	assert_true(lead.sleeping)
 	assert_null(world.terrain.type_at(cell), "the engineers dug through the night")
 
 

@@ -292,8 +292,8 @@ func test_resting_column_closes_up_to_camp_then_sleeps() -> void:
 	assert_false(straggler.sleeping, "still walking to camp")
 	assert_true(a.lead().sleeping, "the front lies down once it has stopped")
 	_run(a, 8.0)
-	assert_almost_eq(a.lead().pos.x, 20.5, 0.01, "nobody passes the camp")
-	assert_almost_eq(straggler.pos.x, 20.5 - a.rules.camp_spacing, 0.15, "joined the camp")
+	assert_almost_eq(a.lead().pos.x, 20.5 + a.rules.camp_spacing / 2.0, 0.05, "the front on its spot, just past the flag")
+	assert_almost_eq(straggler.pos.x, 20.5 - a.rules.camp_spacing / 2.0, 0.15, "joined the camp, just behind it")
 	assert_true(straggler.sleeping)
 
 
@@ -308,15 +308,18 @@ func test_waking_stands_everyone_up() -> void:
 	assert_false(a.soldiers.any(func(s: Soldier) -> bool: return s.sleeping))
 
 
-func test_dense_column_spreads_out_into_camp() -> void:
+## The camp spreads around its flag, half the column on either side, Camp Spacing apart.
+func test_dense_column_spreads_out_into_camp_around_the_flag() -> void:
 	var a := _world(["..............................", "##############################", "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"])
 	a.spawn(4, 20.5)
 	a.camp_x = 20.5
 	a.resting = true
 	_run(a, 8.0)
 	for i in a.soldiers.size():
-		assert_almost_eq(a.soldiers[i].pos.x, 20.5 - i * a.rules.camp_spacing, 0.1, "soldier %d on its spot" % i)
+		assert_almost_eq(a.soldiers[i].pos.x, 20.5 + (1.5 - i) * a.rules.camp_spacing, 0.1, "soldier %d on its spot" % i)
 		assert_true(a.soldiers[i].sleeping)
+	assert_eq(a.soldiers.filter(func(s: Soldier) -> bool: return s.pos.x > 20.5).size(), 2, "half past the flag")
+	assert_eq(a.soldiers.filter(func(s: Soldier) -> bool: return s.pos.x < 20.5).size(), 2, "half behind it")
 
 
 func test_camp_squeezes_in_when_there_is_no_room_behind() -> void:
@@ -512,7 +515,8 @@ func test_soldiers_stuck_in_a_dip_do_not_split_the_camp() -> void:
 		a.soldiers[i].pos = Vector2(18.8 - (i - 1) * 0.25, 6.0)
 	a.soldiers[8].pos = Vector2(16.4, 4.0)
 	a.soldiers[9].pos = Vector2(15.8, 4.0)
-	a.camp_x = 20.5
+	# The camp spreads around its flag: this puts its front at 20.5 with the dip behind it.
+	a.camp_x = 20.5 - 4.5 * a.rules.camp_spacing
 	a.resting = true
 	_run(a, 10.0)
 	var xs := a.soldiers.map(func(s: Soldier) -> float: return s.pos.x)

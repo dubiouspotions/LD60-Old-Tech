@@ -34,11 +34,11 @@ func _run(seconds: float) -> void:
 func test_column_waits_for_the_king() -> void:
 	world.start_at(6.5, 2, 2.0)
 	watch_signals(world)
-	var x0 := world.army.lead().pos.x
+	var front := world.army.camp_x + (world.army.soldiers.size() - 1) / 2.0 * world.army.rules.camp_spacing
 	_run(1.0)
 	assert_true(world.camping())
 	assert_almost_eq(world.march_left(), 1.0, 0.05)
-	assert_eq(world.army.lead().pos.x, x0)
+	assert_lte(world.army.lead().pos.x, front + 0.01, "no further than its camp spot")
 	_run(1.5)
 	assert_false(world.camping(), "king lost patience")
 	assert_signal_emitted_with_parameters(world, "march_ordered", [false])
