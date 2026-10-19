@@ -37,10 +37,17 @@ layer = -10
 
 [node name="SkyTint" type="CanvasModulate" parent="." unique_id=791415413]
 
-[node name="BakgrPixel" type="Sprite2D" parent="." unique_id=291553377]
-position = Vector2(630, 187.70143)
+[node name="SkyPixel" type="Parallax2D" parent="." unique_id=1720385146]
+scroll_scale = Vector2(0, 0)
+repeat_size = Vector2(1522.3888, 0)
+repeat_times = 4
+follow_viewport = false
+
+[node name="Art" type="Sprite2D" parent="SkyPixel" unique_id=291553377]
+position = Vector2(-131.19437, -2.597162)
 scale = Vector2(5.946831, 5.946831)
 texture = ExtResource("1_7yj74")
+centered = false
 
 [node name="Sky" type="TextureRect" parent="." unique_id=489870164]
 visible = false

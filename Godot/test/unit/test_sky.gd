@@ -48,6 +48,24 @@ func test_each_layer_tiles_the_screen_from_the_bottom() -> void:
 		assert_gte(right, VIEW.x, "%s reaches the right edge" % layer_name)
 
 
+## The sky gradient stands still and is repeated sideways, so an ultra-wide window shows no edge.
+func test_the_sky_tiles_across_the_screen() -> void:
+	var bg := _background()
+	var sky: Parallax2D = bg.get_node("SkyPixel")
+	var art := _art(sky)
+	var width := art.texture.get_width() * art.scale.x
+	assert_false(art.centered)
+	assert_eq(sky.scroll_scale, Vector2.ZERO, "it does not scroll")
+	assert_almost_eq(sky.repeat_size.x, width, 0.01, "repeats edge to edge")
+	assert_eq(sky.repeat_size.y, 0.0, "does not repeat upwards")
+	var left := -(sky.repeat_times / 2) * sky.repeat_size.x + art.position.x
+	var right := (sky.repeat_times - sky.repeat_times / 2) * sky.repeat_size.x + art.position.x
+	# The stretch aspect is "expand": a wider window adds screen to the right of x = 0.
+	assert_lte(left, 0.0, "reaches the left edge")
+	assert_gte(right, VIEW.y * 32.0 / 9.0, "reaches the right edge of a 32:9 window")
+	assert_lt(sky.get_index(), bg.get_node("Stars").get_index(), "behind the stars")
+
+
 ## On the background CanvasLayer the camera does not move the layers, so each scrolls itself by its Scroll Scale
 ## share of the camera's travel: sideways, and up and down.
 func test_a_layer_scrolls_by_its_share_of_the_camera_travel() -> void:
