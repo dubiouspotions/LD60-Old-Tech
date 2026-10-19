@@ -5,27 +5,27 @@
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_r1scb"]
 atlas = ExtResource("2_kg76h")
-region = Rect2(0, 0, 128, 128)
+region = Rect2(0, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_h6g8s"]
 atlas = ExtResource("2_kg76h")
-region = Rect2(128, 0, 128, 128)
+region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_e2lph"]
 atlas = ExtResource("2_kg76h")
-region = Rect2(256, 0, 128, 128)
+region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l5xlm"]
 atlas = ExtResource("2_kg76h")
-region = Rect2(384, 0, 128, 128)
+region = Rect2(96, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_s31v8"]
 atlas = ExtResource("2_kg76h")
-region = Rect2(512, 0, 128, 128)
+region = Rect2(128, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rjhu6"]
 atlas = ExtResource("2_kg76h")
-region = Rect2(640, 0, 128, 128)
+region = Rect2(160, 0, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_hy4tk"]
 animations = [{
@@ -61,7 +61,7 @@ label = ""
 z_index = 1
 position = Vector2(-11, -101)
 rotation = -0.052359886
-scale = Vector2(0.4753372, 0.4753372)
+scale = Vector2(1.901349, 1.901349)
 sprite_frames = SubResource("SpriteFrames_hy4tk")
 animation = &"grön flagga"
 autoplay = "grön flagga"
