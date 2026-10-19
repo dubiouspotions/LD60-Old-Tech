@@ -173,26 +173,35 @@ func test_terrain_type_prints_its_name() -> void:
 	assert_eq(str(WorldFixture.type("water")), "Water")
 
 
-## Anything that shows a tile outside the map (a falling box) takes its picture from the TileSet.
+## Anything that shows a tile outside the map (a falling sandbag) takes its picture from the TileSet.
 func test_tile_texture_comes_from_the_tileset() -> void:
 	var t := WorldFixture.terrain(self, MAP)
-	var box := WorldFixture.type("box")
-	t.set_type(Vector2i(0, 0), box)
+	var sandbag := WorldFixture.type("sandbag")
+	t.set_type(Vector2i(0, 0), sandbag)
 	var src := t.tile_set.get_source(t.get_cell_source_id(Vector2i(0, 0))) as TileSetAtlasSource
-	var tex := t.tile_texture(box) as AtlasTexture
+	var tex := t.tile_texture(sandbag) as AtlasTexture
 	assert_not_null(tex)
 	assert_eq(tex.atlas, src.texture)
 	assert_eq(tex.region, Rect2(src.get_tile_texture_region(t.get_cell_atlas_coords(Vector2i(0, 0)))))
 
 
-## A new material can bring its tiles in an atlas source of its own (the sandbag): it is drawn and pictured with them.
+## A new material can bring its tiles in an atlas source of its own (the sandbag, sandbag.png): it is drawn and
+## pictured with them. The sandbag also has the old atlas tile that was the box, so this takes that one away.
 func test_a_material_in_a_tileset_source_of_its_own_is_drawn_with_it() -> void:
 	var t := WorldFixture.terrain(self, MAP)
 	var sandbag := WorldFixture.type("sandbag")
+	var tiles := t.tile_set.duplicate(true) as TileSet
+	var classic := tiles.get_source(t.look.classic_source) as TileSetAtlasSource
+	for i in range(classic.get_tiles_count() - 1, -1, -1):
+		var coords := classic.get_tile_id(i)
+		if classic.get_tile_data(coords, 0).get_custom_data(Terrain.CUSTOM_DATA) == sandbag:
+			classic.remove_tile(coords)
+	t.tile_set = tiles
+	t.rebuild()
 	t.set_type(Vector2i(0, 0), sandbag)
 	var sid := t.get_cell_source_id(Vector2i(0, 0))
 	assert_ne(sid, -1, "drawn")
-	assert_ne(sid, t.look.classic_source, "not from the old atlas, which has no sandbag")
+	assert_ne(sid, t.look.classic_source, "not from the old atlas, which now has no sandbag")
 	assert_ne(sid, t.look.source_id, "nor from the v2 ground tiles")
 	assert_eq(t.painted_type(Vector2i(0, 0)), sandbag)
 	assert_not_null(t.tile_texture(sandbag), "pictured off the map too (thrown, falling)")

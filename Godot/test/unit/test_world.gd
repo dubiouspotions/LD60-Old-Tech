@@ -189,13 +189,13 @@ func test_archers_hold_fire_while_the_column_sleeps() -> void:
 
 func test_falling_block_looks_like_its_tile() -> void:
 	world.begin(0, 3)
-	var box := load("res://data/terrain/box.tres") as TerrainType
+	var sandbag := load("res://data/terrain/sandbag.tres") as TerrainType
 	var block: FallingBlock = world.falling_block_scene.instantiate()
-	block.type = box
+	block.type = sandbag
 	world.objects.add_child(block)
 	var sprite: Sprite2D = block.get_node("Sprite")
-	assert_eq((sprite.texture as AtlasTexture).region, (world.terrain.tile_texture(box) as AtlasTexture).region)
-	assert_eq((sprite.texture as AtlasTexture).atlas, (world.terrain.tile_texture(box) as AtlasTexture).atlas)
+	assert_eq((sprite.texture as AtlasTexture).region, (world.terrain.tile_texture(sandbag) as AtlasTexture).region)
+	assert_eq((sprite.texture as AtlasTexture).atlas, (world.terrain.tile_texture(sandbag) as AtlasTexture).atlas)
 
 
 func test_soldiers_cost_two_gold_and_engineers_five() -> void:
