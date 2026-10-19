@@ -52,8 +52,8 @@ func _run(show: MenuShow, seconds: float, done: Callable) -> Array:
 	return stages
 
 
-func test_the_game_opens_on_the_main_menu() -> void:
-	assert_eq(ProjectSettings.get_setting("application/run/main_scene"), "res://menu/main_menu.tscn")
+func test_the_game_opens_on_the_main_menu_after_the_boot_scene() -> void:
+	assert_eq((load("res://menu/boot.tscn").instantiate() as Boot).next_scene, "res://menu/main_menu.tscn")
 	assert_eq(Level.GAME_SCENE, "res://game/main.tscn", "a level run on its own still goes straight into the game")
 
 

@@ -104,6 +104,14 @@ func test_with_sample_playback_every_stream_is_readied_a_frame_at_a_time() -> vo
 	Audio.samples = had
 
 
+## Sounds count as samples wherever the engine plays them as samples: the web build, by its platform override.
+func test_samples_follow_the_playback_type_of_this_platform() -> void:
+	var key := "audio/general/default_playback_type"
+	# The setting counts 0 = Stream, 1 = Sample.
+	assert_eq(Audio.samples, ProjectSettings.get_setting_with_override(key) == 1)
+	assert_eq(ProjectSettings.get_setting(key + ".web"), 1, "the web build plays samples")
+
+
 ## The game preloads its audio folder (Audio Folder on the Game node) as it starts.
 func test_the_game_preloads_its_audio_folder() -> void:
 	var game: Game = load("res://game/main.tscn").instantiate()

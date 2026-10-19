@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/march_music.ogg-f6dcc6c482411f03146c3a76e14c5
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0
