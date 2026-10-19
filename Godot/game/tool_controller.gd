@@ -99,6 +99,11 @@ func cancel() -> void:
 	_last_end = Vector2(NAN, NAN)
 
 
+## A plank is in hand (being drawn, or waiting for its start), or a tool is held down.
+func busy() -> bool:
+	return _build_from != null or _build_waiting or _holding
+
+
 ## Where the plank following the mouse starts: the one being drawn, or (chain held) the end of the last one placed.
 ## null when there is none.
 func preview_from() -> Bridge.Snap:
@@ -144,6 +149,9 @@ func _on_ordered(planned: Array[Bridge.Member]) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"cancel"):
+		# Esc first puts down the plank in hand; only with nothing in hand does it reach the pause menu (Game).
+		if busy() and event.is_action_pressed(&"pause_menu"):
+			get_viewport().set_input_as_handled()
 		cancel()
 	elif event.is_action(&"chain_build"):
 		chain = event.is_pressed()

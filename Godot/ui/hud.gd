@@ -23,8 +23,12 @@ signal retry_pressed
 ## Restart the current level from its checkpoint (any time, not only when lost).
 signal restart_level_pressed
 signal restart_pressed
-## Back to the main menu.
+## The Menu button: open the pause menu.
 signal menu_pressed
+## The pause menu's Resume.
+signal resume_pressed
+## The pause menu's Quit to Main Menu.
+signal quit_pressed
 ## The player moved a volume slider (0..1) for bus.
 signal volume_changed(bus: StringName, value: float)
 
@@ -100,6 +104,11 @@ func _ready() -> void:
 	%NewWorldButton.pressed.connect(_emit.bind(restart_pressed))
 	%AgainButton.pressed.connect(_emit.bind(restart_pressed))
 	%MenuButton.pressed.connect(_emit.bind(menu_pressed))
+	var pause: PauseMenu = %PauseMenu
+	pause.resume_pressed.connect(_emit.bind(resume_pressed))
+	pause.restart_checkpoint_pressed.connect(_emit.bind(restart_level_pressed))
+	pause.restart_pressed.connect(_emit.bind(restart_pressed))
+	pause.quit_pressed.connect(_emit.bind(quit_pressed))
 	%SoundButton.toggled.connect(func(on: bool) -> void: %SoundPanel.visible = on)
 	%MusicSlider.value_changed.connect(func(v: float) -> void: volume_changed.emit(music_bus, v))
 	%SoundSlider.value_changed.connect(func(v: float) -> void: volume_changed.emit(sound_bus, v))
@@ -332,6 +341,14 @@ func _set_edge_marker(m: TextureRect, visible_on_side: int, screen_y: float) -> 
 	m.position = Vector2(vp.x - m.size.x - 6.0 if visible_on_side > 0 else 6.0, clampf(screen_y - m.size.y / 2, 60.0, vp.y - 120.0))
 
 
+func show_pause_menu(on: bool) -> void:
+	%PauseMenu.visible = on
+
+
+func pause_menu_open() -> bool:
+	return %PauseMenu.visible
+
+
 func show_intro(on: bool) -> void:
 	%Intro.visible = on
 
@@ -365,10 +382,11 @@ func hide_cards() -> void:
 	%Lost.color = _lost_color
 	%Lost.get_node(^"Center").position.y = 0.0
 	%Victory.visible = false
+	%PauseMenu.visible = false
 
 
 func any_card_open() -> bool:
-	return %Intro.visible or %Lost.visible or %Victory.visible
+	return %Intro.visible or %Lost.visible or %Victory.visible or %PauseMenu.visible
 
 
 func _to_screen(world_px: Vector2) -> Vector2:
