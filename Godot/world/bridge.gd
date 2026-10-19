@@ -205,6 +205,9 @@ var members: Array[Member] = []
 ## Length of the last substep, for joint velocities.
 var _h: float = 1.0 / 600.0
 var _hits: Array = [] # [cell, member, energy (J)] of every fast hit on the ground this tick
+## Column -> members whose x span reaches into it, in member order (see walk_surface). Rebuilt when stale.
+var _decks: Dictionary = {}
+var _decks_stale: bool = true
 
 
 func _process(_delta: float) -> void:
@@ -428,7 +431,9 @@ func route_from_ground(j: Joint) -> Array[Joint]:
 
 
 ## Shortest walk along built members from a joint that matches is_start to goal. [] if none.
-func route(goal: Joint, is_start: Callable) -> Array[Joint]:
+## links (from links()) can be passed in when routing many times over the same bridge.
+func route(goal: Joint, is_start: Callable, links: Dictionary = {}) -> Array[Joint]:
+	var next := links if not links.is_empty() else self.links()
 	var came := {goal: null}
 	var queue: Array[Joint] = [goal]
 	while not queue.is_empty():
@@ -439,14 +444,27 @@ func route(goal: Joint, is_start: Callable) -> Array[Joint]:
 				out.append(n)
 				n = came[n]
 			return out
-		for m in members:
-			if m.blueprint:
-				continue
-			var o: Joint = m.b if m.a == n else (m.a if m.b == n else null)
-			if o and not came.has(o):
+		for o: Joint in next.get(n, []):
+			if not came.has(o):
 				came[o] = n
 				queue.append(o)
 	return []
+
+
+## The joints each joint is joined to by a built member, in member order: Joint -> Array of Joint (see route).
+func links() -> Dictionary:
+	var out := {}
+	for m in members:
+		if m.blueprint:
+			continue
+		if not out.has(m.a):
+			out[m.a] = []
+		out[m.a].append(m.b)
+		if m.b != m.a:
+			if not out.has(m.b):
+				out[m.b] = []
+			out[m.b].append(m.a)
+	return out
 
 
 ## Builds one blueprint and holds it on scaffolding.
@@ -583,7 +601,7 @@ func _first_hit(a: Vector2, b: Vector2, blocks: Callable) -> Variant:
 ## With walkable_only false, any piece solid along its length (see BridgeMaterial.solid_along) counts.
 func walk_surface(x: float, y_from: float, walkable_only: bool = true) -> Dictionary:
 	var best := {}
-	for m in members:
+	for m: Member in _members_over(floori(x)):
 		# Finished pieces are walkable even while still on scaffolding; of a piece being built, the part
 		# already built is.
 		var built := 1.0 if not m.blueprint else (m.progress if m.ordered and m.from_joint else 0.0)
@@ -603,6 +621,22 @@ func walk_surface(x: float, y_from: float, walkable_only: bool = true) -> Dictio
 		if y >= y_from - 1e-6 and (best.is_empty() or y < best.y):
 			best = {y = y, member = m, t = t}
 	return best
+
+
+## Members whose x span reaches into column, in member order. Joints only move in step() and members only come and
+## go through _recompute_mass() and clear(), which mark the index stale.
+func _members_over(column: int) -> Array:
+	if _decks_stale:
+		_decks_stale = false
+		_decks.clear()
+		for m in members:
+			if not (is_finite(m.a.pos.x) and is_finite(m.b.pos.x)):
+				continue
+			for c in range(floori(minf(m.a.pos.x, m.b.pos.x)), floori(maxf(m.a.pos.x, m.b.pos.x)) + 1):
+				if not _decks.has(c):
+					_decks[c] = []
+				_decks[c].append(m)
+	return _decks.get(column, [])
 
 
 ## Advances the truss by dt. loads: [[member, t along member, kg], ...] from soldiers standing on it.
@@ -689,6 +723,7 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 		if not m.blueprint and m.a.pos.y > bottom or m.b.pos.y > bottom:
 			remove_member(m)
 	_resolve_hits()
+	_decks_stale = true
 
 
 ## Eases each member's sag toward what its loads ({member: kg weighted by where they stand}) call for.
@@ -706,6 +741,7 @@ func _bend(bending: Dictionary) -> void:
 func clear() -> void:
 	members.clear()
 	nodes.clear()
+	_decks_stale = true
 
 
 ## Removes every member, built or planned, with an end left of lo or right of hi (metres).
@@ -783,6 +819,7 @@ func _add_joint(p: Vector2) -> Joint:
 
 
 func _recompute_mass() -> void:
+	_decks_stale = true
 	for n in nodes:
 		n.mass = 0.0
 		n.degree = 0

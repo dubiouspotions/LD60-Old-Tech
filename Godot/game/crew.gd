@@ -398,6 +398,7 @@ func _most_urgent(jobs: Array) -> Dictionary:
 func _jobs_for(e: Engineer, any_height: bool) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var starts := _starts_for(e, any_height)
+	var links := bridge.links()
 	for m in bridge.members:
 		var builder := _builder_of(m)
 		if builder and builder != e:
@@ -405,7 +406,7 @@ func _jobs_for(e: Engineer, any_height: bool) -> Array[Dictionary]:
 		for j in bridge.work_ends(m):
 			if not _in_zone(j.pos.x):
 				continue
-			var route := bridge.route(j, starts)
+			var route := bridge.route(j, starts, links)
 			if route.is_empty() or not _in_zone(route[0].pos.x):
 				continue
 			out.append({x = j.pos.x, cost = _route_cost(e, route), what = m, take = func() -> void:
@@ -470,11 +471,12 @@ func _jobs_for(e: Engineer, any_height: bool) -> Array[Dictionary]:
 ## below and then climb up to (max_climb) or down to (max_drop), or any height with any_height.
 func _starts_for(e: Engineer, any_height: bool = false) -> Callable:
 	var reachable := {}
+	var walk := _walker(e.pos, true, any_height)
 	return func(n: Bridge.Joint) -> bool:
 		if e.at:
 			return n == e.at
 		if not reachable.has(n):
-			var y := _walk_y(e.pos, n.pos.x, true, any_height)
+			var y: float = walk.call(n.pos.x)
 			reachable[n] = not is_nan(y) and (any_height or (y - n.pos.y <= rules.max_climb and n.pos.y - y <= rules.max_drop))
 		return reachable[n]
 
@@ -936,12 +938,13 @@ func _route_toward(e: Engineer, x: float) -> Array[Bridge.Joint]:
 	if e.at == null and not is_nan(_walk_y(e.pos, x)):
 		return none
 	var starts := _starts_for(e)
+	var links := bridge.links()
 	var best := none
 	var best_cost := INF
 	for n in bridge.nodes:
 		if not n.pinned or n == e.at or is_nan(_walk_y(n.pos, x)):
 			continue
-		var route := bridge.route(n, starts)
+		var route := bridge.route(n, starts, links)
 		if route.is_empty():
 			continue
 		var cost := _route_cost(e, route)
@@ -1039,6 +1042,38 @@ func _walk_y(p: Vector2, x: float, decks: bool = true, any_height: bool = false)
 	return y
 
 
+## _walk_y from p, for many x while the ground stays as it is: a callable x -> height. Walks to different x the same
+## way take the same whole steps up to their last, so those are walked once and kept.
+func _walker(p: Vector2, decks: bool = true, any_height: bool = false) -> Callable:
+	# way -> [x after each whole step, height there], as floats (a Vector2 would round them)
+	var walked := {-1: [[p.x] as Array[float], [p.y] as Array[float]], 1: [[p.x] as Array[float], [p.y] as Array[float]]}
+	return func(x: float) -> float:
+		x = move_toward(x, p.x, EDGE)
+		var way: Array = walked[-1 if x < p.x else 1]
+		var xs: Array[float] = way[0]
+		var ys: Array[float] = way[1]
+		var at := p.x
+		var y := p.y
+		var k := 0
+		var first := true
+		while first or absf(x - at) > 0.001:
+			first = false
+			if absf(x - at) > 0.25:
+				k += 1
+				if k == xs.size():
+					var to := move_toward(at, x, 0.25)
+					xs.append(to)
+					ys.append(_next_y(y, to, decks, any_height))
+				at = xs[k]
+				y = ys[k]
+			else:
+				at = x
+				y = _next_y(y, at, decks, any_height)
+			if is_nan(y):
+				return NAN
+		return y
+
+
 ## Where idle engineer i stands: ready beside a plan waiting to be ordered, else behind the last soldier.
 func _idle_x(i: int) -> float:
 	if not is_nan(_ready_x):
@@ -1077,13 +1112,14 @@ func _update_ready_spot(dt: float) -> void:
 	_ready_think = THINK_INTERVAL
 	_ready_x = NAN
 	var from := engineers[0].pos
+	var walk := _walker(from)
 	var best := INF
 	for m in bridge.members:
 		if not m.blueprint or m.ordered:
 			continue
 		for j: Bridge.Joint in [m.a, m.b]:
 			var d := absf(j.pos.x - from.x)
-			if (j.pinned or j.built) and d < best and _in_zone(j.pos.x) and not is_nan(_walk_y(from, j.pos.x)):
+			if (j.pinned or j.built) and d < best and _in_zone(j.pos.x) and not is_nan(walk.call(j.pos.x)):
 				best = d
 				_ready_x = j.pos.x
 				_ready_side = 1.0 if j.pos.x >= from.x else -1.0
