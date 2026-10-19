@@ -18,6 +18,10 @@ signal tool_changed(index: int, material: BridgeMaterial)
 @export var mark_color: Color = Color("e9a93b")
 ## Progress bar on a tower block the column is attacking.
 @export var siege_color: Color = Color("ff6a55")
+## Empty part and outline of the siege bar: dark, so the bar shows against the brick.
+@export var siege_empty_color: Color = Color("683a3a")
+## Height of the siege bar's fill (pixels).
+@export var siege_bar_height: float = 4.0
 @export var preview_font_size: int = 16
 ## Light that follows the cursor so the engineers' work can be seen at night (optional).
 @export var lantern: Node2D
@@ -380,12 +384,20 @@ func _draw_marks() -> void:
 		var r := Rect2(Vector2(order.cell) * px, Vector2.ONE * px).grow(-3)
 		draw_rect(r, mark_color, false, 2.0)
 		draw_line(r.position + Vector2(0, r.size.y), r.position + Vector2(r.size.x, 0), Color(mark_color, 0.5), 1.5)
+	_draw_siege_bars()
+
+
+## A bar along the bottom of each tower block under attack, filling as it is razed, outlined in its empty colour.
+func _draw_siege_bars() -> void:
+	var px := Grid.PX
 	for cell in world.terrain.besieged_cells():
 		var done := world.terrain.siege_progress(cell)
-		if done > 0.0:
-			var r := Rect2(Vector2(cell) * px, Vector2.ONE * px).grow(-3)
-			draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), r.size * Vector2(1, 0) + Vector2(0, 4)), Color(siege_color, 0.3))
-			draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x * done, 4)), siege_color)
+		if done <= 0.0:
+			continue
+		var r := Rect2(Vector2(cell) * px, Vector2.ONE * px).grow(-4)
+		var bar := Rect2(r.position.x, r.end.y - siege_bar_height, r.size.x, siege_bar_height)
+		draw_rect(bar.grow(1.0), siege_empty_color)
+		draw_rect(Rect2(bar.position, Vector2(roundf(bar.size.x * done), bar.size.y)), siege_color)
 
 
 func _draw_build(mat: BridgeMaterial) -> void:
