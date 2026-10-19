@@ -30,6 +30,10 @@ extends Node
 @export var morning_text: String = "Morning · breaking camp"
 ## Status while the column marches toward a deep drop or hazard (%s = what).
 @export var danger_text: String = "Marching · %s"
+## Added to the status line while engineers have no way back to the column (see CrewRules.stuck_time); the second
+## takes the count.
+@export var stuck_one_text: String = "An engineer is stuck"
+@export var stuck_many_text: String = "%d engineers stuck"
 @export var march_title: String = "Forward, march!"
 @export var march_player_text: String = "The column breaks camp on your order"
 @export var march_king_text: String = "The king has lost his patience"
@@ -338,22 +342,30 @@ func _update_status() -> void:
             under_fire = true
             break
     if _over:
-        _hud.set_status(_over_status, Hud.Mood.FIRE)
+        _set_status(_over_status, Hud.Mood.FIRE)
     elif get_tree().paused and _hud.any_card_open():
         # Paused for a card (the intro). A plain pause shows the PAUSED tag, and the status carries on as below.
-        _hud.set_status("Awaiting orders", Hud.Mood.HALT)
+        _set_status("Awaiting orders", Hud.Mood.HALT)
     elif _world.camping():
-        _hud.set_status(patience_text % ceili(_world.march_left()), Hud.Mood.HALT)
+        _set_status(patience_text % ceili(_world.march_left()), Hud.Mood.HALT)
     elif _world.at_camp():
-        _hud.set_status(morning_text, Hud.Mood.HALT)
+        _set_status(morning_text, Hud.Mood.HALT)
     elif under_fire:
-        _hud.set_status("Under fire · %s" % reason if reason else "Under fire", Hud.Mood.FIRE)
+        _set_status("Under fire · %s" % reason if reason else "Under fire", Hud.Mood.FIRE)
     elif reason:
-        _hud.set_status("Halted · %s" % reason, Hud.Mood.HALT)
+        _set_status("Halted · %s" % reason, Hud.Mood.HALT)
     elif not _world.army.danger.is_empty():
-        _hud.set_status(danger_text % _world.army.danger, Hud.Mood.FIRE)
+        _set_status(danger_text % _world.army.danger, Hud.Mood.FIRE)
     else:
-        _hud.set_status("Marching", Hud.Mood.NORMAL)
+        _set_status("Marching", Hud.Mood.NORMAL)
+
+
+## Shows text on the status line, with the stuck engineers (if any) told after it.
+func _set_status(text: String, mood: Hud.Mood) -> void:
+    var stuck := _world.crew.stuck_count()
+    if stuck > 0 and not _over:
+        text += " · " + (stuck_one_text if stuck == 1 else stuck_many_text % stuck)
+    _hud.set_status(text, mood)
 
 
 func _update_lead_marker(lead: Soldier) -> void:

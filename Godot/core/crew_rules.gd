@@ -26,6 +26,9 @@ extends Resource
 ## An idle engineer that makes no way back to the column this long (stranded on a ledge or in a pit) climbs
 ## up or down any height of ground to get there (Max Climb and Max Drop no longer hold it). 0: never.
 @export_range(0.0, 30.0, 0.5, "suffix:s") var stranded_time: float = 3.0
+## A stranded engineer that still makes no way back this much longer, even climbing any height, is stuck: the
+## status line says so.
+@export_range(0.0, 30.0, 0.5, "suffix:s") var stuck_time: float = 3.0
 ## Engineers dig a marked cell whose centre is within this distance of their chest.
 ## How long the digging takes is set per terrain type (Dig Time).
 @export_range(0.5, 5.0, 0.1, "suffix:m") var dig_reach: float = 1.6

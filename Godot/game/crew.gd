@@ -64,6 +64,8 @@ class Engineer:
 	var stranded: float = 0.0
 	## Climbs up or down any height of ground (it was stranded), until it reaches its place.
 	var any_height: bool = false
+	## Stranded and still no way back after stuck_time more, climbing any height (see stuck_count).
+	var stuck: bool = false
 	## Walks the ground beneath decks, climbing down past them (to dig a cell only reached from below one).
 	var under_decks: bool = false
 	## Pieces of wood from the tree it felled, still to pick up. It takes no other work until they are in.
@@ -233,9 +235,16 @@ func _update_stranded(e: Engineer, x: float, was: Vector2, dt: float) -> void:
 		e.any_height = false
 	if e.pos != was or absf(x - e.pos.x) <= 0.05 or rules.stranded_time <= 0.0:
 		e.stranded = 0.0
+		e.stuck = false
 		return
 	e.stranded += dt
 	e.any_height = e.any_height or e.stranded >= rules.stranded_time
+	e.stuck = e.stranded >= rules.stranded_time + rules.stuck_time
+
+
+## Engineers that have no way back to the column at all (see CrewRules.stuck_time).
+func stuck_count() -> int:
+	return engineers.filter(func(e: Engineer) -> bool: return e.stuck).size()
 
 
 ## The hazard (spikes, water) the engineer's body is in, else null (see Terrain.hazard_for_body).

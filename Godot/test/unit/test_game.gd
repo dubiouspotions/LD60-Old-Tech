@@ -142,6 +142,23 @@ func test_skipping_the_last_level_wins_the_campaign() -> void:
 	assert_signal_emitted(world, "victory")
 
 
+## A stuck engineer is told on the status line, after whatever else it says.
+func test_the_status_line_warns_of_a_stuck_engineer() -> void:
+	game._begin()
+	var world: World = game.get_node("%World")
+	var status: Label = game.get_node("%HUD").get_node("%Status")
+	game._process(0.0)
+	var before := status.text
+	assert_false(status.text.contains(game.stuck_one_text), "nobody stuck")
+	world.crew.engineers[0].stuck = true
+	game._process(0.0)
+	assert_true(status.text.begins_with(before), "what it said before stays")
+	assert_true(status.text.contains(game.stuck_one_text), "and the warning follows: %s" % status.text)
+	world.crew.hire(world.crew.engineers[0].pos.x).stuck = true
+	game._process(0.0)
+	assert_true(status.text.contains(game.stuck_many_text % 2), "counted: %s" % status.text)
+
+
 func _key(code: Key) -> InputEventKey:
 	var k := InputEventKey.new()
 	k.physical_keycode = code

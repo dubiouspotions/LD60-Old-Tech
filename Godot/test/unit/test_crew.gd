@@ -1006,6 +1006,71 @@ func test_crew_switches_to_a_more_urgent_job_on_its_way_only_if_nearer() -> void
 	assert_eq(e.dig, near, "more urgent and nearer: switches")
 
 
+## An engineer on a bridge over spikes that breaks falls with it and dies on the spikes. (Right at the pit's edge,
+## with a foot over the ground, it holds on instead, as a soldier does.)
+func test_an_engineer_falling_off_a_broken_bridge_onto_spikes_dies() -> void:
+	for x0: float in [6.5, 7.5, 8.5]:
+		world.terrain.clear()
+		world.terrain.rebuild()
+		var rows := [
+			"..............",
+			"..............",
+			"..............",
+			"..............",
+			"..............",
+			"######....####",
+			"######^^^^####",
+			"##############",
+			"BBBBBBBBBBBBBB",
+		]
+		for y in rows.size():
+			for x in rows[y].length():
+				var key: String = WorldFixture.LEGEND[rows[y][x]]
+				if key != "":
+					world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+		world.bridge.clear()
+		world.crew.spawn(2.5)
+		var m := world.bridge.build(world.bridge.snap_point(Vector2(6, 5)), world.bridge.snap_point(Vector2(10, 5)), LOG)
+		var e: Crew.Engineer = world.crew.engineers[0]
+		e.pos = Vector2(x0, world.bridge.walk_surface(x0, 0.0).y)
+		world.bridge.break_member(m, true)
+		_run(4.0)
+		assert_false(e in world.crew.engineers, "fell onto the spikes from x %s and died" % x0)
+
+
+## An engineer cut off from the column (on ground between spike pits) that makes no way back, even climbing any
+## height, counts as stuck; one that gets going again does not.
+func test_an_engineer_with_no_way_back_counts_as_stuck() -> void:
+	world.terrain.clear()
+	world.terrain.rebuild()
+	var rows := [
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"....................",
+		"####^^^^##^^^^######",
+		"####################",
+		"BBBBBBBBBBBBBBBBBBBB",
+	]
+	for y in rows.size():
+		for x in rows[y].length():
+			var key: String = WorldFixture.LEGEND[rows[y][x]]
+			if key != "":
+				world.terrain.set_type(Vector2i(x, y), WorldFixture.type(key))
+	world.army.spawn(1, 17.5)
+	world.crew.spawn(17.5)
+	var e: Crew.Engineer = world.crew.engineers[0]
+	e.pos = Vector2(9.0, 5.0)
+	_run(world.crew.rules.stranded_time)
+	assert_eq(world.crew.stuck_count(), 0, "not stuck yet: it tries climbing any height first")
+	_run(world.crew.rules.stuck_time + 1.0)
+	assert_eq(world.crew.stuck_count(), 1, "no way back at all: stuck")
+	e.pos = Vector2(16.5, 5.0)
+	_run(0.5)
+	assert_eq(world.crew.stuck_count(), 0, "free again")
+
+
 func test_instant_work_cheat_finishes_ordered_plans_at_once() -> void:
 	var rules := world.crew.rules
 	rules.instant_work = true
