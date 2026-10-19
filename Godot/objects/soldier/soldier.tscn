@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://c78yrurvjdt8p" path="res://world/soilder_walk.png" id="4_yrtfe"]
 [ext_resource type="Texture2D" uid="uid://28j71k80nis2" path="res://world/green_flag_ani.png" id="5_lxyqk"]
 [ext_resource type="Texture2D" uid="uid://ds7nrtiq0f4cv" path="res://world/tent.png" id="6_dsnea"]
-[ext_resource type="Script" path="res://objects/soldier/mutiny_clock.gd" id="7_clock"]
+[ext_resource type="Script" uid="uid://dcmuxtms8w15q" path="res://objects/soldier/mutiny_clock.gd" id="7_clock"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lxyqk"]
 atlas = ExtResource("4_yrtfe")
@@ -360,7 +360,6 @@ position = Vector2(-2.000002, -25.999998)
 scale = Vector2(1.4375, 1.625)
 sprite_frames = SubResource("SpriteFrames_4pjgo")
 animation = &"soilder_walk"
-frame_progress = 0.62080973
 
 [node name="Spear" type="Line2D" parent="Body" unique_id=1391842286]
 unique_name_in_owner = true
@@ -428,7 +427,7 @@ position = Vector2(-20, -18)
 scale = Vector2(1.375, 1.375)
 texture = ExtResource("6_dsnea")
 
-[node name="MutinyClock" type="Node2D" parent="."]
+[node name="MutinyClock" type="Node2D" parent="." unique_id=1432010157]
 unique_name_in_owner = true
 visible = false
 z_index = 2
