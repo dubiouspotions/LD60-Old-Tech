@@ -99,3 +99,20 @@ func test_no_shooting_stars_by_day() -> void:
 	stars.amount = 0.0
 	_advance(stars.shooting_interval.y * 2)
 	assert_eq(stars.shooting(), 0)
+
+
+## The stars drift sideways with the camera at their Parallax share of its travel (less than the hills), and wrap
+## round the screen so the sky never runs out of stars.
+func test_stars_scroll_with_their_parallax_and_wrap_round() -> void:
+	var size := Vector2(1280, 720)
+	assert_gt(stars.parallax, 0.0, "the stars move a little")
+	assert_lt(stars.parallax, (bg.get_node("RidgeFar") as Ridge).parallax, "less than the far hills")
+	assert_almost_eq(stars.parallax, (bg.get_node("BakgrPixel") as Ridge).parallax, 0.0001, "with the sky behind them")
+	var still := stars.star_position(0, size, 0.0)
+	var moved := stars.star_position(0, size, 100.0)
+	var shift := 100.0 * Grid.PX * stars.parallax
+	assert_almost_eq(fposmod(still.x - moved.x, size.x), fposmod(shift, size.x), stars.pixel + 0.01, "drifts left as the camera goes right")
+	assert_eq(moved.y, still.y, "only sideways")
+	for i in stars.count():
+		var p := stars.star_position(i, size, 1e5)
+		assert_true(p.x >= 0.0 and p.x < size.x, "star %d on screen" % i)
