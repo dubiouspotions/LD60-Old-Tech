@@ -294,7 +294,8 @@ func banner(title: String, sub: String) -> void:
 	tw.tween_property(b, ^"modulate:a", 0.0, 0.75)
 
 
-## Arrow at the screen edge pointing at the column when it is off screen.
+## Arrow at the screen edge pointing at the column when it is off screen. The markers are TextureRects of one
+## arrow sprite (pointing right, tinted by their modulate), flipped to point left.
 func set_lead_marker(visible_on_side: int, screen_y: float) -> void:
 	_set_edge_marker(%LeadMarker, visible_on_side, screen_y)
 	_keep_markers_apart()
@@ -309,8 +310,8 @@ func set_crew_marker(visible_on_side: int, screen_y: float) -> void:
 ## Moves the red arrow just clear of the blue one when both are on the same edge and would cover each other:
 ## below it, or above it near the bottom of the screen.
 func _keep_markers_apart() -> void:
-	var red: Label = %CrewMarker
-	var blue: Label = %LeadMarker
+	var red: TextureRect = %CrewMarker
+	var blue: TextureRect = %LeadMarker
 	if not (red.visible and blue.visible) or not red.get_rect().intersects(blue.get_rect()):
 		return
 	var below := blue.position.y + blue.size.y
@@ -319,11 +320,11 @@ func _keep_markers_apart() -> void:
 
 
 ## Shows marker at the screen edge on visible_on_side (-1 left, 1 right; 0 hides it), at screen_y, pointing out.
-func _set_edge_marker(m: Label, visible_on_side: int, screen_y: float) -> void:
+func _set_edge_marker(m: TextureRect, visible_on_side: int, screen_y: float) -> void:
 	m.visible = visible_on_side != 0
 	if visible_on_side == 0:
 		return
-	m.text = "▶" if visible_on_side > 0 else "◀"
+	m.flip_h = visible_on_side < 0
 	var vp := m.get_viewport_rect().size
 	m.position = Vector2(vp.x - m.size.x - 6.0 if visible_on_side > 0 else 6.0, clampf(screen_y - m.size.y / 2, 60.0, vp.y - 120.0))
 

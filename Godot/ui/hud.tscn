@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://data/sounds/ui_click.tres" id="5"]
 [ext_resource type="PackedScene" path="res://ui/world_button.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://ui/plan_buttons.tscn" id="7"]
+[ext_resource type="Texture2D" path="res://ui/elements/edge_arrow.png" id="8_arrow"]
 [ext_resource type="Texture2D" uid="uid://dx3rcjuho1gm5" path="res://world/dirt.png" id="7_m0eg6"]
 [ext_resource type="Texture2D" uid="uid://iqyfiq0vbe12" path="res://world/timber.png" id="8_b00kl"]
 [ext_resource type="Texture2D" uid="uid://c0ypepdtamdmc" path="res://world/rope.png" id="9_so1yu"]
@@ -508,25 +509,25 @@ theme_override_font_sizes/font_size = 20
 text = "Checkpoint"
 horizontal_alignment = 1
 
-[node name="LeadMarker" type="Label" parent="Root" unique_id=981923255]
+[node name="LeadMarker" type="TextureRect" parent="Root" unique_id=981923255]
 unique_name_in_owner = true
 visible = false
+modulate = Color(0.302, 0.545, 0.941, 1)
 layout_mode = 0
 offset_right = 24.0
-offset_bottom = 30.0
-theme_override_colors/font_color = Color(0.302, 0.545, 0.941, 1)
-theme_override_font_sizes/font_size = 24
-text = "▶"
+offset_bottom = 24.0
+mouse_filter = 2
+texture = ExtResource("8_arrow")
 
-[node name="CrewMarker" type="Label" parent="Root" unique_id=1462093817]
+[node name="CrewMarker" type="TextureRect" parent="Root" unique_id=1462093817]
 unique_name_in_owner = true
 visible = false
+modulate = Color(0.92, 0.3, 0.25, 1)
 layout_mode = 0
 offset_right = 24.0
-offset_bottom = 30.0
-theme_override_colors/font_color = Color(0.92, 0.3, 0.25, 1)
-theme_override_font_sizes/font_size = 24
-text = "▶"
+offset_bottom = 24.0
+mouse_filter = 2
+texture = ExtResource("8_arrow")
 
 [node name="Intro" type="ColorRect" parent="Root" unique_id=1007607496]
 unique_name_in_owner = true

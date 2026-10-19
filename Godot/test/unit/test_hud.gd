@@ -87,25 +87,27 @@ func test_camp_shoppe_panel_shows_under_the_camp() -> void:
 
 ## A red arrow at the screen edge points at the nearest engineer off screen, like the blue one at the leader.
 func test_crew_marker_points_at_an_engineer_off_screen() -> void:
-	var m: Label = hud.get_node("%CrewMarker")
-	var lead: Label = hud.get_node("%LeadMarker")
+	var m: TextureRect = hud.get_node("%CrewMarker")
+	var lead: TextureRect = hud.get_node("%LeadMarker")
 	hud.set_crew_marker(0, 0.0)
 	assert_false(m.visible, "nobody off screen")
 	hud.set_crew_marker(-1, 300.0)
 	assert_true(m.visible)
-	assert_eq(m.text, "◀")
+	assert_true(m.flip_h, "pointing left")
 	assert_lt(m.position.x, 50.0, "on the left edge")
 	hud.set_crew_marker(1, 300.0)
-	assert_eq(m.text, "▶")
-	assert_gt(m.get_theme_color(&"font_color").r, 0.8, "red")
-	assert_lt(m.get_theme_color(&"font_color").b, 0.5)
-	assert_eq(m.get_theme_font_size(&"font_size"), lead.get_theme_font_size(&"font_size"), "the same arrow as the leader's")
+	assert_false(m.flip_h, "pointing right")
+	assert_gt(m.modulate.r, 0.8, "red")
+	assert_not_null(m.texture, "an arrow sprite, not a glyph the font may lack")
+	assert_eq(m.texture, lead.texture, "the same arrow as the leader's")
+	assert_lt(m.modulate.b, 0.5)
+	assert_eq(m.size, lead.size, "and the same size")
 
 
 ## The red and the blue arrow never cover each other, whichever is placed first and wherever on the edge.
 func test_crew_and_lead_markers_never_overlap() -> void:
-	var red: Label = hud.get_node("%CrewMarker")
-	var blue: Label = hud.get_node("%LeadMarker")
+	var red: TextureRect = hud.get_node("%CrewMarker")
+	var blue: TextureRect = hud.get_node("%LeadMarker")
 	var bottom := red.get_viewport_rect().size.y
 	for y: float in [300.0, 0.0, bottom]:
 		for crew_first: bool in [true, false]:
