@@ -667,6 +667,15 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 	var was: Array[Vector2] = []
 	for n in nodes:
 		was.append(n.pos)
+	# Each joint's built members, in member order, sharing its hits on the ground (see _collide).
+	var on_joint := {}
+	for m in members:
+		if m.blueprint:
+			continue
+		for j: Joint in ([m.a] if m.a == m.b else [m.a, m.b]):
+			if not on_joint.has(j):
+				on_joint[j] = []
+			on_joint[j].append(m)
 	for s in substeps:
 		for n in nodes:
 			if n.fixed():
@@ -695,7 +704,7 @@ func step(dt: float, loads: Array = [], bodies: Array[Body] = []) -> void:
 			m._acc -= dl / h2
 		for n in nodes:
 			if not n.fixed():
-				_collide(n, h)
+				_collide(n, h, on_joint.get(n, []))
 	if terrain:
 		for i in nodes.size():
 			terrain.splash(was[i], nodes[i].pos, (nodes[i].pos.y - was[i].y) / dt)
@@ -955,15 +964,15 @@ func _through_ground(a: Vector2, b: Vector2) -> bool:
 	return false
 
 
-func _collide(n: Joint, h: float) -> void:
+## Keeps joint n out of the ground. on: its built members (see step).
+func _collide(n: Joint, h: float, on: Array) -> void:
 	var out := _push_out(n.pos, n.prev)
 	if out.is_empty():
 		return
 	var v := n.pos - n.prev
 	# The joint's mass and load come from its members: each takes its share of the hit.
-	for m in members:
-		if not m.blueprint and (m.a == n or m.b == n):
-			_strike(out[2], m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
+	for m: Member in on:
+		_strike(out[2], m, (n.mass + n.load) * (m.mass / 2.0) / maxf(n.mass, 1e-6), v, out[1], h)
 	n.pos = out[0]
 	n.prev = n.pos - (v + _contact_dv(v, out[1]))
 
