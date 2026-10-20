@@ -57,6 +57,9 @@ func step(dt: float, world: World, bodies: Array) -> void:
 		if pair[0] == self or absf(b.center.x - (x + 0.5)) >= 0.5 + b.half_width() or head < bottom - 0.05 or head > next:
 			continue
 		if harmless and not b.is_box():
+			# Someone in the next column reaching into this one is not under it: it falls past them.
+			if floori(b.center.x) != x:
+				continue
 			if not land_under(world, pair[0]):
 				smash()
 			return

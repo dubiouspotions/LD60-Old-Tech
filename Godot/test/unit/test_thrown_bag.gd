@@ -1,7 +1,7 @@
 extends GutTest
-## A thrown sandbag flies its arc and falls where it was thrown, unless it hits anything on the way: then it
-## breaks in a cloud of dust, hurting nobody. A soldier or engineer it hits gets it under their feet instead: it lands
-## in the cell they stand in and they step up onto it.
+## A thrown sandbag flies its arc to the cell it was thrown at through anything on the way (ground, bridge pieces,
+## soldiers, engineers), and falls on from there. Only an archer stops it: it breaks on them in a cloud of dust, hurting
+## nobody. A soldier or engineer standing in that cell gets it under their feet: they step up onto it.
 
 ## Flat ground at row 8, a wall at x 6 rows 4..7.
 const MAP: Array = [
@@ -72,27 +72,49 @@ func test_a_clear_throw_lands() -> void:
 	assert_eq(world.terrain.type_at(Vector2i(13, 7)), WorldFixture.type("sandbag"))
 
 
-func test_a_throw_into_a_wall_breaks_in_a_cloud_of_dust() -> void:
-	watch_signals(Effects)
+func test_a_throw_through_a_wall_still_lands_where_it_was_thrown() -> void:
 	_throw(Vector2(2.5, 7.0), Vector2i(8, 7))
-	assert_eq(_sandbags(), 0, "nothing landed")
-	assert_false(_bags_flying(), "gone")
-	var kinds: Array = []
-	for i in get_signal_emit_count(Effects, "burst"):
-		kinds.append(get_signal_parameters(Effects, "burst", i)[0])
-	assert_has(kinds, &"dust", "a cloud of dust")
+	assert_eq(world.terrain.type_at(Vector2i(8, 7)), WorldFixture.type("sandbag"))
+	assert_eq(_sandbags(), 1)
 	assert_eq(world.terrain.type_at(Vector2i(6, 6)), WorldFixture.type("soil"), "the wall stands")
 
 
-func test_a_throw_into_a_bridge_piece_breaks() -> void:
+func test_a_throw_through_a_bridge_piece_still_lands_where_it_was_thrown() -> void:
 	var b := world.bridge
 	b.build(b.snap_point(Vector2(11.0, 4.0)), b.snap_point(Vector2(11.0, 8.0)), load("res://data/bridge/log.tres"))
 	_throw(Vector2(8.5, 7.0), Vector2i(14, 7))
+	assert_eq(world.terrain.type_at(Vector2i(14, 7)), WorldFixture.type("sandbag"))
+	assert_eq(_sandbags(), 1)
+
+
+## The column waits at the edge just short of where the bag is thrown (#48): it flies past them.
+func test_a_throw_past_a_soldier_beside_the_cell_still_lands_where_it_was_thrown() -> void:
+	world.army.spawn(1, 12.9)
+	world.army.hold = true
+	var s := world.army.soldiers[0]
+	_throw(Vector2(8.5, 7.0), Vector2i(13, 7))
+	assert_eq(world.terrain.type_at(Vector2i(13, 7)), WorldFixture.type("sandbag"))
+	assert_eq(world.terrain.type_at(Vector2i(12, 7)), null, "not under the soldier")
+	assert_false(s.dead)
+
+
+func test_a_throw_into_an_archer_breaks_in_a_cloud_of_dust() -> void:
+	watch_signals(Effects)
+	world.terrain.set_type(Vector2i(11, 6), WorldFixture.type("brick"))
+	world.terrain.set_type(Vector2i(11, 7), WorldFixture.type("brick"))
+	var archer: Archer = load("res://objects/archer/archer.tscn").instantiate()
+	archer.position = Grid.to_px(Vector2(11.5, 6))
+	world.objects.add_child(archer)
+	var hp := archer.hp
+	_throw(Vector2(8.5, 7.0), Vector2i(14, 7))
 	assert_eq(_sandbags(), 0, "nothing landed")
-	assert_false(_bags_flying())
+	assert_false(_bags_flying(), "gone")
+	assert_true(archer.alive())
+	assert_eq(archer.hp, hp, "not hurt")
+	assert_gt(_dust_count(), 0, "a cloud of dust")
 
 
-func test_a_throw_into_a_soldier_lands_under_them_and_they_step_up() -> void:
+func test_a_throw_at_a_soldiers_cell_lands_under_them_and_they_step_up() -> void:
 	world.army.spawn(1, 11.5)
 	world.army.hold = true
 	var s := world.army.soldiers[0]
@@ -104,7 +126,7 @@ func test_a_throw_into_a_soldier_lands_under_them_and_they_step_up() -> void:
 	assert_almost_eq(s.pos.y, 7.0, 0.01, "standing on it")
 
 
-func test_a_throw_into_another_engineer_lands_under_them_and_they_step_up() -> void:
+func test_a_throw_at_another_engineers_cell_lands_under_them_and_they_step_up() -> void:
 	_crew(2, 8.5)
 	var thrower := world.crew.engineers[0]
 	var other := world.crew.engineers[1]
@@ -169,6 +191,17 @@ func test_a_sandbag_falling_on_a_soldier_lands_under_them_and_they_step_up() -> 
 	assert_eq(world.terrain.type_at(Vector2i(12, 7)), WorldFixture.type("sandbag"), "under their feet")
 	assert_eq(_sandbags(), 1)
 	assert_almost_eq(s.pos.y, 7.0, 0.01, "standing on it")
+
+
+## One standing in the next column, reaching into this one, is not under it (#48): it falls past them.
+func test_a_sandbag_falls_past_a_soldier_in_the_next_column() -> void:
+	world.army.spawn(1, 13.2)
+	world.army.hold = true
+	var s := world.army.soldiers[0]
+	_drop_sandbag(12)
+	assert_eq(world.terrain.type_at(Vector2i(12, 7)), WorldFixture.type("sandbag"))
+	assert_eq(world.terrain.type_at(Vector2i(13, 7)), null, "not under the soldier")
+	assert_false(s.dead)
 
 
 func test_with_no_room_to_step_up_it_breaks_on_the_soldier() -> void:
