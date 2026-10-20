@@ -150,20 +150,22 @@ jobs:
           name: Linux
           path: ./build/linux
 
+      # Each channel uploads even if one before it failed (an itch.io channel can be stuck processing its
+      # last build); the job still fails, so the Discord message below goes out.
       - name: Itch.io web
-        if: env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != ''
+        if: ${{ !cancelled() && env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != '' }}
         run: BUTLER_API_KEY=${ITCHIO_API_KEY} butler push ./build/web ${ITCHIO_USERNAME}/${ITCHIO_GAME}:web
 
       - name: Itch.io MacOS
-        if: env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != ''
+        if: ${{ !cancelled() && env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != '' }}
         run: BUTLER_API_KEY=${ITCHIO_API_KEY} butler push ./build/mac/$EXPORT_NAME.zip ${ITCHIO_USERNAME}/${ITCHIO_GAME}:mac
 
       - name: Itch.io Windows
-        if: env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != ''
+        if: ${{ !cancelled() && env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != '' }}
         run: BUTLER_API_KEY=${ITCHIO_API_KEY} butler push ./build/windows/$EXPORT_NAME.zip ${ITCHIO_USERNAME}/${ITCHIO_GAME}:windows
 
       - name: Itch.io Linux
-        if: env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != ''
+        if: ${{ !cancelled() && env.ITCHIO_API_KEY != '' && env.ITCHIO_USERNAME != '' && env.ITCHIO_GAME != '' }}
         run: BUTLER_API_KEY=${ITCHIO_API_KEY} butler push ./build/linux/$EXPORT_NAME.zip ${ITCHIO_USERNAME}/${ITCHIO_GAME}:linux
 
       - name: Notify Discord of deploy failure
